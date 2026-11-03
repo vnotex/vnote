@@ -24,6 +24,9 @@ public:
   // Check if this hook was cancelled
   bool isCancelled() const { return m_cancelled; }
 
+  // Failure of this action dispatch, distinct from deliberate cancellation.
+  bool hasFailed() const { return m_failed; }
+
   // Stop propagation to other callbacks
   void stopPropagation() { m_stopPropagation = true; }
 
@@ -31,9 +34,7 @@ public:
   bool isPropagationStopped() const { return m_stopPropagation; }
 
   // Set metadata value
-  void setMetadata(const QString &p_key, const QVariant &p_value) {
-    m_metadata[p_key] = p_value;
-  }
+  void setMetadata(const QString &p_key, const QVariant &p_value) { m_metadata[p_key] = p_value; }
 
   // Get metadata value
   QVariant getMetadata(const QString &p_key, const QVariant &p_defaultValue = QVariant()) const {
@@ -47,9 +48,11 @@ public:
   const QString &hookName() const { return m_hookName; }
 
 private:
+  friend class HookManager;
   QString m_hookName;
   bool m_cancelled;
   bool m_stopPropagation;
+  bool m_failed = false;
   QVariantMap m_metadata;
 };
 

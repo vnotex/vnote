@@ -7,7 +7,7 @@ VNote binaries, together with the notices those licenses require us to keep.
 ## Scope
 
 This file covers the bundled **icon sets**, **libsodium cryptography dependency**,
-**Windows minisign verifier**, and **WebDAV transport/XML dependencies**.
+**Windows minisign verifier**, **WebDAV transport/XML dependencies**, and **HTTP server dependency**.
 
 It does **not** restate licenses that already ship next to the code they cover:
 
@@ -42,6 +42,18 @@ alongside these resources.
 Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see
 [Unresolved](#unresolved) rather than treating this document as complete.
+
+---
+
+## cpp-httplib
+
+- **Upstream:** [cpp-httplib v0.64.0](https://github.com/yhirose/cpp-httplib/tree/24e58ce5b25d55045af4cd6f463e83a8082fbe6b)
+- **License:** MIT; Copyright (c) 2017 yhirose
+- **Use:** private HTTP/1.1 transport dependency of `vnote_http`, without optional TLS or compression
+
+The build redistributes the unmodified upstream `LICENSE` as `LICENSE.cpp-httplib` beside
+the Windows executable, in macOS `Contents/Resources`, or under Linux
+`${datadir}/licenses/vnote`. This dependency does not add Qt HTTP Server's GPL-only module.
 
 ---
 

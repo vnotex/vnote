@@ -320,16 +320,24 @@ nonoverlapping ranges before constructing output; never rematch a changed line o
 byte offsets. Only final successful Simple results carry `m_replacementSupported`; parsing and
 streaming previews cannot grant it. The controller rejects truncated or invalidated results.
 
-`BufferService::replaceSearchMatches()` owns each deferred request, independently of the
-controller. Reject protected/read-only/non-notebook targets before opening. Private opens must
-not fire `FileAfterOpen` (it creates editor tabs). Reserve the buffer, suspend autosave and writer
-registration, freeze views, then asynchronously drain earlier saves before capturing current
-writer text. Preparation uses copied inputs on QtConcurrent, strict round-trippable codecs,
-a 50 MiB source limit, and a backing-file SHA-256; existing encoding and UTF-8 BOM are preserved.
+`BufferService` owns one `ContentReplacement` lifecycle for both
+`replaceSearchMatches()` and `NoteOperationService` Replace/Append. Search supplies its reviewed
+line matches to `SearchService::buildReplacement`; external mutations supply an ordinary domain
+request, never a fabricated search result. Reject protected/read-only/non-notebook targets before
+opening. Private opens must not fire `FileAfterOpen` (it creates editor tabs). Reserve the buffer,
+suspend autosave and writer registration, freeze views, then asynchronously drain earlier saves
+before capturing current writer text. Preparation uses copied inputs on QtConcurrent, strict
+round-trippable codecs, a 50 MiB source limit, and a backing-file SHA-256; existing encoding and
+UTF-8 BOM are preserved. External writes refuse drafts, bind the supplied digest to the actual
+saved bytes and preserve the existing uniform line endings instead of applying editor save-time
+overrides. Re-capture an external writer after before-save hooks: a changed guarded payload fails
+rather than silently overwriting the hook's editor changes.
 
 `BufferSaveQueue::enqueueReplacement()` is an exact job on the existing executor. It accepts
 only an idle key, excludes ordinary enqueues, never coalesces or emits ordinary `saveFinished`,
-and rechecks cancellation and the disk digest under `NotebookIoGate` before installing bytes.
+and rechecks cancellation, the canonical physical path and disk digest under `NotebookIoGate`
+before installing bytes. An optional lifetime-safe, thread-safe authorization callback is checked
+again on that worker immediately before installation; it must never capture GUI-owned state.
 Once installed, finish the save attempt. Hooks run outside the gate; refresh all views before
 restoring the writer. A failed write retains transformed dirty text for explicit recovery, with
 no automatic destructive retry. A successful manual recovery save retires that dirty revision.
@@ -340,6 +348,52 @@ Reservation hooks reject notebook close and delete/move/rename of the file or an
 folder, using notebook identity and path-component boundaries. Coverage lives in
 `test_searchservice`, `test_buffer`, `test_buffer_save_queue`, `test_searchresultmodel`, and
 `test_searchcontroller`.
+
+## Domain note operations
+
+`NoteOperationService` is owner-thread application orchestration, with domain-only
+`NoteOperationRequest`/`NoteOperationResult` values. It has no HTTP, token-registry or REST
+dependency. Every `execute()` result is deferred, including immediate rejection. Cancellation
+is honored until commitment; `committed`, `saved` and `recoveryRequired` are independent facts,
+and an after-hook error must not erase a successful save. A failed content save retains recovery
+text in the real buffer, with autosave suppressed, through the shared replacement lifecycle.
+
+Action dispatch isolates callback exceptions instead of rethrowing them. Its bool return is
+cancellation only; obtain the `HookContext` out-param and check `hasFailed()` for this dispatch's
+callback/recursion failures. Before-hook failures prevent a mutation. After-hook failures retain
+the committed/saved facts and report `after_hook_failed`; a try/catch around `doAction()` alone
+cannot observe an isolated plugin exception. Failure state is dispatcher-owned and resets for
+each invocation, independently of user metadata and cancellation.
+
+Create produces an empty Markdown/Text note only. Rename preserves UUID and registered file
+type, including specialized ordinary files. Trash accepts ordinary Markdown/Text notes in a
+bundled notebook through **`vxcore_node_trash` only**; never call the delete API as a fallback.
+Requests revalidate notebook writability, UUID/path, parent identity, destination collisions,
+editor/save state and canonical non-linked paths. Hidden/control paths and protected notes are
+unavailable. File type facts come from the existing `FileTypeCoreService` registry.
+
+Node mutations hold a `SyncWorkQueueManager` maintenance lease and a notebook buffer reservation.
+Before-hooks and comment participant capture run outside the gate; comment flush checkpoints are
+checked again at commitment. Comment waits are bounded and yield through operation-owned timers.
+To keep trash SHA-256 I/O off the GUI, a worker obtains the gate with a nonblocking try-lock,
+hashes saved bytes, and queues one callback-free owner-thread metadata commit while retaining
+the gate. The worker waits at most five seconds for that continuation. Cancellation retires the
+continuation and wakes it, so teardown never joins a worker that still needs GUI dispatch.
+The owner never waits to acquire the gate and never runs hooks/editor capture under it.
+`NotebookCoreService`'s private before/commit/after phases preserve ordinary public callers;
+after-hooks and open-view notifications run only after the worker has released the gate.
+Raw-note comment sidecar lifecycle work must become durable before reporting a rename saved.
+
+The facade's shutdown cancels owned work without stopping the shared editor save queue.
+`BufferService` retains exact-save reservations until real worker completion even if the facade
+has been destroyed; its completion uses a guarded `QPointer`. Application teardown still drains
+`BufferService` before destroying the shared context or gate. Never release a frozen writer early
+or infer persistence merely because an HTTP waiter stopped waiting.
+
+`captureActiveWriterContent(..., bool *hasWriter)` is nonmutating and distinguishes no writer
+from a failing writer callback, including suspended writers. Saved fallback is safe only for the
+former. Regression coverage is in `test_buffer` and `test_buffer_save_queue`.
+
 
 ## UpdateService
 

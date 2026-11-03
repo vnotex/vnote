@@ -37,6 +37,15 @@ The existing `[Release]` condition disables these suites for both kits. Both Qt 
 build and sign packages and run the signed-package ABI, consumer and WebEngine gates,
 including native Intel verification; do not describe Qt 6.9.3 as unit-test validated.
 
+### HTTP API test registration
+
+All test-enabled platform jobs run `scripts/e2e/smoke_http_api.py --check-registration`
+against the build tree. The five HTTP/auth/REST/adapter/lifecycle targets are mandatory;
+do not silently skip them when an HTTP dependency is missing. `cpp-httplib` is pinned and
+private to the standalone transport; no Qt HttpServer or embedded TLS package is required.
+Package its upstream license using the existing platform license destinations.
+The standalone vxcore strict-trash regression remains a separate core-suite responsibility.
+
 ## Interactive CI debugging
 
 Use this when a failure needs the real hosted OS, desktop, Qt kit or CI setup.

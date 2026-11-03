@@ -169,6 +169,9 @@ private:
 
 class HookManager;
 class NotebookIoGate;
+class NoteOperationService;
+struct NoteOperationRequest;
+struct NoteOperationResult;
 
 // Service layer for notebook operations. Wraps VxCore C API and provides Qt signals.
 // NotebookCoreService IS the new notebook layer - replaces legacy NotebookMgr.
@@ -611,6 +614,13 @@ signals:
                         const QString &errorMessage);
 
 private:
+  friend class NoteOperationService;
+  // Owner-thread phases: hooks run outside NotebookIoGate. The primitive is
+  // callback-free at the Qt boundary and must run only under the caller's gate.
+  bool beforeFileMutation(const NoteOperationRequest &p_request);
+  bool afterFileMutation(const NoteOperationRequest &p_request);
+  VxCoreError commitFileMutation(const NoteOperationRequest &p_request,
+                                 NoteOperationResult *p_result);
   // Check context validity before operations.
   bool checkContext() const;
 

@@ -31,6 +31,7 @@
 #include <core/services/buffersavequeue.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/noteoperationservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/syncworkqueuemanager.h>
 #include <vxcore/notebook_json_keys.h>
@@ -156,6 +157,7 @@ struct ReplacementPreparation {
   QString codecName;
   QByteArray digest;
   QString error;
+  QString errorCode;
   int count = 0;
   bool utf8Bom = false;
 };
@@ -176,7 +178,9 @@ ReplacementPreparation prepareReplacement(const QString &p_path, QByteArray p_ra
                                           bool p_hasWriter, QString p_codecName, bool p_private,
                                           const QVector<SearchLineMatch> &p_matches,
                                           const QString &p_replacement,
-                                          const std::shared_ptr<std::atomic_bool> &p_cancelled) {
+                                          const std::shared_ptr<std::atomic_bool> &p_cancelled,
+                                          bool p_external, bool p_append,
+                                          const QByteArray &p_expectedDigest) {
   ReplacementPreparation result;
   try {
     if (p_cancelled->load()) {
@@ -195,6 +199,11 @@ ReplacementPreparation prepareReplacement(const QString &p_path, QByteArray p_ra
       return result;
     }
     result.digest = QCryptographicHash::hash(disk, QCryptographicHash::Sha256);
+    if (p_external && (result.digest != p_expectedDigest || p_raw != disk)) {
+      result.errorCode = QStringLiteral("precondition_failed");
+      result.error = BufferService::tr("The saved note has changed.");
+      return result;
+    }
     result.utf8Bom = p_raw.startsWith(QByteArray::fromHex("efbbbf"));
     if (result.utf8Bom)
       p_raw.remove(0, 3);
@@ -224,8 +233,38 @@ ReplacementPreparation prepareReplacement(const QString &p_path, QByteArray p_ra
       result.error = BufferService::tr("Binary content cannot be replaced.");
       return result;
     }
-    SearchService::buildReplacement(p_text, p_matches, p_replacement, &result.text, &result.count,
-                                    &result.error);
+    if (p_external) {
+      auto normalized = [](QString text) {
+        text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+        text.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+        return text;
+      };
+      if (p_hasWriter && normalized(p_text) != normalized(original)) {
+        result.errorCode = QStringLiteral("unsaved_changes");
+        result.error = BufferService::tr("The note has unsaved editor changes.");
+        return result;
+      }
+      QString addition = normalized(p_replacement);
+      QString withoutPairs = original;
+      withoutPairs.remove(QStringLiteral("\r\n"));
+      const bool crlf = original.contains(QStringLiteral("\r\n"));
+      const bool cr = withoutPairs.contains(QLatin1Char('\r'));
+      const bool lf = withoutPairs.contains(QLatin1Char('\n'));
+      if ((crlf && (cr || lf)) || (cr && lf)) {
+        result.errorCode = QStringLiteral("unsupported_encoding");
+        result.error = BufferService::tr("Mixed line endings cannot be replaced externally.");
+        return result;
+      }
+      if (crlf)
+        addition.replace(QStringLiteral("\n"), QStringLiteral("\r\n"));
+      else if (cr)
+        addition.replace(QLatin1Char('\n'), QLatin1Char('\r'));
+      result.text = p_append ? original + addition : addition;
+      result.count = 1;
+    } else {
+      SearchService::buildReplacement(p_text, p_matches, p_replacement, &result.text, &result.count,
+                                      &result.error);
+    }
   } catch (const std::exception &error) {
     result.error = QString::fromUtf8(error.what());
   } catch (...) {
@@ -235,12 +274,24 @@ ReplacementPreparation prepareReplacement(const QString &p_path, QByteArray p_ra
 }
 } // namespace
 
-struct BufferService::SearchReplacement {
-  SearchFileResult target;
+struct BufferService::ContentReplacement {
+  NodeIdentifier target;
+  QString nodeUuid;
+  QVector<SearchLineMatch> matches;
   QString replacement;
+  bool supported = true;
+  bool external = false;
+  bool append = false;
+  QByteArray expectedDigest;
+  QByteArray savedDigest;
+  QString canonicalPath;
+  std::function<bool()> authorized;
+  std::function<void(NoteOperationResult)> complete;
+  SyncWorkQueueManager::MaintenanceLease maintenance;
   Buffer2 buffer;
   QString path;
   ActiveWriter writer;
+  QString writerText;
   bool hadWriter = false;
   bool wasDirty = false;
   bool privatelyOpened = false;
@@ -430,7 +481,7 @@ BufferService::~BufferService() {
 bool BufferService::shutdown(int p_timeoutMs) {
   m_replacementStopping = true;
   m_autoSaveTimer->stop();
-  const auto pending = m_searchReplacements;
+  const auto pending = m_contentReplacements;
   for (const auto &request : pending)
     request->cancelled->store(true);
   for (const auto &request : pending) {
@@ -439,7 +490,8 @@ bool BufferService::shutdown(int p_timeoutMs) {
   }
   for (auto it = pending.constBegin(); it != pending.constEnd(); ++it) {
     if (!it.value()->dispatched)
-      finishSearchReplacement(it.key(), false, false, tr("Replacement was cancelled."));
+      finishContentReplacement(it.key(), false, false, tr("Replacement was cancelled."),
+                               QStringLiteral("cancelled"));
   }
   if (m_saveQueue && !m_saveQueue->shutdown(p_timeoutMs))
     return false;
@@ -447,7 +499,7 @@ bool BufferService::shutdown(int p_timeoutMs) {
   // or guessing durability from the buffer's modified flag.
   if (m_saveQueue)
     QCoreApplication::sendPostedEvents(m_saveQueue, QEvent::MetaCall);
-  return m_searchReplacements.isEmpty();
+  return m_contentReplacements.isEmpty();
 }
 
 QObject *BufferService::asQObject() { return this; }
@@ -465,8 +517,8 @@ bool BufferService::beginSyncApply(const QString &p_notebookId, QStringList *p_p
   if (p_notebookId.isEmpty() || m_replacementStopping ||
       replacementAffectsNode(p_notebookId, QString(), true))
     return false;
-  for (const auto &request : m_searchReplacements) {
-    if (request->target.m_notebookId == p_notebookId)
+  for (const auto &request : m_contentReplacements) {
+    if (request->target.notebookId == p_notebookId)
       return false;
   }
   const auto root = getResolvedPath(p_notebookId, QString());
@@ -596,10 +648,10 @@ bool BufferService::replacementAffectsNode(const QString &p_notebookId, const QS
     }
   }
   for (auto token : m_replacementReservations) {
-    const auto request = m_searchReplacements.value(token);
-    if (!request || request->target.m_notebookId != p_notebookId)
+    const auto request = m_contentReplacements.value(token);
+    if (!request || request->target.notebookId != p_notebookId)
       continue;
-    const auto &path = request->target.m_path;
+    const auto &path = request->target.relativePath;
     if (path == p_path ||
         (p_folder && (p_path.isEmpty() || path.startsWith(p_path + QLatin1Char('/')))))
       return true;
@@ -613,16 +665,44 @@ int BufferService::replaceSearchMatches(const SearchFileResult &p_target,
       m_nextReplacementToken == std::numeric_limits<int>::max())
     return 0;
   const int token = ++m_nextReplacementToken;
-  auto request = std::make_shared<SearchReplacement>();
-  request->target = p_target;
+  auto request = std::make_shared<ContentReplacement>();
+  request->target = {p_target.m_notebookId, p_target.m_path};
+  request->nodeUuid = p_target.m_id;
+  request->matches = p_target.m_lineMatches;
+  request->supported = p_target.m_replacementSupported && p_target.m_type == SearchResultType::File;
   request->replacement = p_replacement;
-  m_searchReplacements.insert(token, request);
-  QTimer::singleShot(0, this, [this, token]() { startSearchReplacement(token); });
+  m_contentReplacements.insert(token, request);
+  QTimer::singleShot(0, this, [this, token]() { startContentReplacement(token); });
+  return token;
+}
+
+int BufferService::replaceContent(NoteOperationRequest p_request,
+                                  std::function<void(NoteOperationResult)> p_complete) {
+  Q_ASSERT(QThread::currentThread() == thread());
+  if (m_replacementStopping || m_nextReplacementToken == std::numeric_limits<int>::max())
+    return 0;
+  const int token = ++m_nextReplacementToken;
+  auto request = std::make_shared<ContentReplacement>();
+  request->target = {p_request.notebookId, p_request.relativePath};
+  request->nodeUuid = std::move(p_request.nodeId);
+  request->replacement = std::move(p_request.text);
+  request->external = true;
+  request->append = p_request.kind == NoteOperationKind::Append;
+  request->expectedDigest = std::move(p_request.expectedFileSha256);
+  request->authorized = std::move(p_request.authorized);
+  request->complete = std::move(p_complete);
+  request->cancelled = p_request.cancelled ? std::move(p_request.cancelled)
+                                           : std::make_shared<std::atomic_bool>(false);
+  request->supported =
+      !request->nodeUuid.isEmpty() && request->expectedDigest.size() == 32 &&
+      (p_request.kind == NoteOperationKind::Replace || p_request.kind == NoteOperationKind::Append);
+  m_contentReplacements.insert(token, request);
+  QTimer::singleShot(0, this, [this, token]() { startContentReplacement(token); });
   return token;
 }
 
 void BufferService::cancelSearchReplacement(int p_token) {
-  const auto request = m_searchReplacements.value(p_token);
+  const auto request = m_contentReplacements.value(p_token);
   if (request)
     request->cancelled->store(true);
 }
@@ -635,50 +715,63 @@ Buffer2 BufferService::openReplacementBuffer(const NodeIdentifier &p_nodeId) {
   return getBufferHandle(id);
 }
 
-void BufferService::startSearchReplacement(int p_token) {
-  const auto request = m_searchReplacements.value(p_token);
+void BufferService::startContentReplacement(int p_token) {
+  const auto request = m_contentReplacements.value(p_token);
   if (!request || request->finishing)
     return;
-  auto fail = [this, p_token](const QString &error) {
-    finishSearchReplacement(p_token, false, false, error);
+  auto fail = [this, p_token](const QString &error,
+                              const QString &code = QStringLiteral("precondition_failed")) {
+    finishContentReplacement(p_token, false, false, error, code);
   };
   try {
     const auto &target = request->target;
-    if (!target.m_replacementSupported) {
+    if (!request->supported) {
       fail(tr("Replacement is available only for Simple search results."));
       return;
     }
     if (request->cancelled->load() || m_replacementStopping ||
-        m_syncApplyBuffers.contains(target.m_notebookId)) {
-      fail(tr("Replacement was cancelled."));
+        m_syncApplyBuffers.contains(target.notebookId)) {
+      fail(tr("Replacement was cancelled."), QStringLiteral("cancelled"));
       return;
     }
-    if (!m_context || !m_hookMgr || !m_saveQueue || target.m_notebookId.isEmpty() ||
-        target.m_type != SearchResultType::File || target.m_path.isEmpty() ||
-        QDir::isAbsolutePath(target.m_path) || target.m_path.contains(QLatin1Char('\\')) ||
-        QDir::cleanPath(target.m_path) != target.m_path ||
-        target.m_path.startsWith(QLatin1String("../")) || target.m_path == QLatin1String("..")) {
+    if (!m_context || !m_hookMgr || !m_saveQueue || target.notebookId.isEmpty() ||
+        target.relativePath.isEmpty() || QDir::isAbsolutePath(target.relativePath) ||
+        target.relativePath.contains(QLatin1Char('\\')) ||
+        QDir::cleanPath(target.relativePath) != target.relativePath ||
+        target.relativePath.startsWith(QLatin1String("../")) ||
+        target.relativePath == QLatin1String("..")) {
       fail(tr("The search target is not an available notebook file."));
       return;
     }
-    if (!target.m_id.isEmpty()) {
+    if (!request->nodeUuid.isEmpty()) {
       QString notebookId, path;
-      if (!BufferCoreService::resolveNodeId(target.m_id, notebookId, path) ||
-          notebookId != target.m_notebookId || path != target.m_path) {
+      if (!BufferCoreService::resolveNodeId(request->nodeUuid, notebookId, path) ||
+          notebookId != target.notebookId || path != target.relativePath) {
         fail(tr("The search target has moved or is no longer available."));
         return;
       }
     }
+    if (request->authorized && !request->authorized()) {
+      fail(tr("The operation is no longer authorized."), QStringLiteral("forbidden"));
+      return;
+    }
+    if (m_syncWorkQueues) {
+      request->maintenance = m_syncWorkQueues->tryAcquireMaintenance({target.notebookId});
+      if (!request->maintenance) {
+        fail(tr("The notebook is busy."), QStringLiteral("resource_busy"));
+        return;
+      }
+    }
     bool readOnly = false;
-    if (vxcore_notebook_is_read_only(m_context, target.m_notebookId.toUtf8().constData(),
+    if (vxcore_notebook_is_read_only(m_context, target.notebookId.toUtf8().constData(),
                                      &readOnly) != VXCORE_OK ||
         readOnly) {
-      fail(tr("The notebook is closed or read-only."));
+      fail(tr("The notebook is closed or read-only."), QStringLiteral("read_only"));
       return;
     }
     char *json = nullptr;
-    const auto status = vxcore_node_get_config(m_context, target.m_notebookId.toUtf8().constData(),
-                                               target.m_path.toUtf8().constData(), &json);
+    const auto status = vxcore_node_get_config(m_context, target.notebookId.toUtf8().constData(),
+                                               target.relativePath.toUtf8().constData(), &json);
     std::unique_ptr<char, decltype(&vxcore_string_free)> owned(json, vxcore_string_free);
     const auto node = json ? QJsonDocument::fromJson(QByteArray(json)).object() : QJsonObject();
     if (status != VXCORE_OK ||
@@ -686,14 +779,30 @@ void BufferService::startSearchReplacement(int p_token) {
       fail(tr("The search target is not an available notebook file."));
       return;
     }
-    if (target.m_path.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) ||
+    if (target.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) ||
         node.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()) {
-      fail(tr("Protected notes cannot be replaced from search results."));
+      fail(tr("Protected notes cannot be replaced."), QStringLiteral("protected_note_unavailable"));
       return;
     }
-    const NodeIdentifier nodeId{target.m_notebookId, target.m_path};
+    const NodeIdentifier nodeId{target.notebookId, target.relativePath};
     request->path = getResolvedPath(nodeId.notebookId, nodeId.relativePath);
     const QFileInfo file(request->path);
+    request->canonicalPath = file.canonicalFilePath();
+    const auto root = QFileInfo(getResolvedPath(target.notebookId, {})).canonicalFilePath();
+    const auto relative = QDir(root).relativeFilePath(request->canonicalPath);
+    if (root.isEmpty() || request->canonicalPath.isEmpty() || QDir::isAbsolutePath(relative) ||
+        relative == QLatin1String("..") || relative.startsWith(QLatin1String("../")) ||
+        file.isSymbolicLink() || file.isJunction()) {
+      fail(tr("The note path is unavailable."), QStringLiteral("not_found"));
+      return;
+    }
+    for (QFileInfo part = file; part.absoluteFilePath() != root;
+         part = QFileInfo(part.absolutePath())) {
+      if (part.isSymbolicLink() || part.isJunction() || part.isRoot()) {
+        fail(tr("Linked note paths are unavailable."), QStringLiteral("not_found"));
+        return;
+      }
+    }
     if (request->path.isEmpty() || !file.isFile() || !file.isWritable() ||
         file.size() > c_replacementMaxBytes) {
       fail(tr("The note is missing, read-only, or exceeds the search size limit."));
@@ -702,8 +811,8 @@ void BufferService::startSearchReplacement(int p_token) {
     QString openId;
     for (const auto &value : listBuffers()) {
       const auto info = value.toObject();
-      if (info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != target.m_notebookId ||
-          info.value(QStringLiteral("filePath")).toString() != target.m_path)
+      if (info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != target.notebookId ||
+          info.value(QStringLiteral("filePath")).toString() != target.relativePath)
         continue;
       const auto id = info.value(QLatin1String(vxcore::kJsonKeyId)).toString();
       if (!openId.isEmpty() && openId != id) {
@@ -723,6 +832,11 @@ void BufferService::startSearchReplacement(int p_token) {
     }
     request->revision = currentRevision(buffer.id());
     request->wasDirty = isDirty(buffer.id()) || request->revision > lastSavedRevision(buffer.id());
+    if (request->external && (request->wasDirty || (!isSaveQueueBusy(buffer.id()) &&
+                                                    BufferCoreService::isModified(buffer.id())))) {
+      fail(tr("The note has unsaved changes."), QStringLiteral("unsaved_changes"));
+      return;
+    }
     const auto writer = m_activeWriters.constFind(buffer.id());
     if (writer != m_activeWriters.constEnd()) {
       request->writer = writer.value();
@@ -736,7 +850,7 @@ void BufferService::startSearchReplacement(int p_token) {
       m_autoSaveTimer->stop();
     request->waitTimer.start();
     emit contentReplacementStateChanged(buffer.id(), true, false, false);
-    prepareSearchReplacement(p_token);
+    prepareContentReplacement(p_token);
   } catch (const std::exception &error) {
     fail(QString::fromUtf8(error.what()));
   } catch (...) {
@@ -744,34 +858,44 @@ void BufferService::startSearchReplacement(int p_token) {
   }
 }
 
-bool BufferService::replacementIdentityCurrent(const SearchReplacement &p_request) const {
+bool BufferService::replacementIdentityCurrent(const ContentReplacement &p_request) const {
   const auto &id = p_request.buffer.id();
   if (!p_request.reserved || !isContentReplacementActive(id) || isBufferReadOnly(id) ||
       currentRevision(id) != p_request.revision ||
       BufferCoreService::getRevision(id) != p_request.coreRevision || isSaveQueueBusy(id) ||
       BufferCoreService::getLineEndingOverride(id) != p_request.lineEnding)
     return false;
+  QString notebookId, path;
+  bool readOnly = false;
+  if ((!p_request.nodeUuid.isEmpty() &&
+       (!BufferCoreService::resolveNodeId(p_request.nodeUuid, notebookId, path) ||
+        notebookId != p_request.target.notebookId || path != p_request.target.relativePath)) ||
+      vxcore_notebook_is_read_only(m_context, p_request.target.notebookId.toUtf8().constData(),
+                                   &readOnly) != VXCORE_OK ||
+      readOnly || QFileInfo(p_request.path).canonicalFilePath() != p_request.canonicalPath)
+    return false;
   const auto info = getBuffer(id);
   return !info.isEmpty() &&
          info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() ==
-             p_request.target.m_notebookId &&
-         info.value(QStringLiteral("filePath")).toString() == p_request.target.m_path &&
-         getResolvedPath(p_request.target.m_notebookId, p_request.target.m_path) ==
+             p_request.target.notebookId &&
+         info.value(QStringLiteral("filePath")).toString() == p_request.target.relativePath &&
+         getResolvedPath(p_request.target.notebookId, p_request.target.relativePath) ==
              p_request.path &&
          BufferCoreService::getState(id) != BufferState::FileChanged &&
          BufferCoreService::getState(id) != BufferState::FileMissing;
 }
 
-void BufferService::prepareSearchReplacement(int p_token) {
-  const auto request = m_searchReplacements.value(p_token);
+void BufferService::prepareContentReplacement(int p_token) {
+  const auto request = m_contentReplacements.value(p_token);
   if (!request || request->finishing || request->watcher)
     return;
-  auto fail = [this, p_token](const QString &error) {
-    finishSearchReplacement(p_token, false, false, error);
+  auto fail = [this, p_token](const QString &error,
+                              const QString &code = QStringLiteral("precondition_failed")) {
+    finishContentReplacement(p_token, false, false, error, code);
   };
   try {
     if (request->cancelled->load() || m_replacementStopping) {
-      fail(tr("Replacement was cancelled."));
+      fail(tr("Replacement was cancelled."), QStringLiteral("cancelled"));
       return;
     }
     const auto id = request->buffer.id();
@@ -779,7 +903,7 @@ void BufferService::prepareSearchReplacement(int p_token) {
       if (request->waitTimer.elapsed() >= 5000)
         fail(tr("The note is still being saved. Try again in a moment."));
       else
-        QTimer::singleShot(25, this, [this, p_token]() { prepareSearchReplacement(p_token); });
+        QTimer::singleShot(25, this, [this, p_token]() { prepareContentReplacement(p_token); });
       return;
     }
     if (!BufferCoreService::checkExternalChanges(id)) {
@@ -808,19 +932,25 @@ void BufferService::prepareSearchReplacement(int p_token) {
       fail(tr("Could not capture the current note content."));
       return;
     }
+    if (request->external && hasWriter)
+      request->writerText = text;
     const QString codec = bufferEncoding(id);
     const QString path = request->path;
-    const auto matches = request->target.m_lineMatches;
+    const auto matches = request->matches;
     const QString replacement = request->replacement;
     const bool privatelyOpened = request->privatelyOpened;
     const auto cancelled = request->cancelled;
+    const bool external = request->external;
+    const bool append = request->append;
+    const auto expectedDigest = request->expectedDigest;
     request->watcher = new QFutureWatcher<ReplacementPreparation>(this);
     connect(request->watcher, &QFutureWatcher<ReplacementPreparation>::finished, this,
-            [this, p_token]() { dispatchSearchReplacement(p_token); });
-    request->watcher->setFuture(QtConcurrent::run(
-        [path, raw, text, hasWriter, codec, privatelyOpened, matches, replacement, cancelled]() {
+            [this, p_token]() { dispatchContentReplacement(p_token); });
+    request->watcher->setFuture(
+        QtConcurrent::run([path, raw, text, hasWriter, codec, privatelyOpened, matches, replacement,
+                           cancelled, external, append, expectedDigest]() {
           return prepareReplacement(path, raw, text, hasWriter, codec, privatelyOpened, matches,
-                                    replacement, cancelled);
+                                    replacement, cancelled, external, append, expectedDigest);
         }));
   } catch (const std::exception &error) {
     fail(QString::fromUtf8(error.what()));
@@ -829,21 +959,23 @@ void BufferService::prepareSearchReplacement(int p_token) {
   }
 }
 
-void BufferService::dispatchSearchReplacement(int p_token) {
-  const auto request = m_searchReplacements.value(p_token);
+void BufferService::dispatchContentReplacement(int p_token) {
+  const auto request = m_contentReplacements.value(p_token);
   if (!request || request->finishing || request->dispatched)
     return;
-  auto fail = [this, p_token](const QString &error) {
-    finishSearchReplacement(p_token, false, false, error);
+  auto fail = [this, p_token](const QString &error,
+                              const QString &code = QStringLiteral("precondition_failed")) {
+    finishContentReplacement(p_token, false, false, error, code);
   };
   try {
     if (request->cancelled->load() || m_replacementStopping) {
-      fail(tr("Replacement was cancelled."));
+      fail(tr("Replacement was cancelled."), QStringLiteral("cancelled"));
       return;
     }
     const auto prepared = request->watcher->result();
     if (!prepared.error.isEmpty()) {
-      fail(prepared.error);
+      fail(prepared.error, prepared.errorCode.isEmpty() ? QStringLiteral("unsupported_encoding")
+                                                        : prepared.errorCode);
       return;
     }
     if (!replacementIdentityCurrent(*request)) {
@@ -851,14 +983,14 @@ void BufferService::dispatchSearchReplacement(int p_token) {
       return;
     }
     if (!prepared.count) {
-      finishSearchReplacement(p_token, false, false, {});
+      finishContentReplacement(p_token, false, false, {});
       return;
     }
     const auto id = request->buffer.id();
     if (request->privatelyOpened)
       m_bufferEncodings.insert(id, prepared.codecName);
     auto *codec = QTextCodec::codecForName(prepared.codecName.toUtf8());
-    const auto intended = prepareTextForSave(id, prepared.text);
+    const auto intended = request->external ? prepared.text : prepareTextForSave(id, prepared.text);
     QTextCodec::ConverterState encoder(QTextCodec::IgnoreHeader);
     const auto checked = codec->fromUnicode(intended.constData(), intended.size(), &encoder);
     QString decoded;
@@ -867,7 +999,7 @@ void BufferService::dispatchSearchReplacement(int p_token) {
       fail(tr("The replacement cannot be represented in the note's encoding."));
       return;
     }
-    QByteArray payload = encodeContent(id, prepared.text);
+    QByteArray payload = request->external ? checked : encodeContent(id, prepared.text);
     if (payload != checked) {
       fail(tr("The replacement cannot be represented in the note's encoding."));
       return;
@@ -876,24 +1008,45 @@ void BufferService::dispatchSearchReplacement(int p_token) {
       payload.prepend(QByteArray::fromHex("efbbbf"));
     BufferEvent event;
     event.bufferId = id;
-    if (m_hookMgr->doAction(HookNames::FileBeforeSave, event)) {
-      fail(tr("Saving the replacement was cancelled."));
+    HookContext beforeContext;
+    const bool cancelled =
+        m_hookMgr->doAction(HookNames::FileBeforeSave, event.toVariantMap(), &beforeContext);
+    if (cancelled || beforeContext.hasFailed()) {
+      fail(tr("Saving the replacement was cancelled."), beforeContext.hasFailed()
+                                                            ? QStringLiteral("before_hook_failed")
+                                                            : QStringLiteral("cancelled"));
       return;
     }
     if (request->cancelled->load() || m_replacementStopping) {
-      fail(tr("Replacement was cancelled."));
+      fail(tr("Replacement was cancelled."), QStringLiteral("cancelled"));
       return;
+    }
+    if (request->external && request->hadWriter) {
+      QString currentWriter;
+      if (!captureActiveWriterContent(id, &currentWriter) || currentWriter != request->writerText) {
+        request->wasDirty = true;
+        ++request->revision;
+        m_revisions[id].m_revision = request->revision;
+        fail(tr("A save hook changed the guarded note content."),
+             QStringLiteral("precondition_failed"));
+        return;
+      }
     }
     if (!replacementIdentityCurrent(*request)) {
       fail(tr("The note changed while preparing the replacement."));
       return;
     }
+    if (request->authorized && !request->authorized()) {
+      fail(tr("The operation is no longer authorized."), QStringLiteral("forbidden"));
+      return;
+    }
+    request->savedDigest = QCryptographicHash::hash(payload, QCryptographicHash::Sha256);
     request->count = prepared.count;
     ++request->revision;
     m_revisions[id].m_revision = request->revision;
-    request->dispatched = m_saveQueue->enqueueReplacement(request->target.m_notebookId, id,
-                                                          request->path, prepared.digest, payload,
-                                                          request->revision, request->cancelled);
+    request->dispatched = m_saveQueue->enqueueReplacement(
+        request->target.notebookId, id, request->path, prepared.digest, payload, request->revision,
+        request->cancelled, request->authorized, request->canonicalPath);
     if (!request->dispatched) {
       --request->revision;
       m_revisions[id].m_revision = request->revision;
@@ -909,19 +1062,26 @@ void BufferService::dispatchSearchReplacement(int p_token) {
 void BufferService::onReplacementFinished(const QString &p_bufferId, quint64 p_revision,
                                           bool p_changed, bool p_ok, const QString &p_error) {
   const auto token = m_replacementReservations.value(p_bufferId);
-  const auto request = m_searchReplacements.value(token);
+  const auto request = m_contentReplacements.value(token);
   if (request && request->dispatched && request->revision == p_revision)
-    finishSearchReplacement(token, p_changed, p_ok, p_error);
+    finishContentReplacement(token, p_changed, p_ok, p_error,
+                             p_error == QLatin1String("Replacement cancelled.")
+                                 ? QStringLiteral("cancelled")
+                             : p_error == QLatin1String("Replacement authorization expired.")
+                                 ? QStringLiteral("forbidden")
+                             : p_changed ? QStringLiteral("save_failed")
+                                         : QStringLiteral("precondition_failed"));
 }
 
-void BufferService::finishSearchReplacement(int p_token, bool p_changed, bool p_saved,
-                                            const QString &p_error) {
-  const auto request = m_searchReplacements.value(p_token);
+void BufferService::finishContentReplacement(int p_token, bool p_changed, bool p_saved,
+                                             const QString &p_error, const QString &p_errorCode) {
+  const auto request = m_contentReplacements.value(p_token);
   if (!request || request->finishing)
     return;
   request->finishing = true;
   const auto id = request->buffer.id();
   QString error = p_error;
+  QString errorCode = p_error.isEmpty() ? QString() : p_errorCode;
   if (request->watcher) {
     disconnect(request->watcher, nullptr, this, nullptr);
     request->watcher->future().waitForFinished();
@@ -947,6 +1107,7 @@ void BufferService::finishSearchReplacement(int p_token, bool p_changed, bool p_
       emit contentReplacementStateChanged(id, false, p_changed, p_saved);
     } catch (...) {
       error = tr("An editor could not refresh after replacement.");
+      errorCode = QStringLiteral("refresh_failed");
     }
     m_replacementReservations.remove(id);
     request->reserved = false;
@@ -958,10 +1119,17 @@ void BufferService::finishSearchReplacement(int p_token, bool p_changed, bool p_
   if (p_saved) {
     BufferEvent event;
     event.bufferId = id;
+    bool hookFailed = false;
     try {
-      m_hookMgr->doAction(HookNames::FileAfterSave, event);
+      HookContext context;
+      m_hookMgr->doAction(HookNames::FileAfterSave, event.toVariantMap(), &context);
+      hookFailed = context.hasFailed();
     } catch (...) {
+      hookFailed = true;
+    }
+    if (hookFailed) {
       error = tr("The note was saved, but an after-save hook failed.");
+      errorCode = QStringLiteral("after_hook_failed");
     }
     if (currentRevision(id) > request->revision || BufferCoreService::isModified(id))
       m_dirtyBuffers.insert(id);
@@ -969,12 +1137,28 @@ void BufferService::finishSearchReplacement(int p_token, bool p_changed, bool p_
   if (request->privatelyOpened && request->buffer.isValid() &&
       (!p_changed || (p_saved && !isDirty(id))))
     closeBuffer(id);
-  m_searchReplacements.remove(p_token);
+  m_contentReplacements.remove(p_token);
   if (p_changed && !p_saved)
     error = tr("Replacement edits remain unsaved: %1").arg(error);
-  emit searchReplacementFinished(
-      p_token, NodeIdentifier{request->target.m_notebookId, request->target.m_path}, id,
-      p_changed ? request->count : 0, p_saved, error);
+  request->maintenance.release();
+  if (request->external) {
+    NoteOperationResult result;
+    result.notebookId = request->target.notebookId;
+    result.nodeId = request->nodeUuid;
+    result.relativePath = request->target.relativePath;
+    result.committed = p_changed;
+    result.saved = p_saved;
+    result.fileSha256 = p_saved ? request->savedDigest : QByteArray();
+    result.errorCode = errorCode;
+    result.errorMessage = error.isEmpty() ? QString()
+                                          : tr("The note operation did not complete cleanly; "
+                                               "inspect its saved and committed status.");
+    if (request->complete)
+      request->complete(std::move(result));
+  } else {
+    emit searchReplacementFinished(p_token, request->target, id, p_changed ? request->count : 0,
+                                   p_saved, error);
+  }
 }
 
 void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) { m_autoSavePolicy = p_policy; }
@@ -1016,8 +1200,8 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
     *p_outErr = VXCORE_OK;
   }
   qDebug() << "BufferService::openBuffer notebook:" << p_nodeId.notebookId
-           << "path:" << p_nodeId.relativePath << "mode:" << static_cast<int>(p_settings.m_mode)
-           << "readOnly:" << p_settings.m_readOnly << "lineNumber:" << p_settings.m_lineNumber;
+           << "mode:" << static_cast<int>(p_settings.m_mode) << "readOnly:" << p_settings.m_readOnly
+           << "lineNumber:" << p_settings.m_lineNumber;
 
   auto event = fileOpenEvent(p_nodeId, p_settings);
   // Dispatch only after the later opening/operation/maintenance/gate scopes unwind.
@@ -1183,7 +1367,7 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
 
   if (bufferId.isEmpty()) {
     if (*p_outErr != VXCORE_ERR_ENCRYPTION_LOCKED)
-      qWarning() << "BufferService::openBuffer failed for" << p_nodeId.relativePath;
+      qWarning() << "BufferService::openBuffer failed with error:" << *p_outErr;
     return Buffer2(); // Failed to open.
   }
 
@@ -3097,13 +3281,15 @@ bool BufferService::fetchEditorContent(const ContentFetchCallback &p_callback, Q
   return false;
 }
 
-bool BufferService::captureActiveWriterContent(const QString &p_bufferId,
-                                               QString *p_outText) const {
+bool BufferService::captureActiveWriterContent(const QString &p_bufferId, QString *p_outText,
+                                               bool *p_hasWriter) const {
+  if (p_hasWriter)
+    *p_hasWriter = false;
   if (!p_outText || QThread::currentThread() != thread())
     return false;
   auto writer = m_activeWriters.value(p_bufferId);
   if (!writer.callback) {
-    const auto request = m_searchReplacements.value(m_replacementReservations.value(p_bufferId));
+    const auto request = m_contentReplacements.value(m_replacementReservations.value(p_bufferId));
     if (request && request->hadWriter)
       writer = request->writer;
   }
@@ -3115,6 +3301,8 @@ bool BufferService::captureActiveWriterContent(const QString &p_bufferId,
   }
   if (!writer.callback)
     return false;
+  if (p_hasWriter)
+    *p_hasWriter = true;
   return fetchEditorContent(writer.callback, p_outText);
 }
 
@@ -3251,7 +3439,7 @@ void BufferService::registerActiveWriter(const QString &p_bufferId, quintptr p_w
 }
 
 void BufferService::unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey) {
-  const auto request = m_searchReplacements.value(m_replacementReservations.value(p_bufferId));
+  const auto request = m_contentReplacements.value(m_replacementReservations.value(p_bufferId));
   if (request && request->hadWriter && request->writer.key == p_writerKey) {
     if (!request->dispatched && !request->finishing)
       request->cancelled->store(true);

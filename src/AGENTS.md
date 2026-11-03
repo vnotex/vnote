@@ -256,6 +256,9 @@ string-based callers, if any, before adding or removing a named registration.
 |--------|------|----------------|
 | Core & Services | [core/AGENTS.md](core/AGENTS.md) | ServiceLocator, DI, Buffer2, hooks, config, adding a service |
 | Services (deep) | [core/services/AGENTS.md](core/services/AGENTS.md) | Sync, save/search threading, update check, service internals |
+| HTTP transport | [http/AGENTS.md](http/AGENTS.md) | Standalone HTTP library; no VNote/core/widget dependencies |
+| REST API | [api/AGENTS.md](api/AGENTS.md) | Standalone routes, authorization and injected backend contract |
+| HTTP API integration | [integrations/httpapi/AGENTS.md](integrations/httpapi/AGENTS.md) | Service-backed adapter, credentials, settings and application lifecycle |
 | Controllers | [controllers/AGENTS.md](controllers/AGENTS.md) | Adding or changing a controller |
 | Models | [models/AGENTS.md](models/AGENTS.md) | Qt Model/View data representations |
 | Views | [views/AGENTS.md](views/AGENTS.md) | View conventions, delegate patterns |

@@ -222,6 +222,7 @@ jobs:
           # libVTextEdit.dylib lives next to the parent build's VNote binary;
           # add it to DYLD_LIBRARY_PATH so Qt-side test exes resolve it at load.
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_http_api.py" --check-registration .
           test_status=0
           ctest --output-on-failure || test_status=1
           ctest --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1

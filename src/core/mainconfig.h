@@ -4,8 +4,8 @@
 #include "iconfig.h"
 
 #include <QString>
-#include <QtGlobal>
 #include <QVersionNumber>
+#include <QtGlobal>
 
 class QJsonObject;
 
@@ -13,6 +13,7 @@ namespace vnotex {
 class CoreConfig;
 class EditorConfig;
 class WidgetConfig;
+class HttpApiConfig;
 class IConfigMgr;
 
 class MainConfig : public IConfig {
@@ -31,6 +32,8 @@ public:
   EditorConfig &getEditorConfig();
 
   WidgetConfig &getWidgetConfig();
+
+  HttpApiConfig &getHttpApiConfig();
 
   void update() Q_DECL_OVERRIDE;
 
@@ -56,6 +59,7 @@ private:
     CoreConfigIndex = 0,
     EditorConfigIndex,
     WidgetConfigIndex,
+    HttpApiConfigIndex,
     ChildConfigCount
   };
 

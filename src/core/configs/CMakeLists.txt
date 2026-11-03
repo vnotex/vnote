@@ -6,6 +6,7 @@ set(CONFIGS_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/coreconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/widgetconfig.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/httpapiconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp

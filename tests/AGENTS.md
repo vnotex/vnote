@@ -507,6 +507,30 @@ The same PATH prepend is required before running parent `test_*.exe` directly. `
 
 vxcore submodule tests (`libs/vxcore/build_test/bin/Debug/test_*.exe`) do NOT depend on Qt or VTextEdit and need no PATH setup.
 
+### HTTP API verification
+
+The five mandatory targets are `test_httpserver`, `test_apiauth`, `test_restapi`,
+`test_vnoteapibackend` and `test_httpapilifecycle`. CI checks their registration with
+`python scripts/e2e/smoke_http_api.py --check-registration <build>` before running tests.
+Transport and REST policy tests link no application services or widgets; adapter/lifecycle
+tests deliberately use real core services/configuration. New API context fixtures redirect the
+process temp root before enabling vxcore test mode, since `vxcore_test_config` is otherwise a
+shared directory across test executables. Restore environment only after context/worker teardown.
+Use an OS temp root outside any Git worktree for these regression runs: a temp directory under
+`build*` still inherits this repository's `.gitattributes`, invalidating tests that intentionally
+exercise files outside Git. Normalize the temp path before passing it to native path guards.
+
+For application smoke, use the disposable portable profile rules above, issue separate
+read-only and write/trash tokens from its Settings page, and create `.http-api-smoke.json`
+in the fixture root containing `{"disposable":true,"notebookId":"<fixture UUID>"}`.
+Keep token files inside that root. Run `scripts/e2e/smoke_http_api.py` with `--base-url`,
+`--fixture-root`, `--token-file` and `--read-token-file`; the script only touches uniquely named
+fixture notes and verifies actual disk/recycle contents. Exercise dirty-editor rejection and
+owner revocation in the GUI; `--expect-revoked` checks the issued token after revocation.
+HTTPS smoke takes `--ca-file` for process-local certificate verification; never install a test
+CA globally or disable TLS verification. A loopback HTTPS proxy run does not prove public
+network reachability. Strict-trash changes also require the separate vxcore `test_node` suite.
+
 ## Adding New Tests
 Use the `add_qt_test()` helper function in CMakeLists.txt:
 

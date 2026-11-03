@@ -1,0 +1,1583 @@
+"openapi": "3.1.0"
+"jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema"
+"info":
+  "title": "VNote HTTP API"
+  "version": "1.0.0"
+  "description": "Opt-in owner-token note automation. Non-browser clients only. Embedded HTTP is literal loopback-only; external HTTPS terminates at an administrator-managed same-host reverse proxy. Every request requires bearer auth, strict upstream Host, no Origin or Cookie. No CORS, remote administration, arbitrary filesystem access, protected-note export, or permanent deletion. Full deployment and conflict/partial-outcome guidance: http-api.md."
+"servers":
+  -
+    "url": "http://127.0.0.1:18765/api/v1"
+    "description": "Default local loopback listener. For remote use configure a verified HTTPS gateway; never publicly expose this port."
+"security":
+  -
+    "clientToken": []
+"tags":
+  -
+    "name": "Discovery"
+  -
+    "name": "Notes"
+  -
+    "name": "Operations"
+"paths":
+  "/info":
+    "get":
+      "operationId": "getInfo"
+      "summary": "Read protocol identity and limits"
+      "tags":
+        - "Discovery"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Info"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes": []
+  "/notebooks":
+    "get":
+      "operationId": "listNotebooks"
+      "summary": "List granted open notebooks"
+      "tags":
+        - "Discovery"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/NotebookList"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:read"
+  "/notebooks/{notebookId}/nodes":
+    "get":
+      "operationId": "listNodes"
+      "summary": "List direct indexed children"
+      "tags":
+        - "Notes"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/NodeList"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:read"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/ParentId"
+        -
+          "$ref": "#/components/parameters/ListLimit"
+        -
+          "$ref": "#/components/parameters/Cursor"
+      "description": "Protected nodes are omitted before pagination and counts. Non-addressable indexed entries may have id:null and stableId:false. Direct-folder snapshots exceeding10000 visible indexed entries return413 listing_too_large."
+  "/notebooks/{notebookId}/notes/{nodeId}":
+    "get":
+      "operationId": "getNote"
+      "summary": "Read metadata without content"
+      "tags":
+        - "Notes"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Note"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:read"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+    "patch":
+      "operationId": "renameNote"
+      "summary": "Rename a note using its metadata version"
+      "tags":
+        - "Notes"
+      "responses":
+        "202":
+          "description": "Accepted for asynchronous execution; poll Location."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+            "Location":
+              "$ref": "#/components/headers/Location"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/AcceptedOperation"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "413":
+          "$ref": "#/components/responses/413"
+        "415":
+          "$ref": "#/components/responses/415"
+        "428":
+          "$ref": "#/components/responses/428"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:write"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+        -
+          "$ref": "#/components/parameters/MetadataIfMatch"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/RenameRequest"
+      "description": "Syntax/policy failures are immediate HTTP problems. Backend conflicts and other domain errors are returned in the terminal operation, not as a successful admission claim."
+    "delete":
+      "operationId": "trashNote"
+      "summary": "Move one ordinary note to the recycle bin"
+      "tags":
+        - "Notes"
+      "responses":
+        "202":
+          "description": "Accepted for asynchronous execution; poll Location."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+            "Location":
+              "$ref": "#/components/headers/Location"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/AcceptedOperation"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "413":
+          "$ref": "#/components/responses/413"
+        "428":
+          "$ref": "#/components/responses/428"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:trash"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+        -
+          "$ref": "#/components/parameters/StateIfMatch"
+      "description": "No body. Requires real reversible-trash capability; never permanent delete, unindex or fallback deletion. Syntax/policy failures are immediate HTTP problems. Backend conflicts and other domain errors are returned in the terminal operation, not as a successful admission claim."
+  "/notebooks/{notebookId}/notes/{nodeId}/content":
+    "get":
+      "operationId": "readContent"
+      "summary": "Read a saved or explicit live snapshot"
+      "tags":
+        - "Notes"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Content"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:read"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+        -
+          "$ref": "#/components/parameters/View"
+        -
+          "$ref": "#/components/parameters/Offset"
+        -
+          "$ref": "#/components/parameters/ContentLimit"
+        -
+          "$ref": "#/components/parameters/Cursor"
+      "description": "live requires notes:read-live as an additional grant. Saved reads include noteStateVersion. Live reads never save/flush the editor. VNote adapter coherent saved snapshots are bounded to 16 MiB."
+    "put":
+      "operationId": "replaceContent"
+      "summary": "Conditionally replace ordinary note content"
+      "tags":
+        - "Notes"
+      "responses":
+        "202":
+          "description": "Accepted for asynchronous execution; poll Location."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+            "Location":
+              "$ref": "#/components/headers/Location"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/AcceptedOperation"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "413":
+          "$ref": "#/components/responses/413"
+        "415":
+          "$ref": "#/components/responses/415"
+        "428":
+          "$ref": "#/components/responses/428"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:write"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+        -
+          "$ref": "#/components/parameters/SavedIfMatch"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/TextRequest"
+            "examples":
+              "replacement":
+                "value":
+                  "text": "Replacement text\n"
+      "description": "Refuses dirty editors. Preserves encoding/BOM/line endings; no conversion options. Syntax/policy failures are immediate HTTP problems. Backend conflicts and other domain errors are returned in the terminal operation, not as a successful admission claim."
+  "/notebooks/{notebookId}/notes/{nodeId}/append":
+    "post":
+      "operationId": "appendContent"
+      "summary": "Conditionally append exact text"
+      "tags":
+        - "Notes"
+      "responses":
+        "202":
+          "description": "Accepted for asynchronous execution; poll Location."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+            "Location":
+              "$ref": "#/components/headers/Location"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/AcceptedOperation"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "413":
+          "$ref": "#/components/responses/413"
+        "415":
+          "$ref": "#/components/responses/415"
+        "428":
+          "$ref": "#/components/responses/428"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:write"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+        -
+          "$ref": "#/components/parameters/NodeId"
+        -
+          "$ref": "#/components/parameters/SavedIfMatch"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/TextRequest"
+      "description": "No automatically inserted newline/separator. Same dirty/encoding/precondition rules as replace. Syntax/policy failures are immediate HTTP problems. Backend conflicts and other domain errors are returned in the terminal operation, not as a successful admission claim."
+  "/notebooks/{notebookId}/notes":
+    "post":
+      "operationId": "createNote"
+      "summary": "Create an empty Markdown or plain-text note"
+      "tags":
+        - "Notes"
+      "responses":
+        "202":
+          "description": "Accepted for asynchronous execution; poll Location."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+            "Location":
+              "$ref": "#/components/headers/Location"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/AcceptedOperation"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "413":
+          "$ref": "#/components/responses/413"
+        "415":
+          "$ref": "#/components/responses/415"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:write"
+      "parameters":
+        -
+          "$ref": "#/components/parameters/NotebookId"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/CreateRequest"
+            "examples":
+              "emptyMarkdown":
+                "value":
+                  "name": "new-note.md"
+                  "format": "markdown"
+      "description": "A separate content initialization failure leaves an identifiable empty note. Name collision fails rather than choosing another name. Syntax/policy failures are immediate HTTP problems. Backend conflicts and other domain errors are returned in the terminal operation, not as a successful admission claim."
+  "/search":
+    "post":
+      "operationId": "searchNotes"
+      "summary": "Search only granted saved ordinary notes"
+      "tags":
+        - "Notes"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/SearchResult"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "415":
+          "$ref": "#/components/responses/415"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes":
+        - "notes:read"
+      "requestBody":
+        "required": true
+        "content":
+          "application/json":
+            "schema":
+              "$ref": "#/components/schemas/SearchRequest"
+      "description": "Scope is applied before execution. No regex, live buffers, protected content or specialized binary content. At most one running API search and two waiting; 20-second budget. Adapter bounds: 1000 files, 10000 indexed nodes, 64 MiB candidate bytes; truncated signals bounded work/results."
+  "/operations/{operationId}":
+    "get":
+      "operationId": "getOperation"
+      "summary": "Poll a token-owned mutation"
+      "tags":
+        - "Operations"
+      "responses":
+        "200":
+          "description": "Authorized result."
+          "headers":
+            "X-Request-Id":
+              "$ref": "#/components/headers/RequestId"
+            "Cache-Control":
+              "$ref": "#/components/headers/NoStore"
+            "X-Content-Type-Options":
+              "$ref": "#/components/headers/NoSniff"
+            "ETag":
+              "$ref": "#/components/headers/RepresentationETag"
+          "content":
+            "application/json":
+              "schema":
+                "$ref": "#/components/schemas/Operation"
+              "examples":
+                "saved":
+                  "value":
+                    "id": "0123456789abcdef0123456789abcdef.0123456789abcdef0123456789abcdef"
+                    "state": "succeeded"
+                    "createdAt": "2026-11-01T00:00:00.000Z"
+                    "completedAt": "2026-11-01T00:00:00.100Z"
+                    "committed": true
+                    "saved": true
+                    "resource":
+                      "id": "node-id"
+                      "notebookId": "notebook-id"
+                      "contentVersion": "saved-opaque"
+                "conflictRecovery":
+                  "summary": "Fetch/reconcile fresh saved content before considering another guarded request."
+                  "value":
+                    "id": "0123456789abcdef0123456789abcdef.0123456789abcdef0123456789abcdef"
+                    "state": "failed"
+                    "createdAt": "2026-11-01T00:00:00.000Z"
+                    "completedAt": "2026-11-01T00:00:00.100Z"
+                    "committed": false
+                    "saved": false
+                    "resource": {}
+                    "error":
+                      "status": 412
+                      "code": "precondition_failed"
+                      "title": "The note changed"
+                "partialCreateInitialize":
+                  "summary": "The prior empty create succeeded; this subsequent initialize failed. The empty resource still exists."
+                  "value":
+                    "id": "0123456789abcdef0123456789abcdef.abcdef0123456789abcdef0123456789"
+                    "state": "failed"
+                    "createdAt": "2026-11-01T00:00:01.000Z"
+                    "completedAt": "2026-11-01T00:00:01.100Z"
+                    "committed": false
+                    "saved": false
+                    "resource":
+                      "id": "new-note-id"
+                      "notebookId": "notebook-id"
+                    "error":
+                      "status": 409
+                      "code": "unsaved_changes"
+                      "title": "The note has unsaved changes"
+        "400":
+          "$ref": "#/components/responses/400"
+        "401":
+          "$ref": "#/components/responses/401"
+        "403":
+          "$ref": "#/components/responses/403"
+        "404":
+          "$ref": "#/components/responses/404"
+        "405":
+          "$ref": "#/components/responses/405"
+        "409":
+          "$ref": "#/components/responses/409"
+        "410":
+          "$ref": "#/components/responses/410"
+        "412":
+          "$ref": "#/components/responses/412"
+        "413":
+          "$ref": "#/components/responses/413"
+        "422":
+          "$ref": "#/components/responses/422"
+        "429":
+          "$ref": "#/components/responses/429"
+        "503":
+          "$ref": "#/components/responses/503"
+      "x-required-scopes": []
+      "parameters":
+        -
+          "$ref": "#/components/parameters/OperationId"
+      "description": "Rechecks current token, notebook grant and original action scope. Other owners get404. Active operations are never evicted; at most16 global/4 per token. Retain at most256 completed for15 minutes. Old-instance, expired or evicted IDs give410. A dropped admission response is an unknown outcome, not safe permission to replay."
+"components":
+  "securitySchemes":
+    "clientToken":
+      "type": "http"
+      "scheme": "bearer"
+      "bearerFormat": "id.secret"
+      "description": "Owner-issued one-time-display 256-bit token. Full bearer is32 lowercase hex ID + dot +43 base64url secret characters. Stored server-side only as SHA-256 verifier. Scopes are grant metadata, not OAuth; see x-required-scopes and the guide."
+  "parameters":
+    "NotebookId":
+      "name": "notebookId"
+      "in": "path"
+      "required": true
+      "schema":
+        "type": "string"
+        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    "NodeId":
+      "name": "nodeId"
+      "in": "path"
+      "required": true
+      "schema":
+        "type": "string"
+        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    "OperationId":
+      "name": "operationId"
+      "in": "path"
+      "required": true
+      "schema":
+        "type": "string"
+        "pattern": "^[0-9a-f]{32}\\.[0-9a-f]{32}$"
+    "ParentId":
+      "name": "parentId"
+      "in": "query"
+      "schema":
+        "type": "string"
+        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+      "description": "Existing indexed parent folder identity; omitted means root."
+    "Cursor":
+      "name": "cursor"
+      "in": "query"
+      "schema":
+        "type": "string"
+        "minLength": 1
+        "maxLength": 2048
+      "description": "Opaque snapshot cursor returned by the preceding page. Changed snapshots return 412."
+    "ListLimit":
+      "name": "limit"
+      "in": "query"
+      "schema":
+        "type": "integer"
+        "minimum": 1
+        "maximum": 200
+        "default": 50
+    "ContentLimit":
+      "name": "limit"
+      "in": "query"
+      "schema":
+        "type": "integer"
+        "minimum": 1
+        "maximum": 1048576
+        "default": 65536
+      "description": "Maximum decoded UTF-8 output bytes; must fit the next complete character."
+    "Offset":
+      "name": "offset"
+      "in": "query"
+      "schema":
+        "type": "integer"
+        "minimum": 0
+        "maximum": 9999999999999999
+        "default": 0
+      "description": "UTF-8 byte boundary. Nonzero offsets require cursor, and cursor position must match."
+    "View":
+      "name": "view"
+      "in": "query"
+      "schema":
+        "type": "string"
+        "enum":
+          - "saved"
+          - "live"
+        "default": "saved"
+      "description": "live additionally requires notes:read-live. No writer falls back explicitly to saved, not a save operation."
+    "SavedIfMatch":
+      "name": "If-Match"
+      "in": "header"
+      "required": true
+      "schema":
+        "type": "string"
+        "minLength": 3
+        "maxLength": 256
+      "description": "Exactly one quoted strong saved contentVersion. Reject W/, wildcard, list and duplicate headers. The HTTP response-page ETag is not this value."
+    "MetadataIfMatch":
+      "name": "If-Match"
+      "in": "header"
+      "required": true
+      "schema":
+        "type": "string"
+        "minLength": 3
+        "maxLength": 256
+      "description": "Exactly one quoted strong metadataVersion. Reject W/, wildcard, list and duplicate headers. The HTTP response-page ETag is not this value."
+    "StateIfMatch":
+      "name": "If-Match"
+      "in": "header"
+      "required": true
+      "schema":
+        "type": "string"
+        "minLength": 3
+        "maxLength": 256
+      "description": "Exactly one quoted strong saved noteStateVersion. Reject W/, wildcard, list and duplicate headers. The HTTP response-page ETag is not this value."
+  "headers":
+    "RequestId":
+      "description": "Server-generated safe request correlation ID. Client values are not trusted."
+      "schema":
+        "type": "string"
+    "NoStore":
+      "schema":
+        "type": "string"
+        "const": "no-store"
+    "NoSniff":
+      "schema":
+        "type": "string"
+        "const": "nosniff"
+    "RepresentationETag":
+      "description": "Strong validator of the exact JSON response/page. NOT a full-note mutation If-Match token."
+      "schema":
+        "type": "string"
+    "Location":
+      "description": "Relative owner-scoped operation URL, /api/v1/operations/{id}. Never formed from forwarded host headers."
+      "schema":
+        "type": "string"
+        "pattern": "^/api/v1/operations/[0-9a-f]{32}\\.[0-9a-f]{32}$"
+    "RetryAfter":
+      "description": "Admission/unavailable retry delay in seconds; never blindly replay a mutation with unknown outcome."
+      "schema":
+        "type": "string"
+        "const": "1"
+  "responses":
+    "400":
+      "description": "Invalid JSON, duplicate/unknown fields or query keys, invalid path/Host/Cookie, bad UTF-8 boundary, or malformed strong precondition."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "401":
+      "description": "Missing, invalid, expired or revoked bearer token. A newly completed revoked read is not published."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+        "WWW-Authenticate":
+          "schema":
+            "type": "string"
+            "const": "Bearer realm=\"vnote\""
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "403":
+      "description": "Insufficient action scope, readonly resource, or any Origin-bearing browser request."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "404":
+      "description": "Absent or ungranted resource, or operation owned by another token."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "405":
+      "description": "Method not supported. Allow enumerates permitted methods; no CORS/OPTIONS facility."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+        "Allow":
+          "schema":
+            "type": "string"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "409":
+      "description": "Conflict: unsaved_changes, resource_busy or name_conflict; no automatic overwrite or renamed collision."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "410":
+      "description": "Operation belongs to an old instance or is expired/evicted; no automatic replay."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "412":
+      "description": "Snapshot changed, stale validator, or validator from the wrong representation."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "413":
+      "description": "Request body, coherent saved snapshot, or direct-folder listing exceeds a finite size/work bound."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "415":
+      "description": "Request Content-Type must be application/json (optional charset=utf-8); content encodings are unsupported."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "422":
+      "description": "Protected note, unsupported note type/encoding or unavailable capability."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "428":
+      "description": "Exactly one quoted strong full-resource If-Match is required."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "429":
+      "description": "Operation/search/transport admission bound reached."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+        "Retry-After":
+          "$ref": "#/components/headers/RetryAfter"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+    "503":
+      "description": "Stopping, unavailable, backend deadline exceeded, live capture failure, or save failure."
+      "headers":
+        "X-Request-Id":
+          "$ref": "#/components/headers/RequestId"
+        "Cache-Control":
+          "$ref": "#/components/headers/NoStore"
+        "X-Content-Type-Options":
+          "$ref": "#/components/headers/NoSniff"
+        "Retry-After":
+          "$ref": "#/components/headers/RetryAfter"
+      "content":
+        "application/problem+json":
+          "schema":
+            "$ref": "#/components/schemas/Problem"
+  "schemas":
+    "Problem":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "type":
+          "type": "string"
+          "format": "uri"
+        "status":
+          "type": "integer"
+          "minimum": 400
+          "maximum": 599
+        "code":
+          "type": "string"
+        "title":
+          "type": "string"
+        "requestId":
+          "type": "string"
+      "required":
+        - "type"
+        - "status"
+        - "code"
+        - "title"
+        - "requestId"
+    "OperationError":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "status":
+          "type": "integer"
+          "minimum": 400
+          "maximum": 599
+        "code":
+          "type": "string"
+        "title":
+          "type": "string"
+      "required":
+        - "status"
+        - "code"
+        - "title"
+    "NodeCapabilities":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "stableId":
+          "type": "boolean"
+        "readContent":
+          "type": "boolean"
+        "writeContent":
+          "type": "boolean"
+        "rename":
+          "type": "boolean"
+        "trash":
+          "type": "boolean"
+      "required":
+        - "stableId"
+        - "readContent"
+        - "writeContent"
+        - "rename"
+        - "trash"
+    "Notebook":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "name":
+          "type": "string"
+        "readOnly":
+          "type": "boolean"
+        "capabilities":
+          "type": "object"
+          "additionalProperties": false
+          "properties":
+            "read":
+              "type": "boolean"
+            "write":
+              "type": "boolean"
+            "trash":
+              "type": "boolean"
+          "required":
+            - "read"
+            - "write"
+            - "trash"
+      "required":
+        - "id"
+        - "name"
+        - "readOnly"
+        - "capabilities"
+    "Node":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type":
+            - "string"
+            - "null"
+          "description": "Stable ID, or null for an indexed non-addressable node; never a fabricated path-based ID."
+        "notebookId":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "name":
+          "type": "string"
+        "path":
+          "type": "string"
+          "description": "Notebook-relative display metadata only, not a client-supplied filesystem path."
+        "type":
+          "type": "string"
+          "description": "folder or the backend file-type name; not guessed from a client extension."
+        "contentReadable":
+          "type": "boolean"
+        "readOnly":
+          "type": "boolean"
+        "capabilities":
+          "$ref": "#/components/schemas/NodeCapabilities"
+        "metadataVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+      "required":
+        - "id"
+        - "notebookId"
+        - "name"
+        - "path"
+        - "type"
+        - "contentReadable"
+        - "readOnly"
+        - "capabilities"
+    "Note":
+      "allOf":
+        -
+          "$ref": "#/components/schemas/Node"
+        -
+          "type": "object"
+          "properties":
+            "id":
+              "type": "string"
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          "required":
+            - "metadataVersion"
+    "NotebookList":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "items":
+          "type": "array"
+          "items":
+            "$ref": "#/components/schemas/Notebook"
+      "required":
+        - "items"
+    "NodeList":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "items":
+          "type": "array"
+          "maxItems": 200
+          "items":
+            "$ref": "#/components/schemas/Node"
+        "nextCursor":
+          "type":
+            - "string"
+            - "null"
+          "maxLength": 2048
+          "description": "Opaque snapshot/position cursor. URL-encode and pass unchanged. null means end; changed snapshot gives 412."
+      "required":
+        - "items"
+        - "nextCursor"
+    "Content":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "notebookId":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "view":
+          "type": "string"
+          "enum":
+            - "saved"
+            - "live"
+        "text":
+          "type": "string"
+        "encoding":
+          "type": "string"
+          "description": "Source codec canonical name, e.g. UTF-8. No conversion request is accepted."
+        "lineEnding":
+          "type": "string"
+          "enum":
+            - "LF"
+            - "CRLF"
+            - "CR"
+            - "mixed"
+        "dirty":
+          "type": "boolean"
+        "contentVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+        "noteStateVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+        "offset":
+          "type": "integer"
+          "minimum": 0
+        "returnedBytes":
+          "type": "integer"
+          "minimum": 0
+          "maximum": 1048576
+        "totalBytes":
+          "type": "integer"
+          "minimum": 0
+        "nextCursor":
+          "type":
+            - "string"
+            - "null"
+          "maxLength": 2048
+          "description": "Opaque snapshot/position cursor. URL-encode and pass unchanged. null means end; changed snapshot gives 412."
+      "required":
+        - "id"
+        - "notebookId"
+        - "view"
+        - "text"
+        - "encoding"
+        - "lineEnding"
+        - "dirty"
+        - "contentVersion"
+        - "offset"
+        - "returnedBytes"
+        - "totalBytes"
+        - "nextCursor"
+      "description": "Offsets/counts are UTF-8 bytes of decoded text, not JSON bytes, source encoding bytes or UTF-16 code units. Saved reads additionally require noteStateVersion; live reads omit it. An absent writer explicitly falls back to saved."
+      "allOf":
+        -
+          "if":
+            "properties":
+              "view":
+                "const": "saved"
+          "then":
+            "required":
+              - "noteStateVersion"
+          "else":
+            "not":
+              "required":
+                - "noteStateVersion"
+    "SearchRequest":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "query":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 1024
+          "description": "Literal case-insensitive text, not regular expression syntax."
+        "notebookIds":
+          "type": "array"
+          "minItems": 1
+          "maxItems": 256
+          "uniqueItems": true
+          "items":
+            "type": "string"
+            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+          "description": "Optional explicit subset of the captured notebook grant; omitted uses that grant. No future notebook enrollment."
+        "searchContent":
+          "type": "boolean"
+          "default": true
+          "description": "true searches saved ordinary-note content; false searches names."
+        "limit":
+          "type": "integer"
+          "minimum": 1
+          "maximum": 50
+          "default": 50
+      "required":
+        - "query"
+    "SearchItem":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "notebookId":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "path":
+          "type": "string"
+        "name":
+          "type": "string"
+        "snippet":
+          "type": "string"
+        "view":
+          "type": "string"
+          "const": "saved"
+      "required":
+        - "id"
+        - "notebookId"
+        - "path"
+        - "name"
+        - "snippet"
+        - "view"
+    "SearchResult":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "items":
+          "type": "array"
+          "maxItems": 50
+          "items":
+            "$ref": "#/components/schemas/SearchItem"
+        "truncated":
+          "type": "boolean"
+      "required":
+        - "items"
+        - "truncated"
+    "CreateRequest":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 255
+          "description": "A single filename with an explicit extension matching the configured Markdown/Text mapping. No path separators, control characters, Windows device aliases (including names such as CON.md and COM1.md), reserved filename punctuation, terminal dot/space, automatic suffix or numbered collision resolution. Device-name restrictions apply on every platform."
+        "format":
+          "type": "string"
+          "enum":
+            - "markdown"
+            - "text"
+        "parentId":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+      "required":
+        - "name"
+        - "format"
+      "description": "Creates an empty note. Omit parentId for root. Content is initialized separately; failure of the subsequent PUT does not undo creation."
+    "TextRequest":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "text":
+          "type": "string"
+          "description": "Exact decoded Unicode text (no NUL or unmatched surrogate); append adds no separator. Existing encoding/BOM/line endings are preserved."
+      "required":
+        - "text"
+    "RenameRequest":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "name":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 255
+          "description": "Single filename only; same filename safety rules as create. No arbitrary metadata members."
+      "required":
+        - "name"
+    "AcceptedOperation":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[0-9a-f]{32}\\.[0-9a-f]{32}$"
+        "state":
+          "type": "string"
+          "const": "pending"
+        "committed":
+          "type": "boolean"
+          "const": false
+        "saved":
+          "type": "boolean"
+          "const": false
+      "required":
+        - "id"
+        - "state"
+        - "committed"
+        - "saved"
+      "description": "Admission only, not a successful mutation. Poll relative Location using the same token."
+    "MutationResource":
+      "type": "object"
+      "description": "Committed resource identity and available fresh metadata/versions. A saved result with refreshRequired=true needs a fresh read before another guarded mutation. No note body is returned."
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "notebookId":
+          "type": "string"
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        "name":
+          "type": "string"
+        "path":
+          "type": "string"
+        "type":
+          "type": "string"
+        "contentReadable":
+          "type": "boolean"
+        "readOnly":
+          "type": "boolean"
+        "capabilities":
+          "$ref": "#/components/schemas/NodeCapabilities"
+        "metadataVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+        "contentVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+        "noteStateVersion":
+          "type": "string"
+          "minLength": 1
+          "maxLength": 254
+          "description": "Opaque full-resource validator. Send it wrapped in double quotes in If-Match; never use the HTTP JSON-page ETag instead."
+        "refreshRequired":
+          "type": "boolean"
+        "recoveryRequired":
+          "type": "boolean"
+      "additionalProperties": false
+    "Operation":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "id":
+          "type": "string"
+          "pattern": "^[0-9a-f]{32}\\.[0-9a-f]{32}$"
+        "state":
+          "type": "string"
+          "enum":
+            - "pending"
+            - "running"
+            - "succeeded"
+            - "failed"
+            - "cancelled"
+        "createdAt":
+          "type": "string"
+          "format": "date-time"
+        "completedAt":
+          "type": "string"
+          "format": "date-time"
+        "committed":
+          "type": "boolean"
+        "saved":
+          "type": "boolean"
+        "resource":
+          "$ref": "#/components/schemas/MutationResource"
+        "error":
+          "$ref": "#/components/schemas/OperationError"
+      "required":
+        - "id"
+        - "state"
+        - "createdAt"
+        - "committed"
+        - "saved"
+      "description": "Terminal outcomes include completedAt and resource; failed outcomes include error. A failed operation may still have committed=true and saved=true (e.g. after_hook_failed500). Unknown/operation_failed domain errors use500 with a safe generic title; save_failed uses503. No rollback is implied."
+    "Info":
+      "type": "object"
+      "additionalProperties": false
+      "properties":
+        "apiVersion":
+          "type": "string"
+          "const": "1"
+        "instanceId":
+          "type": "string"
+          "pattern": "^[0-9a-f]{32}$"
+        "capabilities":
+          "type": "array"
+          "items":
+            "type": "string"
+            "enum":
+              - "savedContent"
+              - "liveContent"
+              - "search"
+              - "create"
+              - "replace"
+              - "append"
+              - "rename"
+              - "trash"
+        "limits":
+          "type": "object"
+          "additionalProperties": false
+          "properties":
+            "requestBodyBytes":
+              "type": "integer"
+              "minimum": 1
+            "listItems":
+              "type": "integer"
+              "minimum": 1
+            "searchItems":
+              "type": "integer"
+              "minimum": 1
+            "contentBytes":
+              "type": "integer"
+              "minimum": 1
+            "backendDeadlineSeconds":
+              "type": "integer"
+              "minimum": 1
+            "activeOperations":
+              "type": "integer"
+              "minimum": 1
+            "activeOperationsPerToken":
+              "type": "integer"
+              "minimum": 1
+            "retainedOperations":
+              "type": "integer"
+              "minimum": 1
+            "operationRetentionSeconds":
+              "type": "integer"
+              "minimum": 1
+            "activeAndQueuedSearches":
+              "type": "integer"
+              "minimum": 1
+          "required":
+            - "requestBodyBytes"
+            - "listItems"
+            - "searchItems"
+            - "contentBytes"
+            - "backendDeadlineSeconds"
+            - "activeOperations"
+            - "activeOperationsPerToken"
+            - "retainedOperations"
+            - "operationRetentionSeconds"
+            - "activeAndQueuedSearches"
+      "required":
+        - "apiVersion"
+        - "instanceId"
+        - "capabilities"
+        - "limits"

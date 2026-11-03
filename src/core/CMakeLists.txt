@@ -14,6 +14,7 @@ target_sources(vnote PRIVATE
     global.cpp global.h
     hookcontext.h
     hooknames.h
+    httpapiconfig.cpp httpapiconfig.h
     iconfig.h
     iconfigmgr.h
     iviewwindowcontent.h

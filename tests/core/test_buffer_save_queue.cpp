@@ -253,6 +253,8 @@ private slots:
   void testReplacementFailureKeepsRecoverableContent();
   void testReplacementAllowsOtherNotebookProgress();
   void testReplacementShutdownDrainsAcceptedWrite();
+  void testReplacementRechecksAuthorizationAtCommit();
+  void testReplacementRejectsInvalidIdentityGuard();
 };
 
 // Helper: wait until the QSignalSpy collects @p_target signals or timeout.
@@ -827,6 +829,62 @@ void TestBufferSaveQueue::testReplacementShutdownDrainsAcceptedWrite() {
   QVERIFY(exactSpy.at(0).at(2).toBool());
   QVERIFY(exactSpy.at(0).at(3).toBool());
   QCOMPARE(exactSpy.count(), 1);
+}
+
+void TestBufferSaveQueue::testReplacementRechecksAuthorizationAtCommit() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto path = directory.filePath(QStringLiteral("authorization.txt"));
+  FakeBufferCoreService fake;
+  QVERIFY(fake.attachBackingFile("bufA", path, "original"));
+  auto cancelled = std::make_shared<std::atomic_bool>(false);
+  auto authorized = std::make_shared<std::atomic_bool>(true);
+  std::atomic_bool checkedOnWorker{false};
+  auto *ownerThread = QThread::currentThread();
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(fake, gate);
+  GateBlocker blocker(gate, "nb1");
+  QVERIFY(blocker.waitUntilEntered());
+  QSignalSpy finished(&queue, &vnotex::BufferSaveQueue::replacementFinished);
+  QVERIFY(queue.enqueueReplacement("nb1", "bufA", path, sha256("original"), "replacement", 1,
+                                   cancelled, [authorized, &checkedOnWorker, ownerThread]() {
+                                     checkedOnWorker.store(QThread::currentThread() != ownerThread);
+                                     return authorized->load();
+                                   }));
+  authorized->store(false); // Revoked after dispatch, before the worker obtains its gate.
+  blocker.release();
+  QVERIFY(waitForSignalCount(finished, 1));
+  QVERIFY(checkedOnWorker.load());
+  QVERIFY(!finished.first().at(2).toBool());
+  QVERIFY(!finished.first().at(3).toBool());
+  QCOMPARE(finished.first().at(4).toString(), QStringLiteral("Replacement authorization expired."));
+  QCOMPARE(fake.content("bufA"), QByteArray("original"));
+  QCOMPARE(readFile(path), QByteArray("original"));
+  QVERIFY(!queue.isBusy("nb1", "bufA"));
+}
+
+void TestBufferSaveQueue::testReplacementRejectsInvalidIdentityGuard() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto path = directory.filePath(QStringLiteral("identity.txt"));
+  const auto otherPath = directory.filePath(QStringLiteral("other.txt"));
+  FakeBufferCoreService fake;
+  QVERIFY(fake.attachBackingFile("bufA", path, "identical bytes"));
+  QVERIFY(writeFile(otherPath, "identical bytes"));
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(fake, gate);
+  auto cancelled = std::make_shared<std::atomic_bool>(false);
+  QVERIFY(!queue.enqueueReplacement("nb1", "bufA", path, QByteArray("not-a-sha256"), "replacement",
+                                    1, cancelled));
+  QSignalSpy finished(&queue, &vnotex::BufferSaveQueue::replacementFinished);
+  QVERIFY(queue.enqueueReplacement("nb1", "bufA", path, sha256("identical bytes"), "replacement", 2,
+                                   cancelled, {}, otherPath));
+  QVERIFY(waitForSignalCount(finished, 1));
+  QVERIFY(!finished.first().at(2).toBool());
+  QVERIFY(!finished.first().at(3).toBool());
+  QCOMPARE(readFile(path), QByteArray("identical bytes"));
+  QCOMPARE(readFile(otherPath), QByteArray("identical bytes"));
+  QCOMPARE(fake.content("bufA"), QByteArray("identical bytes"));
 }
 
 } // namespace tests

@@ -13,6 +13,7 @@ set(SERVICES_SOURCES
   searchcoreservice.cpp
   searchservice.cpp
   notebookcoreservice.cpp
+  noteoperationservice.cpp
   nodetransferservice.cpp
   notebookiogate.cpp
   historyservice.cpp
@@ -78,6 +79,7 @@ set(SERVICES_HEADERS
   searchcoreservice.h
   searchservice.h
   notebookcoreservice.h
+  noteoperationservice.h
   nodetransferservice.h
   notebookiogate.h
   historyservice.h

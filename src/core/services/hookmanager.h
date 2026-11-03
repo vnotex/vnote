@@ -65,6 +65,8 @@ public:
   // setter). *p_outCtx is overwritten on EVERY return path - including the
   // recursion-guard bail-out and the no-callbacks-registered path - so stale
   // metadata from a previous call can never leak through.
+  // hasFailed() reports isolated callback exceptions or recursion rejection;
+  // the bool return remains cancellation only. Callers choose failure policy.
   //
   // Metadata precedence: all callbacks for a hook share ONE context, invoked in
   // priority order, so a later handler CAN overwrite an earlier handler's key

@@ -12756,4 +12756,278 @@ Continue?</source>
         <translation>ページに合わせる</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::HttpApiConfig</name>
+    <message>
+        <source>HTTP API settings contain missing fields or invalid value types.</source>
+        <translation>HTTP API 設定に不足している項目、または無効な値の型があります。</translation>
+    </message>
+    <message>
+        <source>The HTTP API port must be an integer from 1 to 65535.</source>
+        <translation>HTTP API のポートは 1～65535 の整数にしてください。</translation>
+    </message>
+    <message>
+        <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
+        <translation>HTTP API のアドレスには 127.0.0.1 や ::1 などのループバック IP アドレスを指定してください。</translation>
+    </message>
+    <message>
+        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
+        <translation>外部 URL は HTTPS を使用し、認証情報、クエリ、フラグメントを含めないでください。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiPage</name>
+    <message>
+        <source>HTTP API</source>
+        <translation>HTTP API</translation>
+    </message>
+    <message>
+        <source>For remote access, configure an HTTPS reverse proxy on this computer. VNote listens only on loopback and does not install a proxy or open firewall ports.</source>
+        <translation>リモートアクセスには、このコンピューターで HTTPS リバースプロキシを設定してください。VNote はループバックのみで待ち受け、プロキシのインストールやファイアウォールのポート開放は行いません。</translation>
+    </message>
+    <message>
+        <source>Enable HTTP API</source>
+        <translation>HTTP API を有効にする</translation>
+    </message>
+    <message>
+        <source>Loopback address</source>
+        <translation>ループバックアドレス</translation>
+    </message>
+    <message>
+        <source>Use a literal loopback address, such as 127.0.0.1 or ::1</source>
+        <translation>127.0.0.1 や ::1 などのループバック IP アドレスを指定</translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation>ポート</translation>
+    </message>
+    <message>
+        <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
+        <translation>1～65535 のポートを指定。使用中のポートは自動で変更されません</translation>
+    </message>
+    <message>
+        <source>External HTTPS URL</source>
+        <translation>外部 HTTPS URL</translation>
+    </message>
+    <message>
+        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
+        <translation>リバースプロキシの表示用 URL（任意）。認証情報、クエリ、フラグメントは使用不可</translation>
+    </message>
+    <message>
+        <source>Client Tokens</source>
+        <translation>クライアントトークン</translation>
+    </message>
+    <message>
+        <source>Tokens can be managed while the listener is disabled. Issuing and revoking take effect immediately and are not undone by Reset. To change permissions, revoke the token and issue a new one. Future notebooks are never granted automatically.</source>
+        <translation>待ち受けが無効でもトークンを管理できます。発行と失効は即時に反映され、リセットでは元に戻りません。権限を変更するにはトークンを失効させ、新しく発行してください。今後追加するノートブックには自動でアクセス権が付与されません。</translation>
+    </message>
+    <message>
+        <source>Client</source>
+        <translation>クライアント</translation>
+    </message>
+    <message>
+        <source>Token ID</source>
+        <translation>トークン ID</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation>権限</translation>
+    </message>
+    <message>
+        <source>Notebooks</source>
+        <translation>ノートブック</translation>
+    </message>
+    <message>
+        <source>Expires</source>
+        <translation>有効期限</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>状態</translation>
+    </message>
+    <message>
+        <source>Revoke Selected Token</source>
+        <translation>選択したトークンを失効</translation>
+    </message>
+    <message>
+        <source>Refresh Tokens and Notebooks</source>
+        <translation>トークンとノートブックを更新</translation>
+    </message>
+    <message>
+        <source>Issue Client Token</source>
+        <translation>クライアントトークンを発行</translation>
+    </message>
+    <message>
+        <source>Choose explicit notebook grants and permissions. Live reads may expose unsaved editor text. Write changes notes; trash moves notes to the recycle bin.</source>
+        <translation>ノートブックのアクセス権と操作権限を明示的に選択してください。ライブ読み取りは未保存の編集テキストを公開する場合があります。書き込みはノートを変更し、ごみ箱への移動はノートをごみ箱に移します。</translation>
+    </message>
+    <message>
+        <source>Client label</source>
+        <translation>クライアントのラベル</translation>
+    </message>
+    <message>
+        <source>Allowed notebooks</source>
+        <translation>アクセスを許可するノートブック</translation>
+    </message>
+    <message>
+        <source>Select one or more currently open notebooks</source>
+        <translation>現在開いているノートブックを 1 つ以上選択</translation>
+    </message>
+    <message>
+        <source>Read saved notes and search (notes:read)</source>
+        <translation>保存済みノートの読み取りと検索 (notes:read)</translation>
+    </message>
+    <message>
+        <source>Read live editor text (notes:read-live)</source>
+        <translation>編集中のテキストをライブ読み取り (notes:read-live)</translation>
+    </message>
+    <message>
+        <source>Create and edit notes (notes:write)</source>
+        <translation>ノートの作成と編集 (notes:write)</translation>
+    </message>
+    <message>
+        <source>Trash notes (notes:trash)</source>
+        <translation>ノートをごみ箱に移動 (notes:trash)</translation>
+    </message>
+    <message>
+        <source>Expiry (local time)</source>
+        <translation>有効期限（現地時刻）</translation>
+    </message>
+    <message>
+        <source>A future expiry is required; new tokens default to 90 days</source>
+        <translation>将来の有効期限が必要です。新規トークンの既定は 90 日間</translation>
+    </message>
+    <message>
+        <source>Issue Token</source>
+        <translation>トークンを発行</translation>
+    </message>
+    <message>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API コントローラーを利用できません。</translation>
+    </message>
+    <message>
+        <source>%1
+Endpoint: %2</source>
+        <translation>%1
+エンドポイント: %2</translation>
+    </message>
+    <message>
+        <source>Expired</source>
+        <translation>期限切れ</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation>有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>無効</translation>
+    </message>
+    <message>
+        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
+        <translation>クライアントのラベル、1 つ以上のノートブックと権限、将来の有効期限を指定してください。</translation>
+    </message>
+    <message>
+        <source>Token issued and saved.</source>
+        <translation>トークンを発行して保存しました。</translation>
+    </message>
+    <message>
+        <source>Token Issued</source>
+        <translation>トークン発行完了</translation>
+    </message>
+    <message>
+        <source>Copy this bearer token now and keep it private. It will not be shown again.</source>
+        <translation>この Bearer トークンを今すぐコピーし、安全に保管してください。再表示はできません。</translation>
+    </message>
+    <message>
+        <source>Revoke Token</source>
+        <translation>トークンを失効</translation>
+    </message>
+    <message>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>このトークンを失効させますか？待機中のリクエストは直ちにアクセスできなくなります。確定済みの変更は元に戻せません。</translation>
+    </message>
+    <message>
+        <source>Token revoked and the revocation saved.</source>
+        <translation>トークンを失効させ、失効情報を保存しました。</translation>
+    </message>
+    <message>
+        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
+        <translation>失効情報を永続的に保存できませんでした。再起動する前に待ち受け状態を確認してください。%1</translation>
+    </message>
+</context>
+<context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>トークン管理は所有スレッドで実行する必要があります</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>トークンレジストリが無効です</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
+        <translation>ノートブック、有効な権限、ラベル、将来のトークン有効期限を指定してください</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>トークンの上限（64 個）に達しました</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>トークンはもう存在しません</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Disabled</source>
+        <translation>無効</translation>
+    </message>
+    <message>
+        <source>HTTP API configuration is unavailable</source>
+        <translation>HTTP API 設定を利用できません</translation>
+    </message>
+    <message>
+        <source>Could not load HTTP API credentials (%1)</source>
+        <translation>HTTP API の認証情報を読み込めませんでした（%1）</translation>
+    </message>
+    <message>
+        <source>HTTP API is shutting down</source>
+        <translation>HTTP API を終了しています</translation>
+    </message>
+    <message>
+        <source>Invalid HTTP API settings: %1</source>
+        <translation>HTTP API 設定が無効です: %1</translation>
+    </message>
+    <message>
+        <source>Waiting for application startup</source>
+        <translation>アプリケーションの起動を待機中</translation>
+    </message>
+    <message>
+        <source>Could not start HTTP API (%1)</source>
+        <translation>HTTP API を開始できませんでした（%1）</translation>
+    </message>
+    <message>
+        <source>Listening on %1</source>
+        <translation>%1 で待ち受け中</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Select at least one available notebook</source>
+        <translation>利用可能なノートブックを 1 つ以上選択してください</translation>
+    </message>
+    <message>
+        <source>Could not issue an HTTP API token (%1)</source>
+        <translation>HTTP API トークンを発行できませんでした（%1）</translation>
+    </message>
+    <message>
+        <source>Token access is blocked for this session, but revocation could not be saved (%1). The HTTP API has been stopped.</source>
+        <translation>このセッションではトークンのアクセスをブロックしましたが、失効情報を保存できませんでした（%1）。HTTP API を停止しました。</translation>
+    </message>
+</context>
 </TS>

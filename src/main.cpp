@@ -65,6 +65,7 @@
 #include <gui/services/webengineprofileservice.h>
 #include <gui/services/webviewservice.h>
 #include <gui/utils/widgetutils.h>
+#include <integrations/httpapi/httpapicontroller.h>
 #include <qwindow.h>
 #include <utils/autostartutils.h>
 #include <utils/docsutils.h>
@@ -550,6 +551,11 @@ int main(int argc, char *argv[]) {
     QObject::connect(
         &app, &QCoreApplication::aboutToQuit, &app,
         [&serviceLocator]() {
+          // Settle API response waiters before joining HTTP workers or draining
+          // services: no worker may wait for a GUI callback during teardown.
+          if (auto *httpApi = serviceLocator.get<HttpApiController>()) {
+            httpApi->shutdown();
+          }
           auto *svc = serviceLocator.get<vnotex::SyncService>();
           if (svc) {
             svc->shutdown();
@@ -600,7 +606,8 @@ int main(int argc, char *argv[]) {
 
     CommandLineOptions cmdOptions;
     bool earlyExit = false;
-    switch (cmdOptions.parse(app.arguments())) {
+    const auto parseResult = cmdOptions.parse(app.arguments());
+    switch (parseResult) {
     case CommandLineOptions::Ok:
       break;
 
@@ -840,8 +847,15 @@ int main(int argc, char *argv[]) {
       qWarning() << "failed to reconcile the Windows startup entry";
     }
 
+    HttpApiController httpApiController(serviceLocator);
+    serviceLocator.registerService<HttpApiController>(&httpApiController);
+
     // Create MainWindow2 with ServiceLocator
     MainWindow2 mainWindow(serviceLocator);
+    if (parseResult == CommandLineOptions::Ok) {
+      QObject::connect(&mainWindow, &MainWindow2::postInitFinished, &httpApiController,
+                       &HttpApiController::applicationReady);
+    }
     // Create NavigationModeService AFTER MainWindow2 (needs top-level widget)
     NavigationModeService navigationModeService(configMgr.getCoreConfig(), &mainWindow);
     serviceLocator.registerService<NavigationModeService>(&navigationModeService);
@@ -911,6 +925,7 @@ int main(int argc, char *argv[]) {
 
     // Run event loop
     ret = app.exec();
+    httpApiController.shutdown();
 
     // The explicit guard.exit() that used to live here is redundant: the guard
     // destructor calls it at scope exit, which is also when the QLocalServer it

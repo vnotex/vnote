@@ -864,6 +864,7 @@ void MainWindow2::setupViewArea() {
   // instance). This is an explicit handoff rather than relying on timer
   // ordering, so buffers are always registered in their vxcore workspace.
   connect(m_viewArea, &ViewArea2::corePropagationReady, this, [this]() {
+    const bool firstPostInit = !m_postInitComplete;
     m_postInitComplete = true;
     // Drain queued opens in arrival order; detached batches each get a fresh
     // detached window.
@@ -909,6 +910,9 @@ void MainWindow2::setupViewArea() {
     // Only then release queued Service capture requests: a capture opens a
     // buffer, which must land in the restored vxcore workspace.
     m_captureDispatcher.setReady();
+    if (firstPostInit) {
+      emit postInitFinished();
+    }
   });
 
   // Export requested from a view window's context menu. The source pointer is

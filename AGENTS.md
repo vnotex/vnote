@@ -337,6 +337,17 @@ Full contract: [src/core/services/AGENTS.md § Search Threading Contract](src/co
 
 ---
 
+## HTTP Automation API
+
+HTTP transport and REST policy are standalone libraries with injected interfaces, not
+ServiceLocator or vxcore dependencies. Only the application adapter bridges them to VNote
+services. The listener is opt-in and loopback-only; external access uses an administrator-managed
+HTTPS reverse proxy. Never expose configuration, credentials, shell execution or protected-note
+content through generic note/file routes. Ownership and lifecycle:
+[src/integrations/httpapi/AGENTS.md](src/integrations/httpapi/AGENTS.md).
+
+---
+
 ## Update Check
 
 Ordinary startup and manual checks fetch release metadata and offer the **release page**.
@@ -451,6 +462,9 @@ put the full detail in the module doc.
 | Source overview | [src/AGENTS.md](src/AGENTS.md) | You need the architecture diagram, directory tree, design-decision rationale, or a source-wide Qt pattern (memory, queued metatypes) |
 | Core & Services | [src/core/AGENTS.md](src/core/AGENTS.md) | ServiceLocator, DI, Buffer2, hooks, config, themes, adding a service |
 | Services (deep) | [src/core/services/AGENTS.md](src/core/services/AGENTS.md) | Sync state model, save/search threading, update check, notifications |
+| HTTP transport | [src/http/AGENTS.md](src/http/AGENTS.md) | Embedded HTTP transport, dependency pin, framing limits and worker shutdown |
+| REST API | [src/api/AGENTS.md](src/api/AGENTS.md) | Routes, token policy, backend interfaces, pagination and asynchronous operations |
+| HTTP API integration | [src/integrations/httpapi/AGENTS.md](src/integrations/httpapi/AGENTS.md) | VNote backend adapter, settings, private credential storage and startup/shutdown |
 | Controllers | [src/controllers/AGENTS.md](src/controllers/AGENTS.md) | Adding or changing a controller; MVC rules for controllers |
 | Models | [src/models/AGENTS.md](src/models/AGENTS.md) | Qt Model/View data representations |
 | Views | [src/views/AGENTS.md](src/views/AGENTS.md) | View conventions, delegate patterns |

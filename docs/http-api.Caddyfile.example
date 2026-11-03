@@ -1,0 +1,48 @@
+# Install Caddy separately and replace api.example.com with your HTTPS hostname.
+# Caddy owns certificates/renewal. VNote stays loopback-only on the SAME host.
+# Validate the final deployment file with: caddy validate --config Caddyfile --adapter caddyfile
+# Add administrator-managed perimeter connection/per-external-IP rate limits before public use.
+# Do not enable access/debug logs containing Authorization, query strings or note bodies.
+# Syntax references:
+# https://caddyserver.com/docs/caddyfile/options#servers
+# https://caddyserver.com/docs/caddyfile/directives/request_body
+# https://caddyserver.com/docs/caddyfile/directives/reverse_proxy
+{
+	servers {
+		max_header_size 16KiB
+		timeouts {
+			read_header 5s
+			read_body 10s
+			write 35s
+			idle 5s
+		}
+	}
+}
+
+api.example.com {
+	handle /api/v1/* {
+		request_body {
+			max_size 1048576
+		}
+		reverse_proxy 127.0.0.1:18765 {
+			# Authorization is preserved by reverse_proxy by default. Never replace it with a
+			# shared owner credential, and never strip Origin/Cookie to bypass VNote admission.
+			header_up Host 127.0.0.1:18765
+			# Do not replay unknown mutation outcomes, including on upstream reconnect.
+			lb_retries 0
+			transport http {
+				versions 1.1
+				dial_timeout 2s
+				response_header_timeout 25s
+				expect_continue_timeout 2s
+				max_response_header 16KiB
+				max_conns_per_host 20
+				keepalive off
+				compression off
+			}
+		}
+	}
+	handle {
+		respond 404
+	}
+}

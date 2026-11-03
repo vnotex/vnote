@@ -1,5 +1,6 @@
 #include "notebookcoreservice.h"
 
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QMetaObject>
@@ -15,6 +16,7 @@
 #include <core/hooknames.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/noteoperationservice.h>
 #include <core/services/synclog.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -1773,19 +1775,13 @@ QString NotebookCoreService::getAvailableName(const QString &p_notebookId,
 // File operations.
 QString NotebookCoreService::createFile(const QString &p_notebookId, const QString &p_folderPath,
                                         const QString &p_fileName) {
-  if (!checkContext()) {
-    return QString();
-  }
-
-  char *fileId = nullptr;
-  VxCoreError err = vxcore_file_create(m_context, p_notebookId.toUtf8().constData(),
-                                       p_folderPath.toUtf8().constData(),
-                                       p_fileName.toUtf8().constData(), &fileId);
-  if (err != VXCORE_OK) {
-    qWarning() << "createFile failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return QString();
-  }
-  return cstrToQString(fileId);
+  NoteOperationRequest request;
+  request.kind = NoteOperationKind::Create;
+  request.notebookId = p_notebookId;
+  request.relativePath = p_folderPath;
+  request.name = p_fileName;
+  NoteOperationResult result;
+  return commitFileMutation(request, &result) == VXCORE_OK ? result.nodeId : QString();
 }
 
 bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {
@@ -1848,15 +1844,15 @@ QJsonObject NotebookCoreService::getFileInfo(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
-VxCoreError NotebookCoreService::getFileSize(const QString &p_notebookId,
-                                            const QString &p_filePath, quint64 &p_outSize) const {
+VxCoreError NotebookCoreService::getFileSize(const QString &p_notebookId, const QString &p_filePath,
+                                             quint64 &p_outSize) const {
   p_outSize = 0;
   if (!checkContext()) {
     return VXCORE_ERR_NOT_INITIALIZED;
   }
   uint64_t size = 0;
   const auto error = vxcore_node_get_file_size(m_context, p_notebookId.toUtf8().constData(),
-                                              p_filePath.toUtf8().constData(), &size);
+                                               p_filePath.toUtf8().constData(), &size);
   p_outSize = size;
   return error;
 }
@@ -1895,43 +1891,137 @@ bool NotebookCoreService::updateFileMetadata(const QString &p_notebookId, const 
 
 bool NotebookCoreService::renameFile(const QString &p_notebookId, const QString &p_filePath,
                                      const QString &p_newName) {
-  if (!checkContext()) {
+  NoteOperationRequest request;
+  request.kind = NoteOperationKind::Rename;
+  request.notebookId = p_notebookId;
+  request.relativePath = p_filePath;
+  request.name = p_newName;
+  if (!checkContext() || !beforeFileMutation(request))
     return false;
-  }
-
-  // Fire NodeBeforeRename hook (cancellable).
-  if (m_hookMgr) {
-    NodeRenameEvent event;
-    event.notebookId = p_notebookId;
-    event.relativePath = p_filePath;
-    event.isFolder = false;
-    event.oldName = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    event.newName = p_newName;
-    if (m_hookMgr->doAction(HookNames::NodeBeforeRename, event)) {
-      return false;
-    }
-  }
-
-  VxCoreError err =
-      vxcore_node_rename(m_context, p_notebookId.toUtf8().constData(),
-                         p_filePath.toUtf8().constData(), p_newName.toUtf8().constData());
-  if (err != VXCORE_OK) {
-    qWarning() << "renameFile failed:" << QString::fromUtf8(vxcore_error_message(err));
+  NoteOperationResult result;
+  if (commitFileMutation(request, &result) != VXCORE_OK)
     return false;
-  }
-
-  // Fire NodeAfterRename hook so other modules can react.
-  if (m_hookMgr) {
-    NodeRenameEvent event;
-    event.notebookId = p_notebookId;
-    event.relativePath = p_filePath;
-    event.isFolder = false;
-    event.oldName = p_filePath.mid(p_filePath.lastIndexOf(QLatin1Char('/')) + 1);
-    event.newName = p_newName;
-    m_hookMgr->doAction(HookNames::NodeAfterRename, event);
-  }
-
+  afterFileMutation(request);
   return true;
+}
+
+bool NotebookCoreService::beforeFileMutation(const NoteOperationRequest &p_request) {
+  if (!m_hookMgr)
+    return true;
+  HookContext context;
+  if (p_request.kind == NoteOperationKind::Rename) {
+    NodeRenameEvent event;
+    event.notebookId = p_request.notebookId;
+    event.relativePath = p_request.relativePath;
+    event.isFolder = false;
+    event.oldName = p_request.relativePath.section(QLatin1Char('/'), -1);
+    event.newName = p_request.name;
+    const bool cancelled =
+        m_hookMgr->doAction(HookNames::NodeBeforeRename, event.toVariantMap(), &context);
+    return !cancelled && !context.hasFailed();
+  }
+  NodeOperationEvent event;
+  event.notebookId = p_request.notebookId;
+  event.relativePath = p_request.relativePath;
+  event.isFolder = false;
+  event.name = p_request.kind == NoteOperationKind::Create
+                   ? p_request.name
+                   : p_request.relativePath.section('/', -1);
+  event.operation = p_request.kind == NoteOperationKind::Create ? QStringLiteral("create")
+                                                                : QStringLiteral("delete");
+  const bool cancelled =
+      m_hookMgr->doAction(p_request.kind == NoteOperationKind::Create ? HookNames::NodeBeforeCreate
+                                                                      : HookNames::NodeBeforeDelete,
+                          event.toVariantMap(), &context);
+  return !cancelled && !context.hasFailed();
+}
+
+bool NotebookCoreService::afterFileMutation(const NoteOperationRequest &p_request) {
+  if (!m_hookMgr)
+    return true;
+  HookContext context;
+  if (p_request.kind == NoteOperationKind::Rename) {
+    NodeRenameEvent event;
+    event.notebookId = p_request.notebookId;
+    event.relativePath = p_request.relativePath;
+    event.isFolder = false;
+    event.oldName = p_request.relativePath.section(QLatin1Char('/'), -1);
+    event.newName = p_request.name;
+    m_hookMgr->doAction(HookNames::NodeAfterRename, event.toVariantMap(), &context);
+    return !context.hasFailed();
+  }
+  NodeOperationEvent event;
+  event.notebookId = p_request.notebookId;
+  event.relativePath = p_request.relativePath;
+  event.isFolder = false;
+  event.name = p_request.kind == NoteOperationKind::Create
+                   ? p_request.name
+                   : p_request.relativePath.section('/', -1);
+  event.operation = p_request.kind == NoteOperationKind::Create ? QStringLiteral("create")
+                                                                : QStringLiteral("delete");
+  m_hookMgr->doAction(p_request.kind == NoteOperationKind::Create ? HookNames::NodeAfterCreate
+                                                                  : HookNames::NodeAfterDelete,
+                      event.toVariantMap(), &context);
+  return !context.hasFailed();
+}
+
+VxCoreError NotebookCoreService::commitFileMutation(const NoteOperationRequest &p_request,
+                                                    NoteOperationResult *p_result) {
+  if (!checkContext() || !p_result)
+    return VXCORE_ERR_NOT_INITIALIZED;
+  const auto notebook = p_request.notebookId.toUtf8();
+  const auto path = p_request.relativePath.toUtf8();
+  const bool guardedMetadata =
+      bool(p_request.authorized) &&
+      (p_request.kind == NoteOperationKind::Create || p_request.kind == NoteOperationKind::Rename);
+  QString destination, destinationPath;
+  bool destinationExisted = false;
+  if (guardedMetadata) {
+    const auto parent = p_request.kind == NoteOperationKind::Create
+                            ? p_request.relativePath
+                            : p_request.relativePath.left(
+                                  qMax(0, p_request.relativePath.lastIndexOf(QLatin1Char('/'))));
+    destination = parent.isEmpty() ? p_request.name : parent + QLatin1Char('/') + p_request.name;
+    destinationPath = buildAbsolutePath(p_request.notebookId, destination);
+    destinationExisted = QFileInfo::exists(destinationPath);
+  }
+  VxCoreError error = VXCORE_ERR_UNSUPPORTED;
+  if (p_request.kind == NoteOperationKind::Create) {
+    char *id = nullptr;
+    error = vxcore_file_create(m_context, notebook.constData(), path.constData(),
+                               p_request.name.toUtf8().constData(), &id);
+    p_result->nodeId = cstrToQString(id);
+  } else if (p_request.kind == NoteOperationKind::Rename) {
+    error = vxcore_node_rename(m_context, notebook.constData(), path.constData(),
+                               p_request.name.toUtf8().constData());
+  } else if (p_request.kind == NoteOperationKind::Trash) {
+    error = vxcore_node_trash(m_context, notebook.constData(), path.constData(),
+                              &p_result->committed, &p_result->recoveryRequired);
+  }
+  if (error == VXCORE_OK) {
+    p_result->committed = true;
+    p_result->saved = true;
+    if (guardedMetadata) {
+      const auto id =
+          p_request.kind == NoteOperationKind::Create ? p_result->nodeId : p_request.nodeId;
+      // A native metadata-store write may fail after the filesystem changed.
+      // Never advertise a stable identity/path that the index cannot resolve.
+      if (!id.isEmpty() && getNodePathById(p_request.notebookId, id) != destination) {
+        p_result->saved = false;
+        p_result->recoveryRequired = true;
+        p_result->relativePath = destination;
+        error = VXCORE_ERR_INVALID_STATE;
+      }
+    }
+  } else if (guardedMetadata && !destinationExisted && QFileInfo(destinationPath).isFile()) {
+    // RenameFile/CreateFile can fail after publishing content but before the
+    // final folder/index update. Preserve it and require reconciliation.
+    p_result->committed = true;
+    p_result->saved = false;
+    p_result->recoveryRequired = true;
+    p_result->relativePath = destination;
+  }
+  return error;
 }
 
 bool NotebookCoreService::moveFile(const QString &p_notebookId, const QString &p_srcFilePath,

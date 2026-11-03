@@ -12756,4 +12756,278 @@ Continue?</source>
         <translation>페이지에 맞추기</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::HttpApiConfig</name>
+    <message>
+        <source>HTTP API settings contain missing fields or invalid value types.</source>
+        <translation>HTTP API 설정에 누락된 필드 또는 잘못된 값 형식이 있습니다.</translation>
+    </message>
+    <message>
+        <source>The HTTP API port must be an integer from 1 to 65535.</source>
+        <translation>HTTP API 포트는 1에서 65535 사이의 정수여야 합니다.</translation>
+    </message>
+    <message>
+        <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
+        <translation>HTTP API 주소는 127.0.0.1 또는 ::1 같은 루프백 IP 주소여야 합니다.</translation>
+    </message>
+    <message>
+        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
+        <translation>외부 URL은 HTTPS를 사용해야 하며 인증 정보, 쿼리 또는 프래그먼트를 포함할 수 없습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiPage</name>
+    <message>
+        <source>HTTP API</source>
+        <translation>HTTP API</translation>
+    </message>
+    <message>
+        <source>For remote access, configure an HTTPS reverse proxy on this computer. VNote listens only on loopback and does not install a proxy or open firewall ports.</source>
+        <translation>원격으로 접근하려면 이 컴퓨터에 HTTPS 역방향 프록시를 구성하세요. VNote는 루프백에서만 수신하며 프록시를 설치하거나 방화벽 포트를 열지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Enable HTTP API</source>
+        <translation>HTTP API 사용</translation>
+    </message>
+    <message>
+        <source>Loopback address</source>
+        <translation>루프백 주소</translation>
+    </message>
+    <message>
+        <source>Use a literal loopback address, such as 127.0.0.1 or ::1</source>
+        <translation>127.0.0.1 또는 ::1 같은 루프백 IP 주소 사용</translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation>포트</translation>
+    </message>
+    <message>
+        <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
+        <translation>1에서 65535 사이의 포트 사용; 이미 사용 중인 포트는 자동으로 변경되지 않음</translation>
+    </message>
+    <message>
+        <source>External HTTPS URL</source>
+        <translation>외부 HTTPS URL</translation>
+    </message>
+    <message>
+        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
+        <translation>역방향 프록시의 표시용 URL(선택 사항); 인증 정보, 쿼리 또는 프래그먼트 사용 불가</translation>
+    </message>
+    <message>
+        <source>Client Tokens</source>
+        <translation>클라이언트 토큰</translation>
+    </message>
+    <message>
+        <source>Tokens can be managed while the listener is disabled. Issuing and revoking take effect immediately and are not undone by Reset. To change permissions, revoke the token and issue a new one. Future notebooks are never granted automatically.</source>
+        <translation>수신 기능이 비활성화된 상태에서도 토큰을 관리할 수 있습니다. 발급과 취소는 즉시 적용되며 초기화로 되돌릴 수 없습니다. 권한을 변경하려면 토큰을 취소하고 새로 발급하세요. 이후 추가되는 노트북에는 접근 권한이 자동으로 부여되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Client</source>
+        <translation>클라이언트</translation>
+    </message>
+    <message>
+        <source>Token ID</source>
+        <translation>토큰 ID</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation>권한</translation>
+    </message>
+    <message>
+        <source>Notebooks</source>
+        <translation>노트북</translation>
+    </message>
+    <message>
+        <source>Expires</source>
+        <translation>만료 시간</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>상태</translation>
+    </message>
+    <message>
+        <source>Revoke Selected Token</source>
+        <translation>선택한 토큰 취소</translation>
+    </message>
+    <message>
+        <source>Refresh Tokens and Notebooks</source>
+        <translation>토큰 및 노트북 새로 고침</translation>
+    </message>
+    <message>
+        <source>Issue Client Token</source>
+        <translation>클라이언트 토큰 발급</translation>
+    </message>
+    <message>
+        <source>Choose explicit notebook grants and permissions. Live reads may expose unsaved editor text. Write changes notes; trash moves notes to the recycle bin.</source>
+        <translation>노트북 접근 권한과 작업 권한을 명시적으로 선택하세요. 실시간 읽기는 저장하지 않은 편집기 텍스트를 노출할 수 있습니다. 쓰기는 노트를 변경하고 휴지통 이동은 노트를 휴지통으로 옮깁니다.</translation>
+    </message>
+    <message>
+        <source>Client label</source>
+        <translation>클라이언트 레이블</translation>
+    </message>
+    <message>
+        <source>Allowed notebooks</source>
+        <translation>허용된 노트북</translation>
+    </message>
+    <message>
+        <source>Select one or more currently open notebooks</source>
+        <translation>현재 열려 있는 노트북을 하나 이상 선택</translation>
+    </message>
+    <message>
+        <source>Read saved notes and search (notes:read)</source>
+        <translation>저장된 노트 읽기 및 검색 (notes:read)</translation>
+    </message>
+    <message>
+        <source>Read live editor text (notes:read-live)</source>
+        <translation>편집기 텍스트 실시간 읽기 (notes:read-live)</translation>
+    </message>
+    <message>
+        <source>Create and edit notes (notes:write)</source>
+        <translation>노트 생성 및 편집 (notes:write)</translation>
+    </message>
+    <message>
+        <source>Trash notes (notes:trash)</source>
+        <translation>노트를 휴지통으로 이동 (notes:trash)</translation>
+    </message>
+    <message>
+        <source>Expiry (local time)</source>
+        <translation>만료 시간(현지 시간)</translation>
+    </message>
+    <message>
+        <source>A future expiry is required; new tokens default to 90 days</source>
+        <translation>미래의 만료 시간 필수; 새 토큰의 기본 유효 기간은 90일</translation>
+    </message>
+    <message>
+        <source>Issue Token</source>
+        <translation>토큰 발급</translation>
+    </message>
+    <message>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 컨트롤러를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>%1
+Endpoint: %2</source>
+        <translation>%1
+엔드포인트: %2</translation>
+    </message>
+    <message>
+        <source>Expired</source>
+        <translation>만료됨</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation>활성</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>비활성화됨</translation>
+    </message>
+    <message>
+        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
+        <translation>클라이언트 레이블을 입력하고 노트북과 권한을 하나 이상 선택한 후 미래의 만료 시간을 지정하세요.</translation>
+    </message>
+    <message>
+        <source>Token issued and saved.</source>
+        <translation>토큰이 발급되고 저장되었습니다.</translation>
+    </message>
+    <message>
+        <source>Token Issued</source>
+        <translation>토큰 발급 완료</translation>
+    </message>
+    <message>
+        <source>Copy this bearer token now and keep it private. It will not be shown again.</source>
+        <translation>지금 이 Bearer 토큰을 복사하여 안전하게 보관하세요. 다시 표시되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Revoke Token</source>
+        <translation>토큰 취소</translation>
+    </message>
+    <message>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>이 토큰을 취소하시겠습니까? 대기 중인 요청은 즉시 접근 권한을 잃으며 이미 확정된 변경 사항은 되돌릴 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Token revoked and the revocation saved.</source>
+        <translation>토큰이 취소되고 취소 정보가 저장되었습니다.</translation>
+    </message>
+    <message>
+        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
+        <translation>취소 정보를 영구적으로 저장하지 못했습니다. 다시 시작하기 전에 수신 상태를 확인하세요. %1</translation>
+    </message>
+</context>
+<context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>토큰 관리는 소유자 스레드에서 실행되어야 함</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>토큰 레지스트리가 잘못됨</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
+        <translation>노트북, 유효한 권한, 레이블 및 미래의 토큰 만료 시간을 선택</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>토큰 한도인 64개에 도달함</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>토큰이 더 이상 존재하지 않음</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Disabled</source>
+        <translation>비활성화됨</translation>
+    </message>
+    <message>
+        <source>HTTP API configuration is unavailable</source>
+        <translation>HTTP API 설정을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>Could not load HTTP API credentials (%1)</source>
+        <translation>HTTP API 인증 정보를 불러올 수 없음(%1)</translation>
+    </message>
+    <message>
+        <source>HTTP API is shutting down</source>
+        <translation>HTTP API를 종료하는 중</translation>
+    </message>
+    <message>
+        <source>Invalid HTTP API settings: %1</source>
+        <translation>잘못된 HTTP API 설정: %1</translation>
+    </message>
+    <message>
+        <source>Waiting for application startup</source>
+        <translation>애플리케이션 시작 대기 중</translation>
+    </message>
+    <message>
+        <source>Could not start HTTP API (%1)</source>
+        <translation>HTTP API를 시작할 수 없음(%1)</translation>
+    </message>
+    <message>
+        <source>Listening on %1</source>
+        <translation>%1에서 수신 중</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>중지됨</translation>
+    </message>
+    <message>
+        <source>Select at least one available notebook</source>
+        <translation>사용 가능한 노트북을 하나 이상 선택</translation>
+    </message>
+    <message>
+        <source>Could not issue an HTTP API token (%1)</source>
+        <translation>HTTP API 토큰을 발급할 수 없음(%1)</translation>
+    </message>
+    <message>
+        <source>Token access is blocked for this session, but revocation could not be saved (%1). The HTTP API has been stopped.</source>
+        <translation>이 세션에서는 토큰 접근이 차단되었지만 취소 정보를 저장하지 못했습니다(%1). HTTP API가 중지되었습니다.</translation>
+    </message>
+</context>
 </TS>

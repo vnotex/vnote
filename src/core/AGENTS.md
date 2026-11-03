@@ -144,6 +144,16 @@ After session restoration and queued file opens, `MainWindow2` opens the notes t
 and detached-file routing. The release-version skill requires replacing both documents from
 the target root changelog section in the same commit as the version bump.
 
+### HTTP API configuration
+
+`HttpApiConfig` is a typed `MainConfig` child; access it through
+`ConfigMgr2::getConfig().getHttpApiConfig()`. Both the application and `core_configs`
+compile the same implementation. Absent settings retain disabled defaults, but malformed or
+explicitly null settings remain invalid through unrelated preference saves. Call `isValid()`
+before using listener fields, including when disabled. Token verifiers/grants are not part of
+the debounced main configuration. Runtime and private-storage ownership:
+[`../integrations/httpapi/AGENTS.md`](../integrations/httpapi/AGENTS.md).
+
 ### Interface translations
 
 `CoreConfig::getAvailableLocales()` exposes `en_US`, `zh_CN`, `ja_JP` and `ko_KR`.

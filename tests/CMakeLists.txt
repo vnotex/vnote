@@ -108,6 +108,8 @@ add_subdirectory(gui)
 add_subdirectory(export)
 add_subdirectory(unitedentry)
 add_subdirectory(integration)
+add_subdirectory(http)
+add_subdirectory(api)
 
 # =============================================================================
 # macOS Services metadata (Create Note in VNote)

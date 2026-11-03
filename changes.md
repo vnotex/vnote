@@ -1,4 +1,10 @@
 # Changes
+## Unreleased
+* Add an opt-in, loopback-only HTTP API for local agents and HTTPS reverse-proxy clients, with independent transport, REST and VNote integration modules
+* Add owner-issued expiring notebook-scoped API tokens, separate read/live-read/write/trash permissions, private verifier storage and immediate revocation controls in Settings
+* Expose bounded note listing, saved/live reads, search and conditional create/edit/append/rename/trash operations without overwriting dirty editors or exporting protected notes
+* Add strict reversible note trash without the legacy permanent-delete fallback, and preserve save/sync coordination, actual mutation outcomes and orderly API shutdown
+
 ## v4.13.0
 A feature release with outline mind maps, editable node-note previews, source-aware exports and refined editing on top of VNote 4.12.0:
 

@@ -1,0 +1,103 @@
+#include "httpapiconfig.h"
+
+#include <QCoreApplication>
+#include <QUrl>
+
+#include <cmath>
+
+using namespace vnotex;
+
+HttpApiConfig::HttpApiConfig(IConfigMgr *p_mgr, IConfig *p_parentConfig)
+    : IConfig(p_mgr, p_parentConfig),
+      m_values{{QStringLiteral("enabled"), false},
+               {QStringLiteral("address"), QStringLiteral("127.0.0.1")},
+               {QStringLiteral("port"), 18765},
+               {QStringLiteral("externalBaseUrl"), QString()}} {
+  m_sectionName = QStringLiteral("httpApi");
+}
+
+void HttpApiConfig::fromJson(const QJsonObject &p_jobj) {
+  // ConfigMgr2 supplies defaults through its merge patch. An absent field here was
+  // explicitly deleted, or the section had the wrong type: retain a durable rejection.
+  for (auto it = m_values.begin(); it != m_values.end(); ++it) {
+    const auto value = p_jobj.value(it.key());
+    it.value() = value.isUndefined() ? QJsonValue(QJsonValue::Null) : value;
+  }
+}
+
+QJsonObject HttpApiConfig::toJson() const { return m_values; }
+
+bool HttpApiConfig::isEnabled() const { return m_values.value(QStringLiteral("enabled")).toBool(); }
+
+void HttpApiConfig::setEnabled(bool p_enabled) { setValue(QStringLiteral("enabled"), p_enabled); }
+
+QString HttpApiConfig::getAddress() const {
+  return m_values.value(QStringLiteral("address")).toString();
+}
+
+void HttpApiConfig::setAddress(const QString &p_address) {
+  setValue(QStringLiteral("address"), p_address);
+}
+
+int HttpApiConfig::getPort() const { return m_values.value(QStringLiteral("port")).toInt(); }
+
+void HttpApiConfig::setPort(int p_port) { setValue(QStringLiteral("port"), p_port); }
+
+QString HttpApiConfig::getExternalBaseUrl() const {
+  return m_values.value(QStringLiteral("externalBaseUrl")).toString();
+}
+
+void HttpApiConfig::setExternalBaseUrl(const QString &p_url) {
+  setValue(QStringLiteral("externalBaseUrl"), p_url);
+}
+
+void HttpApiConfig::setValue(const QString &p_key, const QJsonValue &p_value) {
+  if (m_values.value(p_key) != p_value) {
+    m_values.insert(p_key, p_value);
+    update();
+  }
+}
+
+bool HttpApiConfig::isValid(QString *p_error) const {
+  if (p_error) {
+    p_error->clear();
+  }
+  auto fail = [p_error](const char *p_message) {
+    if (p_error) {
+      *p_error = QCoreApplication::translate("vnotex::HttpApiConfig", p_message);
+    }
+    return false;
+  };
+  if (!m_values.value(QStringLiteral("enabled")).isBool() ||
+      !m_values.value(QStringLiteral("address")).isString() ||
+      !m_values.value(QStringLiteral("port")).isDouble() ||
+      !m_values.value(QStringLiteral("externalBaseUrl")).isString()) {
+    return fail(
+        QT_TRANSLATE_NOOP("vnotex::HttpApiConfig",
+                          "HTTP API settings contain missing fields or invalid value types."));
+  }
+  const double port = m_values.value(QStringLiteral("port")).toDouble();
+  if (!std::isfinite(port) || port < 1 || port > 65535 || port != static_cast<int>(port)) {
+    return fail(QT_TRANSLATE_NOOP("vnotex::HttpApiConfig",
+                                  "The HTTP API port must be an integer from 1 to 65535."));
+  }
+  const QString address = getAddress();
+  if (address != QStringLiteral("127.0.0.1") && address != QStringLiteral("::1")) {
+    return fail(QT_TRANSLATE_NOOP(
+        "vnotex::HttpApiConfig",
+        "The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1."));
+  }
+  const QString externalUrl = getExternalBaseUrl();
+  if (!externalUrl.isEmpty()) {
+    const QUrl url(externalUrl, QUrl::StrictMode);
+    if (!url.isValid() || url.isRelative() || url.scheme() != QStringLiteral("https") ||
+        url.host().isEmpty() || !url.userInfo().isEmpty() ||
+        url.authority().contains(QLatin1Char('@')) || url.hasQuery() || url.hasFragment() ||
+        url.port() == 0 || externalUrl != externalUrl.trimmed()) {
+      return fail(QT_TRANSLATE_NOOP(
+          "vnotex::HttpApiConfig",
+          "The external URL must use HTTPS and contain no credentials, query or fragment."));
+    }
+  }
+  return true;
+}

@@ -19,10 +19,14 @@
 #include <core/hooknames.h>
 #include <core/nodeidentifier.h>
 #include <core/searchresulttypes.h>
+#include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
+#include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/noteoperationservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
@@ -236,6 +240,47 @@ public:
   }
 };
 
+class NoteOperationFixture {
+public:
+  explicit NoteOperationFixture(VxCoreContextHandle p_context)
+      : notebooks(p_context), buffers(p_context, &hooks, &gate, AutoSavePolicy::None),
+        comments(&notebooks, &gate, &hooks), types(p_context, QStringLiteral("en_US")),
+        operations(services) {
+    notebooks.setHookManager(&hooks);
+    notebooks.setNotebookIoGate(&gate);
+    buffers.setSyncWorkQueueManager(&queues);
+    services.registerService(&notebooks);
+    services.registerService(&buffers);
+    services.registerService(&comments);
+    services.registerService(&types);
+    services.registerService(&gate);
+    services.registerService(&queues);
+  }
+
+  NotebookIoGate gate;
+  HookManager hooks;
+  NotebookCoreService notebooks;
+  SyncWorkQueueManager queues;
+  BufferService buffers;
+  CommentService comments;
+  FileTypeCoreService types;
+  ServiceLocator services;
+  NoteOperationService operations;
+};
+
+NoteOperationRequest noteRequest(const SearchFileResult &p_target, NoteOperationKind p_kind,
+                                 const QByteArray &p_bytes) {
+  NoteOperationRequest request;
+  request.kind = p_kind;
+  request.notebookId = p_target.m_notebookId;
+  request.nodeId = p_target.m_id;
+  request.relativePath = p_target.m_path;
+  request.expectedPath = p_target.m_path;
+  request.expectedFileSha256 = QCryptographicHash::hash(p_bytes, QCryptographicHash::Sha256);
+  request.authorized = []() { return true; };
+  return request;
+}
+
 } // namespace
 
 class TestBuffer : public QObject {
@@ -327,6 +372,17 @@ private slots:
   void testSearchReplacementDestroyPreparation();
   void testSearchReplacementEncoding_data();
   void testSearchReplacementEncoding();
+  void testNoteOperationsCreateRenameTrash();
+  void testNoteOperationsRefuseDirtyAndStale_data();
+  void testNoteOperationsRefuseDirtyAndStale();
+  void testNoteOperationsPreserveEncoding_data();
+  void testNoteOperationsPreserveEncoding();
+  void testNoteOperationsRejectChangingHook();
+  void testNoteOperationsPartialSave();
+  void testNoteOperationsGateBusyAndCancel();
+  void testNoteOperationsShutdownPendingNode();
+  void testNoteOperationsCommentFailure();
+  void testWriterCaptureAvailability();
 
 private:
   SearchFileResult
@@ -2998,6 +3054,332 @@ void TestBuffer::testSearchReplacementEncoding() {
     QCOMPARE(note.getContentRaw(), expected);
     QVERIFY(!buffers.isDirty(note.id()));
   }
+}
+
+void TestBuffer::testNoteOperationsCreateRenameTrash() {
+  NoteOperationFixture fixture(m_context);
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  NoteOperationRequest create;
+  create.kind = NoteOperationKind::Create;
+  create.notebookId = m_notebookId;
+  create.name = QStringLiteral("domain-created.md");
+  create.authorized = []() { return true; };
+  const auto token = fixture.operations.execute(create);
+  QCOMPARE(finished.count(), 0);
+  QVERIFY(finished.wait(10000));
+  QCOMPARE(finished.first().first().toULongLong(), token);
+  auto result = qvariant_cast<NoteOperationResult>(finished.takeFirst().at(1));
+  QVERIFY2(result.errorCode.isEmpty(), qPrintable(result.errorCode));
+  QVERIFY(result.committed && result.saved);
+  QVERIFY(!result.nodeId.isEmpty());
+  const auto id = result.nodeId;
+  QCOMPARE(result.relativePath, create.name);
+  const auto path = fixture.notebooks.buildAbsolutePath(m_notebookId, create.name);
+  QVERIFY(QFileInfo(path).isFile());
+  QCOMPARE(QFileInfo(path).size(), qint64(0));
+
+  fixture.operations.execute(create);
+  QVERIFY(finished.wait(10000));
+  result = qvariant_cast<NoteOperationResult>(finished.takeFirst().at(1));
+  QCOMPARE(result.errorCode, QStringLiteral("name_conflict"));
+  QVERIFY(!result.committed && !result.saved);
+
+  auto buffer = fixture.buffers.openBuffer({m_notebookId, create.name});
+  QVERIFY(buffer.isValid());
+  int before = 0, after = 0;
+  bool hooksOutsideGate = true;
+  fixture.hooks.addAction<NodeRenameEvent>(
+      HookNames::NodeBeforeRename, [&](HookContext &, const NodeRenameEvent &) {
+        ++before;
+        NotebookIoGate::ScopedTryLock lock(fixture.gate, m_notebookId, 0);
+        hooksOutsideGate = hooksOutsideGate && lock.isLocked();
+      });
+  fixture.hooks.addAction<NodeRenameEvent>(
+      HookNames::NodeAfterRename, [&](HookContext &, const NodeRenameEvent &) {
+        ++after;
+        NotebookIoGate::ScopedTryLock lock(fixture.gate, m_notebookId, 0);
+        hooksOutsideGate = hooksOutsideGate && lock.isLocked();
+      });
+  NoteOperationRequest rename;
+  rename.kind = NoteOperationKind::Rename;
+  rename.notebookId = m_notebookId;
+  rename.nodeId = id;
+  rename.relativePath = create.name;
+  rename.expectedPath = create.name;
+  rename.name = QStringLiteral("domain-renamed.md");
+  rename.authorized = create.authorized;
+  fixture.operations.execute(rename);
+  QVERIFY(finished.wait(10000));
+  result = qvariant_cast<NoteOperationResult>(finished.takeFirst().at(1));
+  QVERIFY2(result.errorCode.isEmpty(), qPrintable(result.errorCode));
+  QVERIFY(result.committed && result.saved);
+  QCOMPARE(result.nodeId, id);
+  QCOMPARE(fixture.notebooks.getNodePathById(m_notebookId, id), rename.name);
+  QCOMPARE(fixture.buffers.getBuffer(buffer.id()).value(QStringLiteral("filePath")).toString(),
+           rename.name);
+  QCOMPARE(before, 1);
+  QCOMPARE(after, 1);
+  QVERIFY(hooksOutsideGate);
+  QVERIFY(!fixture.buffers.isContentReplacementActive(buffer.id()));
+
+  NoteOperationRequest trash = rename;
+  trash.kind = NoteOperationKind::Trash;
+  trash.relativePath = rename.name;
+  trash.expectedPath = rename.name;
+  trash.expectedFileSha256 = QCryptographicHash::hash(QByteArray(), QCryptographicHash::Sha256);
+  fixture.operations.execute(trash);
+  QVERIFY(finished.wait(10000));
+  result = qvariant_cast<NoteOperationResult>(finished.takeFirst().at(1));
+  QVERIFY2(result.errorCode.isEmpty(), qPrintable(result.errorCode));
+  QVERIFY(result.committed && result.saved && !result.recoveryRequired);
+  QVERIFY(!QFileInfo::exists(fixture.notebooks.buildAbsolutePath(m_notebookId, rename.name)));
+  QVERIFY(!QDir(fixture.notebooks.getRecycleBinPath(m_notebookId))
+               .entryList(QDir::AllEntries | QDir::NoDotAndDotDot)
+               .isEmpty());
+}
+
+void TestBuffer::testNoteOperationsRefuseDirtyAndStale_data() {
+  QTest::addColumn<QString>("condition");
+  QTest::addColumn<QString>("errorCode");
+  QTest::newRow("dirty") << QStringLiteral("dirty") << QStringLiteral("unsaved_changes");
+  QTest::newRow("unreported-dirty")
+      << QStringLiteral("unreported") << QStringLiteral("unsaved_changes");
+  QTest::newRow("stale-digest") << QStringLiteral("digest")
+                                << QStringLiteral("precondition_failed");
+  QTest::newRow("moved") << QStringLiteral("moved") << QStringLiteral("precondition_failed");
+  QTest::newRow("read-only") << QStringLiteral("read-only") << QStringLiteral("read_only");
+  QTest::newRow("revoked") << QStringLiteral("revoked") << QStringLiteral("forbidden");
+  QTest::newRow("protected") << QStringLiteral("protected")
+                             << QStringLiteral("protected_note_unavailable");
+  QTest::newRow("binary") << QStringLiteral("binary") << QStringLiteral("unsupported_note_type");
+}
+
+void TestBuffer::testNoteOperationsRefuseDirtyAndStale() {
+  QFETCH(QString, condition);
+  QFETCH(QString, errorCode);
+  const QByteArray original("guarded original\n");
+  const auto suffix = condition == QLatin1String("protected") ? QStringLiteral(".vne")
+                      : condition == QLatin1String("binary")  ? QStringLiteral(".pdf")
+                                                              : QStringLiteral(".md");
+  const auto target =
+      createReplacementTarget(QStringLiteral("domain-guard-") + condition + suffix, original);
+  NoteOperationFixture fixture(m_context);
+  auto request = noteRequest(target, NoteOperationKind::Replace, original);
+  request.text = QStringLiteral("must not be installed");
+  Buffer2 buffer;
+  QString currentPath = replacementFilePath(target);
+  if (condition == QLatin1String("dirty") || condition == QLatin1String("unreported") ||
+      condition == QLatin1String("read-only")) {
+    FileOpenSettings settings;
+    settings.m_readOnly = condition == QLatin1String("read-only");
+    buffer = fixture.buffers.openBuffer({m_notebookId, target.m_path}, settings);
+    QVERIFY(buffer.isValid());
+    if (condition != QLatin1String("read-only")) {
+      fixture.buffers.registerActiveWriter(buffer.id(), 1,
+                                           []() { return QStringLiteral("draft"); });
+      if (condition == QLatin1String("dirty"))
+        fixture.buffers.markDirty(buffer.id());
+    }
+  } else if (condition == QLatin1String("digest")) {
+    request.expectedFileSha256 = QCryptographicHash::hash("stale", QCryptographicHash::Sha256);
+  } else if (condition == QLatin1String("moved")) {
+    const auto newName = QStringLiteral("domain-guard-moved-new.md");
+    QVERIFY(fixture.notebooks.renameFile(m_notebookId, target.m_path, newName));
+    currentPath = fixture.notebooks.buildAbsolutePath(m_notebookId, newName);
+  } else if (condition == QLatin1String("revoked")) {
+    request.authorized = []() { return false; };
+  }
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QCOMPARE(finished.count(), 0);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QCOMPARE(result.errorCode, errorCode);
+  QVERIFY(!result.committed && !result.saved);
+  QCOMPARE(readReplacementFile(currentPath), original);
+  if (buffer.isValid())
+    QVERIFY(!fixture.buffers.isContentReplacementActive(buffer.id()));
+}
+
+void TestBuffer::testNoteOperationsPreserveEncoding_data() {
+  QTest::addColumn<QByteArray>("original");
+  QTest::addColumn<QString>("text");
+  QTest::addColumn<QByteArray>("expected");
+  QTest::addColumn<bool>("append");
+  QTest::newRow("replace-crlf-bom")
+      << QByteArray::fromHex("efbbbf") + "old\r\n"
+      << QStringLiteral("new\nline\n") << QByteArray::fromHex("efbbbf") + "new\r\nline\r\n"
+      << false;
+  QTest::newRow("append-crlf") << QByteArray("old\r\n") << QStringLiteral("next\n")
+                               << QByteArray("old\r\nnext\r\n") << true;
+  auto *codec = QTextCodec::codecForName("GB18030");
+  QTest::newRow("append-gb18030") << codec->fromUnicode(QString::fromUtf8("原文\n"))
+                                  << QString::fromUtf8("追加\n")
+                                  << codec->fromUnicode(QString::fromUtf8("原文\n追加\n")) << true;
+}
+
+void TestBuffer::testNoteOperationsPreserveEncoding() {
+  QFETCH(QByteArray, original);
+  QFETCH(QString, text);
+  QFETCH(QByteArray, expected);
+  QFETCH(bool, append);
+  const auto target = createReplacementTarget(
+      QStringLiteral("domain-encoding-%1.md").arg(QString::fromLatin1(QTest::currentDataTag())),
+      original);
+  NoteOperationFixture fixture(m_context);
+  int before = 0, after = 0;
+  fixture.hooks.addAction<BufferEvent>(HookNames::FileBeforeSave,
+                                       [&](HookContext &, const BufferEvent &) { ++before; });
+  fixture.hooks.addAction<BufferEvent>(HookNames::FileAfterSave,
+                                       [&](HookContext &, const BufferEvent &) {
+                                         ++after;
+                                         throw std::runtime_error("test after-hook failure");
+                                       });
+  auto request = noteRequest(
+      target, append ? NoteOperationKind::Append : NoteOperationKind::Replace, original);
+  request.text = text;
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QVERIFY(result.committed && result.saved);
+  QCOMPARE(result.errorCode, QStringLiteral("after_hook_failed"));
+  QCOMPARE(result.fileSha256, QCryptographicHash::hash(expected, QCryptographicHash::Sha256));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), expected);
+  QCOMPARE(before, 1);
+  QCOMPARE(after, 1);
+  QVERIFY(fixture.buffers.listBuffers().isEmpty());
+}
+
+void TestBuffer::testNoteOperationsRejectChangingHook() {
+  const QByteArray original("clean note\n");
+  const auto target = createReplacementTarget(QStringLiteral("domain-hook-change.md"), original);
+  NoteOperationFixture fixture(m_context);
+  auto buffer = fixture.buffers.openBuffer({m_notebookId, target.m_path});
+  QString editor = QString::fromUtf8(original);
+  fixture.buffers.registerActiveWriter(buffer.id(), 1, [&]() { return editor; });
+  fixture.hooks.addAction<BufferEvent>(
+      HookNames::FileBeforeSave,
+      [&](HookContext &, const BufferEvent &) { editor = QStringLiteral("hook draft"); });
+  auto request = noteRequest(target, NoteOperationKind::Replace, original);
+  request.text = QStringLiteral("external replacement");
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QCOMPARE(result.errorCode, QStringLiteral("precondition_failed"));
+  QVERIFY(!result.committed && !result.saved);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+  QCOMPARE(editor, QStringLiteral("hook draft"));
+  QVERIFY(!fixture.buffers.isContentReplacementActive(buffer.id()));
+}
+
+void TestBuffer::testNoteOperationsPartialSave() {
+  const QByteArray original("durable original\n");
+  const auto target = createReplacementTarget(QStringLiteral("domain-partial.md"), original);
+  NoteOperationFixture fixture(m_context);
+  ReplacementWriteFailureService failing(m_context, &fixture.hooks, &fixture.gate,
+                                         AutoSavePolicy::None);
+  failing.setSyncWorkQueueManager(&fixture.queues);
+  failing.failurePath = replacementFilePath(target);
+  fixture.services.registerService<BufferService>(&failing);
+  auto request = noteRequest(target, NoteOperationKind::Replace, original);
+  request.text = QStringLiteral("recoverable replacement\n");
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QVERIFY(result.committed && !result.saved);
+  QCOMPARE(result.errorCode, QStringLiteral("save_failed"));
+  QCOMPARE(readReplacementFile(failing.failurePath), original);
+  QCOMPARE(failing.listBuffers().size(), 1);
+  const auto id = failing.listBuffers().first().toObject().value(QStringLiteral("id")).toString();
+  QVERIFY(failing.isDirty(id));
+  QVERIFY(!failing.isContentReplacementActive(id));
+  QCOMPARE(failing.getBufferHandle(id).getContentRaw(), request.text.toUtf8());
+  failing.closeBuffer(id);
+  fixture.services.registerService<BufferService>(&fixture.buffers);
+}
+
+void TestBuffer::testNoteOperationsGateBusyAndCancel() {
+  const QByteArray original("not renamed\n");
+  const auto target = createReplacementTarget(QStringLiteral("domain-busy.md"), original);
+  NoteOperationFixture fixture(m_context);
+  auto request = noteRequest(target, NoteOperationKind::Rename, original);
+  request.name = QStringLiteral("domain-busy-renamed.md");
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  {
+    ReplacementGateBarrier barrier(fixture.gate, m_notebookId);
+    fixture.operations.execute(request);
+    QVERIFY(finished.wait(10000)); // Completion does not require the GUI to acquire the gate.
+    const auto result = qvariant_cast<NoteOperationResult>(finished.takeFirst().at(1));
+    QCOMPARE(result.errorCode, QStringLiteral("resource_busy"));
+    QVERIFY(!result.committed);
+  }
+  const auto token = fixture.operations.execute(request);
+  fixture.operations.cancel(token);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QCOMPARE(result.errorCode, QStringLiteral("cancelled"));
+  QVERIFY(!result.committed);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+}
+
+void TestBuffer::testNoteOperationsShutdownPendingNode() {
+  const QByteArray original("cancel before metadata commitment\n");
+  const auto target = createReplacementTarget(QStringLiteral("domain-shutdown.md"), original);
+  NoteOperationFixture fixture(m_context);
+  const auto buffer = fixture.buffers.openBuffer({m_notebookId, target.m_path});
+  QVERIFY(buffer.isValid());
+  ReplacementObserver observer(fixture.buffers);
+  ReplacementPreparationBarrier barrier;
+  auto request = noteRequest(target, NoteOperationKind::Rename, original);
+  request.name = QStringLiteral("domain-shutdown-renamed.md");
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QTRY_VERIFY_WITH_TIMEOUT(fixture.buffers.isContentReplacementActive(buffer.id()), 5000);
+  fixture.operations.shutdown();
+  barrier.release();
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QCOMPARE(result.errorCode, QStringLiteral("cancelled"));
+  QVERIFY(!result.committed && !result.saved);
+  QVERIFY(!fixture.buffers.isContentReplacementActive(buffer.id()));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+  QCOMPARE(observer.states.size(), 2);
+  QVERIFY(observer.states.first().active);
+  QVERIFY(!observer.states.last().active);
+}
+
+void TestBuffer::testNoteOperationsCommentFailure() {
+  const QByteArray original("note with unsaved comments\n");
+  const auto target = createReplacementTarget(QStringLiteral("domain-comments.md"), original);
+  NoteOperationFixture fixture(m_context);
+  auto participant = fixture.comments.registerFlushParticipant(
+      {m_notebookId, target.m_path}, []() { throw std::runtime_error("comment capture failed"); },
+      1);
+  auto request = noteRequest(target, NoteOperationKind::Trash, original);
+  QSignalSpy finished(&fixture.operations, &NoteOperationService::finished);
+  fixture.operations.execute(request);
+  QVERIFY(finished.wait(10000));
+  const auto result = qvariant_cast<NoteOperationResult>(finished.first().at(1));
+  QCOMPARE(result.errorCode, QStringLiteral("comments_not_saved"));
+  QVERIFY(!result.committed);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+}
+
+void TestBuffer::testWriterCaptureAvailability() {
+  const auto target = createReplacementTarget(QStringLiteral("domain-capture.md"));
+  NoteOperationFixture fixture(m_context);
+  const auto buffer = fixture.buffers.openBuffer({m_notebookId, target.m_path});
+  bool hasWriter = true;
+  QString text;
+  QVERIFY(!fixture.buffers.captureActiveWriterContent(buffer.id(), &text, &hasWriter));
+  QVERIFY(!hasWriter);
+  fixture.buffers.registerActiveWriter(
+      buffer.id(), 1, []() -> QString { throw std::runtime_error("unavailable editor"); });
+  QVERIFY(!fixture.buffers.captureActiveWriterContent(buffer.id(), &text, &hasWriter));
+  QVERIFY(hasWriter);
 }
 
 } // namespace tests

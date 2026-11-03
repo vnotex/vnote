@@ -179,6 +179,8 @@ jobs:
           if (-not $registered) {
             throw "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing"
           }
+          python "$env:GITHUB_WORKSPACE/scripts/e2e/smoke_http_api.py" --check-registration .
+          if ($LASTEXITCODE -ne 0) { throw "HTTP API tests are not fully registered" }
         working-directory: ${{runner.workspace}}/build
 
       - name: Build and Run Tests

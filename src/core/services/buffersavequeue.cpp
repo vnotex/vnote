@@ -20,6 +20,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QFileInfo>
 #include <QLoggingCategory>
 #include <QMutexLocker>
 #include <QSet>
@@ -168,8 +169,10 @@ bool BufferSaveQueue::enqueueReplacement(const QString &p_notebookId, const QStr
                                          const QString &p_resolvedPath,
                                          const QByteArray &p_expectedFileSha256,
                                          const QByteArray &p_content, quint64 p_revision,
-                                         const std::shared_ptr<std::atomic_bool> &p_cancelled) {
-  if (m_coreService.isBufferReadOnly(p_bufferId)) {
+                                         const std::shared_ptr<std::atomic_bool> &p_cancelled,
+                                         std::function<bool()> p_authorized,
+                                         const QString &p_canonicalPath) {
+  if (m_coreService.isBufferReadOnly(p_bufferId) || p_expectedFileSha256.size() != 32) {
     return false;
   }
   const QString key = compositeKey(p_notebookId, p_bufferId);
@@ -187,6 +190,9 @@ bool BufferSaveQueue::enqueueReplacement(const QString &p_notebookId, const QStr
     job.expectedFileSha256 = p_expectedFileSha256;
     job.revision = p_revision;
     job.cancelled = p_cancelled;
+    job.authorized = std::move(p_authorized);
+    job.canonicalPath =
+        p_canonicalPath.isEmpty() ? QFileInfo(p_resolvedPath).canonicalFilePath() : p_canonicalPath;
     m_pending.insert(key, std::move(job));
     m_running.insert(key, JobType::Replacement);
     ++m_inFlightCount;
@@ -239,6 +245,10 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       if (job.type == JobType::Replacement) {
         auto cancelled = [&]() { return job.cancelled && job.cancelled->load(); };
         auto matchesDisk = [&]() {
+          const QFileInfo info(job.resolvedPath);
+          if (job.canonicalPath.isEmpty() || info.canonicalFilePath() != job.canonicalPath ||
+              !info.isFile() || !info.isWritable() || info.isSymbolicLink() || info.isJunction())
+            return false;
           QFile file(job.resolvedPath);
           QCryptographicHash hash(QCryptographicHash::Sha256);
           return file.open(QIODevice::ReadOnly) && hash.addData(&file) &&
@@ -251,6 +261,10 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
         } else if (cancelled()) {
           // Hashing can take time; cancellation must still prevent installation.
           errMsg = QStringLiteral("Replacement cancelled.");
+        } else if (job.authorized && !job.authorized()) {
+          errMsg = QStringLiteral("Replacement authorization expired.");
+        } else if (QFileInfo(job.resolvedPath).canonicalFilePath() != job.canonicalPath) {
+          errMsg = QStringLiteral("The note path changed.");
         } else {
           persist(job.rawContent);
         }

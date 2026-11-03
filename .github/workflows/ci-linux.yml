@@ -240,6 +240,7 @@ jobs:
             echo "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing" >&2
             exit 1
           fi
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_http_api.py" --check-registration .
           test_status=0
           bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure || test_status=1
           QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1

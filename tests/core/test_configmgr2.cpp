@@ -13,6 +13,7 @@
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/error.h>
+#include <core/httpapiconfig.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/mindmapeditorconfig.h>
@@ -100,6 +101,10 @@ private slots:
   void testMindMapEditor_defaultLayoutUsesMainConfig();
   void testMindMapEditor_settersPersistAndClearStyleIndependently();
   void testMindMapEditor_shortcutFilteringPreservesRawOverrides();
+
+  void testHttpApi_mergeAndPersistence();
+  void testHttpApi_rejectsMalformedSettings_data();
+  void testHttpApi_rejectsMalformedSettings();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
   void testAbsentKeyKeepsTheCppDefaultForEveryField();
@@ -1565,6 +1570,142 @@ void TestConfigMgr2::testMindMapEditor_shortcutFilteringPreservesRawOverrides() 
       raw);
 }
 
+void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
+  // Exercise the actual absent-section and per-key merge before enabling a listener.
+  QVERIFY(!loadThroughMergePath(QJsonObject()).isEmpty());
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    auto &api = mgr.getConfig().getHttpApiConfig();
+    QVERIFY(api.isValid());
+    QVERIFY(!api.isEnabled());
+    QCOMPARE(api.getAddress(), QStringLiteral("127.0.0.1"));
+    QCOMPARE(api.getPort(), 18765);
+    QVERIFY(api.getExternalBaseUrl().isEmpty());
+  }
+  QVERIFY(!loadThroughMergePath(QJsonObject{{QStringLiteral("httpApi"),
+                                             QJsonObject{{QStringLiteral("enabled"), true}}}})
+               .isEmpty());
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    auto &api = mgr.getConfig().getHttpApiConfig();
+    QVERIFY(api.isValid());
+    QVERIFY(api.isEnabled());
+    QCOMPARE(api.getPort(), 18765);
+    api.setAddress(QStringLiteral("::1"));
+    api.setPort(23456);
+    api.setExternalBaseUrl(QStringLiteral("https://notes.example.test/api/v1"));
+    QVERIFY(api.isValid());
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    auto &api = restarted.getConfig().getHttpApiConfig();
+    QVERIFY(api.isValid());
+    QVERIFY(api.isEnabled());
+    QCOMPARE(api.getAddress(), QStringLiteral("::1"));
+    QCOMPARE(api.getPort(), 23456);
+    QCOMPARE(api.getExternalBaseUrl(), QStringLiteral("https://notes.example.test/api/v1"));
+    api.setEnabled(false);
+    api.setExternalBaseUrl(QString());
+  }
+  ConfigMgr2 disabled(m_configService);
+  disabled.init();
+  auto &api = disabled.getConfig().getHttpApiConfig();
+  QVERIFY(api.isValid());
+  QVERIFY(!api.isEnabled());
+  QVERIFY(api.getExternalBaseUrl().isEmpty());
+  QCOMPARE(api.getAddress(), QStringLiteral("::1"));
+  QCOMPARE(api.getPort(), 23456);
+}
+
+void TestConfigMgr2::testHttpApi_rejectsMalformedSettings_data() {
+  QTest::addColumn<QJsonObject>("patch");
+  const QString section = QStringLiteral("httpApi");
+  auto field = [&section](const char *p_name, const QString &p_key, const QJsonValue &p_value) {
+    QTest::newRow(p_name) << QJsonObject{{section, QJsonObject{{p_key, p_value}}}};
+  };
+  field("enabled-string", QStringLiteral("enabled"), QStringLiteral("true"));
+  field("enabled-number", QStringLiteral("enabled"), 1);
+  field("enabled-null", QStringLiteral("enabled"), QJsonValue(QJsonValue::Null));
+  field("address-number", QStringLiteral("address"), 127);
+  field("address-null", QStringLiteral("address"), QJsonValue(QJsonValue::Null));
+  field("port-string", QStringLiteral("port"), QStringLiteral("18765"));
+  field("port-bool", QStringLiteral("port"), true);
+  field("port-null", QStringLiteral("port"), QJsonValue(QJsonValue::Null));
+  field("port-fraction", QStringLiteral("port"), 18765.5);
+  field("port-zero", QStringLiteral("port"), 0);
+  field("port-negative", QStringLiteral("port"), -1);
+  field("port-too-large", QStringLiteral("port"), 65536);
+  field("wildcard", QStringLiteral("address"), QStringLiteral("0.0.0.0"));
+  field("ipv6-wildcard", QStringLiteral("address"), QStringLiteral("::"));
+  field("nonloopback", QStringLiteral("address"), QStringLiteral("192.168.1.2"));
+  field("hostname", QStringLiteral("address"), QStringLiteral("localhost"));
+  field("short-ipv4", QStringLiteral("address"), QStringLiteral("127.1"));
+  field("other-loopback-ipv4", QStringLiteral("address"), QStringLiteral("127.0.0.2"));
+  field("scoped-ipv6", QStringLiteral("address"), QStringLiteral("::1%1"));
+  field("mapped-ipv6", QStringLiteral("address"), QStringLiteral("::ffff:127.0.0.1"));
+  field("url-number", QStringLiteral("externalBaseUrl"), 12);
+  field("url-null", QStringLiteral("externalBaseUrl"), QJsonValue(QJsonValue::Null));
+  field("url-http", QStringLiteral("externalBaseUrl"), QStringLiteral("http://notes.example.test"));
+  field("url-relative", QStringLiteral("externalBaseUrl"), QStringLiteral("/api/v1"));
+  field("url-no-host", QStringLiteral("externalBaseUrl"), QStringLiteral("https:///api/v1"));
+  field("url-user", QStringLiteral("externalBaseUrl"),
+        QStringLiteral("https://user@notes.example.test"));
+  field("url-empty-user", QStringLiteral("externalBaseUrl"),
+        QStringLiteral("https://@notes.example.test"));
+  field("url-query", QStringLiteral("externalBaseUrl"),
+        QStringLiteral("https://notes.example.test?"));
+  field("url-fragment", QStringLiteral("externalBaseUrl"),
+        QStringLiteral("https://notes.example.test#"));
+  field("url-port-zero", QStringLiteral("externalBaseUrl"),
+        QStringLiteral("https://notes.example.test:0"));
+  QTest::newRow("enabled-invalid-port")
+      << QJsonObject{{section, QJsonObject{{QStringLiteral("enabled"), true},
+                                           {QStringLiteral("port"), QStringLiteral("18765")}}}};
+  QTest::newRow("section-string") << QJsonObject{{section, QStringLiteral("enabled")}};
+  QTest::newRow("section-bool") << QJsonObject{{section, true}};
+  QTest::newRow("section-array") << QJsonObject{{section, QJsonArray()}};
+  QTest::newRow("section-null") << QJsonObject{{section, QJsonValue(QJsonValue::Null)}};
+}
+
+void TestConfigMgr2::testHttpApi_rejectsMalformedSettings() {
+  QFETCH(QJsonObject, patch);
+  QVERIFY(!loadThroughMergePath(patch).isEmpty());
+  QJsonObject rejected;
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    auto &api = mgr.getConfig().getHttpApiConfig();
+    QString error;
+    QVERIFY(!api.isValid(&error));
+    QVERIFY(!error.isEmpty());
+    rejected = api.toJson();
+    // An unrelated preference save must not normalize the invalid API fields into
+    // valid defaults and silently permit startup on the next launch.
+    auto &core = mgr.getCoreConfig();
+    core.setAlwaysOpenNotesInNewTabs(!core.getAlwaysOpenNotesInNewTabs());
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    auto &api = restarted.getConfig().getHttpApiConfig();
+    QVERIFY(!api.isValid());
+    QCOMPARE(api.toJson(), rejected);
+    // Repair through the same setters used by Settings, rather than reconstructing config.
+    api.setEnabled(false);
+    api.setAddress(QStringLiteral("127.0.0.1"));
+    api.setPort(18765);
+    api.setExternalBaseUrl(QString());
+    QVERIFY(api.isValid());
+  }
+  ConfigMgr2 repaired(m_configService);
+  repaired.init();
+  QVERIFY(repaired.getConfig().getHttpApiConfig().isValid());
+  QVERIFY(!repaired.getConfig().getHttpApiConfig().isEnabled());
+}
+
 // ============ Absent-key safety (the defaults merge) ============
 
 QJsonObject TestConfigMgr2::loadThroughMergePath(const QJsonObject &p_onDisk) const {
@@ -1785,9 +1926,9 @@ void TestConfigMgr2::testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected() {
 
 void TestConfigMgr2::testAnExplicitNullDeletesTheKey() {
   // Pinning merge_patch's (RFC 7386) null semantics: a JSON null DELETES the key rather than
-  // selecting the default, so the read helper's zero value applies. Nothing VNote writes ever
-  // emits null - this documents the one hole in absent-key safety so a future change that
-  // starts emitting nulls is caught here rather than in the field.
+  // selecting the default, so the ordinary read helper's zero value applies.
+  // HttpApiConfig deliberately preserves nulls to reject malformed security settings;
+  // its separate regression ensures this invalid state survives subsequent writes.
   MainConfig defaults(m_configMgr);
   const QJsonObject defaultsJson = defaults.toJson();
 

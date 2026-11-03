@@ -59,6 +59,7 @@ bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args,
 
   // Recursion guard.
   if (m_recursionDepth >= c_maxRecursionDepth) {
+    ctx.m_failed = true;
     qWarning() << "HookManager::doAction: max recursion depth reached for hook" << p_hook;
     emit actionError(p_hook, "Max recursion depth exceeded");
     if (p_outCtx) {
@@ -77,6 +78,7 @@ bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args,
 
   // Take a copy of the list in case callbacks modify registration.
   const QList<ActionEntry> callbacks = it.value();
+  bool failed = false;
 
   ++m_recursionDepth;
 
@@ -84,12 +86,16 @@ bool HookManager::doAction(const QString &p_hook, const QVariantMap &p_args,
     try {
       entry.callback(ctx, p_args);
     } catch (const std::exception &e) {
-      qWarning() << "HookManager::doAction: exception in hook" << p_hook << ":" << e.what();
+      failed = ctx.m_failed = true;
+      qWarning() << "HookManager::doAction: hook_exception" << p_hook;
       emit actionError(p_hook, QString::fromUtf8(e.what()));
     } catch (...) {
+      failed = ctx.m_failed = true;
       qWarning() << "HookManager::doAction: unknown exception in hook" << p_hook;
       emit actionError(p_hook, "Unknown exception");
     }
+    // The dispatcher owns this fact even if a callback replaced its context.
+    ctx.m_failed = failed;
 
     // Stop propagation if requested.
     if (ctx.isPropagationStopped()) {
@@ -274,7 +280,7 @@ QVariant HookManager::applyFilters(const QString &p_hook, const QVariant &p_valu
     try {
       result = entry.callback(result, p_context);
     } catch (const std::exception &e) {
-      qWarning() << "HookManager::applyFilters: exception in hook" << p_hook << ":" << e.what();
+      qWarning() << "HookManager::applyFilters: hook_exception" << p_hook;
       emit filterError(p_hook, QString::fromUtf8(e.what()));
       // Continue with previous result on error.
     } catch (...) {

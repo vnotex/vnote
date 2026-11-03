@@ -65,7 +65,9 @@ public:
   bool enqueueReplacement(const QString &p_notebookId, const QString &p_bufferId,
                           const QString &p_resolvedPath, const QByteArray &p_expectedFileSha256,
                           const QByteArray &p_content, quint64 p_revision,
-                          const std::shared_ptr<std::atomic_bool> &p_cancelled);
+                          const std::shared_ptr<std::atomic_bool> &p_cancelled,
+                          std::function<bool()> p_authorized = {},
+                          const QString &p_canonicalPath = {});
 
   // Separate protected FIFO: no lease, generation, or backup flag is added
   // to ordinary SaveJob. Every accepted revision reports its actual result.
@@ -131,6 +133,8 @@ private:
     QString resolvedPath;
     QByteArray expectedFileSha256;
     std::shared_ptr<std::atomic_bool> cancelled;
+    std::function<bool()> authorized;
+    QString canonicalPath;
   };
 
   // Composite key "notebookId::bufferId" — pin buffer-level serialisation

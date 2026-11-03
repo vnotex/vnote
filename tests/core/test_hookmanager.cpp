@@ -119,7 +119,8 @@ void TestHookManager::testRemoveAction() {
 void TestHookManager::testDoActionNotCancelled() {
   bool called = false;
   int id = m_hookManager->addAction(
-      "test.notcancelled", [&called](vnotex::HookContext &, const QVariantMap &) { called = true; });
+      "test.notcancelled",
+      [&called](vnotex::HookContext &, const QVariantMap &) { called = true; });
 
   bool cancelled = m_hookManager->doAction("test.notcancelled");
   QVERIFY(called);
@@ -173,33 +174,43 @@ void TestHookManager::testActionPriority() {
 }
 
 void TestHookManager::testActionErrorHandling() {
-  bool errorEmitted = false;
-  connect(m_hookManager, &vnotex::HookManager::actionError, this,
-          [&errorEmitted](const QString &, const QString &) { errorEmitted = true; });
-
-  int id = m_hookManager->addAction("test.error", [](vnotex::HookContext &, const QVariantMap &) {
+  vnotex::HookManager manager;
+  QSignalSpy errors(&manager, &vnotex::HookManager::actionError);
+  manager.addAction("test.error", [](vnotex::HookContext &, const QVariantMap &) {
     throw std::runtime_error("Test error");
   });
+  bool laterCallbackSawFailure = false;
+  manager.addAction(
+      "test.error",
+      [&](vnotex::HookContext &ctx, const QVariantMap &) {
+        laterCallbackSawFailure = ctx.hasFailed();
+        ctx = vnotex::HookContext("replacement");
+      },
+      20);
 
-  // Should not throw, should emit signal
-  m_hookManager->doAction("test.error");
-  QVERIFY(errorEmitted);
-  m_hookManager->removeAction(id);
+  vnotex::HookContext result;
+  QVERIFY(!manager.doAction("test.error", QVariantMap(), &result));
+  QCOMPARE(errors.count(), 1);
+  QVERIFY(laterCallbackSawFailure);
+  QVERIFY(result.hasFailed());
+  QVERIFY(!result.isCancelled());
+  QVERIFY(!manager.doAction("test.clean", QVariantMap(), &result));
+  QVERIFY(!result.hasFailed());
 }
 
 // ===== Filter Tests =====
 
 void TestHookManager::testAddFilter() {
-  int id = m_hookManager->addFilter("test.filter",
-                                    [](const QVariant &value, const QVariantMap &) { return value; });
+  int id = m_hookManager->addFilter(
+      "test.filter", [](const QVariant &value, const QVariantMap &) { return value; });
   QVERIFY(id > 0);
   QCOMPARE(m_hookManager->filterCount("test.filter"), 1);
   m_hookManager->removeFilter(id);
 }
 
 void TestHookManager::testRemoveFilter() {
-  int id = m_hookManager->addFilter("test.removefilter",
-                                    [](const QVariant &value, const QVariantMap &) { return value; });
+  int id = m_hookManager->addFilter(
+      "test.removefilter", [](const QVariant &value, const QVariantMap &) { return value; });
   QCOMPARE(m_hookManager->filterCount("test.removefilter"), 1);
   QVERIFY(m_hookManager->removeFilter(id));
   QCOMPARE(m_hookManager->filterCount("test.removefilter"), 0);
@@ -207,12 +218,10 @@ void TestHookManager::testRemoveFilter() {
 }
 
 void TestHookManager::testApplyFiltersChain() {
-  int id1 = m_hookManager->addFilter("test.chain", [](const QVariant &value, const QVariantMap &) {
-    return value.toInt() + 1;
-  });
-  int id2 = m_hookManager->addFilter("test.chain", [](const QVariant &value, const QVariantMap &) {
-    return value.toInt() * 2;
-  });
+  int id1 = m_hookManager->addFilter(
+      "test.chain", [](const QVariant &value, const QVariantMap &) { return value.toInt() + 1; });
+  int id2 = m_hookManager->addFilter(
+      "test.chain", [](const QVariant &value, const QVariantMap &) { return value.toInt() * 2; });
 
   QVariant result = m_hookManager->applyFilters("test.chain", 5);
   QCOMPARE(result.toInt(), 12); // (5 + 1) * 2 = 12
@@ -264,7 +273,8 @@ void TestHookManager::testFilterErrorHandling() {
 
 void TestHookManager::testRegisteredHooks() {
   int id1 = m_hookManager->addAction("hook.a", [](vnotex::HookContext &, const QVariantMap &) {});
-  int id2 = m_hookManager->addFilter("hook.b", [](const QVariant &v, const QVariantMap &) { return v; });
+  int id2 =
+      m_hookManager->addFilter("hook.b", [](const QVariant &v, const QVariantMap &) { return v; });
 
   QStringList hooks = m_hookManager->registeredHooks();
   QVERIFY(hooks.contains("hook.a"));
@@ -275,9 +285,10 @@ void TestHookManager::testRegisteredHooks() {
 }
 
 void TestHookManager::testCallbackCount() {
-  int id1 = m_hookManager->addAction("hook.count", [](vnotex::HookContext &, const QVariantMap &) {});
-  int id2 =
-      m_hookManager->addFilter("hook.count", [](const QVariant &v, const QVariantMap &) { return v; });
+  int id1 =
+      m_hookManager->addAction("hook.count", [](vnotex::HookContext &, const QVariantMap &) {});
+  int id2 = m_hookManager->addFilter("hook.count",
+                                     [](const QVariant &v, const QVariantMap &) { return v; });
 
   QCOMPARE(m_hookManager->callbackCount("hook.count"), 2);
   QCOMPARE(m_hookManager->actionCount("hook.count"), 1);
@@ -290,7 +301,8 @@ void TestHookManager::testCallbackCount() {
 void TestHookManager::testHasCallbacks() {
   QVERIFY(!m_hookManager->hasCallbacks("nonexistent.hook"));
 
-  int id = m_hookManager->addAction("exists.hook", [](vnotex::HookContext &, const QVariantMap &) {});
+  int id =
+      m_hookManager->addAction("exists.hook", [](vnotex::HookContext &, const QVariantMap &) {});
   QVERIFY(m_hookManager->hasCallbacks("exists.hook"));
   m_hookManager->removeAction(id);
   QVERIFY(!m_hookManager->hasCallbacks("exists.hook"));
@@ -308,10 +320,10 @@ void TestHookManager::testRecursionGuard() {
             }
           });
 
-  int id = m_hookManager->addAction(
-      "recursive.hook", [this](vnotex::HookContext &, const QVariantMap &) {
-        m_hookManager->doAction("recursive.hook"); // Recursive call
-      });
+  int id = m_hookManager->addAction("recursive.hook",
+                                    [this](vnotex::HookContext &, const QVariantMap &) {
+                                      m_hookManager->doAction("recursive.hook"); // Recursive call
+                                    });
 
   // Should not crash, should hit recursion limit
   m_hookManager->doAction("recursive.hook");
@@ -402,8 +414,7 @@ void TestHookManager::testDoActionOutContextClearedOnRecursionGuard() {
         if (depth >= vnotex::HookManager::c_maxRecursionDepth) {
           // m_recursionDepth is already at the cap, so this nested call bails
           // out through the recursion guard.
-          deepestCancelled =
-              m_hookManager->doAction("outctx.recursive", QVariantMap(), &deepest);
+          deepestCancelled = m_hookManager->doAction("outctx.recursive", QVariantMap(), &deepest);
           captured = true;
         } else {
           m_hookManager->doAction("outctx.recursive");

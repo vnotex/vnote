@@ -202,6 +202,9 @@ signals:
 
   void minimizedToSystemTray();
 
+  // Session restoration and queued startup opens have completed.
+  void postInitFinished();
+
   // File operations.
   void newNoteRequested();
   void newFolderRequested();

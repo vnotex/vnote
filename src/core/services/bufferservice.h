@@ -24,6 +24,9 @@ class BufferSaveQueue;
 class NotebookIoGate;
 class SyncWorkQueueManager;
 struct SearchFileResult;
+class NoteOperationService;
+struct NoteOperationRequest;
+struct NoteOperationResult;
 
 // Auto-save policy for buffer content.
 // Matches EditorConfig::AutoSavePolicy values.
@@ -350,7 +353,9 @@ public:
 
   // Capture the active or temporarily suspended writer without changing buffer content.
   // Returns false if no writer is available or its snapshot capture fails.
-  bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText) const;
+  // p_hasWriter distinguishes those cases, including temporarily suspended writers.
+  bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText,
+                                  bool *p_hasWriter = nullptr) const;
   // GUI-thread reservation after views are frozen and the save queue is idle.
   // Nonnull output captures current writer/raw bytes; protected capture requires
   // an authenticated editor. Null output reserves only a clean, unloaded protected
@@ -438,6 +443,7 @@ signals:
 
 private:
   friend class Buffer2;
+  friend class NoteOperationService;
   struct MemorySave;
   struct MemoryBufferState;
   struct MemoryBuffers;
@@ -447,13 +453,16 @@ private:
   bool saveMemoryBuffer(const Buffer2 &p_buffer, VxCoreError *p_error);
   bool waitForMemorySave(const std::shared_ptr<MemorySave> &p_save);
   bool syncMemoryContent(const QString &p_bufferId, const QByteArray &p_content);
-  struct SearchReplacement;
+  struct ContentReplacement;
+  int replaceContent(NoteOperationRequest p_request,
+                     std::function<void(NoteOperationResult)> p_complete);
   Buffer2 openReplacementBuffer(const NodeIdentifier &p_nodeId);
-  void startSearchReplacement(int p_token);
-  void prepareSearchReplacement(int p_token);
-  void dispatchSearchReplacement(int p_token);
-  void finishSearchReplacement(int p_token, bool p_changed, bool p_saved, const QString &p_error);
-  bool replacementIdentityCurrent(const SearchReplacement &p_request) const;
+  void startContentReplacement(int p_token);
+  void prepareContentReplacement(int p_token);
+  void dispatchContentReplacement(int p_token);
+  void finishContentReplacement(int p_token, bool p_changed, bool p_saved, const QString &p_error,
+                                const QString &p_errorCode = {});
+  bool replacementIdentityCurrent(const ContentReplacement &p_request) const;
   void onReplacementFinished(const QString &p_bufferId, quint64 p_revision, bool p_changed,
                              bool p_ok, const QString &p_error);
   bool replacementAffectsNode(const QString &p_notebookId, const QString &p_path,
@@ -549,7 +558,7 @@ private:
   // UTF-8 default. Cleared on closeBuffer; never persisted. GUI-thread only.
   QHash<QString, QString> m_bufferEncodings;
 
-  QHash<int, std::shared_ptr<SearchReplacement>> m_searchReplacements;
+  QHash<int, std::shared_ptr<ContentReplacement>> m_contentReplacements;
   QHash<QString, int> m_replacementReservations;
   QSet<QString> m_failedReplacements; // Unsaved recovery text must not be retried automatically.
   QHash<QString, QHash<QString, QString>> m_syncApplyBuffers;

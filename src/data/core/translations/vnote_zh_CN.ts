@@ -12756,4 +12756,278 @@ Continue?</source>
         <translation>适应页面</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::HttpApiConfig</name>
+    <message>
+        <source>HTTP API settings contain missing fields or invalid value types.</source>
+        <translation>HTTP API 设置缺少字段或包含无效的值类型。</translation>
+    </message>
+    <message>
+        <source>The HTTP API port must be an integer from 1 to 65535.</source>
+        <translation>HTTP API 端口必须是 1 至 65535 的整数。</translation>
+    </message>
+    <message>
+        <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
+        <translation>HTTP API 地址必须是回环 IP 地址，例如 127.0.0.1 或 ::1。</translation>
+    </message>
+    <message>
+        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
+        <translation>外部 URL 必须使用 HTTPS，且不得包含凭据、查询参数或片段。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiPage</name>
+    <message>
+        <source>HTTP API</source>
+        <translation>HTTP API</translation>
+    </message>
+    <message>
+        <source>For remote access, configure an HTTPS reverse proxy on this computer. VNote listens only on loopback and does not install a proxy or open firewall ports.</source>
+        <translation>如需远程访问，请在此计算机上配置 HTTPS 反向代理。VNote 仅监听回环地址，不会安装代理或开放防火墙端口。</translation>
+    </message>
+    <message>
+        <source>Enable HTTP API</source>
+        <translation>启用 HTTP API</translation>
+    </message>
+    <message>
+        <source>Loopback address</source>
+        <translation>回环地址</translation>
+    </message>
+    <message>
+        <source>Use a literal loopback address, such as 127.0.0.1 or ::1</source>
+        <translation>使用回环 IP 地址，例如 127.0.0.1 或 ::1</translation>
+    </message>
+    <message>
+        <source>Port</source>
+        <translation>端口</translation>
+    </message>
+    <message>
+        <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
+        <translation>使用 1 至 65535 的端口；端口被占用时不会自动更换</translation>
+    </message>
+    <message>
+        <source>External HTTPS URL</source>
+        <translation>外部 HTTPS URL</translation>
+    </message>
+    <message>
+        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
+        <translation>可选的反向代理显示 URL；不得包含凭据、查询参数或片段</translation>
+    </message>
+    <message>
+        <source>Client Tokens</source>
+        <translation>客户端令牌</translation>
+    </message>
+    <message>
+        <source>Tokens can be managed while the listener is disabled. Issuing and revoking take effect immediately and are not undone by Reset. To change permissions, revoke the token and issue a new one. Future notebooks are never granted automatically.</source>
+        <translation>监听器停用时仍可管理令牌。签发和撤销会立即生效，且无法通过重置撤销。要更改权限，请撤销令牌并签发新令牌。今后添加的笔记本不会自动获得授权。</translation>
+    </message>
+    <message>
+        <source>Client</source>
+        <translation>客户端</translation>
+    </message>
+    <message>
+        <source>Token ID</source>
+        <translation>令牌 ID</translation>
+    </message>
+    <message>
+        <source>Permissions</source>
+        <translation>权限</translation>
+    </message>
+    <message>
+        <source>Notebooks</source>
+        <translation>笔记本</translation>
+    </message>
+    <message>
+        <source>Expires</source>
+        <translation>到期时间</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <source>Revoke Selected Token</source>
+        <translation>撤销所选令牌</translation>
+    </message>
+    <message>
+        <source>Refresh Tokens and Notebooks</source>
+        <translation>刷新令牌和笔记本</translation>
+    </message>
+    <message>
+        <source>Issue Client Token</source>
+        <translation>签发客户端令牌</translation>
+    </message>
+    <message>
+        <source>Choose explicit notebook grants and permissions. Live reads may expose unsaved editor text. Write changes notes; trash moves notes to the recycle bin.</source>
+        <translation>请选择明确的笔记本授权和权限。实时读取可能会暴露编辑器中尚未保存的文本。写入会更改笔记；移至回收站会将笔记放入回收站。</translation>
+    </message>
+    <message>
+        <source>Client label</source>
+        <translation>客户端标签</translation>
+    </message>
+    <message>
+        <source>Allowed notebooks</source>
+        <translation>允许访问的笔记本</translation>
+    </message>
+    <message>
+        <source>Select one or more currently open notebooks</source>
+        <translation>选择一个或多个当前打开的笔记本</translation>
+    </message>
+    <message>
+        <source>Read saved notes and search (notes:read)</source>
+        <translation>读取已保存的笔记和搜索 (notes:read)</translation>
+    </message>
+    <message>
+        <source>Read live editor text (notes:read-live)</source>
+        <translation>读取编辑器实时文本 (notes:read-live)</translation>
+    </message>
+    <message>
+        <source>Create and edit notes (notes:write)</source>
+        <translation>创建和编辑笔记 (notes:write)</translation>
+    </message>
+    <message>
+        <source>Trash notes (notes:trash)</source>
+        <translation>将笔记移至回收站 (notes:trash)</translation>
+    </message>
+    <message>
+        <source>Expiry (local time)</source>
+        <translation>到期时间（本地时间）</translation>
+    </message>
+    <message>
+        <source>A future expiry is required; new tokens default to 90 days</source>
+        <translation>到期时间必须在将来；新令牌默认有效期为 90 天</translation>
+    </message>
+    <message>
+        <source>Issue Token</source>
+        <translation>签发令牌</translation>
+    </message>
+    <message>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 控制器不可用。</translation>
+    </message>
+    <message>
+        <source>%1
+Endpoint: %2</source>
+        <translation>%1
+端点：%2</translation>
+    </message>
+    <message>
+        <source>Expired</source>
+        <translation>已过期</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation>有效</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>已停用</translation>
+    </message>
+    <message>
+        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
+        <translation>请输入客户端标签，选择至少一个笔记本和一项权限，并设置将来的到期时间。</translation>
+    </message>
+    <message>
+        <source>Token issued and saved.</source>
+        <translation>令牌已签发并保存。</translation>
+    </message>
+    <message>
+        <source>Token Issued</source>
+        <translation>令牌已签发</translation>
+    </message>
+    <message>
+        <source>Copy this bearer token now and keep it private. It will not be shown again.</source>
+        <translation>请立即复制此持有者令牌并妥善保密。之后将无法再次查看。</translation>
+    </message>
+    <message>
+        <source>Revoke Token</source>
+        <translation>撤销令牌</translation>
+    </message>
+    <message>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>是否撤销此令牌？排队中的请求会立即失去访问权限；已提交的更改无法撤销。</translation>
+    </message>
+    <message>
+        <source>Token revoked and the revocation saved.</source>
+        <translation>令牌已撤销，撤销记录已保存。</translation>
+    </message>
+    <message>
+        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
+        <translation>无法持久保存撤销记录。请在重启前检查监听器状态。%1</translation>
+    </message>
+</context>
+<context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>令牌管理必须在所有者线程中运行</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>令牌注册表无效</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
+        <translation>请选择笔记本、有效权限、标签和将来的令牌到期时间</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>已达到 64 个令牌的上限</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>令牌已不存在</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Disabled</source>
+        <translation>已停用</translation>
+    </message>
+    <message>
+        <source>HTTP API configuration is unavailable</source>
+        <translation>HTTP API 配置不可用</translation>
+    </message>
+    <message>
+        <source>Could not load HTTP API credentials (%1)</source>
+        <translation>无法加载 HTTP API 凭据（%1）</translation>
+    </message>
+    <message>
+        <source>HTTP API is shutting down</source>
+        <translation>HTTP API 正在关闭</translation>
+    </message>
+    <message>
+        <source>Invalid HTTP API settings: %1</source>
+        <translation>HTTP API 设置无效：%1</translation>
+    </message>
+    <message>
+        <source>Waiting for application startup</source>
+        <translation>正在等待应用启动完成</translation>
+    </message>
+    <message>
+        <source>Could not start HTTP API (%1)</source>
+        <translation>无法启动 HTTP API（%1）</translation>
+    </message>
+    <message>
+        <source>Listening on %1</source>
+        <translation>正在监听 %1</translation>
+    </message>
+    <message>
+        <source>Stopped</source>
+        <translation>已停止</translation>
+    </message>
+    <message>
+        <source>Select at least one available notebook</source>
+        <translation>请选择至少一个可用的笔记本</translation>
+    </message>
+    <message>
+        <source>Could not issue an HTTP API token (%1)</source>
+        <translation>无法签发 HTTP API 令牌（%1）</translation>
+    </message>
+    <message>
+        <source>Token access is blocked for this session, but revocation could not be saved (%1). The HTTP API has been stopped.</source>
+        <translation>本次会话中已阻止令牌访问，但无法保存撤销记录（%1）。HTTP API 已停止。</translation>
+    </message>
+</context>
 </TS>

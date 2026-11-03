@@ -264,8 +264,7 @@ CommentService::Location CommentService::resolveLocation(const NodeIdentifier &p
   const auto assetsFolder =
       m_notebookService->getAttachmentsFolder(p_nodeId.notebookId, p_nodeId.relativePath);
   if (assetsFolder.isEmpty()) {
-    qCWarning(commentServiceLog) << "no attachments folder for" << p_nodeId.relativePath
-                                 << "in notebook" << p_nodeId.notebookId;
+    qCWarning(commentServiceLog) << "no attachments folder in notebook" << p_nodeId.notebookId;
     return location;
   }
 

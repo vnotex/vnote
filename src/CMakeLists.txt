@@ -11,6 +11,9 @@ find_package(Qt6 REQUIRED COMPONENTS Concurrent Core Core5Compat Gui Network Pri
 
 qt_standard_project_setup()
 
+add_subdirectory(http)
+add_subdirectory(api)
+
 # Application icon on Windows
 set(VX_APP_ICON_RC_WIN data/core/icons/vnote.rc)
 
@@ -124,11 +127,12 @@ target_compile_definitions(vnote PRIVATE
 # core_net must be declared before core, which links it.
 add_subdirectory(net)
 add_subdirectory(core)
+add_subdirectory(integrations/httpapi)
 
 # Shared sync validation is compiled in core_services rather than in vnote.
 if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
     qt_add_lupdate(TS_FILES ${VX_TS_FILES}
-        SOURCE_TARGETS vnote
+        SOURCE_TARGETS vnote vnote_httpapi
         SOURCES core/services/syncsettings.cpp)
 else()
     qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES}
@@ -160,6 +164,7 @@ target_link_libraries(vnote PRIVATE
     Qt::WebEngineWidgets
     Qt::Widgets
     core_services
+    vnote_httpapi
     VTextEdit
     qhotkey
     vxcore
@@ -175,6 +180,7 @@ endif()
 
 get_target_property(VX_SODIUM_SOURCE_DIR sodium SOURCE_DIR)
 get_target_property(VX_PUGIXML_LICENSE pugixml VXCORE_LICENSE_FILE)
+get_target_property(VX_HTTP_LICENSE vnote_http VNOTE_HTTP_LICENSE_FILE)
 if(NOT APPLE)
     get_target_property(VX_CURL_LICENSE vxcore_webdav_curl VXCORE_LICENSE_FILE)
 endif()
@@ -212,6 +218,9 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
         "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.m3-unicode"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_HTTP_LICENSE}"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.cpp-httplib"
         COMMENT "Copying resources and third-party licenses into app bundle Resources"
     )
 endif()
@@ -235,6 +244,8 @@ if (WIN32)
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3-lucide)
     install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3-unicode)
+    install(FILES "${VX_HTTP_LICENSE}" DESTINATION ${CMAKE_INSTALL_BINDIR}
+        RENAME LICENSE.cpp-httplib)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
 elseif(APPLE)
     set(CMAKE_MACOSX_RPATH ON)
@@ -278,6 +289,8 @@ else()
         DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3-lucide)
     install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
         DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3-unicode)
+    install(FILES "${VX_HTTP_LICENSE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote
+        RENAME LICENSE.cpp-httplib)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/translations" OPTIONAL)
 
     set(desktop.path applications)

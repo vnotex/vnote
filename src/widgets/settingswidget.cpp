@@ -32,6 +32,7 @@
 #include "dialogs/settings/editorpage.h"
 #include "dialogs/settings/fileassociationpage.h"
 #include "dialogs/settings/generalpage.h"
+#include "dialogs/settings/httpapipage.h"
 #include "dialogs/settings/imagehostpage.h"
 #include "dialogs/settings/markdowneditorpage.h"
 #include "dialogs/settings/mindmapeditorpage.h"
@@ -299,6 +300,11 @@ void SettingsWidget::setupPages() {
 
   {
     auto *page = new SyncPage(m_services, this);
+    addPage(page);
+  }
+
+  {
+    auto *page = new HttpApiPage(m_services, this);
     addPage(page);
   }
 
