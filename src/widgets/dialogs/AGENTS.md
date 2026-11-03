@@ -67,6 +67,14 @@ convention, not a rule that every input must occupy the same row as its label.
   wrap across the available width. Use existing themed description/card properties, never
   inline colors. Keep checkbox text beside the checkbox and use `createCheckBoxRow()`;
   related checkbox lists retain a wrapping group heading rather than duplicate field labels.
+- **Action rows:** standalone section and item actions are direction-aware leading-aligned
+  (left in LTR, right in RTL) and naturally sized, never stretched across the row. Keep
+  related buttons together, with trailing stretch; use `Qt::AlignLeading` for a single
+  button in a vertical layout. Match the container's content inset (16 horizontal / 6
+  vertical for Settings card action rows); destructive Remove/Delete actions use the same
+  rule and stay within their item group. Field-specific Browse/Test/Manage/Add Dictionary
+  actions remain adjacent to their input, or leading-aligned with that input when wrapped
+  below. Do not move the Apply/Reset toolbar or override native dialog-footer conventions.
 - **Provider-field exception:** Image Host's generated credential/URL/path/command forms
   always use `WrapAllRows` and expanding fields. Never infer their layout from config keys
   or credential values. Keep their edits directly parented to the provider `QGroupBox`:

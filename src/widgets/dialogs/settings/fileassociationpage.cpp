@@ -225,7 +225,7 @@ void FileAssociationPage::loadExternalProgramsGroup() {
     addExternalProgramRow(QString(), QString(), QString());
     pageIsChanged();
   });
-  buttonLayout->addWidget(m_addProgramButton, 0, Qt::AlignRight);
+  buttonLayout->addWidget(m_addProgramButton, 0, Qt::AlignLeading);
   m_externalCardLayout->addWidget(buttonRow);
 
   // System program row — always last, before the Add button.
@@ -283,7 +283,7 @@ void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QSt
 
   auto *removeLayout = new QVBoxLayout();
   removeLayout->setContentsMargins(16, 6, 16, 6);
-  removeLayout->addWidget(removeBtn, 0, Qt::AlignRight);
+  removeLayout->addWidget(removeBtn, 0, Qt::AlignLeading);
   rowLayout->addLayout(removeLayout);
 
   // Insert before the Add Program action row if it exists.

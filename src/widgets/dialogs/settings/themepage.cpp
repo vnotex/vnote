@@ -36,7 +36,7 @@ void ThemePage::setupUI() {
   {
     auto *buttonWidget = new QWidget(this);
     auto *buttonLayout = new QHBoxLayout(buttonWidget);
-    buttonLayout->setContentsMargins(0, 0, 0, 0);
+    buttonLayout->setContentsMargins(16, 6, 16, 6);
 
     auto *refreshBtn = new QPushButton(tr("Refresh"), this);
     buttonLayout->addWidget(refreshBtn);

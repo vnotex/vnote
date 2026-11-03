@@ -46,11 +46,10 @@ void QuickAccessPage::setupUI() {
       auto *headerWidget = new QWidget(this);
       auto *headerLayout = new QHBoxLayout(headerWidget);
       headerLayout->setContentsMargins(16, 6, 16, 6);
-      headerLayout->addStretch();
-
       auto *newBtn = new QPushButton(tr("New"), this);
       connect(newBtn, &QPushButton::clicked, this, &QuickAccessPage::newQuickAccessItem);
       headerLayout->addWidget(newBtn);
+      headerLayout->addStretch();
 
       cardLayout->addWidget(headerWidget);
     }
