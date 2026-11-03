@@ -346,7 +346,18 @@ on ARM hosts. Configure and compile share one 120-second budget; target only the
 Use `BUILD_WITH_INSTALL_RPATH` with the signed package Frameworks directory and no SDK link-path
 RPATH additions. Keep the 45-second render bound and all locale checks. Allow 60 seconds for
 graceful shutdown after rendering and mapping checks pass; QtWebEngine helper teardown must not
-share the shorter 15-second post-kill pipe-drain limit. A shutdown timeout still fails the gate.
+share the shorter 15-second post-kill cleanup limit. Only a timeout in this post-mapping
+shutdown phase may retry the affected locale, with one retry budget shared by the entire gate.
+Use the same probe and signed package but a fresh home/profile; rendering, mappings and a clean
+zero exit must all pass again. A second shutdown timeout (even in another locale), rendering or
+mapping failure/timeout, or nonzero exit fails without retry. The native VNote consumer gate is
+unchanged and never retries.
+Before cleanup, retain attempt-specific stderr, failure phase, mapped paths and bounded owned-group
+process/stack diagnostics in `RUNNER_TEMP/vnote-package-diagnostics`. Missing native sampling is
+best-effort; failure to retain the original error/log or prove cleanup prevents retry. Signal only
+the probe's own unreaped process group, then drain/reap and verify no live group members remain.
+Recovered retries emit warnings, and the matrix-specific diagnostic upload runs on package-gate
+success as well as failure. Preserve first-attempt files; do not publish only the recovered result.
 
 ## Windows runtime (Qt 6)
 

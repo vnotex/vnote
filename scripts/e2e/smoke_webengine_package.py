@@ -11,11 +11,16 @@ from pathlib import Path
 import platform
 import re
 import select
+import signal
 import subprocess
 import sys
 import tempfile
 import time
 
+
+RENDER_TIMEOUT = 45
+SHUTDOWN_TIMEOUT = 60
+CLEANUP_TIMEOUT = 15
 
 CASES = {
     "en_US": "en-US.pak",
@@ -128,6 +133,131 @@ def check_mappings(files, pid, frameworks, expected):
         raise RuntimeError("Packaged QtWebEngineProcess did not map the expected locale")
 
 
+def group_processes(pgid, timeout=10):
+    listing = subprocess.check_output(
+        ["/bin/ps", "-axo", "pid=,ppid=,pgid=,stat=,comm="], text=True, timeout=timeout)
+    return [line for line in listing.splitlines()
+            if len(line.split(None, 4)) == 5 and line.split(None, 4)[2] == str(pgid)]
+
+
+def retain_diagnostics(process, locale, attempt, stage, error, log, mappings):
+    diagnostics = Path(os.environ.get("RUNNER_TEMP", tempfile.gettempdir())) / "vnote-package-diagnostics"
+    try:
+        diagnostics.mkdir(parents=True, exist_ok=True)
+        directory = Path(tempfile.mkdtemp(prefix=f"webengine-{locale}-attempt-{attempt}-", dir=diagnostics))
+        stderr = log.read_text(encoding="utf-8", errors="replace")
+        (directory / "stderr.log").write_text(stderr, encoding="utf-8")
+        print(stderr, file=sys.stderr)
+        with (directory / "failure.log").open("w", encoding="utf-8") as output:
+            output.write(f"locale={locale} attempt={attempt} stage={stage} pid={process.pid}\n")
+            output.write(f"command={process.args!r} cached_returncode={process.returncode}\n")
+            output.write(f"failure={error}\n")
+            for pid, paths in mappings.items():
+                output.write(f"mapped files for {pid}:\n" + "\n".join(sorted(map(str, paths))) + "\n")
+        print(f"WebEngine diagnostics: {directory}", flush=True)
+    except OSError as diagnostic_error:
+        print(f"Could not retain WebEngine failure: {diagnostic_error}", file=sys.stderr)
+        return False
+
+    # Best effort, with one overall budget; inspect only this probe's process group.
+    deadline = time.monotonic() + 20
+    try:
+        with (directory / "processes.log").open("w", encoding="utf-8") as output:
+            members = group_processes(process.pid)
+            output.write("PID PPID PGID STATE COMMAND\n" + "\n".join(members) + "\n")
+            for member in members:
+                pid = member.split()[0]
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    output.write("Stack sampling budget exhausted\n")
+                    break
+                output.flush()
+                try:
+                    result = subprocess.run(
+                        ["/usr/bin/sample", pid, "1", "-file", str(directory / f"sample-{pid}.txt")],
+                        stdout=output, stderr=subprocess.STDOUT, timeout=min(5, remaining))
+                    output.write(f"sample {pid}: exit={result.returncode}\n")
+                except (OSError, subprocess.TimeoutExpired) as diagnostic_error:
+                    output.write(f"sample {pid} unavailable: {diagnostic_error}\n")
+    except (OSError, subprocess.SubprocessError) as diagnostic_error:
+        print(f"WebEngine process diagnostics unavailable: {diagnostic_error}", file=sys.stderr)
+    return True
+
+
+def stop_probe(process):
+    deadline = time.monotonic() + CLEANUP_TIMEOUT
+    try:
+        # Do not poll/reap before signalling: the unreaped leader owns this group ID.
+        # communicate() may time out on a helper's inherited stdout after the leader exits.
+        if process.returncode is None:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        process.communicate(timeout=max(0, deadline - time.monotonic()))
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(process.args, CLEANUP_TIMEOUT)
+            members = group_processes(process.pid, timeout=remaining)
+            if not any(not member.split()[3].startswith("Z") for member in members):
+                return
+            time.sleep(min(0.05, remaining))
+    finally:
+        for stream in (process.stdin, process.stdout):
+            if stream is not None:
+                stream.close()
+
+
+def run_locale(command, locale, root, clean_env, frameworks, expected, allow_retry):
+    for attempt in range(1, 3 if allow_retry else 2):
+        home = root / f"{locale}-{attempt}"
+        home.mkdir()
+        env = dict(clean_env, HOME=str(home), CFFIXED_USER_HOME=str(home),
+                   XDG_CONFIG_HOME=str(home), XDG_DATA_HOME=str(home), XDG_CACHE_HOME=str(home))
+        log = home / "stderr.log"
+        with log.open("w", encoding="utf-8") as stderr:
+            process = subprocess.Popen(command, cwd=home, env=env, start_new_session=True,
+                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                       stderr=stderr, text=True)
+            stage = "render"
+            shutdown_timeout = False
+            mappings = {}
+            try:
+                ready, _, _ = select.select([process.stdout], [], [], RENDER_TIMEOUT)
+                if not ready or process.stdout.readline().strip() != "READY":
+                    raise RuntimeError(f"{locale}: WebEngine did not render the smoke document")
+                stage = "mappings"
+                mappings = mapped_files(process.pid)
+                check_mappings(mappings, process.pid, frameworks, expected)
+                stage = "shutdown"
+                try:
+                    process.communicate(input="\n", timeout=SHUTDOWN_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    shutdown_timeout = True
+                    raise
+                if process.returncode != 0:
+                    raise RuntimeError(f"{locale}: probe exited {process.returncode}")
+            except Exception as error:
+                retained = retain_diagnostics(process, locale, attempt, stage, error, log, mappings)
+                try:
+                    stop_probe(process)
+                except (OSError, subprocess.SubprocessError) as cleanup_error:
+                    print(f"WebEngine cleanup failed; not retrying: {cleanup_error}", file=sys.stderr)
+                    raise error from cleanup_error
+                if shutdown_timeout and allow_retry and attempt == 1 and retained:
+                    print(f"::warning::WebEngine {locale} shutdown timed out after rendering and mapping "
+                          "checks passed; retrying once with a fresh profile", flush=True)
+                    continue
+                raise
+        if attempt == 2:
+            print(f"::warning::WebEngine {locale} recovered on its only retry; first-attempt "
+                  "diagnostics retained", flush=True)
+        print(f"PASS: {locale} -> {expected.name}; DOM rendered; browser/helper mapped packaged Qt "
+              "and locale; clean shutdown", flush=True)
+        return attempt == 2
+
+
 def smoke(app, qt_prefix):
     frameworks = (app / "Contents/Frameworks").resolve(strict=True)
     locales = frameworks / "QtWebEngineCore.framework/Versions/A/Resources/qtwebengine_locales"
@@ -157,34 +287,13 @@ def smoke(app, qt_prefix):
                      and key not in ("CMAKE_PREFIX_PATH", "LIBRARY_PATH", "PYTHONPATH", "PYTHONHOME")}
         clean_env.update(PATH="/usr/bin:/bin:/usr/sbin:/sbin", QT_QPA_PLATFORM="cocoa")
         # Locale resources are process-static: never reuse a process across cases.
+        # Share one retry across the entire gate, not one retry per locale.
+        retry_available = True
         for locale, pak in CASES.items():
-            home = root / locale
-            home.mkdir()
-            env = dict(clean_env, HOME=str(home), CFFIXED_USER_HOME=str(home),
-                       XDG_CONFIG_HOME=str(home), XDG_DATA_HOME=str(home), XDG_CACHE_HOME=str(home))
             expected = (locales / pak).resolve(strict=True)
-            log = home / "stderr.log"
-            with log.open("w", encoding="utf-8") as stderr:
-                process = subprocess.Popen([str(probe), locale], cwd=home, env=env,
-                                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                           stderr=stderr, text=True)
-                try:
-                    ready, _, _ = select.select([process.stdout], [], [], 45)
-                    if not ready or process.stdout.readline().strip() != "READY":
-                        raise RuntimeError(f"{locale}: WebEngine did not render the smoke document")
-                    check_mappings(mapped_files(process.pid), process.pid, frameworks, expected)
-                    # Rendering and mappings have passed; allow up to a minute for
-                    # QtWebEngine and its helpers to shut down gracefully.
-                    process.communicate(input="\n", timeout=60)
-                    if process.returncode != 0:
-                        raise RuntimeError(f"{locale}: probe exited {process.returncode}")
-                except Exception:
-                    if process.poll() is None:
-                        process.kill()
-                    process.communicate(timeout=15)
-                    print(log.read_text(encoding="utf-8"), file=sys.stderr)
-                    raise
-            print(f"PASS: {locale} -> {pak}; DOM rendered; browser/helper mapped packaged Qt and locale", flush=True)
+            if run_locale([str(probe), locale], locale, root, clean_env,
+                          frameworks, expected, retry_available):
+                retry_available = False
 
 
 def main():

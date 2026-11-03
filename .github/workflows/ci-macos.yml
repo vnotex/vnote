@@ -506,13 +506,13 @@ jobs:
           python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_webengine_package.py" \
             --app "$mountpoint/VNote.app" --qt-prefix "$(qmake -query QT_INSTALL_PREFIX)"
 
-      - name: Preserve failed package consumer diagnostics
-        if: ${{ always() && steps.package_verify.outcome == 'failure' }}
+      - name: Preserve package consumer diagnostics
+        if: ${{ always() && (steps.package_verify.outcome == 'success' || steps.package_verify.outcome == 'failure') }}
         uses: actions/upload-artifact@v4
         with:
           name: package-consumer-diagnostics-macos-${{matrix.config.qt}}
           path: ${{runner.temp}}/vnote-package-diagnostics
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 7
 
       # Diagnostic only: upload the app image, never its adjacent signing files.
