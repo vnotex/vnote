@@ -271,7 +271,22 @@ bool privateTemporaryFile(QSaveFile &p_file, const DirectoryGuard &p_guard, QStr
   if (raw == -1) {
     return fail(p_error, "credential_store_permissions");
   }
-  return privateHandle(reinterpret_cast<HANDLE>(raw), p_guard.sid, false, p_error);
+  const auto file = reinterpret_cast<HANDLE>(raw);
+  if (!regularHandle(file, false, p_error)) {
+    return false;
+  }
+  // Elevated tokens can default new files to the Administrators owner. Set the
+  // owner only on our new, still-empty temporary file; existing stores remain
+  // subject to strict ownership checks. Reopen by handle, never by pathname.
+  NativeHandle security(ReOpenFile(file, READ_CONTROL | WRITE_OWNER,
+                                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0));
+  if (!security.valid() ||
+      SetSecurityInfo(security.get(), SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION,
+                      const_cast<char *>(p_guard.sid.constData()), nullptr, nullptr,
+                      nullptr) != ERROR_SUCCESS) {
+    return fail(p_error, "credential_store_permissions");
+  }
+  return privateHandle(security.get(), p_guard.sid, false, p_error);
 }
 #else
 class NativeHandle {

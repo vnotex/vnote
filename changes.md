@@ -1,5 +1,7 @@
 # Changes
 ## Unreleased
+* Fix Windows HTTP API token issuance under elevated accounts while retaining strict owner-only credential storage
+* Synchronize notification backlog scrolling tests with completed layout and preserve first-run Windows HTTP API test diagnostics
 * Avoid blank WebEngine frames when switching warm Markdown tabs by restoring page visibility before rendering children, without keeping inactive pages active
 * Keep Windows status and link-preview overlays from promoting entire tab containers to native windows, avoiding stale tab surfaces and preview focus changes
 * Audit HTTP API requests, rejected connections and asynchronous mutation outcomes with privacy-safe structured records and shared request IDs

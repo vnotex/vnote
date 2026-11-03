@@ -198,7 +198,7 @@ jobs:
           exit /b %TEST_RESULT%
         working-directory: ${{runner.workspace}}/build
 
-      - name: Preserve native Typst and theme test reports
+      - name: Preserve native Typst, theme and API test reports
         if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         uses: actions/upload-artifact@v4
         with:
@@ -207,6 +207,8 @@ jobs:
             ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
             ${{runner.workspace}}/build/tests/gui/test_themeservice.txt
             ${{runner.workspace}}/build/tests/gui/test_themeservice.xml
+            ${{runner.workspace}}/build/tests/api/test_httpapilifecycle.txt
+            ${{runner.workspace}}/build/tests/api/test_httpapilifecycle.xml
             ${{runner.workspace}}/build/Testing/Temporary/Last*.log
             ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
           if-no-files-found: warn
@@ -214,7 +216,7 @@ jobs:
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
-        # land in the CI log; first-run Typst and theme reports are preserved above.
+        # land in the CI log; first-run Typst, theme and API reports are preserved above.
         # This step never gates the workflow; each suite needs its own failure history.
         if: failure() && steps.tests.outcome == 'failure'
         shell: cmd

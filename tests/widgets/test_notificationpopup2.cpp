@@ -280,6 +280,12 @@ void TestNotificationPopup2::test_twoMultilineCardsFitBeforeScrolling() {
   renderedTexts();
   QTRY_VERIFY(area->verticalScrollBar()->maximum() > 0);
   QTRY_VERIFY(area->height() <= cap);
+  // Rebuilding the rows posts a later QScrollArea range update. A positive
+  // range may still describe an earlier backlog, so wait for all content
+  // before scrolling to its bottom.
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(),
+               bodyLayout->totalHeightForWidth(area->viewport()->width()) -
+                   area->viewport()->height());
   area->verticalScrollBar()->setValue(area->verticalScrollBar()->maximum());
   auto *oldestText = findLabel(area, texts.first());
   QVERIFY(oldestText);

@@ -51,6 +51,9 @@ This does not change token generation or add machine-bound cryptography.
   broad permissions. Do not heal a corrupt registry or replace it with defaults.
 - POSIX directories/files require owner-only permissions. Windows requires an
   explicit owner DACL; `QFile::setPermissions` is not a Windows ACL substitute.
+- Windows explicitly assigns the current user as owner of each new, still-empty
+  `QSaveFile` temporary file by handle; elevated tokens may default to Administrators.
+  Never normalize ownership of an existing registry or relax its DACL checks.
 - `QSaveFile` direct-write fallback stays disabled. Verify temporary/final file
   protections and report persistence failures before publishing successful grants.
 - Issue secrets once. Invalid grants and token-quota rejection leave the listener running;

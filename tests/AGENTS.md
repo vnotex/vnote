@@ -64,6 +64,10 @@ ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-
 Child-process readiness is a byte-stream protocol: accumulate stdout until the complete
 marker arrives under one deadline. IPC slow-start fixtures must use blocking reads rather
 than pumping the primary event loop while waiting for that marker.
+
+Notification backlog fixtures must wait for the scroll range to match the complete
+height-for-width layout before scrolling to the bottom. A merely positive range can still
+describe earlier rows while `QScrollArea` has a queued layout update, especially on Cocoa.
 ## Test Structure
 
 ```
@@ -522,6 +526,9 @@ Transport and REST policy tests link no application services or widgets; adapter
 tests deliberately use real core services/configuration. New API context fixtures redirect the
 process temp root before enabling vxcore test mode, since `vxcore_test_config` is otherwise a
 shared directory across test executables. Restore environment only after context/worker teardown.
+On Windows, `test_httpapilifecycle` writes plaintext and JUnit reports in `tests/api` within
+the build tree as well as stdout. CI preserves both before diagnostic reruns: hosted console
+capture can omit the assertions even when CTest correctly reports failure.
 Use an OS temp root outside any Git worktree for these regression runs: a temp directory under
 `build*` still inherits this repository's `.gitattributes`, invalidating tests that intentionally
 exercise files outside Git. Normalize the temp path before passing it to native path guards.
