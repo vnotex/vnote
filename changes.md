@@ -23,6 +23,7 @@ A feature release with outline mind maps, editable node-note previews, source-aw
     * Add a shared, editable `web/css/export.css` stylesheet for HTML and HTML-based PDF/Custom exports; preserve user styles across upgrades and leave native Typst PDF unchanged
     * Simplify option labels and explain when custom commands use original disk files rather than the current buffer snapshot
 * **Notebooks and interface**
+    * Restore complete button borders in Moonlight and nine other themes while preserving button sizes and checked-state accents
     * Align the keyboard-shortcuts hint with the other entries in Mind Map Editor settings
     * Support drag-and-drop changes to tag parent hierarchies
     * Replace the node Mark dialog with separate Text and Background color menus using the existing 12 colors and PDF-style swatches; Auto clears only the selected override

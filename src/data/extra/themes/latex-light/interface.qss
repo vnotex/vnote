@@ -425,7 +425,7 @@ QPushButton {
     border-radius: 4px;
     padding: 6px 12px;
     min-width: 64px;
-    border-left: 2px solid transparent;
+    border-left: 2px solid @widgets#qpushbutton#border;
 }
 
 QPushButton:default {
