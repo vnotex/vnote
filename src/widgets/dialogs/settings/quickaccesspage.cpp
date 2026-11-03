@@ -3,7 +3,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
-#include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
@@ -62,11 +61,9 @@ void QuickAccessPage::setupUI() {
       m_quickAccessTextEdit->setPlaceholderText(tr("One file per line: file_path, open_mode"));
       m_quickAccessTextEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 
-      auto *editWrapper = new QWidget(this);
-      auto *editLayout = new QVBoxLayout(editWrapper);
-      editLayout->setContentsMargins(16, 0, 16, 6);
-      editLayout->addWidget(m_quickAccessTextEdit);
-      cardLayout->addWidget(editWrapper);
+      cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+          tr("Quick Access"), m_quickAccessTextEdit->placeholderText(), m_quickAccessTextEdit, this,
+          SettingsPageHelper::RowLayout::FullWidth));
 
       const QString searchLabel(tr("Quick access:"));
       addSearchItem(searchLabel, m_quickAccessTextEdit->placeholderText(), m_quickAccessTextEdit);
@@ -84,24 +81,30 @@ void QuickAccessPage::setupUI() {
     // Scheme selector.
     {
       auto *selectorWidget = new QWidget(this);
-      auto *selectorLayout = new QHBoxLayout(selectorWidget);
+      auto *selectorLayout = new QVBoxLayout(selectorWidget);
       selectorLayout->setContentsMargins(0, 0, 0, 0);
 
       m_quickNoteSchemeComboBox = WidgetsFactory::createComboBox(this);
-      selectorLayout->addWidget(m_quickNoteSchemeComboBox, 1);
+      selectorLayout->addWidget(m_quickNoteSchemeComboBox);
       m_quickNoteSchemeComboBox->setPlaceholderText(tr("No scheme to show"));
 
+      // Management actions must not impose their combined width on the selector.
+      auto *actions = new QHBoxLayout();
+      selectorLayout->addLayout(actions);
       auto *newBtn = new QPushButton(tr("New"), this);
       connect(newBtn, &QPushButton::clicked, this, &QuickAccessPage::newQuickNoteScheme);
-      selectorLayout->addWidget(newBtn);
+      actions->addWidget(newBtn);
 
       auto *deleteBtn = new QPushButton(tr("Delete"), this);
       deleteBtn->setEnabled(false);
       connect(deleteBtn, &QPushButton::clicked, this, &QuickAccessPage::removeQuickNoteScheme);
-      selectorLayout->addWidget(deleteBtn);
+      actions->addWidget(deleteBtn);
+      actions->addStretch();
 
       const QString label(tr("Scheme"));
-      auto *row = SettingsPageHelper::createSettingRow(label, QString(), selectorWidget, this);
+      auto *row = SettingsPageHelper::createSettingRow(label, QString(), selectorWidget, this,
+                                                       SettingsPageHelper::RowLayout::Compact,
+                                                       m_quickNoteSchemeComboBox);
       cardLayout->addWidget(row);
       addSearchItem(label, m_quickNoteSchemeComboBox);
 
@@ -116,7 +119,9 @@ void QuickAccessPage::setupUI() {
       cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
 
       m_quickNoteInfoGroupBox = new QGroupBox(this);
-      auto *infoLayout = WidgetsFactory::createFormLayout(m_quickNoteInfoGroupBox);
+      auto *infoLayout = new QVBoxLayout(m_quickNoteInfoGroupBox);
+      infoLayout->setContentsMargins(0, 0, 0, 0);
+      infoLayout->setSpacing(0);
 
       {
         const QString label(tr("Folder"));
@@ -127,7 +132,11 @@ void QuickAccessPage::setupUI() {
             tr("Empty to use current explored folder dynamically"));
         m_quickNoteFolderPathInput->setToolTip(
             tr("Snippet variables are supported, e.g. journal/%yyyy%/%MM%"));
-        infoLayout->addRow(label, m_quickNoteFolderPathInput);
+        infoLayout->addWidget(SettingsPageHelper::createSettingRow(
+            label, QString(), m_quickNoteFolderPathInput, m_quickNoteInfoGroupBox,
+            SettingsPageHelper::RowLayout::FullWidth,
+            m_quickNoteFolderPathInput->findChild<QLineEdit *>(QString(),
+                                                               Qt::FindDirectChildrenOnly)));
         addSearchItem(label, m_quickNoteFolderPathInput);
         connect(m_quickNoteFolderPathInput, &LocationInputWithBrowseButton::textChanged, this,
                 &QuickAccessPage::pageIsChanged);
@@ -138,7 +147,8 @@ void QuickAccessPage::setupUI() {
         auto *snippetService = m_services.get<SnippetCoreService>();
         m_quickNoteNoteNameLineEdit =
             WidgetsFactory::createLineEditWithSnippet(snippetService, m_quickNoteInfoGroupBox);
-        infoLayout->addRow(label, m_quickNoteNoteNameLineEdit);
+        infoLayout->addWidget(SettingsPageHelper::createSettingRow(
+            label, QString(), m_quickNoteNoteNameLineEdit, m_quickNoteInfoGroupBox));
         connect(m_quickNoteNoteNameLineEdit, &QLineEdit::textChanged, this,
                 &QuickAccessPage::pageIsChanged);
       }
@@ -146,7 +156,11 @@ void QuickAccessPage::setupUI() {
       {
         const QString label(tr("Template"));
         m_quickNoteTemplateSelector = new NoteTemplateSelector(m_services, m_quickNoteInfoGroupBox);
-        infoLayout->addRow(label, m_quickNoteTemplateSelector);
+        infoLayout->addWidget(SettingsPageHelper::createSettingRow(
+            label, QString(), m_quickNoteTemplateSelector, m_quickNoteInfoGroupBox,
+            SettingsPageHelper::RowLayout::FullWidth,
+            m_quickNoteTemplateSelector->findChild<QComboBox *>(QString(),
+                                                                Qt::FindDirectChildrenOnly)));
         addSearchItem(label, m_quickNoteTemplateSelector);
         connect(m_quickNoteTemplateSelector, &NoteTemplateSelector::templateChanged, this,
                 &QuickAccessPage::pageIsChanged);
@@ -156,7 +170,8 @@ void QuickAccessPage::setupUI() {
         const QString label(tr("Open in detached window"));
         m_quickNoteDetachedViewCheckBox =
             WidgetsFactory::createCheckBox(label, m_quickNoteInfoGroupBox);
-        infoLayout->addRow(QString(), m_quickNoteDetachedViewCheckBox);
+        infoLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+            m_quickNoteDetachedViewCheckBox, QString(), m_quickNoteInfoGroupBox));
         addSearchItem(label, m_quickNoteDetachedViewCheckBox);
         connect(m_quickNoteDetachedViewCheckBox, &QCheckBox::toggled, this,
                 &QuickAccessPage::pageIsChanged);

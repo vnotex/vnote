@@ -400,6 +400,15 @@ background: [groove-bg];
 
 ---
 
+## Settings Forms
+
+Use compact label/input rows for ordinary desktop settings and explicitly stacked full-width
+rows for long content. Keep control columns aligned, labels visible, and layout responsive to
+window width and font size. The normative rules, shared helper API, and dynamic-page exceptions
+live in [Dialogs: Settings Form Layout](../src/widgets/dialogs/AGENTS.md#settings-form-layout).
+
+---
+
 ## Animation & Transitions
 
 **Note**: QSS has limited animation support. These are aspirational guidelines.

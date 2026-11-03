@@ -477,6 +477,7 @@ void MarkdownEditorPage::setupEditGroup() {
     srcRowLayout->setContentsMargins(16, 6, 16, 6);
     srcRowLayout->setSpacing(4);
     auto *srcLabel = new QLabel(tr("In-place preview sources"), srcRow);
+    srcLabel->setWordWrap(true);
     srcRowLayout->addWidget(srcLabel);
 
     m_inplacePreviewSourceImageLinkCheckBox =
@@ -671,7 +672,9 @@ void MarkdownEditorPage::setupGeneralGroup() {
     const QString label(tr("PlantUml JAR file"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_plantUmlJarFileInput->toolTip(), jarWidget, this));
+        label, m_plantUmlJarFileInput->toolTip(), jarWidget, this,
+        SettingsPageHelper::RowLayout::FullWidth,
+        m_plantUmlJarFileInput->findChild<QLineEdit *>(QString(), Qt::FindDirectChildrenOnly)));
     addSearchItem(label, m_plantUmlJarFileInput->toolTip(), m_plantUmlJarFileInput);
     connect(m_plantUmlJarFileInput, &LocationInputWithBrowseButton::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -686,7 +689,8 @@ void MarkdownEditorPage::setupGeneralGroup() {
     const QString label(tr("Override PlantUml web service"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit, this));
+        label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit, this,
+        SettingsPageHelper::RowLayout::FullWidth));
     addSearchItem(label, m_plantUmlWebServiceLineEdit->toolTip(), m_plantUmlWebServiceLineEdit);
     connect(m_plantUmlWebServiceLineEdit, &QLineEdit::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -741,7 +745,9 @@ void MarkdownEditorPage::setupGeneralGroup() {
     const QString label(tr("Graphviz executable file"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_graphvizFileInput->toolTip(), fileWidget, this));
+        label, m_graphvizFileInput->toolTip(), fileWidget, this,
+        SettingsPageHelper::RowLayout::FullWidth,
+        m_graphvizFileInput->findChild<QLineEdit *>(QString(), Qt::FindDirectChildrenOnly)));
     addSearchItem(label, m_graphvizFileInput->toolTip(), m_graphvizFileInput);
     connect(m_graphvizFileInput, &LocationInputWithBrowseButton::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);
@@ -779,7 +785,8 @@ void MarkdownEditorPage::setupGeneralGroup() {
     const QString label(tr("Override MathJax script"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit, this));
+        label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit, this,
+        SettingsPageHelper::RowLayout::FullWidth));
     addSearchItem(label, m_mathJaxScriptLineEdit->toolTip(), m_mathJaxScriptLineEdit);
     connect(m_mathJaxScriptLineEdit, &QLineEdit::textChanged, this,
             &MarkdownEditorPage::pageIsChanged);

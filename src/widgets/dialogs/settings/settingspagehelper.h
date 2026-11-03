@@ -17,6 +17,8 @@ class SettingsPageHelper {
 public:
   SettingsPageHelper() = delete;
 
+  enum class RowLayout { Compact, FullWidth };
+
   // Create a card container (QFrame with SettingsCard property).
   // Returns a QFrame with a QVBoxLayout already set. Add rows/widgets to its layout.
   static QFrame *createCard(QWidget *p_parent = nullptr);
@@ -30,11 +32,14 @@ public:
   // Create a thin horizontal separator line (SettingsSeparator property).
   static QFrame *createSeparator(QWidget *p_parent = nullptr);
 
-  // Create a setting row: label on the left, control widget on the right.
-  // p_description is optional muted text shown below the label.
+  // Compact rows align labels and fields, wrapping below the label when space is limited.
+  // FullWidth is explicit for paths, URLs, commands and multiline content.
+  // Descriptions appear below the field. For composites, pass the actual focusable control.
   // Returns a QWidget with SettingsRow property set.
   static QWidget *createSettingRow(const QString &p_label, const QString &p_description,
-                                   QWidget *p_control, QWidget *p_parent = nullptr);
+                                   QWidget *p_control, QWidget *p_parent = nullptr,
+                                   RowLayout p_layout = RowLayout::Compact,
+                                   QWidget *p_focusControl = nullptr);
 
   // Create a checkbox row: checkbox on the left with optional description below.
   // Returns a QWidget with SettingsRow property set.

@@ -1,17 +1,52 @@
 #include "settingspagehelper.h"
 
+#include <QAbstractSpinBox>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QFormLayout>
 #include <QFrame>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
-#include <QPlainTextEdit>
-#include <QTextEdit>
+#include <QMouseEvent>
 #include <QVBoxLayout>
 
 #include <widgets/propertydefs.h>
 
 using namespace vnotex;
+
+namespace {
+class SettingLabel : public QLabel {
+public:
+  SettingLabel(const QString &p_text, bool p_compact, QWidget *p_parent)
+      : QLabel(p_text, p_parent), m_compact(p_compact) {
+    setWordWrap(true);
+    setTextFormat(Qt::PlainText);
+  }
+
+  QSize sizeHint() const override {
+    if (!m_compact) {
+      return QLabel::sizeHint();
+    }
+    // A preferred column, not a fixed/minimum width: the scroll area must still
+    // be able to shrink the page and let QFormLayout wrap a long pair.
+    const int width = fontMetrics().horizontalAdvance(QLatin1Char('x')) * 24;
+    return QSize(width, heightForWidth(width));
+  }
+
+protected:
+  void mouseReleaseEvent(QMouseEvent *p_event) override {
+    if (p_event->button() == Qt::LeftButton && rect().contains(p_event->position().toPoint()) &&
+        buddy() && buddy()->isEnabled()) {
+      buddy()->setFocus(Qt::MouseFocusReason);
+      p_event->accept();
+      return;
+    }
+    QLabel::mouseReleaseEvent(p_event);
+  }
+
+private:
+  const bool m_compact;
+};
+} // namespace
 
 QFrame *SettingsPageHelper::createCard(QWidget *p_parent) {
   auto *card = new QFrame(p_parent);
@@ -47,67 +82,59 @@ QFrame *SettingsPageHelper::createSeparator(QWidget *p_parent) {
 }
 
 QWidget *SettingsPageHelper::createSettingRow(const QString &p_label, const QString &p_description,
-                                             QWidget *p_control, QWidget *p_parent) {
+                                              QWidget *p_control, QWidget *p_parent,
+                                              RowLayout p_layout, QWidget *p_focusControl) {
   auto *row = new QWidget(p_parent);
   row->setProperty(PropertyDefs::c_settingsRow, true);
+  auto *rowLayout = new QVBoxLayout(row);
+  rowLayout->setContentsMargins(16, 6, 16, 6);
+  rowLayout->setSpacing(4);
 
-  // Use vertical layout when the control is or contains a text input
-  // (QLineEdit, QPlainTextEdit, QTextEdit) so the edit gets the full row width
-  // instead of being squeezed into the right half.
-  bool useVertical = false;
-  if (p_control) {
-    useVertical = qobject_cast<QLineEdit *>(p_control) || qobject_cast<QPlainTextEdit *>(p_control)
-                  || qobject_cast<QTextEdit *>(p_control) || p_control->findChild<QLineEdit *>()
-                  || p_control->findChild<QPlainTextEdit *>() || p_control->findChild<QTextEdit *>();
+  auto *nameLabel = new SettingLabel(p_label, p_layout == RowLayout::Compact, row);
+  auto *focusControl = p_focusControl ? p_focusControl : p_control;
+  if (focusControl) {
+    nameLabel->setBuddy(focusControl);
+    if (focusControl->accessibleName().isEmpty()) {
+      focusControl->setAccessibleName(p_label);
+    }
+    if (focusControl->accessibleDescription().isEmpty()) {
+      focusControl->setAccessibleDescription(p_description);
+    }
   }
 
-  if (useVertical) {
-    auto *rowLayout = new QVBoxLayout(row);
-    rowLayout->setContentsMargins(16, 6, 16, 6);
-    rowLayout->setSpacing(2);
-
-    auto *nameLabel = new QLabel(p_label, row);
+  if (p_layout == RowLayout::FullWidth || !p_control) {
     rowLayout->addWidget(nameLabel);
-
-    if (!p_description.isEmpty()) {
-      auto *descLabel = createDescription(p_description, row);
-      rowLayout->addWidget(descLabel);
-    }
-
-    p_control->setParent(row);
-    rowLayout->addWidget(p_control);
-  } else {
-    auto *rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(16, 6, 16, 6);
-    rowLayout->setSpacing(12);
-
-    // Left side: label + optional description stacked vertically.
-    auto *leftLayout = new QVBoxLayout();
-    leftLayout->setContentsMargins(0, 0, 0, 0);
-    leftLayout->setSpacing(2);
-
-    auto *nameLabel = new QLabel(p_label, row);
-    leftLayout->addWidget(nameLabel);
-
-    if (!p_description.isEmpty()) {
-      auto *descLabel = createDescription(p_description, row);
-      leftLayout->addWidget(descLabel);
-    }
-
-    rowLayout->addLayout(leftLayout, 1);
-
-    // Right side: control widget.
     if (p_control) {
-      p_control->setParent(row);
-      rowLayout->addWidget(p_control, 0, Qt::AlignRight | Qt::AlignVCenter);
+      rowLayout->addWidget(p_control);
     }
+  } else {
+    // Widget type only controls sizing, never label placement. In particular, a
+    // spin box's internal line edit must not turn an ordinary value into a text area.
+    if (qobject_cast<QComboBox *>(p_control) || qobject_cast<QAbstractSpinBox *>(p_control)) {
+      auto policy = p_control->sizePolicy();
+      policy.setHorizontalPolicy(QSizePolicy::Preferred);
+      p_control->setSizePolicy(policy);
+    }
+    auto *form = new QFormLayout();
+    form->setContentsMargins(0, 0, 0, 0);
+    form->setHorizontalSpacing(12);
+    form->setVerticalSpacing(4);
+    form->setRowWrapPolicy(QFormLayout::WrapLongRows);
+    form->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    form->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+    form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    form->addRow(nameLabel, p_control);
+    rowLayout->addLayout(form);
   }
 
+  if (!p_description.isEmpty()) {
+    rowLayout->addWidget(createDescription(p_description, row));
+  }
   return row;
 }
 
 QWidget *SettingsPageHelper::createCheckBoxRow(QCheckBox *p_checkBox, const QString &p_description,
-                                              QWidget *p_parent) {
+                                               QWidget *p_parent) {
   auto *row = new QWidget(p_parent);
   row->setProperty(PropertyDefs::c_settingsRow, true);
 

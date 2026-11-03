@@ -190,7 +190,8 @@ void EditorPage::setupUI() {
     const QString label(tr("Spell check dictionary"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_spellCheckDictComboBox->toolTip(), spellCheckWidget, this));
+        label, m_spellCheckDictComboBox->toolTip(), spellCheckWidget, this,
+        SettingsPageHelper::RowLayout::Compact, m_spellCheckDictComboBox));
     addSearchItem(label, m_spellCheckDictComboBox->toolTip(), m_spellCheckDictComboBox);
     connect(m_spellCheckDictComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             &EditorPage::pageIsChanged);

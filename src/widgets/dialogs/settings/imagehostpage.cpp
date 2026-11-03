@@ -88,7 +88,7 @@ void ImageHostPage::loadInternal() {
   // Remove existing provider group boxes from layout.
   for (auto it = m_hostToFields.begin(); it != m_hostToFields.end(); ++it) {
     if (!it.value().isEmpty()) {
-      // The group box is the grandparent of the first field.
+      // The group box is the direct parent of the first field.
       auto *groupBox = it.value().first()->parentWidget();
       if (groupBox) {
         m_mainLayout->removeWidget(groupBox);
@@ -156,6 +156,8 @@ QGroupBox *ImageHostPage::setupGroupBoxForProvider(IImageHostProvider *p_provide
                                                    QWidget *p_parent) {
   auto *box = new QGroupBox(p_provider->getName(), p_parent);
   auto *layout = WidgetsFactory::createFormLayout(box);
+  layout->setRowWrapPolicy(QFormLayout::WrapAllRows);
+  layout->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
 
   QVector<QLineEdit *> fields;
   QStringList keys;

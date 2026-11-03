@@ -73,6 +73,7 @@ void AppearancePage::setupUI() {
     dockRowLayout->setSpacing(4);
 
     auto *dockLabel = new QLabel(tr("Dock widgets kept when expanding content area"), dockRow);
+    dockLabel->setWordWrap(true);
     dockRowLayout->addWidget(dockLabel);
 
     for (int i = 0; i < docks.size(); ++i) {
