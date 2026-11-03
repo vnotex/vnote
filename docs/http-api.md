@@ -13,8 +13,10 @@ headless product, or public TLS listener. The machine-readable contract is
    **1 day, 7 days, 30 days, 60 days, 90 days, 180 days, or Never**. New grants default to
    read-only and 90 days; select notebooks deliberately.
    A grant never automatically includes notebooks opened or created later.
-3. Copy the token when shown. It is displayed only once. Store it in the client's secret store,
-   not in notebook content, a URL, a command history, source control or an MCP tool argument.
+3. Click **Copy** when the token is shown. This copies the entire token without closing the
+   dialog. Copying is explicit; closing the dialog does not clear the clipboard. The token is
+   displayed only once. Store it in the client's secret store, not in notebook content, a URL,
+   a command history, source control or an MCP tool argument.
 4. Enable the listener on `127.0.0.1:18765` (or another explicit port). `::1` is an explicit
    alternative. Wildcard/public binds and automatic port fallback are not supported.
 5. Send `Authorization: Bearer <id.secret>` on every request, including `/info` and operations.
@@ -26,8 +28,10 @@ ordinary debounced preferences, protected for the OS owner, and contains SHA-256
 not recoverable bearer secrets. At most 64 unexpired enabled tokens may be issued; revocation
 frees a slot and later issuance prunes expired/disabled records. Issuance is published only after
 durable storage succeeds. Revocation takes effect in memory immediately; if persistence fails,
-the listener stops and Settings reports the error. Do not treat failed persistence as durable
-revocation: fix storage protections before re-enabling.
+the listener stops and VNote posts a persistent error notification; the listener status also
+reflects the failure. Successful issuance, copying and revocation add no status footer or
+notification. Do not treat failed persistence as durable revocation: fix storage protections
+before re-enabling.
 
 Finite expiry is calculated when the token is issued, using the selected number of local calendar
 days. The token list displays the local expiry date without time-of-day detail. **Never** disables

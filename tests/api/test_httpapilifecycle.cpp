@@ -26,6 +26,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/notificationservice.h>
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/syncworkqueuemanager.h>
@@ -232,6 +233,7 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
   BufferService buffers(context, &hooks, &gate);
   buffers.setSyncWorkQueueManager(&queues);
   CommentService comments(&notebooks, &gate, &hooks);
+  NotificationService notifications;
   SearchCoreService searchCore(context);
   SearchService search(&searchCore);
   services.registerService<ConfigMgr2>(&config);
@@ -241,6 +243,7 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
   services.registerService<HookManager>(&hooks);
   services.registerService<SyncWorkQueueManager>(&queues);
   services.registerService<CommentService>(&comments);
+  services.registerService<NotificationService>(&notifications);
   services.registerService<SearchService>(&search);
   services.registerService<SearchCoreService>(&searchCore);
   const auto notebook =
@@ -354,6 +357,29 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
     controller.applicationReady();
     QVERIFY2(controller.isListening(), qPrintable(controller.statusText()));
     QCOMPARE(request(controller.endpoint(), token).status, 401);
+    QVERIFY(notifications.messages().isEmpty());
+    QString failureToken;
+    QVERIFY2(controller.issueToken(QStringLiteral("Notification failure"), {notebook},
+                                   {QStringLiteral("notes:read")}, std::nullopt, &failureToken,
+                                   &error),
+             qPrintable(error));
+    QVERIFY(notifications.messages().isEmpty());
+    const auto backup = registry + QStringLiteral(".saved");
+    QVERIFY(QFile::rename(registry, backup));
+    const auto restoreRegistry = qScopeGuard([&]() {
+      QDir().rmdir(registry);
+      QFile::rename(backup, registry);
+    });
+    QVERIFY(QDir().mkdir(registry));
+    QVERIFY(!controller.revokeToken(failureToken.section(QLatin1Char('.'), 0, 0), &error));
+    QVERIFY(!controller.isListening());
+    QCOMPARE(notifications.activeCount(), 1);
+    const auto &message = notifications.messages().constFirst();
+    QCOMPARE(message.m_severity, NotificationMessage::Severity::Error);
+    QCOMPARE(message.m_attention, NotificationMessage::Attention::Interrupt);
+    QCOMPARE(message.m_duration, NotificationMessage::Duration::Persist);
+    QCOMPARE(message.m_category, QStringLiteral("httpapi"));
+    QVERIFY(!message.m_text.contains(failureToken));
     controller.shutdown();
   }
 }

@@ -39,7 +39,6 @@ private:
   QLabel *m_configError = nullptr;
   QTreeWidget *m_tokens = nullptr;
   QPushButton *m_revoke = nullptr;
-  QLabel *m_tokenResult = nullptr;
 };
 
 } // namespace vnotex

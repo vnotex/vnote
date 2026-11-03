@@ -15,6 +15,7 @@
 #include "settingspagehelper.h"
 #include <core/servicelocator.h>
 #include <integrations/httpapi/httpapicontroller.h>
+#include <utils/clipboardutils.h>
 #include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
@@ -58,8 +59,8 @@ void NewHttpApiTokenDialog::setupUI() {
     return rowLayout;
   };
   auto *notebooks = addGroup(tr("Allowed notebooks"));
-  notebooks->addWidget(SettingsPageHelper::createDescription(
-      tr("Select one or more currently open notebooks"), widget));
+  notebooks->addWidget(
+      SettingsPageHelper::createDescription(tr("Select one or more notebooks for access"), widget));
   m_notebooks = new QListWidget(widget);
   m_notebooks->setObjectName(QStringLiteral("HttpApiNotebookGrants"));
   m_notebooks->setMinimumHeight(120);
@@ -173,6 +174,10 @@ void NewHttpApiTokenDialog::acceptedButtonClicked() {
   value->selectAll();
   layout->addWidget(value);
   auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+  auto *copy = buttons->addButton(tr("Copy"), QDialogButtonBox::ActionRole);
+  copy->setObjectName(QStringLiteral("HttpApiCopyToken"));
+  connect(copy, &QPushButton::clicked, &dialog,
+          [value]() { ClipboardUtils::setTextToClipboard(value->text()); });
   connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
   layout->addWidget(buttons);
   dialog.exec();

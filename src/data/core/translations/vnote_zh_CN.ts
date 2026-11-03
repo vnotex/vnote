@@ -12866,10 +12866,6 @@ Continue?</source>
         <translation>已停用</translation>
     </message>
     <message>
-        <source>Token issued and saved.</source>
-        <translation>令牌已签发并保存。</translation>
-    </message>
-    <message>
         <source>Revoke Token</source>
         <translation>撤销令牌</translation>
     </message>
@@ -12877,17 +12873,13 @@ Continue?</source>
         <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
         <translation>是否撤销此令牌？排队中的请求会立即失去访问权限；已提交的更改无法撤销。</translation>
     </message>
-    <message>
-        <source>Token revoked and the revocation saved.</source>
-        <translation>令牌已撤销，撤销记录已保存。</translation>
-    </message>
-    <message>
-        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
-        <translation>无法持久保存撤销记录。请在重启前检查监听器状态。%1</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
     <message>
         <source>Expiry</source>
         <translation>有效期</translation>
@@ -12937,8 +12929,8 @@ Continue?</source>
         <translation>允许访问的笔记本</translation>
     </message>
     <message>
-        <source>Select one or more currently open notebooks</source>
-        <translation>选择一个或多个当前打开的笔记本</translation>
+        <source>Select one or more notebooks for access</source>
+        <translation>选择一个或多个允许访问的笔记本</translation>
     </message>
     <message>
         <source>Read saved notes and search (notes:read)</source>
@@ -13006,6 +12998,10 @@ Continue?</source>
 </context>
 <context>
     <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Token revocation failed</source>
+        <translation>令牌撤销失败</translation>
+    </message>
     <message>
         <source>Service disabled</source>
         <translation>服务已停用</translation>

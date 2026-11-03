@@ -109,6 +109,10 @@ remain below the listener fields.
 Use a compact, right-aligned New/Revoke/Refresh row below the token list, following ThemePage's
 zero-margin horizontal layout with leading stretch. Revoke requires a selection and confirmation;
 Refresh updates token rows, their notebook display names and status without losing token selection.
+There is no token-operation footer. Successful issuance/copy/revocation is silent. The controller
+publishes revoke failures through `NotificationService` as keyless Error/Interrupt/Persist messages
+(category `httpapi`), so each explicit failed attempt gets feedback. Keep listener shutdown/status
+and safe error propagation; never include bearer secrets or notebook paths in the notification.
 
 New opens `NewHttpApiTokenDialog`, using the standard `ScrollDialog` form and button box.
 Load current notebook choices per opening, with no checked notebooks and only read permission
@@ -118,8 +122,11 @@ with 90 days selected initially. Validate the selection before mapping Never to 
 a missing selection is not Never. Compute finite expiry at submission as local now plus calendar
 days, then convert to UTC. The token table shows locale date-only or Never, never a detailed time;
 persist precise UTC expiry internally. Invalid submissions stay open; cancellation issues nothing.
-Successful issuance shows the existing one-time secret dialog, clears its field/local string,
-then closes the form. Never retain a secret getter or restore a previous form's grants/secret.
+Successful issuance shows the one-time secret dialog with Copy (`ActionRole`) and Close.
+Copy uses `ClipboardUtils::setTextToClipboard()` on the complete field value, regardless of
+selection, without accepting/closing the dialog. Never auto-copy or auto-clear the clipboard.
+Closing clears the field/local secret string, then closes the form. Never retain a secret getter
+or restore a previous form's grants/secret.
 The controller still owns current-grant validation and durable publication; the page has no
 inline issuance controls or hidden grant refresh path.
 

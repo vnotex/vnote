@@ -12866,10 +12866,6 @@ Continue?</source>
         <translation>비활성화됨</translation>
     </message>
     <message>
-        <source>Token issued and saved.</source>
-        <translation>토큰이 발급되고 저장되었습니다.</translation>
-    </message>
-    <message>
         <source>Revoke Token</source>
         <translation>토큰 취소</translation>
     </message>
@@ -12877,17 +12873,13 @@ Continue?</source>
         <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
         <translation>이 토큰을 취소하시겠습니까? 대기 중인 요청은 즉시 접근 권한을 잃으며 이미 확정된 변경 사항은 되돌릴 수 없습니다.</translation>
     </message>
-    <message>
-        <source>Token revoked and the revocation saved.</source>
-        <translation>토큰이 취소되고 취소 정보가 저장되었습니다.</translation>
-    </message>
-    <message>
-        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
-        <translation>취소 정보를 영구적으로 저장하지 못했습니다. 다시 시작하기 전에 수신 상태를 확인하세요. %1</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
+        <source>Copy</source>
+        <translation>복사</translation>
+    </message>
     <message>
         <source>Expiry</source>
         <translation>유효 기간</translation>
@@ -12937,8 +12929,8 @@ Continue?</source>
         <translation>허용된 노트북</translation>
     </message>
     <message>
-        <source>Select one or more currently open notebooks</source>
-        <translation>현재 열려 있는 노트북을 하나 이상 선택</translation>
+        <source>Select one or more notebooks for access</source>
+        <translation>접근을 허용할 노트북을 하나 이상 선택</translation>
     </message>
     <message>
         <source>Read saved notes and search (notes:read)</source>
@@ -13006,6 +12998,10 @@ Continue?</source>
 </context>
 <context>
     <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Token revocation failed</source>
+        <translation>토큰 취소 실패</translation>
+    </message>
     <message>
         <source>Service disabled</source>
         <translation>서비스 비활성화됨</translation>

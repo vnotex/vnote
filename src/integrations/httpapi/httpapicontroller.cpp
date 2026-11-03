@@ -14,6 +14,7 @@
 #include <core/mainconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notificationservice.h>
 #include <http/httptypes.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -255,17 +256,31 @@ bool HttpApiController::issueToken(const QString &p_label, const QSet<QString> &
 
 bool HttpApiController::revokeToken(const QString &p_id, QString *p_error) {
   Q_ASSERT(QThread::currentThread() == thread());
+  auto reportFailure = [this, p_error](const QString &p_message) {
+    fail(p_message, p_error);
+    if (auto *notifications = m_services.get<NotificationService>()) {
+      NotificationMessage message;
+      message.m_category = QStringLiteral("httpapi");
+      message.m_title = tr("Token revocation failed");
+      message.m_text = p_message;
+      message.m_severity = NotificationMessage::Severity::Error;
+      message.m_attention = NotificationMessage::Attention::Interrupt;
+      message.m_duration = NotificationMessage::Duration::Persist;
+      notifications->notify(std::move(message));
+    }
+    return false;
+  };
   QString error;
   if (m_stopping || !ensureCredentials(&error)) {
-    return fail(error.isEmpty() ? tr("HTTP API is shutting down") : error, p_error);
+    return reportFailure(error.isEmpty() ? tr("HTTP API is shutting down") : error);
   }
   const bool ok = m_auth->revoke(p_id, &error);
   emit tokensChanged();
   if (!ok) {
-    return fail(tr("Token access is blocked for this session, but revocation could not be saved "
-                   "(%1). The HTTP API has been stopped.")
-                    .arg(error),
-                p_error);
+    return reportFailure(
+        tr("Token access is blocked for this session, but revocation could not be saved "
+           "(%1). The HTTP API has been stopped.")
+            .arg(error));
   }
   return true;
 }

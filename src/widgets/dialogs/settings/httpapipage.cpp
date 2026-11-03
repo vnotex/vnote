@@ -135,11 +135,6 @@ void HttpApiPage::setupUI() {
     refreshStatus();
   });
   tokens->addWidget(buttonWidget);
-  m_tokenResult = new QLabel(this);
-  m_tokenResult->setObjectName(QStringLiteral("HttpApiTokenResult"));
-  m_tokenResult->setTextFormat(Qt::PlainText);
-  m_tokenResult->setWordWrap(true);
-  tokens->addWidget(m_tokenResult);
 
   layout->addStretch();
 }
@@ -243,9 +238,7 @@ void HttpApiPage::refreshTokens() {
 
 void HttpApiPage::newToken() {
   NewHttpApiTokenDialog dialog(m_services, this);
-  if (dialog.exec() == QDialog::Accepted) {
-    m_tokenResult->setText(tr("Token issued and saved."));
-  }
+  dialog.exec();
 }
 
 void HttpApiPage::revokeToken() {
@@ -261,14 +254,7 @@ void HttpApiPage::revokeToken() {
                             QMessageBox::No) != QMessageBox::Yes) {
     return;
   }
-  QString error;
-  if (m_controller->revokeToken(id, &error)) {
-    m_tokenResult->setText(tr("Token revoked and the revocation saved."));
-  } else {
-    m_tokenResult->setText(
-        tr("Revocation could not be saved durably. Check the listener status before restarting. %1")
-            .arg(error));
-  }
+  m_controller->revokeToken(id, nullptr);
   refreshTokens();
   refreshStatus();
 }

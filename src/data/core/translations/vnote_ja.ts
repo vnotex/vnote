@@ -12866,10 +12866,6 @@ Continue?</source>
         <translation>無効</translation>
     </message>
     <message>
-        <source>Token issued and saved.</source>
-        <translation>トークンを発行して保存しました。</translation>
-    </message>
-    <message>
         <source>Revoke Token</source>
         <translation>トークンを失効</translation>
     </message>
@@ -12877,17 +12873,13 @@ Continue?</source>
         <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
         <translation>このトークンを失効させますか？待機中のリクエストは直ちにアクセスできなくなります。確定済みの変更は元に戻せません。</translation>
     </message>
-    <message>
-        <source>Token revoked and the revocation saved.</source>
-        <translation>トークンを失効させ、失効情報を保存しました。</translation>
-    </message>
-    <message>
-        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
-        <translation>失効情報を永続的に保存できませんでした。再起動する前に待ち受け状態を確認してください。%1</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
+        <source>Copy</source>
+        <translation>コピー</translation>
+    </message>
     <message>
         <source>Expiry</source>
         <translation>有効期限</translation>
@@ -12937,8 +12929,8 @@ Continue?</source>
         <translation>アクセスを許可するノートブック</translation>
     </message>
     <message>
-        <source>Select one or more currently open notebooks</source>
-        <translation>現在開いているノートブックを 1 つ以上選択</translation>
+        <source>Select one or more notebooks for access</source>
+        <translation>アクセスを許可するノートブックを 1 つ以上選択</translation>
     </message>
     <message>
         <source>Read saved notes and search (notes:read)</source>
@@ -13006,6 +12998,10 @@ Continue?</source>
 </context>
 <context>
     <name>vnotex::HttpApiController</name>
+    <message>
+        <source>Token revocation failed</source>
+        <translation>トークンの失効に失敗</translation>
+    </message>
     <message>
         <source>Service disabled</source>
         <translation>サービスは無効です</translation>
