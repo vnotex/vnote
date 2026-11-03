@@ -18,6 +18,7 @@
 #include <utils/widgetutils.h>
 #include <vtextedit/spellchecker.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
 #include <core/widgetconfig.h>
@@ -157,6 +158,7 @@ void EditorPage::setupUI() {
 
   {
     auto *spellCheckWidget = new QWidget(this);
+    spellCheckWidget->setProperty(PropertyDefs::c_settingsContainer, true);
     auto *lineLayout = new QHBoxLayout(spellCheckWidget);
     lineLayout->setContentsMargins(0, 0, 0, 0);
 

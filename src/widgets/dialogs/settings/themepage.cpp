@@ -14,6 +14,7 @@
 #include <gui/utils/themeutils.h>
 #include <utils/widgetutils.h>
 #include <widgets/listwidget.h>
+#include <widgets/propertydefs.h>
 #include <widgets/settingswidget.h>
 
 #include "settingspagehelper.h"
@@ -35,6 +36,7 @@ void ThemePage::setupUI() {
   // Buttons row: Refresh + Open Location.
   {
     auto *buttonWidget = new QWidget(this);
+    buttonWidget->setProperty(PropertyDefs::c_settingsContainer, true);
     auto *buttonLayout = new QHBoxLayout(buttonWidget);
     buttonLayout->setContentsMargins(16, 6, 16, 6);
 

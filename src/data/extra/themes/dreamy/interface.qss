@@ -1330,6 +1330,11 @@ QWidget[SettingsRow="true"] {
     border: none;
 }
 
+/* Layout-only wrappers reveal the card without changing their child controls. */
+QFrame[SettingsCard="true"] QWidget[SettingsContainer="true"] {
+    background-color: transparent;
+}
+
 /* vnotex::InlineBanner - inline notification strip (see src/widgets/AGENTS.md).
    Fill and text use the chrome roles so the strip reads as chrome above the
    editor content; severity is carried by the BannerSeverity property on the

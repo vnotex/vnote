@@ -642,10 +642,12 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
   {
     auto *jarWidget = new QWidget(this);
+    jarWidget->setProperty(PropertyDefs::c_settingsContainer, true);
     auto *jarLayout = new QHBoxLayout(jarWidget);
     jarLayout->setContentsMargins(0, 0, 0, 0);
 
     m_plantUmlJarFileInput = new LocationInputWithBrowseButton(this);
+    m_plantUmlJarFileInput->setProperty(PropertyDefs::c_settingsContainer, true);
     m_plantUmlJarFileInput->setToolTip(tr("Local JAR file to render PlantUml graphs"));
     m_plantUmlJarFileInput->setBrowseType(LocationInputWithBrowseButton::File,
                                           tr("Select PlantUml JAR File"),
@@ -715,10 +717,12 @@ void MarkdownEditorPage::setupGeneralGroup() {
 
   {
     auto *fileWidget = new QWidget(this);
+    fileWidget->setProperty(PropertyDefs::c_settingsContainer, true);
     auto *fileLayout = new QHBoxLayout(fileWidget);
     fileLayout->setContentsMargins(0, 0, 0, 0);
 
     m_graphvizFileInput = new LocationInputWithBrowseButton(this);
+    m_graphvizFileInput->setProperty(PropertyDefs::c_settingsContainer, true);
     m_graphvizFileInput->setToolTip(tr("Local executable file to render Graphviz graphs"));
     m_graphvizFileInput->setBrowseType(LocationInputWithBrowseButton::File,
                                        tr("Select Graphviz Executable File"));

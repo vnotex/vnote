@@ -8,6 +8,7 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/sessionconfig.h>
 #include <widgets/lineedit.h>
+#include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
 #include "settingspagehelper.h"
@@ -218,6 +219,7 @@ void FileAssociationPage::loadExternalProgramsGroup() {
 
   // Fill the action row with the same themed background as the program rows.
   auto *buttonRow = new QWidget(m_externalCardLayout->parentWidget());
+  buttonRow->setProperty(PropertyDefs::c_settingsContainer, true);
   auto *buttonLayout = new QVBoxLayout(buttonRow);
   buttonLayout->setContentsMargins(16, 6, 16, 6);
   m_addProgramButton = new QPushButton(tr("Add Program"), buttonRow);
@@ -240,6 +242,7 @@ void FileAssociationPage::loadExternalProgramsGroup() {
 void FileAssociationPage::addExternalProgramRow(const QString &p_name, const QString &p_command,
                                                 const QString &p_suffixes) {
   auto *rowWidget = new QWidget(m_externalCardLayout->parentWidget());
+  rowWidget->setProperty(PropertyDefs::c_settingsContainer, true);
   rowWidget->setProperty("programRow", true);
 
   auto *rowLayout = new QVBoxLayout(rowWidget);

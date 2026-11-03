@@ -59,6 +59,9 @@ public:
 
   static const char *c_settingsRow;
 
+  // Layout-only container within a SettingsCard; preserves borders and control states.
+  static const char *c_settingsContainer;
+
   static const char *c_settingsSeparator;
 };
 } // namespace vnotex

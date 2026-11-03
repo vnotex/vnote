@@ -67,6 +67,16 @@ convention, not a rule that every input must occupy the same row as its label.
   wrap across the available width. Use existing themed description/card properties, never
   inline colors. Keep checkbox text beside the checkbox and use `createCheckBoxRow()`;
   related checkbox lists retain a wrapping group heading rather than duplicate field labels.
+- **Card surfaces:** the `SettingsCard` owns its background. Set
+  `PropertyDefs::c_settingsContainer` on layout-only nested wrappers before first show;
+  every bundled theme makes only those opted-in card descendants transparent. Do not mark
+  inputs, buttons, lists or preview editors, apply blanket descendant transparency, or
+  change enabled state to obtain a colour. White/grey is not a saved/disabled/advanced
+  settings distinction. Keep borders and geometry: Native has a narrowly scoped explicit
+  frame rule for opted-in group boxes because a stylesheet background replaces native
+  frame painting. Page-level surfaces and other dialogs remain outside this rule. Custom
+  themes need the same container rule; a same-version development profile may need its
+  deployed bundled QSS refreshed, since Theme Refresh does not reinstall cached assets.
 - **Action rows:** standalone section and item actions are direction-aware leading-aligned
   (left in LTR, right in RTL) and naturally sized, never stretched across the row. Keep
   related buttons together, with trailing stretch; use `Qt::AlignLeading` for a single

@@ -21,6 +21,7 @@
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 #include <widgets/messageboxhelper.h>
+#include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
 #include "newquickaccessitemdialog.h"
@@ -44,6 +45,7 @@ void QuickAccessPage::setupUI() {
     // New button row.
     {
       auto *headerWidget = new QWidget(this);
+      headerWidget->setProperty(PropertyDefs::c_settingsContainer, true);
       auto *headerLayout = new QHBoxLayout(headerWidget);
       headerLayout->setContentsMargins(16, 6, 16, 6);
       auto *newBtn = new QPushButton(tr("New"), this);
@@ -80,6 +82,7 @@ void QuickAccessPage::setupUI() {
     // Scheme selector.
     {
       auto *selectorWidget = new QWidget(this);
+      selectorWidget->setProperty(PropertyDefs::c_settingsContainer, true);
       auto *selectorLayout = new QVBoxLayout(selectorWidget);
       selectorLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -118,6 +121,7 @@ void QuickAccessPage::setupUI() {
       cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
 
       m_quickNoteInfoGroupBox = new QGroupBox(this);
+      m_quickNoteInfoGroupBox->setProperty(PropertyDefs::c_settingsContainer, true);
       auto *infoLayout = new QVBoxLayout(m_quickNoteInfoGroupBox);
       infoLayout->setContentsMargins(0, 0, 0, 0);
       infoLayout->setSpacing(0);
@@ -125,6 +129,7 @@ void QuickAccessPage::setupUI() {
       {
         const QString label(tr("Folder"));
         m_quickNoteFolderPathInput = new LocationInputWithBrowseButton(m_quickNoteInfoGroupBox);
+        m_quickNoteFolderPathInput->setProperty(PropertyDefs::c_settingsContainer, true);
         m_quickNoteFolderPathInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                                   tr("Select Quick Note Folder"));
         m_quickNoteFolderPathInput->setPlaceholderText(
@@ -155,6 +160,7 @@ void QuickAccessPage::setupUI() {
       {
         const QString label(tr("Template"));
         m_quickNoteTemplateSelector = new NoteTemplateSelector(m_services, m_quickNoteInfoGroupBox);
+        m_quickNoteTemplateSelector->setProperty(PropertyDefs::c_settingsContainer, true);
         infoLayout->addWidget(SettingsPageHelper::createSettingRow(
             label, QString(), m_quickNoteTemplateSelector, m_quickNoteInfoGroupBox,
             SettingsPageHelper::RowLayout::FullWidth,

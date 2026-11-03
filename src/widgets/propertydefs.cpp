@@ -44,4 +44,6 @@ const char *PropertyDefs::c_settingsDescription = "SettingsDescription";
 
 const char *PropertyDefs::c_settingsRow = "SettingsRow";
 
+const char *PropertyDefs::c_settingsContainer = "SettingsContainer";
+
 const char *PropertyDefs::c_settingsSeparator = "SettingsSeparator";

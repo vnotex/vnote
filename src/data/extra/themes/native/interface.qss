@@ -224,6 +224,18 @@ QWidget[SettingsRow="true"] {
     border: none;
 }
 
+/* Layout-only wrappers reveal the card without changing their child controls. */
+QFrame[SettingsCard="true"] QWidget[SettingsContainer="true"] {
+    background-color: transparent;
+}
+
+/* Preserve the native group frame and its two-pixel content inset. */
+QFrame[SettingsCard="true"] QGroupBox[SettingsContainer="true"] {
+    background-color: transparent;
+    border: 1px solid @widgets#settingscard#border;
+    padding: 1px;
+}
+
 /* vnotex::InlineBanner - inline notification strip (see src/widgets/AGENTS.md).
    Fill and text use the chrome roles so the strip reads as chrome above the
    editor content; severity is carried by the BannerSeverity property on the

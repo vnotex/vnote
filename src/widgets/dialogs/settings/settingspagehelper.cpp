@@ -164,6 +164,7 @@ QVBoxLayout *SettingsPageHelper::addSection(QVBoxLayout *p_parentLayout, const Q
 
   // Title row with padding.
   auto *titleWidget = new QWidget(card);
+  titleWidget->setProperty(PropertyDefs::c_settingsContainer, true);
   auto *titleLayout = new QVBoxLayout(titleWidget);
   titleLayout->setContentsMargins(16, 12, 16, 8);
   titleLayout->setSpacing(4);
