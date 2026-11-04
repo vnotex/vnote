@@ -471,7 +471,8 @@ bool clickNoteControl(MindMapEditor *p_map, const QString &p_id = QStringLiteral
     return false;
   const auto point = [&] {
     for (auto *item : canvas->scene()->items()) {
-      if (item->isVisible() && item->cursor().shape() == Qt::PointingHandCursor &&
+      if (item->isVisible() && item->parentItem() && item->parentItem()->isSelected() &&
+          item->cursor().shape() == Qt::PointingHandCursor &&
           item->toolTip() == QCoreApplication::translate("m3::qt::MindMapEditor", "Edit Note")) {
         const auto pos = canvas->mapFromScene(item->sceneBoundingRect().center());
         if (canvas->viewport()->rect().contains(pos))
@@ -4071,7 +4072,8 @@ void TestViewAreaTabReuse::previewMindMapNoteLifecycle() {
   }
   const auto id =
       operation == QLatin1String("missing-note") ? QStringLiteral("b") : QStringLiteral("a");
-  QVERIFY(clickNoteControl(map, id));
+  QVERIFY(operation == QLatin1String("missing-note") ? triggerNoteCommand(map, id)
+                                                     : clickNoteControl(map, id));
   QTRY_VERIFY(f->current() != source);
   QPointer<ViewWindow2> note(f->current());
   const auto preview = f->workspace();
