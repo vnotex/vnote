@@ -1,6 +1,7 @@
 #ifndef SESSIONCONFIG_H
 #define SESSIONCONFIG_H
 
+#include "httpapiconfig.h"
 #include "iconfig.h"
 
 #include <QSize>
@@ -108,6 +109,9 @@ public:
   ~SessionConfig();
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
+
+  HttpApiConfig &getHttpApiConfig();
+  const HttpApiConfig &getHttpApiConfig() const;
 
   const QString &getNewNotebookDefaultRootFolderPath() const;
   void setNewNotebookDefaultRootFolderPath(const QString &p_path);
@@ -236,6 +240,8 @@ private:
   void loadExportOption(const QJsonObject &p_session);
 
   QJsonObject saveExportOption() const;
+
+  HttpApiConfig m_httpApiConfig;
 
   QString m_newNotebookDefaultRootFolderPath;
 

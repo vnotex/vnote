@@ -15,8 +15,8 @@ HttpApiConfig::HttpApiConfig(IConfigMgr *p_mgr, IConfig *p_parentConfig)
 }
 
 void HttpApiConfig::fromJson(const QJsonObject &p_jobj) {
-  // ConfigMgr2 supplies defaults through its merge patch. An absent field here was
-  // explicitly deleted, or the section had the wrong type: retain a durable rejection.
+  // SessionConfig supplies absent-field defaults. Missing fields here mean the
+  // section had the wrong type: retain a durable rejection, including explicit nulls.
   for (auto it = m_values.begin(); it != m_values.end(); ++it) {
     const auto value = p_jobj.value(it.key());
     it.value() = value.isUndefined() ? QJsonValue(QJsonValue::Null) : value;

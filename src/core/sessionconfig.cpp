@@ -114,11 +114,12 @@ bool SessionConfig::ExternalProgram::isSystemProgram() const {
 }
 
 SessionConfig::SessionConfig(IConfigMgr *p_mgr)
-    : IConfig(p_mgr, nullptr), m_quickNoteSchemes{{QStringLiteral("Quick Note in Current Notebook"),
-                                                   QStringLiteral("Quick Notes"),
-                                                   QStringLiteral("quick_note_%da%.md"),
-                                                   {},
-                                                   false}} {}
+    : IConfig(p_mgr, nullptr), m_httpApiConfig(p_mgr, this),
+      m_quickNoteSchemes{{QStringLiteral("Quick Note in Current Notebook"),
+                          QStringLiteral("Quick Notes"),
+                          QStringLiteral("quick_note_%da%.md"),
+                          {},
+                          false}} {}
 
 SessionConfig::~SessionConfig() {}
 
@@ -148,6 +149,24 @@ void SessionConfig::fromJson(const QJsonObject &p_jobj) {
   loadExternalPrograms(p_jobj);
 
   loadQuickNoteSchemes(p_jobj);
+
+  // Only HTTP settings receive defaults; other session fields depend on absence.
+  auto httpApi = HttpApiConfig(nullptr).toJson();
+  const auto section = p_jobj.value(m_httpApiConfig.getSectionName());
+  if (!section.isUndefined()) {
+    if (section.isObject()) {
+      const auto values = section.toObject();
+      for (auto it = httpApi.begin(); it != httpApi.end(); ++it) {
+        if (values.contains(it.key())) {
+          it.value() = values.value(it.key());
+        }
+      }
+    } else {
+      // The strict parser retains a malformed section as invalid null fields.
+      httpApi = QJsonObject();
+    }
+  }
+  m_httpApiConfig.fromJson(httpApi);
 }
 
 void SessionConfig::loadCore(const QJsonObject &p_session) {
@@ -290,6 +309,10 @@ void SessionConfig::setNextToolTipIndex(int p_index) {
   updateConfig(m_nextToolTipIndex, qMax(0, p_index), this);
 }
 
+HttpApiConfig &SessionConfig::getHttpApiConfig() { return m_httpApiConfig; }
+
+const HttpApiConfig &SessionConfig::getHttpApiConfig() const { return m_httpApiConfig; }
+
 void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }
 
 QJsonObject SessionConfig::toJson() const {
@@ -309,6 +332,7 @@ QJsonObject SessionConfig::toJson() const {
   writeByteArray(obj, QStringLiteral("tagExplorerSession"), m_tagExplorerSession);
   obj[QStringLiteral("externalPrograms")] = saveExternalPrograms();
   obj[QStringLiteral("quickNoteSchemes")] = saveQuickNoteSchemes();
+  obj[m_httpApiConfig.getSectionName()] = m_httpApiConfig.toJson();
   return obj;
 }
 

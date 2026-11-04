@@ -100,12 +100,15 @@ normal drain/reconciliation semantics and all privacy exclusions above.
 
 ## Configuration and settings
 
-`HttpApiConfig` is a typed MainConfig child in both app and core_configs builds.
-Access it only through ConfigMgr2's merged configuration. Its persisted listener fields are
-`enabled`, `address` and `port`; public HTTPS URLs belong in proxy/client configuration, not here.
-Undeclared input keys are ignored and omitted by normal serialization/save. Missing-after-merge,
-null or malformed values stay invalid through unrelated preference saves; validate
-before reading listener settings even when enabled is false.
+`HttpApiConfig` is a typed `SessionConfig` child in both app and core_configs builds.
+Access it through `ConfigMgr2::getSessionConfig().getHttpApiConfig()`. Its listener fields
+`enabled`, `address` and `port` persist under `httpApi` in local `session.json`, not `vnotex.json`.
+Main-config values are ignored, with no import or fallback. Public HTTPS URLs belong in
+proxy/client configuration, not here. Absent sections/fields use disabled loopback defaults;
+only this section receives defaults, not the rest of the session document. Undeclared keys are
+ignored and omitted on save. Null or malformed values, including non-object sections, stay
+invalid through unrelated session saves; validate before reading listener settings even when
+enabled is false. Token verifiers/grants remain in their separate protected store.
 
 The Settings page is a view. Issue/revoke are explicit immediate controller
 commands; resetting the page changes no grants. Default token choices are read-only

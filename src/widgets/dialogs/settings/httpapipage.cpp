@@ -21,8 +21,8 @@
 #include "settingspagehelper.h"
 #include <core/configmgr2.h>
 #include <core/httpapiconfig.h>
-#include <core/mainconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <integrations/httpapi/httpapicontroller.h>
 #include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
@@ -140,7 +140,7 @@ void HttpApiPage::setupUI() {
 }
 
 void HttpApiPage::loadInternal() {
-  const auto &config = m_services.get<ConfigMgr2>()->getConfig().getHttpApiConfig();
+  const auto &config = m_services.get<ConfigMgr2>()->getSessionConfig().getHttpApiConfig();
   m_enabled->setChecked(config.isEnabled());
   m_address->setText(config.getAddress());
   m_port->setText(config.toJson().value(QStringLiteral("port")).toVariant().toString());
@@ -169,7 +169,7 @@ bool HttpApiPage::saveInternal() {
     return false;
   }
 
-  auto &config = m_services.get<ConfigMgr2>()->getConfig().getHttpApiConfig();
+  auto &config = m_services.get<ConfigMgr2>()->getSessionConfig().getHttpApiConfig();
   config.setEnabled(candidate.isEnabled());
   config.setAddress(candidate.getAddress());
   config.setPort(candidate.getPort());

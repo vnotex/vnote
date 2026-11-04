@@ -11,10 +11,10 @@
 #include <api/apiserver.h>
 #include <core/configmgr2.h>
 #include <core/httpapiconfig.h>
-#include <core/mainconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notificationservice.h>
+#include <core/sessionconfig.h>
 #include <http/httptypes.h>
 #include <vxcore/notebook_json_keys.h>
 
@@ -117,7 +117,7 @@ bool HttpApiController::apply(QString *p_error) {
   if (!config) {
     return fail(tr("HTTP API configuration is unavailable"), p_error);
   }
-  const auto &settings = config->getConfig().getHttpApiConfig();
+  const auto &settings = config->getSessionConfig().getHttpApiConfig();
   QString error;
   if (!settings.isValid(&error)) {
     return fail(tr("Invalid HTTP API settings: %1").arg(error), p_error);
@@ -170,7 +170,7 @@ QString HttpApiController::endpoint() const {
   if (!config) {
     return {};
   }
-  const auto &settings = config->getConfig().getHttpApiConfig();
+  const auto &settings = config->getSessionConfig().getHttpApiConfig();
   if (!settings.isValid()) {
     return {};
   }

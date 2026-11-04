@@ -18,7 +18,6 @@
 #include <api/apiauth.h>
 #include <core/configmgr2.h>
 #include <core/httpapiconfig.h>
-#include <core/mainconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
@@ -30,6 +29,7 @@
 #include <core/services/searchcoreservice.h>
 #include <core/services/searchservice.h>
 #include <core/services/syncworkqueuemanager.h>
+#include <core/sessionconfig.h>
 #include <integrations/httpapi/apicredentialstore.h>
 #include <integrations/httpapi/httpapicontroller.h>
 #include <vxcore/vxcore.h>
@@ -252,7 +252,7 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
   QVERIFY(!notebook.isEmpty());
   const auto port = availablePort();
   QVERIFY(port != 0);
-  auto &settings = config.getConfig().getHttpApiConfig();
+  auto &settings = config.getSessionConfig().getHttpApiConfig();
   settings.setAddress(QStringLiteral("127.0.0.1"));
   settings.setPort(port);
   settings.setEnabled(false);

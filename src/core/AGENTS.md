@@ -146,12 +146,14 @@ the target root changelog section in the same commit as the version bump.
 
 ### HTTP API configuration
 
-`HttpApiConfig` is a typed `MainConfig` child; access it through
-`ConfigMgr2::getConfig().getHttpApiConfig()`. Both the application and `core_configs`
-compile the same implementation. Absent settings retain disabled defaults, but malformed or
-explicitly null settings remain invalid through unrelated preference saves. Call `isValid()`
-before using listener fields, including when disabled. Token verifiers/grants are not part of
-the debounced main configuration. Runtime and private-storage ownership:
+`HttpApiConfig` is a typed `SessionConfig` child; access it through
+`ConfigMgr2::getSessionConfig().getHttpApiConfig()`. Both the application and `core_configs`
+compile the same implementation. Listener settings persist in the local `session.json`, not
+`vnotex.json`; there is no main-config import or fallback. Only the `httpApi` section receives
+absent-field defaults; the rest of the session document remains unmerged. Malformed or explicitly
+null settings remain invalid through unrelated session saves. Call `isValid()` before using
+listener fields, including when disabled. Token verifiers/grants remain separate from both
+configuration files. Runtime and private-storage ownership:
 [`../integrations/httpapi/AGENTS.md`](../integrations/httpapi/AGENTS.md).
 
 ### Interface translations

@@ -22,6 +22,10 @@ headless product, or public TLS listener. The machine-readable contract is
 5. Send `Authorization: Bearer <id.secret>` on every request, including `/info` and operations.
    There is no remote token-management endpoint. Revoke a client from Settings.
 
+Listener settings (`enabled`, `address`, `port`) persist under `httpApi` in the local
+`session.json`, across restarts. They are not stored in the main `vnotex.json`; any HTTP API
+settings there are ignored, not migrated. An absent section defaults to disabled.
+
 Token issuance is available while the listener is disabled. Merely leaving the feature disabled
 creates neither a listener nor a credential registry. The verifier registry is separate from
 ordinary debounced preferences, protected for the OS owner, and contains SHA-256 verifiers,

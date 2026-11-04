@@ -1571,58 +1571,85 @@ void TestConfigMgr2::testMindMapEditor_shortcutFilteringPreservesRawOverrides() 
 }
 
 void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
-  // Exercise the actual absent-section and per-key merge before enabling a listener.
-  QVERIFY(!loadThroughMergePath(QJsonObject()).isEmpty());
+  const auto savedMain =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto savedSession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), savedMain);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        savedSession);
+  });
+  // Main-config listener values are ignored, not migrated into a local profile.
+  const QJsonObject mainBefore{
+      {QStringLiteral("metadata"),
+       QJsonObject{{QStringLiteral("version"), ConfigMgr2::getApplicationVersion()}}},
+      {QStringLiteral("httpApi"), QJsonObject{{QStringLiteral("enabled"), true},
+                                              {QStringLiteral("address"), QStringLiteral("::1")},
+                                              {QStringLiteral("port"), 34567}}}};
+  QVERIFY(
+      m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), mainBefore)
+          .isOk());
+  QVERIFY(m_configService
+              ->updateConfigByName(DataLocation::Local, QStringLiteral("session"), QJsonObject())
+              .isOk());
   {
     ConfigMgr2 mgr(m_configService);
     mgr.init();
-    auto &api = mgr.getConfig().getHttpApiConfig();
+    auto &api = mgr.getSessionConfig().getHttpApiConfig();
     QVERIFY(api.isValid());
     QVERIFY(!api.isEnabled());
     QCOMPARE(api.getAddress(), QStringLiteral("127.0.0.1"));
     QCOMPARE(api.getPort(), 18765);
+    QVERIFY(!mgr.getConfig().toJson().contains(QStringLiteral("httpApi")));
+
+    // Repeated loads reset omitted HTTP fields, without merging other session sections.
+    auto &session = mgr.getSessionConfig();
+    session.fromJson(QJsonObject{
+        {QStringLiteral("httpApi"), QJsonObject{{QStringLiteral("enabled"), true},
+                                                {QStringLiteral("address"), QStringLiteral("::1")},
+                                                {QStringLiteral("port"), 23456}}}});
+    session.fromJson(
+        QJsonObject{{QStringLiteral("httpApi"), QJsonObject{{QStringLiteral("enabled"), true}}}});
+    QVERIFY(api.isEnabled());
+    QCOMPARE(api.getAddress(), QStringLiteral("127.0.0.1"));
+    QCOMPARE(api.getPort(), 18765);
+    session.fromJson(QJsonObject());
+    QVERIFY(api.isValid());
+    QVERIFY(!api.isEnabled());
   }
-  QVERIFY(!loadThroughMergePath(QJsonObject{{QStringLiteral("httpApi"),
-                                             QJsonObject{{QStringLiteral("enabled"), true},
-                                                         {QStringLiteral("externalBaseUrl"),
-                                                          QJsonObject{{"obsolete", true}}}}}})
-               .isEmpty());
-  QString configFile;
+  QVERIFY(m_configService
+              ->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                   QJsonObject{{QStringLiteral("httpApi"),
+                                                QJsonObject{{QStringLiteral("enabled"), true},
+                                                            {QStringLiteral("externalBaseUrl"),
+                                                             QJsonObject{{"obsolete", true}}}}}})
+              .isOk());
   {
     ConfigMgr2 mgr(m_configService);
     mgr.init();
-    auto &api = mgr.getConfig().getHttpApiConfig();
+    auto &api = mgr.getSessionConfig().getHttpApiConfig();
     QVERIFY(api.isValid());
     QVERIFY(api.isEnabled());
     QCOMPARE(api.getPort(), 18765);
-    configFile = mgr.getFileFromConfigFolder(QStringLiteral("vnotex.json"));
-    QFile before(configFile);
-    QVERIFY(before.open(QIODevice::ReadOnly));
-    QVERIFY(QJsonDocument::fromJson(before.readAll())
-                .object()
-                .value("httpApi")
-                .toObject()
-                .value("externalBaseUrl")
-                .isObject());
-    before.close();
     api.setAddress(QStringLiteral("::1"));
     api.setPort(23456);
     QVERIFY(api.isValid());
   }
-  {
-    QFile after(configFile);
-    QVERIFY(after.open(QIODevice::ReadOnly));
-    const auto persisted =
-        QJsonDocument::fromJson(after.readAll()).object().value("httpApi").toObject();
-    QVERIFY(!persisted.contains("externalBaseUrl"));
-    QCOMPARE(persisted.value("enabled"), QJsonValue(true));
-    QCOMPARE(persisted.value("address").toString(), QStringLiteral("::1"));
-    QCOMPARE(persisted.value("port").toInt(), 23456);
-  }
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"))
+          .value(QStringLiteral("httpApi"))
+          .toObject();
+  QVERIFY(!persisted.contains("externalBaseUrl"));
+  QCOMPARE(persisted.value("enabled"), QJsonValue(true));
+  QCOMPARE(persisted.value("address").toString(), QStringLiteral("::1"));
+  QCOMPARE(persisted.value("port").toInt(), 23456);
+  QCOMPARE(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")),
+           mainBefore);
   {
     ConfigMgr2 restarted(m_configService);
     restarted.init();
-    auto &api = restarted.getConfig().getHttpApiConfig();
+    auto &api = restarted.getSessionConfig().getHttpApiConfig();
     QVERIFY(api.isValid());
     QVERIFY(api.isEnabled());
     QCOMPARE(api.getAddress(), QStringLiteral("::1"));
@@ -1631,7 +1658,7 @@ void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
   }
   ConfigMgr2 disabled(m_configService);
   disabled.init();
-  auto &api = disabled.getConfig().getHttpApiConfig();
+  const auto &api = std::as_const(disabled).getSessionConfig().getHttpApiConfig();
   QVERIFY(api.isValid());
   QVERIFY(!api.isEnabled());
   QCOMPARE(api.getAddress(), QStringLiteral("::1"));
@@ -1675,25 +1702,35 @@ void TestConfigMgr2::testHttpApi_rejectsMalformedSettings_data() {
 
 void TestConfigMgr2::testHttpApi_rejectsMalformedSettings() {
   QFETCH(QJsonObject, patch);
-  QVERIFY(!loadThroughMergePath(patch).isEmpty());
+  const auto savedMain =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto savedSession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), savedMain);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        savedSession);
+  });
+  QVERIFY(m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"), patch)
+              .isOk());
   QJsonObject rejected;
   {
     ConfigMgr2 mgr(m_configService);
     mgr.init();
-    auto &api = mgr.getConfig().getHttpApiConfig();
+    auto &api = mgr.getSessionConfig().getHttpApiConfig();
     QString error;
     QVERIFY(!api.isValid(&error));
     QVERIFY(!error.isEmpty());
     rejected = api.toJson();
     // An unrelated preference save must not normalize the invalid API fields into
     // valid defaults and silently permit startup on the next launch.
-    auto &core = mgr.getCoreConfig();
-    core.setAlwaysOpenNotesInNewTabs(!core.getAlwaysOpenNotesInNewTabs());
+    auto &session = mgr.getSessionConfig();
+    session.setTextEditorZoomDelta(session.getTextEditorZoomDelta() + 1);
   }
   {
     ConfigMgr2 restarted(m_configService);
     restarted.init();
-    auto &api = restarted.getConfig().getHttpApiConfig();
+    auto &api = restarted.getSessionConfig().getHttpApiConfig();
     QVERIFY(!api.isValid());
     QCOMPARE(api.toJson(), rejected);
     // Repair through the same setters used by Settings, rather than reconstructing config.
@@ -1704,8 +1741,8 @@ void TestConfigMgr2::testHttpApi_rejectsMalformedSettings() {
   }
   ConfigMgr2 repaired(m_configService);
   repaired.init();
-  QVERIFY(repaired.getConfig().getHttpApiConfig().isValid());
-  QVERIFY(!repaired.getConfig().getHttpApiConfig().isEnabled());
+  QVERIFY(repaired.getSessionConfig().getHttpApiConfig().isValid());
+  QVERIFY(!repaired.getSessionConfig().getHttpApiConfig().isEnabled());
 }
 
 // ============ Absent-key safety (the defaults merge) ============
@@ -1929,8 +1966,6 @@ void TestConfigMgr2::testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected() {
 void TestConfigMgr2::testAnExplicitNullDeletesTheKey() {
   // Pinning merge_patch's (RFC 7386) null semantics: a JSON null DELETES the key rather than
   // selecting the default, so the ordinary read helper's zero value applies.
-  // HttpApiConfig deliberately preserves nulls to reject malformed security settings;
-  // its separate regression ensures this invalid state survives subsequent writes.
   MainConfig defaults(m_configMgr);
   const QJsonObject defaultsJson = defaults.toJson();
 
