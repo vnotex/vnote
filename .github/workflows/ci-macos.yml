@@ -385,8 +385,8 @@ jobs:
         run: |
           # Read the signed, final DMG rather than a build-tree library.
           mountpoint="$RUNNER_TEMP/typst-package"
-          mkdir "$mountpoint"
-          hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          python3 "${GITHUB_WORKSPACE}/.github/scripts/mount-macos-package.py" \
+            "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" "$mountpoint"
           trap 'hdiutil detach "$mountpoint"' EXIT
           cmake -DVNOTE_APP_DIR="$mountpoint/VNote.app" -DVERIFY_ONLY=ON -P "${GITHUB_WORKSPACE}/package/prune-macos-package.cmake"
           python3 - <<'PY'
@@ -561,21 +561,21 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         run: |
           mountpoint="$RUNNER_TEMP/typst-package"
-          mkdir "$mountpoint"
-          hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          python3 "${GITHUB_WORKSPACE}/.github/scripts/mount-macos-package.py" \
+            "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" "$mountpoint"
           trap 'hdiutil detach "$mountpoint"' EXIT
           python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_typst_package.py" \
             --library "$mountpoint/VNote.app/Contents/Frameworks/libvtextedit_typst.1.dylib"
           python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_macos_consumer.py" \
             --app "$mountpoint/VNote.app" --architecture x86_64
 
-      - name: Preserve failed Intel consumer diagnostics
-        if: ${{ always() && steps.package_verify.outcome == 'failure' }}
+      - name: Preserve Intel package consumer diagnostics
+        if: ${{ always() && (steps.package_verify.outcome == 'success' || steps.package_verify.outcome == 'failure') }}
         uses: actions/upload-artifact@v4
         with:
           name: package-consumer-diagnostics-macos-intel-${{matrix.config.qt}}
           path: ${{runner.temp}}/vnote-package-diagnostics
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 7
 
   publish:

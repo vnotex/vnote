@@ -318,6 +318,16 @@ only the exact signed DMG for reproduction, never adjacent certificates/keychain
 directory. It is diagnostic-only, not a release. Do not mask the timeout, force-unmount a busy
 package, or move SSH sessions past signing-secret provisioning.
 
+Both ARM and Intel package gates mount through `.github/scripts/mount-macos-package.py`.
+Only the exact `hdiutil: attach failed - Resource temporarily unavailable` error may retry:
+three attach attempts maximum, with 2s/4s backoff and a 60s limit per attach. Before the first
+attempt and after failures, bounded `hdiutil info -plist` must prove the exact image is absent.
+Existing/partial attachments, occupied mountpoints, ambiguous state, timeouts and other errors
+fail closed without force-detach. The helper creates the mountpoint; the caller retains the
+successful mount's EXIT detach trap. Preserve each attempt's output/status and attachment state
+under `RUNNER_TEMP/vnote-package-diagnostics`, including recovered attempts on both architectures.
+This does not retry runtime gates or establish the cause of the transient resource conflict.
+
 ## macOS runtime composition
 
 Run `package/prune-macos-package.cmake` with `VNOTE_APP_DIR` after each deployment
