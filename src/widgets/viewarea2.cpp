@@ -37,6 +37,7 @@
 #include <gui/services/viewwindowfactory.h>
 #include <gui/utils/widgetutils.h>
 
+#include "buttonpopup.h"
 #include "detachedwindow.h"
 #include "linkpreviewoverlay.h"
 #include "outlineprovider.h"
@@ -1147,14 +1148,65 @@ bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
 }
 
 void ViewArea2::removePreviewWorkspaceHost(const QString &p_workspaceId) {
+  const QPointer<ViewArea2> guard(this);
   const bool active = m_controller->getCurrentWorkspaceId() == p_workspaceId;
+  // Rebinding clears the source identity; retain it before retiring this host.
+  const auto host = m_previewHosts.value(p_workspaceId);
+  const QPointer<ViewSplit2> owner(host.source ? owningSplitForWindow(host.sourceId) : nullptr);
+  const QPointer<QWidget> window(host.source ? host.source->window() : nullptr);
+  const auto *focus = QApplication::focusWidget();
+  const bool restoreContent = host.overlay && host.overlay->isVisible() && host.source &&
+                              host.source->isVisible() && host.source->isEnabled() && owner &&
+                              owner->getCurrentViewWindow() == host.source &&
+                              (!focus || focus == owner || owner->isAncestorOf(focus));
   rebindPreviewWorkspaceSource(p_workspaceId, 0);
-  const auto host = m_previewHosts.take(p_workspaceId);
+  m_previewHosts.remove(p_workspaceId);
   if (host.overlay) {
-    host.overlay->hide();
-    host.overlay->deleteLater();
+    if (restoreContent) {
+      connect(
+          host.overlay, &QObject::destroyed, this,
+          [this, source = host.source, sourceId = host.sourceId, generation = host.generation,
+           owner, window] {
+            // Native preview children must be gone before restoring the content proxy.
+            if (!source || !owner || !window || source->window() != window ||
+                !window->isActiveWindow() || windowForId(sourceId) != source ||
+                owningSplitForWindow(sourceId) != owner ||
+                owner->getCurrentViewWindow() != source ||
+                !isPreviewSourceCurrent(sourceId, generation) ||
+                source->m_bufferReplacementInProgress || source->m_contentReplacementFrozen ||
+                !previewWorkspaceForWindow(sourceId).isEmpty() ||
+                QApplication::activeModalWidget() || ButtonPopup::activePopupWidget()) {
+              return;
+            }
+            const auto *currentFocus = QApplication::focusWidget();
+            if (currentFocus && currentFocus != owner && !owner->isAncestorOf(currentFocus)) {
+              return;
+            }
+            source->setFocus(Qt::OtherFocusReason);
+          },
+          Qt::QueuedConnection);
+      // Hiding a focused subtree walks the top-level focus chain into dock/toolbar chrome.
+      // Leave focus empty for the queued restore; a subsequent explicit focus change still wins.
+      for (int pass = 0; pass < 2 && host.overlay; ++pass) {
+        auto *currentFocus = QApplication::focusWidget();
+        if (!currentFocus ||
+            (currentFocus != host.overlay && !host.overlay->isAncestorOf(currentFocus))) {
+          break;
+        }
+        currentFocus->clearFocus();
+        if (!guard) {
+          return;
+        }
+      }
+    }
+    if (host.overlay) {
+      host.overlay->hide();
+      if (host.overlay) {
+        host.overlay->deleteLater();
+      }
+    }
   }
-  if (active) {
+  if (guard && active) {
     m_controller->clearActivePreviewWindow();
   }
 }
@@ -1794,6 +1846,32 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
     return false;
   }
 
+  if (const auto *owner = owningSplitForWindow(p_windowId); owner && owner->isPreview()) {
+    const QPointer<ViewArea2> self(this);
+    const QPointer<ViewWindow2> closing(win);
+    const auto generation = win->getBufferGeneration();
+    // FocusOut may immediately return focus to a child. Reacquire and clear once more
+    // before tab removal hides the subtree and walks the main-window focus chain.
+    for (int pass = 0; pass < 2; ++pass) {
+      auto *focus = QApplication::focusWidget();
+      if (!focus || (focus != closing && !closing->isAncestorOf(focus))) {
+        break;
+      }
+      focus->clearFocus();
+      if (!self) {
+        return true;
+      }
+      const auto *registered = windowForId(p_windowId);
+      if (!registered) {
+        return true; // A reentrant close already completed; this is not cancellation.
+      }
+      if (!closing || registered != closing || closing->getBufferGeneration() != generation) {
+        // Replacement owns a new writer and requires its own close consent.
+        return false;
+      }
+    }
+  }
+  // FocusOut callbacks may move the accepted view: resolve its final owner now.
   auto *ownerSplit = owningSplitForWindow(p_windowId);
   DetachedWindow *ownerDetached = nullptr;
   QString bufferId;

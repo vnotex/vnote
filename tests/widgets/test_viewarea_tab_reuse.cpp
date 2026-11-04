@@ -23,6 +23,7 @@
 #include <QLineEdit>
 #include <QLineF>
 #include <QListView>
+#include <QMainWindow>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
@@ -960,6 +961,10 @@ private slots:
   void previewOpenInNewTabsDuplicateConsent();
   void previewOpenInNewTabsProtectedDuplicate();
   void previewOpenInNewTabsReentrancy();
+  void previewCloseContentFocus_data();
+  void previewCloseContentFocus();
+  void previewCloseFocusInvalidation_data();
+  void previewCloseFocusInvalidation();
   void previewOutsideClickDismissal();
   void previewSourceCancellation();
   void previewSharedOwnership_data();
@@ -4873,6 +4878,209 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   QCOMPARE(f->current(), source.data());
 }
 
+void TestViewAreaTabReuse::previewCloseContentFocus_data() {
+  QTest::addColumn<QString>("kind");
+  QTest::addColumn<bool>("detached");
+  QTest::addColumn<int>("route");
+  QTest::addColumn<QString>("reaction");
+  for (const auto *kind : {"text", "mindmap", "reader"}) {
+    for (bool detached : {false, true}) {
+      for (int route = 0; route < 3; ++route) {
+        const auto row =
+            QByteArray(kind) + (detached ? "-detached-" : "-main-") + QByteArray::number(route);
+        QTest::newRow(row.constData())
+            << QString::fromLatin1(kind) << detached << route << QString();
+      }
+    }
+  }
+  QTest::newRow("mindmap-refocusing-preview")
+      << QStringLiteral("mindmap") << false << 0 << QStringLiteral("refocus");
+  QTest::newRow("mindmap-reentrant-preview-close")
+      << QStringLiteral("mindmap") << false << 3 << QStringLiteral("close");
+}
+
+void TestViewAreaTabReuse::previewCloseContentFocus() {
+  QFETCH(QString, kind);
+  QFETCH(bool, detached);
+  QFETCH(int, route);
+  QFETCH(QString, reaction);
+  // Main-window chrome precedes the source and preview in the native focus chain.
+  QMainWindow host;
+  auto *toolbar = host.addToolBar(QStringLiteral("Main window controls"));
+  auto *chrome = new QLineEdit(toolbar);
+  chrome->setFocusPolicy(Qt::StrongFocus);
+  toolbar->addWidget(chrome);
+  host.setCentralWidget(f->area.get());
+  const auto restoreArea = qScopeGuard([&] {
+    if (auto *area = host.takeCentralWidget())
+      area->setParent(nullptr);
+  });
+  host.resize(1100, 850);
+  host.show();
+  QVERIFY(activateNativeHost(chrome));
+  chrome->setFocus();
+  QTRY_VERIFY(chrome->hasFocus());
+  const bool mindmap = kind == QLatin1String("mindmap");
+  const bool readerMode = kind == QLatin1String("reader");
+  const auto name = mindmap      ? QStringLiteral("focus.emind")
+                    : readerMode ? QStringLiteral("focus.md")
+                                 : QStringLiteral("focus.txt");
+  QVERIFY(f->create(name, mindmap ? noteMapBytes() : QByteArray("# Source content\n")));
+  QVERIFY(f->create(QStringLiteral("focus-preview.txt"), "Preview content\n"));
+  const auto buffer = f->open(name);
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto main = f->workspace();
+  QPointer<QWidget> content;
+  if (mindmap) {
+    auto *map = source->findChild<MindMapEditor *>();
+    QVERIFY(map && map->selectNode(QStringLiteral("a")));
+    content = map->findChild<QGraphicsView *>();
+  } else if (readerMode) {
+    source->setMode(ViewWindowMode::Read);
+    auto *reader = source->findChild<MarkdownViewer *>();
+    QVERIFY(reader && waitForRender(reader, QStringLiteral("Source content")));
+    content = reader;
+  } else {
+    auto *editor = source->findChild<TextEditor *>();
+    QVERIFY(editor);
+    content = editor->getTextEdit();
+  }
+  QVERIFY(content);
+  const auto original = source->getLatestContent();
+  const auto mode = source->getMode();
+  if (detached) {
+    QVERIFY(f->controller()->detachViewWindow(main, sourceId, buffer.id()));
+    QVERIFY(qobject_cast<DetachedWindow *>(source->window()));
+  }
+  QVERIFY(f->preview(source, f->node(QStringLiteral("focus-preview.txt"))).isValid());
+  const auto previewWorkspace = f->area->previewWorkspaceForWindow(sourceId);
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QPointer<ViewWindow2> preview(f->current());
+  QVERIFY(overlay && preview && preview != source);
+  auto *previewEditor = preview->findChild<TextEditor *>();
+  QVERIFY(previewEditor && activateNativeHost(previewEditor->getTextEdit()));
+  previewEditor->getTextEdit()->setFocus();
+  QTRY_VERIFY(previewEditor->getTextEdit()->hasFocus());
+  bool reacted = false, reentrantClosed = false;
+  const QPointer<QWidget> previewInput(previewEditor->getTextEdit());
+  const auto focusReaction =
+      connect(qApp, &QApplication::focusChanged, this, [&](QWidget *before, QWidget *after) {
+        if (reaction.isEmpty() || reacted || !previewInput || before != previewInput || after)
+          return;
+        reacted = true;
+        if (reaction == QLatin1String("refocus"))
+          previewInput->setFocus(Qt::OtherFocusReason);
+        else
+          // The outer controller owns the transition; exercise reentrant view retirement.
+          reentrantClosed = f->area->closeViewWindow(preview->getViewWindowId(), true);
+      });
+  const auto disconnectReaction = qScopeGuard([&] { disconnect(focusReaction); });
+  if (route == 0) {
+    auto *close = overlay->findChild<QToolButton *>(QStringLiteral("closeLinkPreviewButton"));
+    QVERIFY(close && clickNativeSurface(close, close->rect().center()));
+  } else if (route == 1) {
+    auto *close = overlay->findChild<QAction *>(QStringLiteral("closeLinkPreviewAction"));
+    QVERIFY(close);
+    close->trigger();
+  } else if (route == 2) {
+    QVERIFY(f->controller()->closeViewWindow(preview->getViewWindowId(), false));
+  } else {
+    QVERIFY(f->controller()->closePreviewWorkspace(previewWorkspace));
+  }
+  if (!reaction.isEmpty())
+    QVERIFY(reacted);
+  if (reaction == QLatin1String("close"))
+    QVERIFY(reentrantClosed);
+  QTRY_VERIFY(overlay.isNull() && preview.isNull());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  const auto contentFocused = [&] {
+    auto *nativeHost = source ? source->window()->windowHandle() : nullptr;
+    auto *focusWindow = QGuiApplication::focusWindow();
+    return content && (content->hasFocus() || content->isAncestorOf(QApplication::focusWidget())) &&
+           nativeHost && focusWindow &&
+           (focusWindow == nativeHost ||
+            nativeHost->isAncestorOf(focusWindow, QWindow::ExcludeTransients));
+  };
+  QTRY_VERIFY(contentFocused());
+  QVERIFY(f->workspaces->getWorkspace(previewWorkspace).isEmpty());
+  QCOMPARE(source->getLatestContent(), original);
+  QCOMPARE(source->getMode(), mode);
+  if (mindmap) {
+    auto *map = source->findChild<MindMapEditor *>();
+    QTest::keyClick(QApplication::focusWidget(), Qt::Key_Left);
+    QCOMPARE(map->selectedNodeId(), QStringLiteral("r"));
+    QTest::keyClick(QApplication::focusWidget(), Qt::Key_Right);
+    QCOMPARE(map->selectedNodeId(), QStringLiteral("a"));
+    QTest::keyClick(QApplication::focusWidget(), Qt::Key_N);
+    QTRY_VERIFY(f->current() != source);
+    auto *note = f->current()->findChild<TextEditor *>();
+    QVERIFY(note);
+    QTRY_VERIFY(note->getTextEdit()->hasFocus());
+    QCOMPARE(note->getText(), mapNode(map).value(QStringLiteral("note")).toString());
+    QVERIFY(f->controller()->closePreviewWorkspace(f->workspace()));
+    QTRY_VERIFY(contentFocused());
+  } else if (!readerMode) {
+    QTest::keyClicks(QApplication::focusWidget(), "focused source");
+    QVERIFY(source->getLatestContent().contains(QStringLiteral("focused source")));
+  }
+}
+
+void TestViewAreaTabReuse::previewCloseFocusInvalidation_data() {
+  QTest::addColumn<QString>("reaction");
+  for (const auto *reaction : {"other-pane", "background", "new-preview", "source-close"})
+    QTest::newRow(reaction) << QString::fromLatin1(reaction);
+}
+
+void TestViewAreaTabReuse::previewCloseFocusInvalidation() {
+  QFETCH(QString, reaction);
+  for (const auto *name : {"focus-source.txt", "focus-other.txt", "focus-old.txt", "focus-new.txt"})
+    QVERIFY(f->create(QString::fromLatin1(name), QByteArray(name)));
+  const auto a = f->open(QStringLiteral("focus-source.txt"));
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto main = f->workspace();
+  f->controller()->splitViewSplit(main, Direction::Right, false);
+  QVERIFY(f->open(QStringLiteral("focus-other.txt")).isValid());
+  auto *other = f->current()->findChild<TextEditor *>();
+  QVERIFY(other);
+  QPointer<QWidget> target(other->getTextEdit());
+  f->controller()->focusWindow(main, a.id());
+  QTRY_VERIFY(f->area->isPreviewSourceCurrent(
+      sourceId, source->getLinkOpenSettings().m_previewSourceGeneration));
+  QVERIFY(f->preview(source, f->node(QStringLiteral("focus-old.txt"))).isValid());
+  const auto workspace = f->area->previewWorkspaceForWindow(sourceId);
+  QPointer<LinkPreviewOverlay> oldOverlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(oldOverlay && !workspace.isEmpty());
+  auto *preview = f->current()->findChild<TextEditor *>();
+  QVERIFY(preview && activateNativeHost(preview->getTextEdit()));
+  preview->getTextEdit()->setFocus();
+  QTRY_VERIFY(preview->getTextEdit()->hasFocus());
+  if (reaction == QLatin1String("background"))
+    target->setFocus();
+  QVERIFY(f->controller()->closePreviewWorkspace(workspace));
+  if (reaction == QLatin1String("new-preview")) {
+    QVERIFY(f->preview(source, f->node(QStringLiteral("focus-new.txt"))).isValid());
+    auto *fresh = f->current()->findChild<TextEditor *>();
+    QVERIFY(fresh);
+    target = fresh->getTextEdit();
+  } else {
+    if (reaction == QLatin1String("source-close"))
+      QVERIFY(f->controller()->closeViewWindow(sourceId, true));
+    target->setFocus();
+  }
+  QTRY_VERIFY(oldOverlay.isNull());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  QCoreApplication::processEvents();
+  QTRY_VERIFY(target && target->hasFocus());
+  if (reaction == QLatin1String("new-preview"))
+    QVERIFY(!f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  else if (reaction == QLatin1String("source-close"))
+    QTRY_VERIFY(source.isNull());
+}
+
 void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   const QByteArray sourceBytes("[C](c.md)\n\n# Source A\n");
   QVERIFY(f->create(QStringLiteral("a.md"), sourceBytes));
@@ -5180,6 +5388,8 @@ void TestViewAreaTabReuse::previewOpenInNewTabs() {
   QVERIFY(activateNativeHost(button));
   QVERIFY(clickNativeSurface(button, button->rect().center()));
   QTRY_VERIFY(overlay.isNull());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  QTRY_VERIFY(edit->hasFocus());
   QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
   QCOMPARE(targetSplit->getAllViewWindows(), QVector<ViewWindow2 *>({source, bWindow, cWindow}));
@@ -5832,6 +6042,8 @@ void TestViewAreaTabReuse::previewCloseConsent() {
     const auto a = f->open(QStringLiteral("a.txt"));
     QVERIFY(a.isValid());
     auto *source = f->current();
+    auto *sourceEditor = source->findChild<TextEditor *>();
+    QVERIFY(sourceEditor);
     const auto main = f->workspace();
     const auto b = f->preview(source, f->node(QStringLiteral("b.txt")));
     QVERIFY(b.isValid());
@@ -5860,12 +6072,15 @@ void TestViewAreaTabReuse::previewCloseConsent() {
       QVERIFY(window->isEnabled() && window->isModified());
       QCOMPARE(f->order(preview), QStringList({b.id()}));
       QCOMPARE(f->current(), window.data());
+      QTRY_VERIFY(editor->getTextEdit()->hasFocus());
       DialogAnswer discard(QMessageBox::Discard);
       QVERIFY(f->controller()->closePreviewWorkspace(preview));
       QVERIFY(discard.accepted());
     }
     QTRY_VERIFY(window.isNull());
     QTRY_VERIFY(overlay.isNull());
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+    QTRY_VERIFY(sourceEditor->getTextEdit()->hasFocus());
     QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
     QVERIFY(!f->buffers->getBufferHandle(b.id()).isValid());
     QCOMPARE(f->workspace(), main);

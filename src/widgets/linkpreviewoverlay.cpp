@@ -302,16 +302,10 @@ bool LinkPreviewOverlay::eventFilter(QObject *p_object, QEvent *p_event) {
   p_event->accept();
   if (dismiss) {
     const QPointer<QWidget> guardedSource(source);
-    const QPointer<LinkPreviewOverlay> guardedOverlay(this);
     emit closeRequested();
     // Close hooks/modal loops may have destroyed this overlay or its source.
     if (guardedSource) {
       new PreviewDismissalTail(guardedSource, position);
-      if (guardedSource->isVisible() && guardedSource->isEnabled() &&
-          !QApplication::activeModalWidget() && !ButtonPopup::activePopupWidget() &&
-          (!guardedOverlay || guardedOverlay->getViewSplit()->getViewWindowCount() == 0)) {
-        guardedSource->setFocus(Qt::MouseFocusReason);
-      }
     }
   }
   return true;

@@ -238,12 +238,23 @@ preview promotion/rollback with native geometry, hit testing and keyboard owners
 `LinkPreviewOverlay` requests the existing cancellable workspace close on a primary click in
 its originating view's exposed content or toolbar. Save/Discard/Cancel remains authoritative;
 Cancel preserves the remaining preview tabs and their keyboard focus; accepted dismissal
-returns focus to the source. Consume the dismissal press/release and double-click continuation
-so source links and toolbar actions do not fire.
+returns focus to the source content area. Consume the dismissal press/release and double-click
+continuation so source links and toolbar actions do not fire.
 Clicks inside the preview, other views, popups and modal dialogs retain their normal routing.
 Dragging, focus loss and source hide/show do not dismiss drafts. The application mouse filter
 is installed only while the overlay is visible; a short source-owned guard handles a trailing
 double-click after the closed overlay retires, without delaying closure or owning tabs.
+
+Content focus restoration belongs to `ViewArea2`'s common preview-host retirement, covering
+Close Preview, the last preview tab, and outside dismissal. Clear focus from an accepted
+closing preview tab before removal and from the retiring overlay before hide, so Qt cannot
+walk the top-level focus chain into dock/toolbar controls. Queue restoration after overlay
+destruction so native children cannot reclaim focus. Revalidate the source identity/generation, current
+owner tab, active top-level window and absence of a newer preview or popup before using the
+source's content focus proxy. Background closure, replacement and promotion must not steal
+focus from another pane, a new preview or the promoted editor. Reacquire focus after synchronous
+FocusOut redirects. A reentrant completed close is success, not cancellation; a surviving
+accepted view uses its current owner, while a replacement retains its writer and needs new consent.
 
 Native-rendered Markdown links handled by the application intercept trusted clicks before
 browser navigation and bind activation to the current document generation. Browser-owned
