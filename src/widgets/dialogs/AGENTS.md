@@ -48,8 +48,10 @@ View-window options remain in their menus/toolbars. Searchable, read-only cards 
 **Markdown Editor** explain preview/concealment toggles; **Editor** covers PDF viewing modes
 and Typst preview/color options; **Mind Map Editor** explains **Layout** and **Readable Width**.
 Use the shared title **Editor Toolbar Options** and description **Options in the toolbar of the
-editor**. Each option explains its behavior without repeating its toolbar/menu location. Do not
-duplicate these controls in Settings or mark a page changed when showing/searching the hints.
+editor**. Each option explains its behavior without repeating its toolbar/menu location. Write
+each description as one sentence without a trailing period, putting supplementary details in
+parentheses. Do not duplicate these controls in Settings or mark a page changed when
+showing/searching the hints.
 Use control-free `createSettingRow()` rows and
 register their title labels as search targets: the row/description styles suppress hit borders.
 Reuse the menu's translation context for existing action titles where available; new explanatory

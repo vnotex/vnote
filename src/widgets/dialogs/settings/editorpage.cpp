@@ -48,17 +48,17 @@ void EditorPage::setupUI() {
   addViewHint(
       tr("PDF view window"),
       tr("Cursor chooses text selection or hand panning, Scroll Mode controls page flow, and "
-         "Spread Mode arranges facing pages."));
+         "Spread Mode arranges facing pages"));
   viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addViewHint(
       tr("Typst previews"),
-      tr("In Edit mode, Live Preview shows the compiled PDF beside the source; "
-         "In-Place Preview shows previews inside the source editor. Toggle them independently."));
+      tr("In Edit mode, Live Preview shows the compiled PDF beside the source and "
+         "In-Place Preview shows previews inside the source editor (toggle them independently)"));
   viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addViewHint(
       tr("Typst preview colors"),
-      tr("Theme Style in Preview uses theme colors for the default page background and text. "
-         "Explicit document styles take precedence, and exports are unchanged."));
+      tr("Theme Style in Preview uses theme colors for the default page background and text "
+         "(explicit document styles take precedence and exports are unchanged)"));
 
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Editor"), QString(), this);
 

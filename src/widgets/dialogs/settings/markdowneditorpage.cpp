@@ -53,19 +53,19 @@ void MarkdownEditorPage::setupUI() {
                   row->findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly));
   };
   addMenuHint(QObject::tr("Live Preview"),
-              tr("Show a rendered preview beside the Markdown source while editing."));
+              tr("Show a rendered preview beside the Markdown source while editing"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addMenuHint(QObject::tr("In-Place Preview"),
-              tr("Show previews of images, code blocks, math and tables inside the source editor. "
-                 "Choose which sources to preview in the Edit section below."));
+              tr("Show previews of images, code blocks, math and tables inside the source editor "
+                 "(choose which sources to preview in the Edit section below)"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addMenuHint(QObject::tr("Conceal long link destinations"),
               tr("Shorten long image, link and reference destinations without changing the "
-                 "Markdown source. Hover to see the full destination."));
+                 "Markdown source (hover to see the full destination)"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addMenuHint(QObject::tr("Conceal Markdown Markers"),
-              tr("Hide Markdown formatting markers without changing the source. Move the caret "
-                 "into an element to reveal its markers."));
+              tr("Hide Markdown formatting markers without changing the source (move the caret "
+                 "into an element to reveal its markers)"));
 
   setupGeneralGroup();
   setupReadGroup();

@@ -38,9 +38,9 @@ void MindMapEditorPage::setupUI() {
                   row->findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly));
   };
   addViewHint(tr("Layout"),
-              tr("Choose a Balanced, Right, Left or Outline layout for the mind map."));
+              tr("Choose a Balanced, Right, Left or Outline layout for the mind map"));
   viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
-  addViewHint(QObject::tr("Readable Width"), tr("Center the content in a readable-width area."));
+  addViewHint(QObject::tr("Readable Width"), tr("Center the content in a readable-width area"));
 
   auto *style = SettingsPageHelper::addSection(mainLayout, tr("Style"), QString(), this);
   {
