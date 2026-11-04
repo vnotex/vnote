@@ -1153,7 +1153,8 @@ popup outlines, without mutating producer names.
 ### Markdown concealment
 
 Markdown's top-right **Menu** exposes two Edit-only checkable preferences immediately below
-**In-Place Preview**; neither appears on the Settings page:
+**In-Place Preview**. The controls remain menu-only; **Settings > Markdown Editor** provides
+searchable, read-only hints explaining them and the preview toggles:
 
 - **Conceal long link destinations** retains `editor.markdown_editor.concealment`, default `true`.
 - **Conceal Markdown Markers** stores `editor.markdown_editor.concealMarkdownMarkers`, default

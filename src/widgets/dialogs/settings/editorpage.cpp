@@ -3,6 +3,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTimer>
@@ -34,6 +35,30 @@ EditorPage::EditorPage(ServiceLocator &p_services, QWidget *p_parent)
 
 void EditorPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
+
+  auto *viewLayout =
+      SettingsPageHelper::addSection(mainLayout, tr("View Window Options"), QString(), this);
+  const auto addViewHint = [this, viewLayout](const QString &p_label,
+                                              const QString &p_description) {
+    auto *row = SettingsPageHelper::createSettingRow(p_label, p_description, nullptr, this);
+    viewLayout->addWidget(row);
+    addSearchItem(p_label, p_description,
+                  row->findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly));
+  };
+  addViewHint(tr("PDF view window"),
+              tr("Open a PDF and use the Menu button at the top right of its window. Cursor "
+                 "chooses text selection or hand panning, Scroll Mode controls page flow, and "
+                 "Spread Mode arranges facing pages."));
+  viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
+  addViewHint(tr("Typst previews"),
+              tr("Open a Typst note in Edit mode and use the Menu button at the top right of its "
+                 "window. Live Preview shows the compiled PDF beside the source; In-Place "
+                 "Preview shows previews inside the source editor. Toggle them independently."));
+  viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
+  addViewHint(tr("Typst preview colors"),
+              tr("In the same Menu, Theme Style in Preview uses theme colors for the default "
+                 "page background and text. Explicit document styles take precedence, and "
+                 "exports are unchanged."));
 
   auto *cardLayout = SettingsPageHelper::addSection(mainLayout, tr("Editor"), QString(), this);
 

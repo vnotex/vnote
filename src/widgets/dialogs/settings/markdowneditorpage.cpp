@@ -43,6 +43,33 @@ MarkdownEditorPage::MarkdownEditorPage(ServiceLocator &p_services, QWidget *p_pa
 void MarkdownEditorPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
 
+  auto *menuLayout = SettingsPageHelper::addSection(
+      mainLayout, tr("Editor Menu Options"),
+      tr("Open a Markdown note in Edit mode, then use the Menu button at the top right of its "
+         "window to toggle these options."),
+      this);
+  const auto addMenuHint = [this, menuLayout](const QString &p_label,
+                                              const QString &p_description) {
+    auto *row = SettingsPageHelper::createSettingRow(p_label, p_description, nullptr, this);
+    menuLayout->addWidget(row);
+    addSearchItem(p_label, p_description,
+                  row->findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly));
+  };
+  addMenuHint(QObject::tr("Live Preview"),
+              tr("Show a rendered preview beside the Markdown source while editing."));
+  menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
+  addMenuHint(QObject::tr("In-Place Preview"),
+              tr("Show previews of images, code blocks, math and tables inside the source editor. "
+                 "Choose which sources to preview in the Edit section below."));
+  menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
+  addMenuHint(QObject::tr("Conceal long link destinations"),
+              tr("Shorten long image, link and reference destinations without changing the "
+                 "Markdown source. Hover to see the full destination."));
+  menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
+  addMenuHint(QObject::tr("Conceal Markdown Markers"),
+              tr("Hide Markdown formatting markers without changing the source. Move the caret "
+                 "into an element to reveal its markers."));
+
   setupGeneralGroup();
   setupReadGroup();
   setupEditGroup();

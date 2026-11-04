@@ -44,6 +44,15 @@ Tests find dialog widgets via `findChild<>("objectName")` — NOT by label text.
 Settings pages use `settings/SettingsPageHelper` for card rows. This is a desktop form
 convention, not a rule that every input must occupy the same row as its label.
 
+View-window options remain in their menus/toolbars. Searchable, read-only cards at the top of
+**Markdown Editor** explain preview/concealment toggles; **Editor** covers PDF viewing modes
+and Typst preview/color options; **Mind Map Editor** points to the separate **Layout** toolbar
+button and **Menu > Readable Width**. Do not duplicate these controls in Settings or mark a
+page changed when showing/searching the hints. Use control-free `createSettingRow()` rows and
+register their title labels as search targets: the row/description styles suppress hit borders.
+Reuse the menu's translation context for existing action titles where available; new explanatory
+copy belongs to the settings page.
+
 - **Compact is the default:** ordinary combo boxes, spin boxes and short line edits keep
   their label and input on one row when space permits. Use `createSettingRow()`; never
   choose orientation by recursively searching for a `QLineEdit` (spin boxes contain one).
