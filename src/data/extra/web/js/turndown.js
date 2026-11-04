@@ -34,6 +34,8 @@ class TurndownConverter {
 
         this.fixMark();
 
+        this.fixHeading();
+
         this.fixParagraph();
 
         // MUST be called: without it the bundled default image rule wins and
@@ -431,6 +433,18 @@ class TurndownConverter {
                 }
 
                 return '<mark>' + content + '</mark>';
+            }
+        });
+    }
+
+    fixHeading() {
+        this.ts.addRule('heading', {
+            filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+            replacement: function(content, node) {
+                // The ATX prefix prevents list parsing. Literal backslashes are
+                // doubled by Turndown, so undo only its single leading list escape.
+                const heading = content.replace(/^(\d+)\\\. /, '$1. ');
+                return '\n\n' + '#'.repeat(Number(node.nodeName[1])) + ' ' + heading + '\n\n';
             }
         });
     }

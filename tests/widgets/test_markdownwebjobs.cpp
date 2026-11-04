@@ -530,6 +530,7 @@ class TestMarkdownWebJobs : public QObject {
 private slots:
   void initTestCase();
   void htmlCodeBlocks();
+  void htmlHeadings();
   void htmlMath();
   void allOperations_data();
   void allOperations();
@@ -1047,13 +1048,47 @@ void TestMarkdownWebJobs::htmlCodeBlocks() {
   }
 }
 
+void TestMarkdownWebJobs::htmlHeadings() {
+  struct Case {
+    const char *name;
+    QString html;
+    QString markdown;
+  };
+  const Case cases[] = {
+      {"numbered-h1", QStringLiteral("<h1>1. Heading</h1>"), QStringLiteral("# 1. Heading")},
+      {"numbered-h6", QStringLiteral("<h6>12. Heading</h6>"), QStringLiteral("###### 12. Heading")},
+      {"inline-formatting",
+       QStringLiteral("<h2>2. <em>Emphasis</em> and <code>1. code</code></h2>"),
+       QStringLiteral("## 2. *Emphasis* and `1. code`")},
+      {"literal-backslash", QStringLiteral(R"(<h2>1\. Literal backslash</h2>)"),
+       QStringLiteral(R"(## 1\\. Literal backslash)")},
+      {"code-heading", QStringLiteral(R"(<h2><code>1\. Literal code</code></h2>)"),
+       QStringLiteral(R"(## `1\. Literal code`)")},
+      {"paragraph-is-not-a-list", QStringLiteral("<p>1. Literal paragraph</p>"),
+       QStringLiteral(R"(1\. Literal paragraph)")},
+      {"subsequent-line-is-not-a-list", QStringLiteral("<h2>1. First<br>2. Second</h2>"),
+       QStringLiteral("## 1. First  \n2\\. Second")}};
+  Runtime runtime(true);
+  QObject owner;
+  for (const auto &entry : cases) {
+    const auto job = submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
+                            source(entry.html), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+    QVERIFY2(job->result.status == WebViewJobResult::Status::Success, entry.name);
+    QVERIFY2(job->result.value.toString() == entry.markdown,
+             qPrintable(QStringLiteral("%1\nExpected: %2\nActual: %3")
+                            .arg(QString::fromUtf8(entry.name), entry.markdown,
+                                 job->result.value.toString())));
+  }
+}
+
 void TestMarkdownWebJobs::htmlMath() {
   // Browser copy omits the TeX annotations present in the page's outerHTML.
   QFile clipboardFile(QFINDTESTDATA("../data/katex-clipboard.html"));
   QVERIFY(clipboardFile.open(QIODevice::ReadOnly));
   const auto clipboardHtml = QString::fromUtf8(clipboardFile.readAll());
   const QString clipboardMarkdown = QStringLiteral(
-      "## 1\\. 这条公式对正整数指数为什么成立\n\n"
+      "## 1. 这条公式对正整数指数为什么成立\n\n"
       "当 $m,n$ 是正整数时：\n\n"
       "$$\na^{m+n}=\\underbrace{a\\cdot a\\cdots a}_{m+n\\text{ 个}}\n$$\n\n"
       "而\n\n"
