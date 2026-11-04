@@ -31,6 +31,7 @@
 #include <QList>
 #include <QMenu>
 #include <QPointer>
+#include <QPushButton>
 #include <QSignalSpy>
 #include <QString>
 #include <QStringList>
@@ -218,6 +219,8 @@ private slots:
   void testOnlyFilesShowsOnlyFilesDialog();     // (5)
   void testOnlyFoldersShowsOnlyFoldersDialog(); // (6)
   void testEmptyJsonSkipsBothDialogs();         // (7)
+  void testTriggeringNodeSelection_data();
+  void testTriggeringNodeSelection();
 
   // Column plumbing: the seam must read createdUtc/modifiedUtc off each child
   // and hand them to the dialog, treating 0 / missing as unknown.
@@ -379,7 +382,7 @@ void TestNotebookExplorer2Sort::testFoldersAndFilesShowTwoDialogs() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
 
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY2(folderSubtitle.contains(QStringLiteral("(docs)")), qPrintable(folderSubtitle));
@@ -413,7 +416,7 @@ void TestNotebookExplorer2Sort::testAcceptFoldersCancelFiles() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QCOMPARE(result.newFolderOrder, (QStringList{QStringLiteral("beta"), QStringLiteral("alpha")}));
   QVERIFY(result.newFileOrder.isEmpty());
@@ -434,7 +437,7 @@ void TestNotebookExplorer2Sort::testCancelBoth() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY(result.newFolderOrder.isEmpty());
   QVERIFY(result.newFileOrder.isEmpty());
@@ -457,7 +460,7 @@ void TestNotebookExplorer2Sort::testAcceptUnchangedOrderNoChange() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY2(result.newFolderOrder.isEmpty(),
            "Accepted-but-unchanged folder order must be reported as empty (no-op).");
@@ -484,7 +487,7 @@ void TestNotebookExplorer2Sort::testOnlyFilesShowsOnlyFilesDialog() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QVERIFY2(seenTitle.contains(QStringLiteral("Note")),
            qPrintable(QStringLiteral("Expected Notes dialog, got: %1").arg(seenTitle)));
@@ -511,7 +514,7 @@ void TestNotebookExplorer2Sort::testOnlyFoldersShowsOnlyFoldersDialog() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QVERIFY2(seenTitle.contains(QStringLiteral("Folder")),
            qPrintable(QStringLiteral("Expected Folders dialog, got: %1").arg(seenTitle)));
@@ -536,7 +539,7 @@ void TestNotebookExplorer2Sort::testEmptyJsonSkipsBothDialogs() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, empty, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, empty, nullptr);
   // Give the driver a chance to observe a (non-existent) modal.
   QTest::qWait(50);
   QCOMPARE(driver.modalsObserved(), 0);
@@ -568,7 +571,7 @@ void TestNotebookExplorer2Sort::testHeaderSortByCreatedInSeam() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QCOMPARE(result.newFolderOrder,
            (QStringList{QStringLiteral("gamma"), QStringLiteral("beta"), QStringLiteral("alpha")}));
@@ -591,7 +594,7 @@ void TestNotebookExplorer2Sort::testHeaderSortByModifiedInSeam() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QCOMPARE(result.newFileOrder, (QStringList{QStringLiteral("three.md"), QStringLiteral("two.md"),
                                              QStringLiteral("one.md")}));
@@ -630,7 +633,7 @@ void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
 
   std::sort(blanks.begin(), blanks.end());
@@ -661,7 +664,7 @@ void TestNotebookExplorer2Sort::testCombinedExplorerForwardsSortRequested() {
 
   QSignalSpy spy(explorer.data(), &CombinedNodeExplorer::sortRequested);
   QVERIFY(spy.isValid());
-  controller->sortNodes(idFor(QString()));
+  controller->sortNodes(idFor(QString()), {});
 
   QCOMPARE(spy.count(), 1);
   const auto forwarded = spy.takeFirst().at(0).value<NodeIdentifier>();
@@ -718,6 +721,7 @@ void TestNotebookExplorer2Sort::testContextMenuSortTargetsParent() {
   const auto forwarded = args.at(0).value<NodeIdentifier>();
   QCOMPARE(forwarded.notebookId, m_nbId);
   QCOMPARE(forwarded.relativePath, parentPath);
+  QCOMPARE(args.at(1).value<NodeIdentifier>(), idFor(clickedPath));
 
   delete explorer;
 }
@@ -750,6 +754,62 @@ void TestNotebookExplorer2Sort::testCombinedExplorerRequestReorderNodesBuildsIds
   QCOMPARE(errorSpy.count(), 0);
 
   delete explorer;
+}
+
+void TestNotebookExplorer2Sort::testTriggeringNodeSelection_data() {
+  QTest::addColumn<NodeIdentifier>("currentNode");
+  QTest::addColumn<QString>("folderSelection");
+  QTest::addColumn<QString>("fileSelection");
+  QTest::newRow("folder") << NodeIdentifier{QStringLiteral("nb-test"), QStringLiteral("docs/beta")}
+                          << QStringLiteral("beta") << QString();
+  QTest::newRow("note") << NodeIdentifier{QStringLiteral("nb-test"), QStringLiteral("docs/two.md")}
+                        << QString() << QStringLiteral("two.md");
+  QTest::newRow("missing") << NodeIdentifier{QStringLiteral("nb-test"), QStringLiteral("docs/gone")}
+                           << QString() << QString();
+  QTest::newRow("different-notebook")
+      << NodeIdentifier{QStringLiteral("other"), QStringLiteral("docs/beta")} << QString()
+      << QString();
+  QTest::newRow("different-parent")
+      << NodeIdentifier{QStringLiteral("nb-test"), QStringLiteral("elsewhere/two.md")} << QString()
+      << QString();
+  QTest::newRow("root") << NodeIdentifier{QStringLiteral("nb-test"), QString()} << QString()
+                        << QString();
+  QTest::newRow("no-trigger") << NodeIdentifier{} << QString() << QString();
+}
+
+void TestNotebookExplorer2Sort::testTriggeringNodeSelection() {
+  QFETCH(NodeIdentifier, currentNode);
+  QFETCH(QString, folderSelection);
+  QFETCH(QString, fileSelection);
+  const NodeIdentifier parentId{QStringLiteral("nb-test"), QStringLiteral("docs")};
+  const auto children = makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
+                                         {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  QStringList observedSelections;
+  bool currentMatchesSelection = true;
+  const auto step = [&](SortDialog2 *p_dlg) {
+    auto *tree = p_dlg->findChild<QTreeWidget *>(QLatin1String(kListWidgetName));
+    const auto selected = tree->selectedItems();
+    observedSelections << (selected.isEmpty() ? QString() : selected.first()->text(0));
+    if (!selected.isEmpty()) {
+      currentMatchesSelection &= selected.size() == 1 && tree->currentItem() == selected.first();
+      p_dlg->findChild<QPushButton *>(QStringLiteral("sortTopBtn"))->click();
+    }
+    p_dlg->accept();
+  };
+  DialogDriver driver({step, step});
+  driver.start();
+  const auto result = runSortDialogsForChildren(parentId, currentNode, children, nullptr);
+
+  QCOMPARE(observedSelections, (QStringList{folderSelection, fileSelection}));
+  QVERIFY(currentMatchesSelection);
+  const QStringList expectedFolders =
+      folderSelection.isEmpty() ? QStringList()
+                                : QStringList{QStringLiteral("beta"), QStringLiteral("alpha")};
+  const QStringList expectedFiles =
+      fileSelection.isEmpty() ? QStringList()
+                              : QStringList{QStringLiteral("two.md"), QStringLiteral("one.md")};
+  QCOMPARE(result.newFolderOrder, expectedFolders);
+  QCOMPARE(result.newFileOrder, expectedFiles);
 }
 
 } // namespace tests

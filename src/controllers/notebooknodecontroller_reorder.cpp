@@ -66,7 +66,8 @@ QString NotebookNodeController::currentNotebookId() const {
 // sortRequested; NotebookExplorer2::onSortRequested (T11) owns SortDialog2
 // and, on user confirmation, calls reorderNodes() with the chosen order.
 // Mirrors the newNote -> newNoteRequested pattern.
-void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
+void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId,
+                                       const NodeIdentifier &p_currentNodeId) {
   NodeIdentifier parentId = p_parentId;
   if (!parentId.isValid()) {
     parentId.notebookId = currentNotebookId();
@@ -78,7 +79,7 @@ void NotebookNodeController::sortNodes(const NodeIdentifier &p_parentId) {
   if (isNotebookReadOnly(parentId.notebookId)) {
     return; // Read-only notebook -> sort persistence is a mutation, block it.
   }
-  emit sortRequested(parentId);
+  emit sortRequested(parentId, p_currentNodeId);
 }
 
 void NotebookNodeController::reorderNodes(const NodeIdentifier &p_parentId,

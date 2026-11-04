@@ -163,7 +163,7 @@ private slots:
   // src/controllers/AGENTS.md). Shows two dialogs in sequence (folders then
   // files; strict separation) and routes the result through
   // INodeExplorer::requestReorderNodes.
-  void onSortRequested(const NodeIdentifier &p_parentId);
+  void onSortRequested(const NodeIdentifier &p_parentId, const NodeIdentifier &p_currentNodeId);
 
   // Handles the shareFolderRequested signal forwarded from
   // CombinedNodeExplorer / TwoColumnsNodeExplorer. Owns BOTH dialogs the flow

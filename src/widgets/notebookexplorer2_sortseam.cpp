@@ -74,6 +74,7 @@ QStringList namesOf(const QVector<SortDialog2::Entry> &p_entries) {
 } // namespace
 
 SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
+                                           const NodeIdentifier &p_currentNodeId,
                                            const QJsonObject &p_childrenJson, QWidget *p_parent) {
   SortDialogResult result;
 
@@ -84,19 +85,25 @@ SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
   const QStringList currentFolders = namesOf(folderEntries);
   const QStringList currentFiles = namesOf(fileEntries);
 
+  QString currentName;
+  if (p_currentNodeId.isValid() && !p_currentNodeId.isRoot() &&
+      p_currentNodeId.notebookId == p_parentId.notebookId &&
+      p_currentNodeId.parentPath() == p_parentId.relativePath) {
+    currentName = QFileInfo(p_currentNodeId.relativePath).fileName();
+  }
+
   const QString parentName =
       p_parentId.relativePath.isEmpty()
           ? QCoreApplication::translate("vnotex::NotebookExplorer2", "(notebook root)")
           : QStringLiteral("(%1)").arg(QFileInfo(p_parentId.relativePath).fileName());
-  const QString subtitle =
-      QCoreApplication::translate(
-          "vnotex::NotebookExplorer2",
-          "Reorder children of %1. Order is saved to the configuration file.")
-          .arg(parentName);
+  const QString subtitle = QCoreApplication::translate(
+                               "vnotex::NotebookExplorer2",
+                               "Reorder children of %1. Order is saved to the configuration file.")
+                               .arg(parentName);
 
   if (!folderEntries.isEmpty()) {
     SortDialog2 dlg(QCoreApplication::translate("vnotex::NotebookExplorer2", "Sort Folders"),
-                    subtitle, folderEntries, p_parent);
+                    subtitle, folderEntries, currentName, p_parent);
     dlg.setWindowModality(Qt::WindowModal);
     if (dlg.exec() == QDialog::Accepted) {
       const QStringList chosen = dlg.getSortedOrder();
@@ -108,7 +115,7 @@ SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
 
   if (!fileEntries.isEmpty()) {
     SortDialog2 dlg(QCoreApplication::translate("vnotex::NotebookExplorer2", "Sort Notes"),
-                    subtitle, fileEntries, p_parent);
+                    subtitle, fileEntries, currentName, p_parent);
     dlg.setWindowModality(Qt::WindowModal);
     if (dlg.exec() == QDialog::Accepted) {
       const QStringList chosen = dlg.getSortedOrder();

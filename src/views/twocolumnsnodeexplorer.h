@@ -121,7 +121,7 @@ signals:
   // connects this to onSortRequested (shared with CombinedNodeExplorer) and
   // owns SortDialog2 — controllers MUST NOT show QDialog
   // (src/controllers/AGENTS.md).
-  void sortRequested(const NodeIdentifier &p_parentId);
+  void sortRequested(const NodeIdentifier &p_parentId, const NodeIdentifier &p_currentNodeId);
 
 private slots:
   void onFolderSelectionChanged(const QList<NodeIdentifier> &p_nodeIds);

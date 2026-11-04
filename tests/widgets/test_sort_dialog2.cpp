@@ -178,6 +178,9 @@ private slots:
 
   // 17. A header sort preserves the selection across the take/insert cycle.
   void testHeaderSortPreservesSelection();
+
+  void testInitialCurrentItem_data();
+  void testInitialCurrentItem();
 };
 
 // =============================================================================
@@ -688,6 +691,37 @@ void TestSortDialog2::testHeaderSortPreservesSelection() {
   QVERIFY(upBtn(dlg)->isEnabled());
   QVERIFY(!downBtn(dlg)->isEnabled());
   QVERIFY(!bottomBtn(dlg)->isEnabled());
+}
+
+void TestSortDialog2::testInitialCurrentItem_data() {
+  QTest::addColumn<QString>("currentName");
+  QTest::addColumn<bool>("matches");
+  QTest::newRow("matching") << QStringLiteral("c") << true;
+  QTest::newRow("missing") << QStringLiteral("missing") << false;
+  QTest::newRow("case-sensitive") << QStringLiteral("C") << false;
+  QTest::newRow("unspecified") << QString() << false;
+}
+
+void TestSortDialog2::testInitialCurrentItem() {
+  QFETCH(QString, currentName);
+  QFETCH(bool, matches);
+  const QStringList original{QStringLiteral("a"), QStringLiteral("b"), QStringLiteral("c")};
+  SortDialog2 dlg(QStringLiteral("Sort"), QString(), entries(original), currentName);
+  auto *tree = list(dlg);
+  QCOMPARE(dlg.getSortedOrder(), original);
+  if (!matches) {
+    QVERIFY(tree->selectedItems().isEmpty());
+    QVERIFY(!topBtn(dlg)->isEnabled());
+    return;
+  }
+
+  QCOMPARE(tree->currentItem()->data(0, Qt::UserRole).toString(), currentName);
+  QCOMPARE(tree->selectedItems(), (QList<QTreeWidgetItem *>{tree->currentItem()}));
+  QVERIFY(topBtn(dlg)->isEnabled());
+  QVERIFY(!downBtn(dlg)->isEnabled());
+  topBtn(dlg)->click();
+  QCOMPARE(dlg.getSortedOrder(),
+           (QStringList{QStringLiteral("c"), QStringLiteral("a"), QStringLiteral("b")}));
 }
 
 } // namespace tests

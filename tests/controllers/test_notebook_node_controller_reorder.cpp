@@ -270,12 +270,12 @@ void TestNotebookNodeControllerReorder::sortNodesEmitsSortRequested() {
 
   QSignalSpy sortSpy(m_controller, &vnotex::NotebookNodeController::sortRequested);
 
-  m_controller->sortNodes(parentId);
+  m_controller->sortNodes(parentId, {});
 
   QCOMPARE(sortSpy.count(), 1);
   QCOMPARE(m_service->callCount, 0); // sort must NOT call reorder service
   const QList<QVariant> args = sortSpy.takeFirst();
-  QCOMPARE(args.size(), 1);
+  QCOMPARE(args.size(), 2);
   const auto emittedParent = args.at(0).value<vnotex::NodeIdentifier>();
   QCOMPARE(emittedParent, parentId);
 }
@@ -290,7 +290,7 @@ void TestNotebookNodeControllerReorder::sortNodesWithInvalidParentNoActiveNotebo
 
   QSignalSpy sortSpy(m_controller, &vnotex::NotebookNodeController::sortRequested);
 
-  m_controller->sortNodes(invalidParentId);
+  m_controller->sortNodes(invalidParentId, {});
 
   QCOMPARE(sortSpy.count(), 0);
   QCOMPARE(m_service->callCount, 0);
@@ -306,12 +306,12 @@ void TestNotebookNodeControllerReorder::sortNodesWithInvalidParentActiveNotebook
 
   QSignalSpy sortSpy(m_controller, &vnotex::NotebookNodeController::sortRequested);
 
-  m_controller->sortNodes(invalidParentId);
+  m_controller->sortNodes(invalidParentId, {});
 
   QCOMPARE(sortSpy.count(), 1);
   QCOMPARE(m_service->callCount, 0);
   const QList<QVariant> args = sortSpy.takeFirst();
-  QCOMPARE(args.size(), 1);
+  QCOMPARE(args.size(), 2);
   const auto emittedParent = args.at(0).value<vnotex::NodeIdentifier>();
   QCOMPARE(emittedParent.notebookId, QStringLiteral("nb-123"));
   QCOMPARE(emittedParent.relativePath, QString()); // notebook root

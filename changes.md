@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Enlarge Sort Folders and Sort Notes to 900 × 600 by default and reveal the triggering folder or note as the current selected item when present
 * Open files classified as Others with the system application instead of the plaintext editor, retain inferred text/image viewers, and skip unsupported session tabs without launching external applications
 * Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
 * Preserve annotated KaTeX and MathML formulas when parsing HTML to Markdown and pasting, retaining inline/display math and TeX source without duplicate rendered text

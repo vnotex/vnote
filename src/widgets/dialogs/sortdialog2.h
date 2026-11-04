@@ -39,7 +39,7 @@ public:
   };
 
   SortDialog2(const QString &p_title, const QString &p_subtitle, const QVector<Entry> &p_entries,
-              QWidget *p_parent = nullptr);
+              const QString &p_currentName = QString(), QWidget *p_parent = nullptr);
 
   // Valid only after exec() == QDialog::Accepted. Returns the names in their
   // display order top-to-bottom.

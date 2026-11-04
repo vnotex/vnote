@@ -633,7 +633,8 @@ void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier 
   const NodeIdentifier sortTarget = getParentFolder(p_nodeId);
   auto *sortAction = p_menu->addAction(tr("&Sort"));
   sortAction->setEnabled(!p_readOnly);
-  connect(sortAction, &QAction::triggered, this, [this, sortTarget]() { sortNodes(sortTarget); });
+  connect(sortAction, &QAction::triggered, this,
+          [this, sortTarget, p_nodeId]() { sortNodes(sortTarget, p_nodeId); });
 }
 
 void NotebookNodeController::newNote(const NodeIdentifier &p_parentId) {

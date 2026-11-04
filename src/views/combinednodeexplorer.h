@@ -84,7 +84,7 @@ signals:
   // T11 (notebook-explorer-drag-reorder): forwarded from
   // NotebookNodeController::sortRequested. NotebookExplorer2 connects to this
   // and owns SortDialog2 (controllers MUST NOT show QDialog).
-  void sortRequested(const NodeIdentifier &p_parentId);
+  void sortRequested(const NodeIdentifier &p_parentId, const NodeIdentifier &p_currentNodeId);
 
 private slots:
   void onContextMenuRequested(const NodeIdentifier &p_nodeId, const QPoint &p_globalPos);

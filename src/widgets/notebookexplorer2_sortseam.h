@@ -42,6 +42,7 @@ struct SortDialogResult {
 };
 
 SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
+                                           const NodeIdentifier &p_currentNodeId,
                                            const QJsonObject &p_childrenJson, QWidget *p_parent);
 
 } // namespace vnotex

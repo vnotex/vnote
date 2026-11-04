@@ -2339,10 +2339,11 @@ void NotebookExplorer2::onInfoMessage(const QString &p_title, const QString &p_m
 // explorer bridge → controller → service chain. The unchanged-order check at
 // the view layer prevents spurious service calls.
 //
-// The dialog-show logic is extracted into runSortDialogsForChildren (a public
-// static helper) so widget tests can exercise it without instantiating a full
+// The dialog-show logic is extracted into runSortDialogsForChildren (a free
+// function) so widget tests can exercise it without instantiating a full
 // NotebookExplorer2.
-void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId) {
+void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId,
+                                        const NodeIdentifier &p_currentNodeId) {
   auto *notebookService = m_services.get<NotebookCoreService>();
   if (!notebookService || !m_nodeExplorer) {
     return;
@@ -2351,14 +2352,15 @@ void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId) {
   const QJsonObject childrenJson =
       notebookService->listFolderChildren(p_parentId.notebookId, p_parentId.relativePath);
 
-  const SortDialogResult result = runSortDialogsForChildren(p_parentId, childrenJson, this);
+  const SortDialogResult result =
+      runSortDialogsForChildren(p_parentId, p_currentNodeId, childrenJson, this);
 
   if (!result.newFolderOrder.isEmpty() || !result.newFileOrder.isEmpty()) {
     m_nodeExplorer->requestReorderNodes(p_parentId, result.newFolderOrder, result.newFileOrder);
   }
 }
 
-// NotebookExplorer2::runSortDialogsForChildren lives in
+// runSortDialogsForChildren lives in
 // notebookexplorer2_sortseam.cpp so widget tests can link the helper without
 // dragging in the full NotebookExplorer2 TU and its ~20 transitive widget /
 // service deps.

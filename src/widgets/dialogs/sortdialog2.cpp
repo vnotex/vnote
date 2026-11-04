@@ -87,7 +87,8 @@ protected:
 };
 
 SortDialog2::SortDialog2(const QString &p_title, const QString &p_subtitle,
-                         const QVector<Entry> &p_entries, QWidget *p_parent)
+                         const QVector<Entry> &p_entries, const QString &p_currentName,
+                         QWidget *p_parent)
     : QDialog(p_parent) {
   m_collator = QCollator(QLocale::system());
   m_collator.setCaseSensitivity(Qt::CaseInsensitive);
@@ -95,6 +96,7 @@ SortDialog2::SortDialog2(const QString &p_title, const QString &p_subtitle,
   setupUi(p_title, p_subtitle);
 
   const QString dateTimeFormat = QLocale::system().dateTimeFormat(QLocale::ShortFormat);
+  QTreeWidgetItem *currentItem = nullptr;
   for (const auto &entry : p_entries) {
     auto *item = new QTreeWidgetItem();
     item->setText(kColName, entry.m_name);
@@ -109,8 +111,15 @@ SortDialog2::SortDialog2(const QString &p_title, const QString &p_subtitle,
     // which is what a flat internal-move reorder needs.
     item->setFlags((item->flags() | Qt::ItemIsDragEnabled) & ~Qt::ItemIsDropEnabled);
     m_treeWidget->addTopLevelItem(item);
+    if (!p_currentName.isEmpty() && entry.m_name == p_currentName) {
+      currentItem = item;
+    }
   }
 
+  if (currentItem) {
+    m_treeWidget->setCurrentItem(currentItem);
+    m_treeWidget->scrollToItem(currentItem);
+  }
   updateButtonsEnabled();
 }
 
@@ -207,6 +216,8 @@ void SortDialog2::setupUi(const QString &p_title, const QString &p_subtitle) {
   // A user drag is the only model change that clears the sort indicator on its
   // own; the move handlers call clearSortIndicator() directly.
   connect(tree, &SortDialog2TreeWidget::manualOrderChanged, this, &SortDialog2::clearSortIndicator);
+
+  resize(900, 600);
 }
 
 QStringList SortDialog2::getSortedOrder() const {

@@ -227,7 +227,7 @@ void TestTwoColumnsNodeExplorerSort::testControllerSortRequestedForwardedThrough
 
   // Folder-pane emit → explorer must re-emit once with the same NodeIdentifier.
   const NodeIdentifier rootId = idFor(QString());
-  folderCtrl->sortNodes(rootId);
+  folderCtrl->sortNodes(rootId, {});
   QCOMPARE(spy.count(), 1);
   {
     const QList<QVariant> args = spy.takeFirst();
@@ -238,7 +238,7 @@ void TestTwoColumnsNodeExplorerSort::testControllerSortRequestedForwardedThrough
 
   // File-pane emit must ALSO be forwarded (both panes share the same
   // sortRequested signal at the explorer level — UX parity with Combined).
-  fileCtrl->sortNodes(rootId);
+  fileCtrl->sortNodes(rootId, {});
   QCOMPARE(spy.count(), 1);
   {
     const QList<QVariant> args = spy.takeFirst();

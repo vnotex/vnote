@@ -48,7 +48,7 @@ void NotebookNodeController::importExternalNode(const NodeIdentifier &) {}
 void NotebookNodeController::showNodeProperties(const NodeIdentifier &) {}
 void NotebookNodeController::copyNodePath(const NodeIdentifier &) {}
 void NotebookNodeController::locateNodeInFileManager(const NodeIdentifier &) {}
-void NotebookNodeController::sortNodes(const NodeIdentifier &) {}
+void NotebookNodeController::sortNodes(const NodeIdentifier &, const NodeIdentifier &) {}
 void NotebookNodeController::reloadNode(const NodeIdentifier &) {}
 void NotebookNodeController::reorderNodes(const NodeIdentifier &, const QList<NodeIdentifier> &,
                                           const QList<NodeIdentifier> &) {

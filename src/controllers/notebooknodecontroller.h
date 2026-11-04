@@ -90,7 +90,7 @@ public:
   void locateNodeInFileManager(const NodeIdentifier &p_nodeId);
 
   // Sorting and reload
-  void sortNodes(const NodeIdentifier &p_parentId);
+  void sortNodes(const NodeIdentifier &p_parentId, const NodeIdentifier &p_currentNodeId);
 
   // T7 (notebook-explorer-drag-reorder): persist a drag-reorder of a folder's
   // children. Validates inputs (all dragged ids share parentId; type-consistent
@@ -340,7 +340,7 @@ signals:
   // chosen order. Controllers MUST NOT show QDialog (per
   // src/controllers/AGENTS.md); this signal is the same architectural pattern
   // as newNoteRequested / newFolderRequested.
-  void sortRequested(const NodeIdentifier &p_parentId);
+  void sortRequested(const NodeIdentifier &p_parentId, const NodeIdentifier &p_currentNodeId);
 
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
