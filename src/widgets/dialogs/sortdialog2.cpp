@@ -217,7 +217,7 @@ void SortDialog2::setupUi(const QString &p_title, const QString &p_subtitle) {
   // own; the move handlers call clearSortIndicator() directly.
   connect(tree, &SortDialog2TreeWidget::manualOrderChanged, this, &SortDialog2::clearSortIndicator);
 
-  resize(900, 600);
+  resize(800, 600);
 }
 
 QStringList SortDialog2::getSortedOrder() const {
