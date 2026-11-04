@@ -93,7 +93,7 @@ void UnitedEntry::setupUI() {
   m_comboBox->setMaximumWidth(c_maxInputWidth);
   m_comboBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
   setMaximumWidth(c_maxInputWidth);
-  m_comboBox->lineEdit()->setPlaceholderText(tr("Search file names, or >command"));
+  m_comboBox->lineEdit()->setPlaceholderText(tr("Type to search files by name in all notebooks"));
   m_comboBox->lineEdit()->setClearButtonEnabled(true);
   m_comboBox->lineEdit()->installEventFilter(this);
   m_comboBox->installEventFilter(this);
@@ -419,7 +419,7 @@ void UnitedEntry::processInput() {
   const auto text = m_comboBox->lineEdit()->text();
   const auto entry = UnitedEntryHelper::parseUserEntry(text);
   if (entry.m_name.isEmpty()) {
-    filterEntryListWidgetEntries(entry.m_name);
+    filterEntryListWidgetEntries(entry.m_name, entry.m_isCommand);
     popupWidget(getEntryListWidget());
     m_lastEntry.clear();
     return;
@@ -427,7 +427,7 @@ void UnitedEntry::processInput() {
 
   // Suggest explicit keys until a separating whitespace or arguments are entered.
   if (entry.m_isCommand && entry.m_args.isEmpty() && !text.back().isSpace()) {
-    if (filterEntryListWidgetEntries(entry.m_name)) {
+    if (filterEntryListWidgetEntries(entry.m_name, true)) {
       popupWidget(getEntryListWidget());
       m_lastEntry.clear();
       return;
@@ -464,10 +464,13 @@ const QSharedPointer<QTreeWidget> &UnitedEntry::getEntryListWidget() {
     m_entryListWidget->setHeaderHidden(false);
     m_entryListWidget->setHeaderLabels(QStringList() << tr("Entry") << tr("Description"));
 
+    // The discovery row has no command key; activation enters command mode.
+    m_entryListWidget->addTopLevelItem(new QTreeWidgetItem({tr("Show and run entries >")}));
     const auto entries = m_mgr->getEntries();
     for (const auto &entry : entries) {
-      m_entryListWidget->addTopLevelItem(
-          new QTreeWidgetItem({entry->name(), entry->description()}));
+      auto *item = new QTreeWidgetItem({entry->name(), entry->description()});
+      item->setData(0, Qt::UserRole, entry->name());
+      m_entryListWidget->addTopLevelItem(item);
     }
 
     connect(m_entryListWidget.data(), &QTreeWidget::itemActivated, this,
@@ -481,24 +484,34 @@ QSharedPointer<QLabel> UnitedEntry::getInfoWidget(const QString &p_info) {
   return EntryWidgetFactory::createLabel(p_info);
 }
 
-bool UnitedEntry::filterEntryListWidgetEntries(const QString &p_name) {
+bool UnitedEntry::filterEntryListWidgetEntries(const QString &p_name, bool p_isCommand) {
   const auto &entryListWidget = getEntryListWidget();
+  entryListWidget->setHeaderHidden(!p_isCommand);
+  entryListWidget->setColumnHidden(1, !p_isCommand);
 
-  if (p_name.isEmpty()) {
-    for (int i = 0; i < entryListWidget->topLevelItemCount(); ++i) {
-      entryListWidget->topLevelItem(i)->setHidden(false);
-    }
-    return true;
-  }
-
-  auto items = entryListWidget->findItems(p_name, Qt::MatchStartsWith);
+  QTreeWidgetItem *firstVisible = nullptr;
+  QTreeWidgetItem *exactMatch = nullptr;
   for (int i = 0; i < entryListWidget->topLevelItemCount(); ++i) {
-    entryListWidget->topLevelItem(i)->setHidden(true);
+    auto *item = entryListWidget->topLevelItem(i);
+    const auto key = item->data(0, Qt::UserRole).toString();
+    const bool visible =
+        p_isCommand ? !key.isEmpty() && key.startsWith(p_name, Qt::CaseInsensitive) : key.isEmpty();
+    item->setHidden(!visible);
+    if (visible && !firstVisible) {
+      firstVisible = item;
+    }
+    if (p_isCommand && visible && key == p_name) {
+      exactMatch = item;
+    }
   }
-  for (const auto &item : items) {
-    item->setHidden(false);
+  auto *current = entryListWidget->currentItem();
+  if (exactMatch) {
+    // Keep case-distinct aliases consistent with the exact-case-first resolver.
+    entryListWidget->setCurrentItem(exactMatch);
+  } else if (!current || current->isHidden()) {
+    entryListWidget->setCurrentItem(firstVisible);
   }
-  return !items.isEmpty();
+  return firstVisible != nullptr;
 }
 
 void UnitedEntry::handleEntryListItemActivated(QTreeWidgetItem *p_item) {
@@ -506,13 +519,10 @@ void UnitedEntry::handleEntryListItemActivated(QTreeWidgetItem *p_item) {
     return;
   }
 
-  const auto name = p_item->text(0);
-  if (name.isEmpty()) {
-    return;
-  }
-
+  const auto name = p_item->data(0, Qt::UserRole).toString();
   auto *lineEdit = m_comboBox->lineEdit();
-  lineEdit->setText(QLatin1Char('>') + name + QLatin1Char(' '));
+  lineEdit->setText(name.isEmpty() ? QStringLiteral(">")
+                                   : QLatin1Char('>') + name + QLatin1Char(' '));
   lineEdit->setFocus();
 
   // setText's textChanged only debounce-starts the timer; call directly for

@@ -11584,8 +11584,8 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-84"/>
-        <source>Search file names, or &gt;command</source>
-        <translation>파일 이름 검색 또는 &gt;명령</translation>
+        <source>Type to search files by name in all notebooks</source>
+        <translation>입력하여 모든 노트북에서 파일 이름으로 검색</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -11616,6 +11616,10 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+0"/>
         <source>Description</source>
         <translation>설명</translation>
+    </message>
+    <message>
+        <source>Show and run entries &gt;</source>
+        <translation>항목 표시 및 실행 &gt;</translation>
     </message>
 </context>
 <context>

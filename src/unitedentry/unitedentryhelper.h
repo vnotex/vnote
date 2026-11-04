@@ -28,7 +28,7 @@ public:
 
   void refreshIcons();
 
-  // Empty input lists entries. A leading > selects a command; other nonempty input
+  // Empty input has no key. A leading > selects a command; other nonempty input
   // is a literal filename query across all notebooks, independent of configured aliases.
   // Alias callers prepend > here without changing their prefix-free stored values.
   static UserEntry parseUserEntry(const QString &p_text);

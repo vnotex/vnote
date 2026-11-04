@@ -11584,8 +11584,8 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-84"/>
-        <source>Search file names, or &gt;command</source>
-        <translation>ファイル名を検索、または &gt;コマンド</translation>
+        <source>Type to search files by name in all notebooks</source>
+        <translation>入力してすべてのノートブックのファイルを名前で検索</translation>
     </message>
     <message>
         <location line="+43"/>
@@ -11616,6 +11616,10 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+0"/>
         <source>Description</source>
         <translation>説明</translation>
+    </message>
+    <message>
+        <source>Show and run entries &gt;</source>
+        <translation>エントリーを表示して実行 &gt;</translation>
     </message>
 </context>
 <context>
