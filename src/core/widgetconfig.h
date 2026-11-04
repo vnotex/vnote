@@ -147,7 +147,8 @@ private:
   // first run; empty entries are respected as "no default".
   QJsonObject m_newNoteDefaultTemplates;
 
-  bool m_unitedEntryExpandAllEnabled = false;
+  // Expand result groups by default; an explicit saved preference takes precedence.
+  bool m_unitedEntryExpandAllEnabled = true;
 
   // Whether single click activates items in node explorer.
   bool m_nodeExplorerSingleClickActivation = false;
