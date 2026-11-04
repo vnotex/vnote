@@ -1048,6 +1048,21 @@ void TestMarkdownWebJobs::htmlCodeBlocks() {
 }
 
 void TestMarkdownWebJobs::htmlMath() {
+  // Browser copy omits the TeX annotations present in the page's outerHTML.
+  QFile clipboardFile(QFINDTESTDATA("../data/katex-clipboard.html"));
+  QVERIFY(clipboardFile.open(QIODevice::ReadOnly));
+  const auto clipboardHtml = QString::fromUtf8(clipboardFile.readAll());
+  const QString clipboardMarkdown = QStringLiteral(
+      "## 1\\. 这条公式对正整数指数为什么成立\n\n"
+      "当 $m,n$ 是正整数时：\n\n"
+      "$$\na^{m+n}=\\underbrace{a\\cdot a\\cdots a}_{m+n\\text{ 个}}\n$$\n\n"
+      "而\n\n"
+      "$$\na^{m}\\cdot a^{n}=\\underbrace{a\\cdots a}_{m\\text{ 个}}"
+      "\\cdot \\underbrace{a\\cdots a}_{n\\text{ 个}}\n$$\n\n"
+      "两者都是 $m+n$ 个 $a$ 相乘，所以相等。这是指数运算最基本的性质，也叫**指数律**。");
+  const auto presentation = [](const QString &body) {
+    return QStringLiteral("<math><semantics>%1</semantics></math>").arg(body);
+  };
   const auto math = [](const QString &tex, const QString &display = QString()) {
     return QStringLiteral("<math xmlns=\"http://www.w3.org/1998/Math/MathML\"%1><semantics>"
                           "<mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">"
@@ -1071,6 +1086,73 @@ void TestMarkdownWebJobs::htmlMath() {
     QString markdown;
   };
   const Case cases[] = {
+      {"browser-clipboard-without-annotations", clipboardHtml, clipboardMarkdown},
+      {"presentation-formatting-whitespace",
+       presentation(QStringLiteral("\n<mrow>\n<mi>m</mi><!-- layout -->\n<mo>+</mo>\n"
+                                   "<mi>n</mi>\n</mrow>\n")),
+       QStringLiteral("$m+n$")},
+      {"presentation-with-non-tex-metadata",
+       presentation(
+           QStringLiteral("<mi>x</mi><annotation encoding=\"text/plain\">metadata</annotation>"
+                          "<annotation-xml encoding=\"application/xml\"><data>metadata</data>"
+                          "</annotation-xml>")),
+       QStringLiteral("$x$")},
+      {"annotation-precedes-presentation", math(QStringLiteral("original")),
+       QStringLiteral("$original$")},
+      {"fraction-and-square-root",
+       presentation(QStringLiteral("<mfrac><mi>x</mi><msqrt><mi>y</mi><mo>+</mo><mn>1</mn>"
+                                   "</msqrt></mfrac>")),
+       QStringLiteral(R"($\frac{x}{\sqrt{y+1}}$)")},
+      {"indexed-root", presentation(QStringLiteral("<mroot><mi>x</mi><mn>3</mn></mroot>")),
+       QStringLiteral(R"($\sqrt[{3}]{x}$)")},
+      {"multi-digit-script-base",
+       presentation(QStringLiteral("<msup><mn>10</mn><mi>n</mi></msup>")),
+       QStringLiteral("${10}^{n}$")},
+      {"decimal-script-base", presentation(QStringLiteral("<msub><mn>1.2</mn><mi>n</mi></msub>")),
+       QStringLiteral("${1.2}_{n}$")},
+      {"decimal-combined-script-base",
+       presentation(QStringLiteral("<msubsup><mn>.5</mn><mi>n</mi><mn>2</mn></msubsup>")),
+       QStringLiteral("${.5}_{n}^{2}$")},
+      {"compound-script-base",
+       presentation(QStringLiteral("<msup><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>"
+                                   "<mi>n</mi></msup>")),
+       QStringLiteral("${a+b}^{n}$")},
+      {"nested-script-base",
+       presentation(QStringLiteral("<msup><msup><mi>a</mi><mi>b</mi></msup>"
+                                   "<mi>c</mi></msup>")),
+       QStringLiteral("${a^{b}}^{c}$")},
+      {"root-index-containing-bracket",
+       presentation(QStringLiteral("<mroot><mi>x</mi><mrow><mo>[</mo><mi>n</mi><mo>]</mo>"
+                                   "</mrow></mroot>")),
+       QStringLiteral(R"($\sqrt[{[n]}]{x}$)")},
+      {"combined-scripts",
+       presentation(QStringLiteral("<msubsup><mi>a</mi><mi>i</mi><mn>2</mn></msubsup>")),
+       QStringLiteral("$a_{i}^{2}$")},
+      {"subscript", presentation(QStringLiteral("<msub><mi>a</mi><mi>i</mi></msub>")),
+       QStringLiteral("$a_{i}$")},
+      {"overscript-and-underscript",
+       presentation(QStringLiteral("<mrow><mover><mi>x</mi><mi>a</mi></mover>"
+                                   "<munder><mi>y</mi><mi>b</mi></munder></mrow>")),
+       QStringLiteral(R"($\overset{a}{x}\underset{b}{y}$)")},
+      {"labelled-overbrace",
+       presentation(QStringLiteral("<mover><mover><mi>x</mi><mo>⏞</mo></mover>"
+                                   "<mi>n</mi></mover>")),
+       QStringLiteral(R"($\overbrace{x}^{n}$)")},
+      {"literal-text-escaping",
+       presentation(QStringLiteral("<mtext>&nbsp;个\n&amp;_#$%{}\\^~</mtext>")),
+       QStringLiteral(
+           R"($\text{ 个 \&\_\#\$\%\{\}\textbackslash{}\textasciicircum{}\textasciitilde{}}$)")},
+      {"unsupported-presentation-is-not-partially-recovered",
+       presentation(QStringLiteral("<mrow><msup><mi>a</mi><mn>2</mn></msup>"
+                                   "<menclose><mi>b</mi></menclose></mrow>")),
+       QStringLiteral("a2b")},
+      {"unknown-operator-is-not-guessed",
+       presentation(QStringLiteral("<mrow><mi>x</mi><mo>?</mo></mrow>")), QStringLiteral("x?")},
+      {"malformed-script-is-not-partially-recovered",
+       presentation(QStringLiteral("<msup><mi>a</mi><mi>b</mi><mi>c</mi></msup>")),
+       QStringLiteral("abc")},
+      {"multiple-semantics-presentations-are-not-guessed",
+       presentation(QStringLiteral("<mi>x</mi><mi>y</mi>")), QStringLiteral("xy")},
       {"reported-katex-display",
        QStringLiteral("<span class=\"katex-display ds-markdown-math\">%1</span>")
            .arg(katex(math(formula, QStringLiteral("block")))),
@@ -1105,8 +1187,8 @@ void TestMarkdownWebJobs::htmlMath() {
       {"class-substring-is-not-shell",
        QStringLiteral("<span class=\"not-katex\">%1 Keep text</span>").arg(x),
        QStringLiteral("$x$ Keep text")},
-      {"unannotated-math", QStringLiteral("<math><mi>x</mi></math>"), QStringLiteral("x")},
-      {"empty-tex-annotation", math(QStringLiteral(" \n ")), QStringLiteral("x")},
+      {"unannotated-math", QStringLiteral("<math><mi>x</mi></math>"), QStringLiteral("$x$")},
+      {"empty-tex-annotation", math(QStringLiteral(" \n ")), QStringLiteral("$x$")},
       {"encoding-case-insensitive",
        QStringLiteral("<math><semantics><annotation encoding=\" Application/X-TeX \">"
                       "x</annotation></semantics></math>"),

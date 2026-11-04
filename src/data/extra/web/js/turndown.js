@@ -76,7 +76,7 @@ class TurndownConverter {
             const annotation = Array.from(math.querySelectorAll('semantics > annotation')).find(node =>
                 node.closest('math') === math &&
                 (node.getAttribute('encoding') || '').trim().toLowerCase() === 'application/x-tex');
-            const tex = annotation ? annotation.textContent.trim() : '';
+            const tex = (annotation ? annotation.textContent.trim() : '') || this.mathmlToTex(math);
             if (!tex) {
                 continue;
             }
@@ -95,6 +95,108 @@ class TurndownConverter {
             replacement.textContent = 'math';
             target.replaceWith(replacement);
         }
+    }
+
+    mathmlToTex(p_math) {
+        // Browser selection copying can omit hidden TeX annotations. Recover only
+        // understood presentation nodes; never turn a partial formula into TeX.
+        const operators = new Map([
+            ['−', '-'], ['⋅', '\\cdot '], ['×', '\\times '], ['÷', '\\div '],
+            ['⋯', '\\cdots '], ['…', '\\ldots '], ['±', '\\pm '],
+            ['≤', '\\le '], ['≥', '\\ge '], ['≠', '\\ne '], ['∞', '\\infty '],
+            ['{', '\\{'], ['}', '\\}']
+        ]);
+        const brace = node => {
+            if (!node || !['munder', 'mover'].includes(node.localName) || node.children.length !== 2) {
+                return false;
+            }
+            const marker = node.children[1];
+            return marker.localName === 'mo' && !marker.children.length &&
+                marker.textContent.trim() === (node.localName === 'munder' ? '⏟' : '⏞');
+        };
+        const convert = node => {
+            if (node.namespaceURI !== 'http://www.w3.org/1998/Math/MathML') {
+                return null;
+            }
+            const name = node.localName;
+            const children = Array.from(node.children);
+            if (['mi', 'mn', 'mo', 'mtext'].includes(name)) {
+                if (children.length || node.hasAttribute('mathvariant')) {
+                    return null;
+                }
+                const value = node.textContent.trim();
+                if (name === 'mi') {
+                    // Multi-letter identifiers default to upright in MathML.
+                    if (!/^\p{L}+$/u.test(value)) {
+                        return null;
+                    }
+                    return Array.from(value).length === 1 ? value : '\\mathrm{' + value + '}';
+                }
+                if (name === 'mn') {
+                    return /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) ? value : null;
+                }
+                if (name === 'mo') {
+                    return /^[+\-=<>(),.;:!/\[\]|]$/.test(value) ? value : operators.get(value) ?? null;
+                }
+                const text = node.textContent.replace(/\r\n|[\r\n\t\u00a0]/g, ' ')
+                    .replace(/[\\{}$%&#_^~]/g, ch => {
+                        if (ch === '\\') return '\\textbackslash{}';
+                        if (ch === '^') return '\\textasciicircum{}';
+                        if (ch === '~') return '\\textasciitilde{}';
+                        return '\\' + ch;
+                    });
+                return '\\text{' + text + '}';
+            }
+            if (Array.from(node.childNodes).some(child => child.nodeType === 3 && child.data.trim())) {
+                return null;
+            }
+            if (name === 'semantics') {
+                const presentation = children.filter(child =>
+                    !['annotation', 'annotation-xml'].includes(child.localName));
+                return presentation.length === 1 ? convert(presentation[0]) : null;
+            }
+            if (brace(node)) {
+                const base = convert(children[0]);
+                return base === null ? null :
+                    (name === 'munder' ? '\\underbrace{' : '\\overbrace{') + base + '}';
+            }
+            const parts = children.map(convert);
+            if (parts.some(part => part === null)) {
+                return null;
+            }
+            const baseName = children[0]?.localName;
+            const atomicBase = ['mi', 'mo'].includes(baseName) ||
+                (baseName === 'mn' && parts[0].length === 1);
+            const scriptBase = atomicBase ? parts[0] : '{' + parts[0] + '}';
+            switch (name) {
+            case 'math':
+            case 'mrow':
+                return parts.join('');
+            case 'msqrt':
+                return parts.length ? '\\sqrt{' + parts.join('') + '}' : null;
+            case 'mfrac':
+                return parts.length === 2 ? '\\frac{' + parts[0] + '}{' + parts[1] + '}' : null;
+            case 'mroot':
+                return parts.length === 2 ? '\\sqrt[{' + parts[1] + '}]{' + parts[0] + '}' : null;
+            case 'msub':
+            case 'msup':
+                return parts.length === 2 ? scriptBase + (name === 'msub' ? '_{' : '^{') + parts[1] + '}' : null;
+            case 'msubsup':
+                return parts.length === 3 ? scriptBase + '_{' + parts[1] + '}^{' + parts[2] + '}' : null;
+            case 'munder':
+            case 'mover':
+                if (parts.length !== 2) {
+                    return null;
+                }
+                if (children[0].localName === name && brace(children[0])) {
+                    return parts[0] + (name === 'munder' ? '_{' : '^{') + parts[1] + '}';
+                }
+                return (name === 'munder' ? '\\underset{' : '\\overset{') + parts[1] + '}{' + parts[0] + '}';
+            default:
+                return null;
+            }
+        };
+        return convert(p_math);
     }
 
     fixMath() {

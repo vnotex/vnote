@@ -3,7 +3,7 @@
 * Enlarge Sort Folders and Sort Notes to 800 × 600 by default and reveal the triggering folder or note as the current selected item when present
 * Open files classified as Others with the system application instead of the plaintext editor, retain inferred text/image viewers, and skip unsupported session tabs without launching external applications
 * Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
-* Preserve annotated KaTeX and MathML formulas when parsing HTML to Markdown and pasting, retaining inline/display math and TeX source without duplicate rendered text
+* Preserve KaTeX and MathML formulas when parsing HTML to Markdown and pasting: prefer annotated TeX source, or recover supported MathML when browser copying strips annotations, retaining inline/display math and labeled underbraces without duplicate rendered text
 * Store HTTP API enable, loopback address and port settings in local session configuration instead of main preferences, without migrating unreleased settings
 * Fix Windows HTTP API token issuance under elevated accounts while retaining strict owner-only credential storage
 * Synchronize notification backlog scrolling tests with completed layout and preserve first-run Windows HTTP API test diagnostics
