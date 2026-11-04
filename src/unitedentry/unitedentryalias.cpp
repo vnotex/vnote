@@ -11,7 +11,7 @@ using namespace vnotex;
 UnitedEntryAlias::UnitedEntryAlias(const QString &p_name, const QString &p_description,
                                    const QString &p_value, UnitedEntryMgr *p_mgr, QObject *p_parent)
     : IUnitedEntry(p_name, p_description, p_mgr, p_parent), m_value(p_value) {
-  m_alias = UnitedEntryHelper::parseUserEntry(m_value);
+  m_alias = UnitedEntryHelper::parseUserEntry(QLatin1Char('>') + m_value);
 }
 
 UnitedEntryAlias::UnitedEntryAlias(const QJsonObject &p_obj, UnitedEntryMgr *p_mgr,

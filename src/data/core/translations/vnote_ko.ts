@@ -11584,8 +11584,8 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-84"/>
-        <source>Type to command</source>
-        <translation>명령 입력</translation>
+        <source>Search file names, or &gt;command</source>
+        <translation>파일 이름 검색 또는 &gt;명령</translation>
     </message>
     <message>
         <location line="+43"/>

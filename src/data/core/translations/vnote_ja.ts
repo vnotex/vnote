@@ -11584,8 +11584,8 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-84"/>
-        <source>Type to command</source>
-        <translation>入力してコマンドを実行</translation>
+        <source>Search file names, or &gt;command</source>
+        <translation>ファイル名を検索、または &gt;コマンド</translation>
     </message>
     <message>
         <location line="+43"/>

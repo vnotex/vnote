@@ -93,7 +93,7 @@ void UnitedEntry::setupUI() {
   m_comboBox->setMaximumWidth(c_maxInputWidth);
   m_comboBox->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
   setMaximumWidth(c_maxInputWidth);
-  m_comboBox->lineEdit()->setPlaceholderText(tr("Type to command"));
+  m_comboBox->lineEdit()->setPlaceholderText(tr("Search file names, or >command"));
   m_comboBox->lineEdit()->setClearButtonEnabled(true);
   m_comboBox->lineEdit()->installEventFilter(this);
   m_comboBox->installEventFilter(this);
@@ -294,11 +294,13 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
 
   case Qt::Key_E:
     if (WidgetUtils::isViControlModifier(modifiers)) {
-      // Eliminate input till the entry name.
+      // Keep only an explicit command key; filename queries have no key to retain.
       const auto text = lineEdit->text();
       const auto entry = UnitedEntryHelper::parseUserEntry(text);
-      if (!entry.m_name.isEmpty()) {
-        lineEdit->setText(entry.m_name + QLatin1Char(' '));
+      if (!entry.m_isCommand) {
+        lineEdit->clear();
+      } else if (!entry.m_name.isEmpty()) {
+        lineEdit->setText(QLatin1Char('>') + entry.m_name + QLatin1Char(' '));
       }
       return true;
     }
@@ -306,11 +308,17 @@ bool UnitedEntry::handleLineEditKeyPress(QKeyEvent *p_event) {
 
   case Qt::Key_F:
     if (WidgetUtils::isViControlModifier(modifiers)) {
-      // Select the entry name.
+      // Select the explicit key without its marker, or the entire filename query.
       const auto text = lineEdit->text();
       const auto entry = UnitedEntryHelper::parseUserEntry(text);
-      if (!entry.m_name.isEmpty()) {
-        lineEdit->setSelection(0, entry.m_name.size());
+      if (!entry.m_isCommand) {
+        lineEdit->selectAll();
+      } else if (!entry.m_name.isEmpty()) {
+        auto start = text.indexOf(QLatin1Char('>')) + 1;
+        while (text.at(start).isSpace()) {
+          ++start;
+        }
+        lineEdit->setSelection(start, entry.m_name.size());
       }
       return true;
     }
@@ -417,8 +425,8 @@ void UnitedEntry::processInput() {
     return;
   }
 
-  // Filter the help widget if space after entry name is not entered yet.
-  if (entry.m_name == text.trimmed() && !text.back().isSpace()) {
+  // Suggest explicit keys until a separating whitespace or arguments are entered.
+  if (entry.m_isCommand && entry.m_args.isEmpty() && !text.back().isSpace()) {
     if (filterEntryListWidgetEntries(entry.m_name)) {
       popupWidget(getEntryListWidget());
       m_lastEntry.clear();
@@ -504,7 +512,7 @@ void UnitedEntry::handleEntryListItemActivated(QTreeWidgetItem *p_item) {
   }
 
   auto *lineEdit = m_comboBox->lineEdit();
-  lineEdit->setText(name + QLatin1Char(' '));
+  lineEdit->setText(QLatin1Char('>') + name + QLatin1Char(' '));
   lineEdit->setFocus();
 
   // setText's textChanged only debounce-starts the timer; call directly for

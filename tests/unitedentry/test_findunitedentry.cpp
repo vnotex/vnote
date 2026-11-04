@@ -9,6 +9,7 @@
 #include <unitedentry/findunitedentry.h>
 #include <unitedentry/unitedentryhelper.h>
 #include <unitedentry/unitedentrymgr.h>
+#include <utils/processutils.h>
 
 using namespace vnotex;
 
@@ -46,6 +47,11 @@ private slots:
   void testResolveEntryNameAliasParticipation();
   void testParseAndResolveCase_data();
   void testParseAndResolveCase();
+  void testCommandWhitespace();
+  void testFilenameInput_data();
+  void testFilenameInput();
+  void testEntryListInput_data();
+  void testEntryListInput();
 
 private:
   static void setupParser(QCommandLineParser &p_parser);
@@ -316,18 +322,84 @@ void TestFindUnitedEntry::testParseAndResolveCase_data() {
 void TestFindUnitedEntry::testParseAndResolveCase() {
   QFETCH(QString, input);
   QFETCH(QString, expected);
-  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
-                            QStringLiteral("history"), QStringLiteral("N"),
-                            QStringLiteral("n"), QStringLiteral("G"), QStringLiteral("g")};
-  const auto entry = UnitedEntryHelper::parseUserEntry(input + QStringLiteral(" MixedCase query "));
+  const QList<QString> names{QStringLiteral("find"),    QStringLiteral("help"),
+                             QStringLiteral("history"), QStringLiteral("N"),
+                             QStringLiteral("n"),       QStringLiteral("G"),
+                             QStringLiteral("g")};
+  const auto entry = UnitedEntryHelper::parseUserEntry(QLatin1Char('>') + input +
+                                                       QStringLiteral(" MixedCase query "));
+  QVERIFY(entry.m_isCommand);
   QCOMPARE(entry.m_name, input);
   QCOMPARE(entry.m_args, QStringLiteral("MixedCase query"));
   QCOMPARE(UnitedEntryMgr::resolveEntryName(names, entry.m_name), expected);
 
-  const auto bareEntry = UnitedEntryHelper::parseUserEntry(QStringLiteral(" ") + input);
+  const auto bareEntry = UnitedEntryHelper::parseUserEntry(QStringLiteral("  >") + input);
+  QVERIFY(bareEntry.m_isCommand);
   QCOMPARE(bareEntry.m_name, input);
   QVERIFY(bareEntry.m_args.isEmpty());
   QCOMPARE(UnitedEntryMgr::resolveEntryName(names, bareEntry.m_name), expected);
+}
+
+void TestFindUnitedEntry::testCommandWhitespace() {
+  const auto entry =
+      UnitedEntryHelper::parseUserEntry(QStringLiteral(" \t> \tfind\tMixedCase query \t"));
+  QVERIFY(entry.m_isCommand);
+  QCOMPARE(entry.m_name, QStringLiteral("find"));
+  QCOMPARE(entry.m_args, QStringLiteral("MixedCase query"));
+}
+
+void TestFindUnitedEntry::testFilenameInput_data() {
+  QTest::addColumn<QString>("input");
+  QTest::newRow("single-word") << QStringLiteral("  entry-probe  ");
+  QTest::newRow("command-looking") << QStringLiteral("find xxxx");
+  QTest::newRow("alias-looking") << QStringLiteral("N xxxx");
+  QTest::newRow("scope-options") << QStringLiteral("-s notebook --object content");
+  QTest::newRow("search-options") << QStringLiteral("-r -c -p *.md");
+  QTest::newRow("whitespace-quotes") << QStringLiteral(" \talpha\tbeta  \"quoted\"  gamma \t");
+  QTest::newRow("tab-only-separator") << QStringLiteral("alpha\tbeta");
+  QTest::newRow("boundary-quotes") << QStringLiteral("\"quoted\"");
+  QTest::newRow("embedded-marker") << QStringLiteral("alpha>beta");
+}
+
+void TestFindUnitedEntry::testFilenameInput() {
+  QFETCH(QString, input);
+  const auto entry = UnitedEntryHelper::parseUserEntry(input);
+  QVERIFY(!entry.m_isCommand);
+  QCOMPARE(entry.m_name, QStringLiteral("find"));
+
+  auto args = ProcessUtils::parseCombinedArgString(entry.m_args);
+  args.prepend(entry.m_name);
+  QCommandLineParser parser;
+  setupParser(parser);
+  QVERIFY2(parser.parse(args), qPrintable(parser.errorText()));
+
+  const auto params = FindUnitedEntry::mapArgsToSearchParams(parser);
+  QCOMPARE(params.scope, static_cast<int>(SearchController::AllNotebooks));
+  QCOMPARE(params.searchMode, static_cast<int>(SearchController::FileNameSearch));
+  QCOMPARE(params.fileSearchOptions.matchTarget, SearchController::MatchName);
+  QVERIFY(!params.fileSearchOptions.includeFolders);
+  QCOMPARE(params.keyword, input.trimmed());
+  QVERIFY(!params.useRegex);
+  QVERIFY(!params.caseSensitive);
+  QVERIFY(params.filePattern.isEmpty());
+}
+
+void TestFindUnitedEntry::testEntryListInput_data() {
+  QTest::addColumn<QString>("input");
+  QTest::addColumn<bool>("isCommand");
+  QTest::newRow("empty") << QString() << false;
+  QTest::newRow("whitespace") << QStringLiteral(" \t ") << false;
+  QTest::newRow("marker") << QStringLiteral(">") << true;
+  QTest::newRow("padded-marker") << QStringLiteral(" \t> \t ") << true;
+}
+
+void TestFindUnitedEntry::testEntryListInput() {
+  QFETCH(QString, input);
+  QFETCH(bool, isCommand);
+  const auto entry = UnitedEntryHelper::parseUserEntry(input);
+  QCOMPARE(entry.m_isCommand, isCommand);
+  QVERIFY(entry.m_name.isEmpty());
+  QVERIFY(entry.m_args.isEmpty());
 }
 
 } // namespace tests
