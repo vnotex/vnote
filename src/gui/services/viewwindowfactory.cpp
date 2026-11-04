@@ -40,11 +40,6 @@ void ViewWindowFactory::registerBuiltInCreators() {
                      ViewWindowMode) -> ViewWindow2 * {
                     return new ImageViewWindow(p_services, p_buffer, p_parent);
                   });
-  registerCreator("Others",
-                  [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
-                     ViewWindowMode) -> ViewWindow2 * {
-                    return new TextViewWindow2(p_services, p_buffer, p_parent);
-                  });
   // pdf.js v6 is ESM-only and its `legacy` dist targets Chrome 125+; it is served
   // over a custom `vxpdf://` QWebEngineUrlScheme that only exists on Qt 6. The
   // floor is therefore Qt 6.9 (Chromium 130). Leaving the type unregistered below

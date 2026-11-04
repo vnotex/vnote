@@ -14,6 +14,19 @@
 | `NavigationModeService` | Keyboard navigation mode service |
 | `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
 
+## File viewer routing
+
+`Text` owns the built-in plaintext editor. `Others` has no built-in creator: explicit
+file opens use the controller's system-application fallback, after any configured
+per-suffix external program. Dispatch happens before tab replacement or detached-workspace
+creation. Registered suffixes win; otherwise MIME inference uses the resolved file path
+and may select `Text` or `Image`. Encrypted notes use their authenticated editor type.
+
+Session and fresh-workspace restoration skip types without a registered creator, without
+launching external applications or removing core buffers/workspace membership. Locked
+encrypted notes retain their unlock placeholder. Coverage: `test_viewarea_tab_reuse` tests
+Others dispatch, inferred viewers, legacy sessions and already-unlocked protected editors.
+
 ## Qt application appearance
 
 On Qt 6.8+, `ThemeService` synchronizes `QStyleHints::colorScheme` on startup,

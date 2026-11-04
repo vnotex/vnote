@@ -347,7 +347,8 @@ Settings and other virtual content are never replacement candidates; lone-Home r
 remains owned by the existing successful-open path.
 
 `ViewWindowFactory` stamps the normalized creator key. Reuse requires that exact key and
-`supportsBufferReplacement()`; Text and Others are distinct even though their class matches.
+`supportsBufferReplacement()`. `Others` has no built-in viewer and does not participate
+in tab replacement; explicit opens use the system application instead.
 The controller owns add-before-remove workspace membership, exact-ID reentrancy guards,
 rollback, closed-tab history and consistent current-buffer publication. Unowned candidates
 must be closed through BufferService after checking all visible, hidden and detached owners.

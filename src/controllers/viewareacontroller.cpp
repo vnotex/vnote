@@ -1368,7 +1368,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   } else {
     auto *ftSvc = m_services.get<FileTypeCoreService>();
     if (ftSvc) {
-      FileType ft = ftSvc->getFileType(p_buffer.nodeId().relativePath);
+      FileType ft = ftSvc->getFileType(p_buffer.resolvedPath());
       fileType = ft.m_typeName;
     }
     if (fileType.isEmpty()) {
@@ -4345,32 +4345,36 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
 
   // Resolve file type.
   QString fileType;
-  auto *ftSvc = m_services.get<FileTypeCoreService>();
-  if (ftSvc) {
-    FileType ft = ftSvc->getFileType(buf.nodeId().relativePath);
-    fileType = ft.m_typeName;
-  }
-  if (fileType.isEmpty()) {
-    fileType = QStringLiteral("Text");
+  if (buf.isEncrypted()) {
+    const QString editor = buf.editorType();
+    if (editor == QLatin1String("markdown")) {
+      fileType = QStringLiteral("Markdown");
+    } else if (editor == QLatin1String("text")) {
+      fileType = QStringLiteral("Text");
+    } else if (editor == QLatin1String("mindmap")) {
+      fileType = QStringLiteral("MindMap");
+    } else {
+      return false;
+    }
+  } else {
+    auto *ftSvc = m_services.get<FileTypeCoreService>();
+    if (ftSvc) {
+      FileType ft = ftSvc->getFileType(buf.resolvedPath());
+      fileType = ft.m_typeName;
+    }
+    if (fileType.isEmpty()) {
+      fileType = QStringLiteral("Text");
+    }
   }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-  // PDF has no built-in viewer below Qt 6.9 (see the ViewWindowFactory gate and
-  // src/data/extra/web/pdf.js/AGENTS.md). Restoring the tab would make
-  // ViewArea2::openBuffer emit viewWindowCreationFailed and raise an error
-  // notification at every startup; launching an external application unprompted
-  // at session restore is not acceptable either. So the tab is simply not
-  // recreated.
-  //
-  // Deliberately NOT closing or unregistering the buffer: it stays a member of
-  // the workspace, so the persisted session is untouched, no backup is
-
-  if (fileType.compare(QStringLiteral("PDF"), Qt::CaseInsensitive) == 0) {
-    qInfo() << "ViewAreaController::openRestoredBuffer: PDF viewing needs Qt 6.9+ -"
-            << "skipping restore of" << buf.nodeId().relativePath;
+  // Restore only registered viewers; never launch external applications implicitly.
+  // Keep unsupported buffers and their workspace membership for a later supported open.
+  auto *factory = m_services.get<ViewWindowFactory>();
+  if (!factory || !factory->hasCreator(fileType)) {
+    qInfo() << "ViewAreaController::openRestoredBuffer: no built-in viewer for type" << fileType
+            << "- skipping restore of" << buf.nodeId().relativePath;
     return false;
   }
-#endif
 
   qCDebug(lcWorkspace) << "    Opening restored buffer: buffer:" << p_bufferId
                        << "path:" << buf.nodeId().relativePath << "type:" << fileType

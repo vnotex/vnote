@@ -1026,6 +1026,12 @@ private slots:
   void memoryMarkdownAndMindMap();
   void memoryImagePdfAndTypst();
   void nativeTextAndMindMap();
+  void othersUseSystemApplication_data();
+  void othersUseSystemApplication();
+  void inferredTextAndImageStayInternal();
+  void restoreOthersWithoutExternalLaunch();
+  void restoreUnlockedProtectedEditors_data();
+  void restoreUnlockedProtectedEditors();
   void typstCompilerAndUnavailableSource();
   void typstSessionPosition_data();
   void typstSessionPosition();
@@ -7464,6 +7470,168 @@ void TestViewAreaTabReuse::memoryMarkdownAndMindMap() {
            QColor(28, 164, 92));
 }
 
+void TestViewAreaTabReuse::othersUseSystemApplication_data() {
+  QTest::addColumn<bool>("detached");
+  QTest::newRow("main") << false;
+  QTest::newRow("detached") << true;
+}
+
+void TestViewAreaTabReuse::othersUseSystemApplication() {
+  QFETCH(bool, detached);
+  f->reuse();
+  const QByteArray binary = QByteArray::fromHex("504b03041400000008000000000000000000");
+  QVERIFY(f->create(QStringLiteral("package.apk"), binary));
+  QCOMPARE(f->fileTypes->getFileType(f->absolute(QStringLiteral("package.apk"))).m_typeName,
+           QStringLiteral("Others"));
+  QVERIFY(f->create(QStringLiteral("current.txt"), "Keep this text\n"));
+  QVERIFY(f->open(QStringLiteral("current.txt")).isValid());
+  QPointer<ViewWindow2> current(f->current());
+  auto *editor = current->findChild<TextEditor *>();
+  QVERIFY(editor);
+  appendDraft(editor->getTextEdit(), QStringLiteral("Unsaved draft"));
+  const auto draft = editor->getText();
+  const auto workspaces = f->workspaces->listWorkspaces();
+  const auto buffers = f->buffers->listBuffers();
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto clearHandler =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QSignalSpy failures(f->area.get(), &ViewArea2::viewWindowCreationFailed);
+  FileOpenSettings settings;
+  settings.m_detachedView = detached;
+  f->buffers->openBuffer(f->node(QStringLiteral("package.apk")), settings);
+  QCOMPARE(desktop.opened,
+           QList<QUrl>{QUrl::fromLocalFile(f->absolute(QStringLiteral("package.apk")))});
+  QCOMPARE(f->current(), current.data());
+  QVERIFY(current && current->isModified());
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(f->tabs(), 1);
+  QCOMPARE(f->workspaces->listWorkspaces(), workspaces);
+  QCOMPARE(f->buffers->listBuffers(), buffers);
+  QCOMPARE(failures.count(), 0);
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("package.apk"))), binary);
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("current.txt"))), QByteArray("Keep this text\n"));
+}
+
+void TestViewAreaTabReuse::inferredTextAndImageStayInternal() {
+  f->reuse();
+  const QByteArray text("Inferred text without a registered suffix\n");
+  const auto image = imageBytes(QColor(28, 164, 92));
+  QVERIFY(f->create(QStringLiteral("note.unknown-text"), text));
+  QVERIFY(f->create(QStringLiteral("picture.unknown-image"), image));
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto clearHandler =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QVERIFY(f->open(QStringLiteral("note.unknown-text")).isValid());
+  QVERIFY(f->current());
+  QCOMPARE(f->current()->getFileType(), QStringLiteral("text"));
+  auto *editor = f->current()->findChild<TextEditor *>();
+  QVERIFY(editor);
+  QCOMPARE(editor->getText(), QString::fromUtf8(text));
+  QVERIFY(f->open(QStringLiteral("picture.unknown-image")).isValid());
+  QVERIFY(f->current());
+  QCOMPARE(f->current()->getFileType(), QStringLiteral("image"));
+  QVERIFY(f->current()->findChild<ImageViewer *>());
+  QVERIFY(desktop.opened.isEmpty());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("picture.unknown-image"))), image);
+}
+
+void TestViewAreaTabReuse::restoreOthersWithoutExternalLaunch() {
+  const QByteArray binary = QByteArray::fromHex("504b03041400000008000000000000000000");
+  QVERIFY(f->create(QStringLiteral("package.apk"), binary));
+  QVERIFY(f->create(QStringLiteral("keep.txt"), "Restored text\n"));
+  // Persist a real legacy session; never edit or save the binary through this old viewer.
+  auto *factory = f->factory.get();
+  factory->registerCreator(
+      QStringLiteral("Others"), [factory](ServiceLocator &p_services, const Buffer2 &p_buffer,
+                                          QWidget *p_parent, ViewWindowMode p_mode) {
+        return factory->create(QStringLiteral("Text"), p_services, p_buffer, p_parent, p_mode);
+      });
+  const auto text = f->open(QStringLiteral("keep.txt"), true);
+  const auto apk = f->open(QStringLiteral("package.apk"), true);
+  QVERIFY(text.isValid() && apk.isValid());
+  QCOMPARE(f->current()->getFileType(), QStringLiteral("others"));
+  const auto workspace = f->workspace();
+  const auto order = f->order();
+  const auto apkId = apk.id();
+  const auto textId = text.id();
+  QCOMPARE(f->coreCurrent(), apkId);
+  const auto layout = f->area->saveLayout();
+  const auto notebook = f->notebook;
+  f->config->updateMainConfig(f->config->getConfig().toJson());
+  f->area->saveSession();
+  QCOMPARE(vxcore_prepare_shutdown(f->context), VXCORE_OK);
+  f.reset();
+  f = std::make_unique<Fixture>(directory->path());
+  QVERIFY2(f->initialize(notebook), qPrintable(f->error));
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto clearHandler =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QSignalSpy failures(f->area.get(), &ViewArea2::viewWindowCreationFailed);
+  f->area->loadLayoutFromSession(layout);
+  f->area->restoreSession();
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(workspace).size(), 1);
+  QVERIFY(f->current());
+  QCOMPARE(f->current()->getBuffer().id(), textId);
+  QCOMPARE(f->current()->getLatestContent(), QStringLiteral("Restored text\n"));
+  QCOMPARE(f->order(workspace), order);
+  QVERIFY(f->buffers->getBufferHandle(apkId).isValid());
+  QVERIFY(desktop.opened.isEmpty());
+  QCOMPARE(failures.count(), 0);
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("package.apk"))), binary);
+}
+
+void TestViewAreaTabReuse::restoreUnlockedProtectedEditors_data() {
+  QTest::addColumn<QString>("editorType");
+  QTest::addColumn<QByteArray>("content");
+  QTest::newRow("markdown") << QStringLiteral("markdown") << QByteArray("# Protected content\n");
+  QTest::newRow("text") << QStringLiteral("text") << QByteArray("Protected content\n");
+  QTest::newRow("mindmap") << QStringLiteral("mindmap")
+                           << mindMapBytes(QStringLiteral("Protected content"));
+}
+
+void TestViewAreaTabReuse::restoreUnlockedProtectedEditors() {
+  QFETCH(QString, editorType);
+  QFETCH(QByteArray, content);
+  const QString name = editorType == QLatin1String("markdown") ? QStringLiteral("secret.md")
+                       : editorType == QLatin1String("text")   ? QStringLiteral("secret.txt")
+                                                               : QStringLiteral("secret.emind");
+  const auto id = f->createProtected(name, content, true, editorType);
+  QVERIFY(!id.isEmpty());
+  const auto buffer = f->openProtected(id, true);
+  QVERIFY(buffer.isValid());
+  QCOMPARE(buffer.editorType(), editorType);
+  const auto layout = f->area->saveLayout();
+  const auto workspace = f->workspace();
+  f->controller()->setShouldPropagateToCore(false);
+  f->area.reset();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  // Keep the same core context: a cold restart would lock the buffer and miss this path.
+  QCOMPARE(buffer.editorType(), editorType);
+  f->area = std::make_unique<ViewArea2>(f->services);
+  f->area->resize(1050, 760);
+  f->area->show();
+  QVERIFY(activateNativeHost(f->area.get()));
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto clearHandler =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QSignalSpy failures(f->area.get(), &ViewArea2::viewWindowCreationFailed);
+  f->area->loadLayoutFromSession(layout);
+  f->area->restoreSession();
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(workspace).size(), 1);
+  QVERIFY(f->current());
+  QCOMPARE(f->current()->getBuffer().id(), buffer.id());
+  QVERIFY(f->current()->getBuffer().isEncrypted());
+  QCOMPARE(f->current()->getFileType(), editorType);
+  QVERIFY(f->current()->getLatestContent().contains(QStringLiteral("Protected content")));
+  QVERIFY(!f->current()->findChild<QPushButton *>(QStringLiteral("unlockProtectedNote")));
+  QCOMPARE(failures.count(), 0);
+  QVERIFY(desktop.opened.isEmpty());
+}
+
 void TestViewAreaTabReuse::nativeTextAndMindMap() {
   f->reuse();
   QVERIFY(f->create(QStringLiteral("a.txt"), "Text alpha\n"));
@@ -7482,21 +7650,6 @@ void TestViewAreaTabReuse::nativeTextAndMindMap() {
   QVERIFY(window->save());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("a.txt"))), QByteArray("Text alpha\n"));
   QTRY_VERIFY(readBytes(f->absolute(QStringLiteral("b.txt"))).contains("saved beta"));
-  // Text and Others share a C++ class but are different registered creator keys.
-  QVERIFY(f->create(QStringLiteral("a.unknown-reuse"), "Other alpha\n"));
-  QVERIFY(f->create(QStringLiteral("b.unknown-reuse"), "Other beta\n"));
-  QPointer<ViewWindow2> plainTextWindow = window;
-  QVERIFY(f->open(QStringLiteral("a.unknown-reuse")).isValid());
-  QVERIFY(f->current() != plainTextWindow.data());
-  QTRY_VERIFY(plainTextWindow.isNull());
-  window = f->current();
-  text = window->findChild<TextEditor *>();
-  QVERIFY(text);
-  QCOMPARE(window->getFileType().toLower(), QStringLiteral("others"));
-  QVERIFY(f->open(QStringLiteral("b.unknown-reuse")).isValid());
-  QCOMPARE(f->current(), window);
-  QCOMPARE(window->findChild<TextEditor *>(), text);
-  QCOMPARE(text->getText(), QStringLiteral("Other beta\n"));
   QVERIFY(f->create(QStringLiteral("a.emind"), mindMapBytes(QStringLiteral("Map alpha"))));
   QVERIFY(f->create(QStringLiteral("b.emind"), mindMapBytes(QStringLiteral("Map beta"))));
   QVERIFY(f->create(QStringLiteral("bad.emind"), "{ broken map"));

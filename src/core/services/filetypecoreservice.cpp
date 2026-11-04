@@ -141,7 +141,7 @@ FileType FileTypeCoreService::getFileType(const QString &p_filePath) const {
       return image.m_typeName.isEmpty() ? type : image;
     }
     if (FileUtils2::isText(p_filePath)) {
-      return getFileType("Text");
+      return getFileTypeByName(QStringLiteral("Text"));
     }
   }
 

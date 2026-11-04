@@ -31,19 +31,18 @@ with `QWebEngineView::setHtml()`, which yields an opaque `data:` origin. A modul
 such a page to a `file://` URL is cross-origin and Chromium blocks it. The fix is the
 `vxpdf://` scheme below, registered with `QWebEngineUrlScheme`.
 
-### Compile-time gates
+### Viewer availability gates
 
 | Site | Effect below Qt 6.9 |
 |---|---|
 | `ViewWindowFactory::registerBuiltInCreators` (`src/gui/services/viewwindowfactory.cpp`) | The `"Pdf"` creator (and its `pdfviewwindow2.h` include) is not compiled in, so `hasCreator("PDF")` is false. `ViewAreaController::openBuffer` then takes its existing `QDesktopServices::openUrl` fallback and hands the PDF to the system default reader; a per-suffix external program configured in Settings still wins, as it is checked earlier. |
-| `ViewAreaController::openRestoredBuffer` (`src/controllers/viewareacontroller.cpp`) | A restored PDF tab is skipped with one `qInfo` line instead of raising a `viewWindowCreationFailed` notification at every startup. Nothing is closed or unregistered: the buffer stays in the workspace, so the same config opened under Qt 6.9+ restores the tab intact. |
+| `ViewAreaController::openRestoredBuffer` (`src/controllers/viewareacontroller.cpp`) | The shared `hasCreator` guard skips a restored PDF tab with one `qInfo` line instead of launching an external application or raising a `viewWindowCreationFailed` notification. Nothing is closed or unregistered: the buffer stays in the workspace, so the same config opened under Qt 6.9+ restores the tab intact. |
 | `VxPdfSchemeHandler` (`src/gui/services/vxpdfschemehandler.{h,cpp}`), its registration in `main.cpp` and its installation in `WebEngineProfileService` | Not compiled / not installed. |
 
-`FileTypeCoreService`, vxcore's file-type config and the user's file associations are
-deliberately **untouched** — a `.pdf` still resolves to the `PDF` type everywhere. Filtering
-the type instead would map PDFs onto the editable, auto-saving `TextViewWindow2`, and the
-File Associations page's get→edit→set round trip would permanently delete the PDF entry from
-`vxcore.json`. `PdfViewWindow2`, `PdfViewWindowController`, `PdfViewerConfig` and
+Keep PDF's file-type registration and the user's associations independent of viewer
+availability: a `.pdf` still resolves to `PDF`. Removing the type would lose that identity,
+and the File Associations page's get→edit→set round trip would permanently delete the PDF
+entry from `vxcore.json`. `PdfViewWindow2`, `PdfViewWindowController`, `PdfViewerConfig` and
 `pdfviewercore.js` all stay compiled and tested; only instantiation is gated.
 
 ### Do not trust the file name in JS console log lines
