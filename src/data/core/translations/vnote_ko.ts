@@ -2,6 +2,29 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ko_KR">
 <context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>토큰 관리는 소유자 스레드에서 실행되어야 함</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>토큰 레지스트리가 잘못됨</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>노트북, 유효한 권한, 레이블 및 올바른 유효 기간 옵션을 선택</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>토큰 한도인 64개에 도달함</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>토큰이 더 이상 존재하지 않음</translation>
+    </message>
+</context>
+<context>
     <name>CommandLineOptions</name>
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
@@ -161,7 +184,7 @@
 <context>
     <name>LockedNoteView</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+61"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+62"/>
         <source>This note is locked. Unlock it to read its contents.</source>
         <translation>이 노트는 잠겨 있습니다. 내용을 읽으려면 잠금을 해제하세요.</translation>
     </message>
@@ -890,37 +913,42 @@
         <translation>인쇄</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+43"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
         <source>Readable Width</source>
         <translation>읽기 편한 너비</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+55"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+13"/>
         <source>Live Preview</source>
         <translation>실시간 미리보기</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+3"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+13"/>
         <source>In-Place Preview</source>
         <translation>본문 내 미리 보기</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+4"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
         <source>Conceal long link destinations</source>
         <translation>긴 링크 대상 주소 숨기기</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
         <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
         <translation>Markdown 소스를 변경하지 않고 이미지, 링크, 참조의 긴 대상 주소를 줄여 표시합니다. 전체 주소를 보려면 마우스를 올려놓으세요</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+4"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
         <source>Conceal Markdown Markers</source>
         <translation>Markdown 마커 숨기기</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
         <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
         <translation>소스를 변경하지 않고 Markdown 서식 마커를 숨깁니다. 요소 안으로 커서를 옮기면 마커가 표시됩니다</translation>
     </message>
@@ -1200,12 +1228,12 @@
     <name>vnotex::AppearancePage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/appearancepage.cpp" line="+32"/>
-        <location line="+116"/>
+        <location line="+117"/>
         <source>Appearance</source>
         <translation>모양</translation>
     </message>
     <message>
-        <location line="-111"/>
+        <location line="-112"/>
         <source>System title bar</source>
         <translation>시스템 제목 표시줄</translation>
     </message>
@@ -1226,7 +1254,7 @@
     </message>
     <message>
         <location line="+20"/>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Dock widgets kept when expanding content area</source>
         <translation>콘텐츠 영역을 확장할 때 유지할 도킹 위젯</translation>
     </message>
@@ -1376,23 +1404,28 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+183"/>
-        <location line="+259"/>
-        <location line="+211"/>
-        <location line="+121"/>
-        <location line="+67"/>
-        <location line="+43"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+187"/>
+        <location line="+306"/>
+        <location line="+241"/>
+        <location line="+164"/>
+        <location line="+74"/>
+        <location line="+49"/>
         <source>Replacement was cancelled.</source>
         <translation>바꾸기가 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="-695"/>
+        <location line="-828"/>
         <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
         <translation>노트를 읽을 수 없거나 노트가 검색 크기 제한을 초과합니다.</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+6"/>
+        <source>The saved note has changed.</source>
+        <translation>저장된 노트가 변경되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>The note has a binary or non-round-trippable encoding.</source>
         <translation>노트가 바이너리 형식이거나 원래 바이트로 복원할 수 없는 인코딩을 사용합니다.</translation>
     </message>
@@ -1402,27 +1435,48 @@
         <translation>바이너리 콘텐츠는 바꿀 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location line="+511"/>
-        <location line="+85"/>
+        <location line="+11"/>
+        <source>The note has unsaved editor changes.</source>
+        <translation>노트에 편집기에서 변경한 뒤 저장하지 않은 내용이 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Mixed line endings cannot be replaced externally.</source>
+        <translation>줄 끝 형식이 혼합된 노트는 외부에서 내용을 바꿀 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <location line="+586"/>
+        <location line="+101"/>
         <source>Could not prepare the replacement.</source>
         <translation>바꾸기를 준비하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="-180"/>
+        <location line="-229"/>
         <source>Replacement is available only for Simple search results.</source>
         <translation>바꾸기는 단순 검색 결과에서만 사용할 수 있습니다.</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <location line="+25"/>
+        <location line="+14"/>
+        <location line="+36"/>
         <source>The search target is not an available notebook file.</source>
         <translation>검색 대상이 사용 가능한 노트북 파일이 아닙니다.</translation>
     </message>
     <message>
-        <location line="-18"/>
+        <location line="-29"/>
         <source>The search target has moved or is no longer available.</source>
         <translation>검색 대상이 이동되었거나 더 이상 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+285"/>
+        <source>The operation is no longer authorized.</source>
+        <translation>이 작업은 더 이상 허용되지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="-279"/>
+        <source>The notebook is busy.</source>
+        <translation>노트북이 다른 작업을 처리 중입니다.</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -1431,11 +1485,21 @@
     </message>
     <message>
         <location line="+15"/>
-        <source>Protected notes cannot be replaced from search results.</source>
-        <translation>보호된 노트는 검색 결과에서 바꿀 수 없습니다.</translation>
+        <source>Protected notes cannot be replaced.</source>
+        <translation>보호된 노트는 내용을 바꿀 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
+        <source>The note path is unavailable.</source>
+        <translation>노트 경로를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Linked note paths are unavailable.</source>
+        <translation>링크를 포함한 노트 경로는 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>The note is missing, read-only, or exceeds the search size limit.</source>
         <translation>노트가 없거나, 읽기 전용이거나, 검색 크기 제한을 초과합니다.</translation>
     </message>
@@ -1450,7 +1514,12 @@
         <translation>노트를 사용할 수 없거나, 보호되어 있거나, 읽기 전용이거나, 이미 바꾸기 작업이 진행 중입니다.</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+7"/>
+        <source>The note has unsaved changes.</source>
+        <translation>노트에 저장하지 않은 변경 사항이 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+67"/>
         <source>The note is still being saved. Try again in a moment.</source>
         <translation>노트를 아직 저장 중입니다. 잠시 후 다시 시도하세요.</translation>
     </message>
@@ -1466,29 +1535,34 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+49"/>
-        <location line="+38"/>
+        <location line="+57"/>
+        <location line="+54"/>
         <source>The note changed while preparing the replacement.</source>
         <translation>바꾸기를 준비하는 동안 노트가 변경되었습니다.</translation>
     </message>
     <message>
-        <location line="-80"/>
+        <location line="-104"/>
         <source>Could not capture the current note content.</source>
         <translation>현재 노트 내용을 가져오지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+59"/>
+        <location line="+67"/>
         <location line="+5"/>
         <source>The replacement cannot be represented in the note&apos;s encoding.</source>
         <translation>바꿀 내용을 노트의 인코딩으로 표현할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <source>Saving the replacement was cancelled.</source>
         <translation>바꾼 내용의 저장이 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+15"/>
+        <source>A save hook changed the guarded note content.</source>
+        <translation>저장 훅이 변경 감시 중인 노트 내용을 변경했습니다.</translation>
+    </message>
+    <message>
+        <location line="+23"/>
         <source>The replacement could not be queued. Try again in a moment.</source>
         <translation>바꾸기 작업을 대기열에 넣지 못했습니다. 잠시 후 다시 시도하세요.</translation>
     </message>
@@ -1498,22 +1572,27 @@
         <translation>바꾼 내용을 저장하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+51"/>
         <source>An editor could not refresh after replacement.</source>
         <translation>바꾸기 후 편집기를 새로 고치지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+22"/>
         <source>The note was saved, but an after-save hook failed.</source>
         <translation>노트는 저장되었지만 저장 후 훅 실행에 실패했습니다.</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Replacement edits remain unsaved: %1</source>
         <translation>바꾼 내용이 아직 저장되지 않았습니다: %1</translation>
     </message>
     <message>
-        <location line="+1959"/>
+        <location line="+12"/>
+        <source>The note operation did not complete cleanly; inspect its saved and committed status.</source>
+        <translation>노트 작업이 정상적으로 완료되지 않았습니다. 저장 및 변경 사항 확정 상태를 확인하세요.</translation>
+    </message>
+    <message>
+        <location line="+1963"/>
         <source>The note is being replaced.</source>
         <translation>노트의 내용을 바꾸는 중입니다.</translation>
     </message>
@@ -1635,7 +1714,7 @@
 <context>
     <name>vnotex::CommentService</name>
     <message>
-        <location filename="../../../core/services/commentservice.cpp" line="+286"/>
+        <location filename="../../../core/services/commentservice.cpp" line="+285"/>
         <location line="+101"/>
         <location line="+4"/>
         <source>Cannot locate the comment store for this file.</source>
@@ -1861,13 +1940,53 @@
 <context>
     <name>vnotex::EditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+37"/>
-        <location line="+287"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+40"/>
+        <source>Editor Toolbar Options</source>
+        <translation>편집기 도구 모음 옵션</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Options in the toolbar of the editor</source>
+        <translation>편집기 도구 모음의 옵션</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>PDF view window</source>
+        <translation>PDF 보기 창</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cursor chooses text selection or hand panning, Scroll Mode controls page flow, and Spread Mode arranges facing pages</source>
+        <translation>커서는 텍스트 선택 또는 손 도구로 이동을 선택하고, 스크롤 모드는 페이지 흐름을 제어하며, 양면 보기 모드는 마주 보는 페이지를 배치합니다</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Typst previews</source>
+        <translation>Typst 미리보기</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>In Edit mode, Live Preview shows the compiled PDF beside the source and In-Place Preview shows previews inside the source editor (toggle them independently)</source>
+        <translation>편집 모드에서 실시간 미리보기는 소스 옆에 컴파일된 PDF를 표시하고, 본문 내 미리 보기는 소스 편집기 안에 미리보기를 표시합니다(각각 독립적으로 켜고 끌 수 있습니다)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Typst preview colors</source>
+        <translation>Typst 미리보기 색상</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Theme Style in Preview uses theme colors for the default page background and text (explicit document styles take precedence and exports are unchanged)</source>
+        <translation>미리보기 테마 스타일은 기본 페이지 배경과 텍스트에 테마 색상을 사용합니다(문서에 명시된 스타일이 우선하며 내보내기 결과는 변경되지 않습니다)</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+289"/>
         <source>Editor</source>
         <translation>편집기</translation>
     </message>
     <message>
-        <location line="-283"/>
+        <location line="-285"/>
         <location line="+7"/>
         <source>Auto save policy</source>
         <translation>자동 저장 정책</translation>
@@ -1969,7 +2088,7 @@
         <translation>도구 모음 아이콘 크기</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>Default dictionary used for spell check</source>
         <translation>맞춤법 검사에 사용할 기본 사전</translation>
     </message>
@@ -1994,7 +2113,7 @@
         <translation>맞춤법 검사 사전</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+12"/>
         <source>Default content layout mode for editor windows</source>
         <translation>편집기 창의 기본 콘텐츠 배치 모드</translation>
     </message>
@@ -2684,7 +2803,7 @@
 <context>
     <name>vnotex::FileAssociationPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+33"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+32"/>
         <source>Built-In File Types</source>
         <translation>기본 제공 파일 형식</translation>
     </message>
@@ -2705,38 +2824,41 @@
     </message>
     <message>
         <location line="+30"/>
-        <location line="+84"/>
-        <location line="+42"/>
+        <location line="+87"/>
+        <location line="+15"/>
+        <location line="+25"/>
         <source>Suffixes separated by ;</source>
         <translation>;로 구분된 확장자</translation>
     </message>
     <message>
-        <location line="-125"/>
+        <location line="-126"/>
         <source>List of suffixes for this file type</source>
         <translation>이 파일 형식의 확장자 목록</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+42"/>
         <source>Add Program</source>
         <translation>프로그램 추가</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+29"/>
+        <location line="+26"/>
         <source>Program name</source>
         <translation>프로그램 이름</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-25"/>
         <source>Display name for the external program</source>
         <translation>외부 프로그램의 표시 이름</translation>
     </message>
     <message>
         <location line="+6"/>
+        <location line="+21"/>
         <source>Command (%1 = file path)</source>
         <translation>명령(%1 = 파일 경로)</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-19"/>
         <source>Executable path or command. Use %1 as placeholder for the file path</source>
         <translation>실행 파일 경로 또는 명령. 파일 경로 자리표시자로 %1을 사용하세요</translation>
     </message>
@@ -2751,17 +2873,17 @@
         <translation>제거</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+40"/>
         <source>System default app</source>
         <translation>시스템 기본 앱</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Built-in program that opens files with the OS default application</source>
-        <translation>운영 체제의 기본 앱으로 파일을 여는 내장 프로그램</translation>
+        <location line="+3"/>
+        <source>Operating system will choose the application to open the given file</source>
+        <translation>운영 체제가 해당 파일을 열 애플리케이션을 선택합니다</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-8"/>
         <source>File suffixes to open with the system default application</source>
         <translation>시스템 기본 앱으로 열 파일 확장자</translation>
     </message>
@@ -3659,6 +3781,228 @@
     </message>
 </context>
 <context>
+    <name>vnotex::HttpApiConfig</name>
+    <message>
+        <location filename="../../../core/httpapiconfig.cpp" line="+65"/>
+        <source>HTTP API settings contain missing fields or invalid value types.</source>
+        <translation>HTTP API 설정에 누락된 필드 또는 잘못된 값 형식이 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The HTTP API port must be an integer from 1 to 65535.</source>
+        <translation>HTTP API 포트는 1에서 65535 사이의 정수여야 합니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
+        <translation>HTTP API 주소는 127.0.0.1 또는 ::1 같은 루프백 IP 주소여야 합니다.</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiController</name>
+    <message>
+        <location filename="../../../integrations/httpapi/httpapicontroller.cpp" line="+264"/>
+        <source>Token revocation failed</source>
+        <translation>토큰 취소 실패</translation>
+    </message>
+    <message>
+        <location line="-240"/>
+        <location line="+103"/>
+        <source>Service disabled</source>
+        <translation>서비스 비활성화됨</translation>
+    </message>
+    <message>
+        <location line="-84"/>
+        <location line="+9"/>
+        <location line="+66"/>
+        <source>HTTP API configuration is unavailable</source>
+        <translation>HTTP API 설정을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <location line="-50"/>
+        <source>Could not load HTTP API credentials (%1)</source>
+        <translation>HTTP API 인증 정보를 불러올 수 없음(%1)</translation>
+    </message>
+    <message>
+        <location line="+46"/>
+        <location line="+103"/>
+        <location line="+58"/>
+        <source>HTTP API is shutting down</source>
+        <translation>HTTP API를 종료하는 중</translation>
+    </message>
+    <message>
+        <location line="-152"/>
+        <source>Invalid HTTP API settings: %1</source>
+        <translation>잘못된 HTTP API 설정: %1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Waiting for application startup</source>
+        <translation>애플리케이션 시작 대기 중</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Could not start HTTP API (%1)</source>
+        <translation>HTTP API를 시작할 수 없음(%1)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Listening on %1</source>
+        <translation>%1에서 수신 중</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Stopped</source>
+        <translation>중지됨</translation>
+    </message>
+    <message>
+        <location line="+71"/>
+        <source>Select at least one available notebook</source>
+        <translation>사용 가능한 노트북을 하나 이상 선택</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Could not issue an HTTP API token (%1)</source>
+        <translation>HTTP API 토큰을 발급할 수 없음(%1)</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Token access is blocked for this session, but revocation could not be saved (%1). The HTTP API has been stopped.</source>
+        <translation>이 세션에서는 토큰 접근이 차단되었지만 취소 정보를 저장하지 못했습니다(%1). HTTP API가 중지되었습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::HttpApiPage</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/httpapipage.cpp" line="+225"/>
+        <source>Never</source>
+        <translation>무기한</translation>
+    </message>
+    <message>
+        <location line="-110"/>
+        <source>New</source>
+        <translation>새로 만들기</translation>
+    </message>
+    <message>
+        <location line="-71"/>
+        <location line="+218"/>
+        <source>HTTP API</source>
+        <translation>HTTP API</translation>
+    </message>
+    <message>
+        <location line="-217"/>
+        <source>For remote access, configure an HTTPS reverse proxy on this computer. VNote listens only on loopback and does not install a proxy or open firewall ports.</source>
+        <translation>원격으로 접근하려면 이 컴퓨터에 HTTPS 역방향 프록시를 구성하세요. VNote는 루프백에서만 수신하며 프록시를 설치하거나 방화벽 포트를 열지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Enable HTTP API</source>
+        <translation>HTTP API 사용</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Loopback address</source>
+        <translation>루프백 주소</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Use a literal loopback address, such as 127.0.0.1 or ::1</source>
+        <translation>127.0.0.1 또는 ::1 같은 루프백 IP 주소 사용</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Port</source>
+        <translation>포트</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
+        <translation>1에서 65535 사이의 포트 사용; 이미 사용 중인 포트는 자동으로 변경되지 않음</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+15"/>
+        <source>Client Tokens</source>
+        <translation>클라이언트 토큰</translation>
+    </message>
+    <message>
+        <location line="-14"/>
+        <source>Tokens can be managed while the listener is disabled. Issuing and revoking take effect immediately and are not undone by Reset. To change permissions, revoke the token and issue a new one. Future notebooks are never granted automatically.</source>
+        <translation>수신 기능이 비활성화된 상태에서도 토큰을 관리할 수 있습니다. 발급과 취소는 즉시 적용되며 초기화로 되돌릴 수 없습니다. 권한을 변경하려면 토큰을 취소하고 새로 발급하세요. 이후 추가되는 노트북에는 접근 권한이 자동으로 부여되지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Client</source>
+        <translation>클라이언트</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Token ID</source>
+        <translation>토큰 ID</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Permissions</source>
+        <translation>권한</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Notebooks</source>
+        <translation>노트북</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Expires</source>
+        <translation>만료 시간</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Status</source>
+        <translation>상태</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Revoke</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Refresh</source>
+        <translation>새로 고침</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <location line="+22"/>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 컨트롤러를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Expired</source>
+        <translation>만료됨</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Active</source>
+        <translation>활성</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Disabled</source>
+        <translation>비활성화됨</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Revoke Token</source>
+        <translation>토큰 취소</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>이 토큰을 취소하시겠습니까? 대기 중인 요청은 즉시 접근 권한을 잃으며 이미 확정된 변경 사항은 되돌릴 수 없습니다.</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::ImageHostController</name>
     <message>
         <location filename="../../../controllers/imagehostcontroller.cpp" line="+28"/>
@@ -3694,17 +4038,17 @@
         <translation>이미지 호스트에서 사용하지 않는 이미지 정리(현재 파일만 기준으로 판단)</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+12"/>
         <source>New Image Host</source>
         <translation>새 이미지 호스트</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+37"/>
         <source>Local</source>
         <translation>로컬</translation>
     </message>
     <message>
-        <location line="+82"/>
+        <location line="+84"/>
         <source>Test</source>
         <translation>테스트</translation>
     </message>
@@ -4229,7 +4573,7 @@
 <context>
     <name>vnotex::LinkPreviewOverlay</name>
     <message>
-        <location filename="../../../widgets/linkpreviewoverlay.cpp" line="+133"/>
+        <location filename="../../../widgets/linkpreviewoverlay.cpp" line="+135"/>
         <source>Preview</source>
         <translation>미리 보기</translation>
     </message>
@@ -4329,18 +4673,18 @@
     <message>
         <location line="+54"/>
         <location line="+22"/>
-        <location line="+326"/>
+        <location line="+330"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="-315"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-348"/>
+        <location line="-352"/>
         <source>Exporting encrypted notes is not supported.</source>
         <translation>암호화된 노트 내보내기는 지원하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+210"/>
+        <location line="+214"/>
         <location line="+14"/>
         <source>Tools</source>
         <translation>도구</translation>
@@ -4890,7 +5234,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+288"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+246"/>
         <source>Protect Markdown from XSS</source>
         <translation>Markdown을 XSS로부터 보호</translation>
     </message>
@@ -4920,7 +5264,37 @@
         <translation>탭이 지정한 시간 동안 숨겨져 있으면 웹 뷰 메모리를 해제합니다. 탭으로 돌아오면 저장하지 않은 텍스트나 실행 취소 기록을 잃지 않고 현재 Markdown을 다시 불러옵니다</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-349"/>
+        <source>Editor Toolbar Options</source>
+        <translation>편집기 도구 모음 옵션</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Options in the toolbar of the editor</source>
+        <translation>편집기 도구 모음의 옵션</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Show a rendered preview beside the Markdown source while editing</source>
+        <translation>편집하는 동안 Markdown 소스 옆에 렌더링된 미리보기를 표시합니다</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Show previews of images, code blocks, math and tables inside the source editor (choose which sources to preview in the Edit section below)</source>
+        <translation>소스 편집기 안에 이미지, 코드 블록, 수식 및 표의 미리보기를 표시합니다(아래 편집 섹션에서 미리볼 소스 유형을 선택하세요)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Shorten long image, link and reference destinations without changing the Markdown source (hover to see the full destination)</source>
+        <translation>Markdown 소스를 변경하지 않고 긴 이미지, 링크 및 참조 대상 주소를 짧게 표시합니다(마우스를 올리면 전체 주소가 표시됩니다)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Hide Markdown formatting markers without changing the source (move the caret into an element to reveal its markers)</source>
+        <translation>소스를 변경하지 않고 Markdown 서식 기호를 숨깁니다(요소 안으로 커서를 이동하면 해당 기호가 표시됩니다)</translation>
+    </message>
+    <message>
+        <location line="+176"/>
         <source>Markdown Editor</source>
         <translation>Markdown 편집기</translation>
     </message>
@@ -5066,7 +5440,7 @@
         <translation>본문 내 미리 보기 대상</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Image link</source>
         <translation>이미지 링크</translation>
     </message>
@@ -5168,12 +5542,12 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+85"/>
+        <location line="+90"/>
         <source>Web service</source>
         <translation>웹 서비스</translation>
     </message>
     <message>
-        <location line="-84"/>
+        <location line="-89"/>
         <source>Local JAR</source>
         <translation>로컬 JAR</translation>
     </message>
@@ -5203,7 +5577,7 @@
         <translation>PlantUml 형식</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+17"/>
         <source>Local JAR file to render PlantUml graphs</source>
         <translation>PlantUml 그래프를 렌더링할 로컬 JAR 파일</translation>
     </message>
@@ -5214,12 +5588,12 @@
     </message>
     <message>
         <location line="+4"/>
-        <location line="+69"/>
+        <location line="+74"/>
         <source>Test</source>
         <translation>테스트</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-73"/>
         <source>Test PlantUml JAR and Java Runtime Environment</source>
         <translation>PlantUml JAR 및 Java 실행 환경 테스트</translation>
     </message>
@@ -5230,45 +5604,45 @@
     </message>
     <message>
         <location line="+6"/>
-        <location line="+70"/>
+        <location line="+75"/>
         <source>Test %1.</source>
         <translation>테스트 %1.</translation>
     </message>
     <message>
-        <location line="-70"/>
-        <location line="+70"/>
+        <location line="-75"/>
+        <location line="+75"/>
         <source>succeeded</source>
         <translation>성공</translation>
     </message>
     <message>
-        <location line="-70"/>
-        <location line="+70"/>
+        <location line="-75"/>
+        <location line="+75"/>
         <source>failed</source>
         <translation>실패</translation>
     </message>
     <message>
-        <location line="-65"/>
+        <location line="-70"/>
         <source>PlantUml JAR file</source>
         <translation>PlantUml JAR 파일</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Override the web service used to render PlantUml graphs</source>
         <translation>PlantUml 그래프 렌더링에 사용할 웹 서비스를 별도로 지정</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+93"/>
+        <location line="+98"/>
         <source>Empty to use default one</source>
         <translation>비워 두면 기본값을 사용합니다</translation>
     </message>
     <message>
-        <location line="-91"/>
+        <location line="-96"/>
         <source>Override PlantUml web service</source>
         <translation>PlantUml 웹 서비스 재정의</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Use web service or local executable file to render Graphviz graphs</source>
         <translation>웹 서비스 또는 로컬 실행 파일을 사용하여 Graphviz 그래프 렌더링</translation>
     </message>
@@ -5283,7 +5657,7 @@
         <translation>Graphviz</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+17"/>
         <source>Local executable file to render Graphviz graphs</source>
         <translation>Graphviz 그래프를 렌더링할 로컬 실행 파일</translation>
     </message>
@@ -5308,7 +5682,7 @@
         <translation>Graphviz 실행 파일</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Choose how math formulas are rendered in reading mode and previews. Typst uses Typst syntax inside existing dollar delimiters; encrypted notes use Typst when selected, otherwise bundled KaTeX</source>
         <translation>읽기 모드와 미리 보기에서 수식을 렌더링하는 방식을 선택합니다. Typst는 기존 달러 기호 구분자 안에서 Typst 문법을 사용합니다. 암호화된 노트에서는 Typst를 선택하면 Typst를 사용하고, 그 외에는 내장 KaTeX를 사용합니다</translation>
     </message>
@@ -5351,7 +5725,7 @@
         <translation>HTML을 Markdown으로 변환할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+372"/>
+        <location line="+391"/>
         <source>Presentation Mode</source>
         <translation>프레젠테이션 모드</translation>
     </message>
@@ -5395,7 +5769,7 @@
     </message>
     <message>
         <location line="-4"/>
-        <location line="+2051"/>
+        <location line="+2052"/>
         <location line="+16"/>
         <location line="+84"/>
         <location line="+14"/>
@@ -5403,25 +5777,25 @@
         <translation>미리 보기를 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1474"/>
+        <location line="-1475"/>
         <location line="+15"/>
         <source>Protected note links can open only indexed notebook notes</source>
         <translation>보호된 노트의 링크로는 색인에 등록된 노트북 노트만 열 수 있습니다</translation>
     </message>
     <message>
         <location line="+64"/>
-        <location line="+601"/>
+        <location line="+602"/>
         <location line="+764"/>
         <source>Unable to load note content</source>
         <translation>노트 내용을 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1231"/>
+        <location line="-1232"/>
         <source>Unable to read the editor content</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="+162"/>
+        <location line="+163"/>
         <source>Unable to open preview</source>
         <translation>미리 보기를 열 수 없습니다</translation>
     </message>
@@ -5447,12 +5821,12 @@
         <translation>읽기 모드에서는 바꾸기를 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-3252"/>
+        <location line="-3272"/>
         <source>Unable to render Markdown</source>
         <translation>Markdown을 렌더링할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+3355"/>
+        <location line="+3375"/>
         <location line="+8"/>
         <source>Snippet insertion is not supported in read mode</source>
         <translation>읽기 모드에서는 스니펫을 삽입할 수 없습니다</translation>
@@ -5513,7 +5887,17 @@
         <translation>이미지 복사(&amp;g)</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+51"/>
+        <source>Expand</source>
+        <translation>펼치기</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Collapse</source>
+        <translation>접기</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Copy Image Address</source>
         <translation>이미지 주소 복사</translation>
     </message>
@@ -5747,7 +6131,32 @@
 <context>
     <name>vnotex::MindMapEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+30"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="-11"/>
+        <source>Editor Toolbar Options</source>
+        <translation>편집기 도구 모음 옵션</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Options in the toolbar of the editor</source>
+        <translation>편집기 도구 모음의 옵션</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Layout</source>
+        <translation>레이아웃</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose a Balanced, Right, Left or Outline layout for the mind map</source>
+        <translation>마인드맵의 레이아웃을 균형, 오른쪽, 왼쪽 또는 개요 중에서 선택하세요</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Center the content in a readable-width area</source>
+        <translation>내용을 읽기 편한 너비의 영역 안에 가운데 정렬합니다</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Style</source>
         <translation>스타일</translation>
     </message>
@@ -5852,7 +6261,7 @@
         <translation>키보드 단축키는 [editor.mindMapEditor.shortcuts] 섹션에서 설정할 수 있습니다</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+33"/>
         <source>Mind Map Editor</source>
         <translation>마인드맵 편집기</translation>
     </message>
@@ -6190,6 +6599,129 @@
         <location line="+6"/>
         <source>New Folder</source>
         <translation>새 폴더</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/newhttpapitokendialog.cpp" line="+177"/>
+        <source>Copy</source>
+        <translation>복사</translation>
+    </message>
+    <message>
+        <location line="-81"/>
+        <source>Expiry</source>
+        <translation>유효 기간</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>1 day</source>
+        <translation>1일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>7 days</source>
+        <translation>7일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>30 days</source>
+        <translation>30일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>60 days</source>
+        <translation>60일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>90 days</source>
+        <translation>90일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>180 days</source>
+        <translation>180일</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Never</source>
+        <translation>무기한</translation>
+    </message>
+    <message>
+        <location line="-73"/>
+        <source>Issue Client Token</source>
+        <translation>클라이언트 토큰 발급</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Choose explicit notebook grants and permissions. Live reads may expose unsaved editor text. Write changes notes; trash moves notes to the recycle bin.</source>
+        <translation>노트북 접근 권한과 작업 권한을 명시적으로 선택하세요. 실시간 읽기는 저장하지 않은 편집기 텍스트를 노출할 수 있습니다. 쓰기는 노트를 변경하고 휴지통 이동은 노트를 휴지통으로 옮깁니다.</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Client label</source>
+        <translation>클라이언트 레이블</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Allowed notebooks</source>
+        <translation>허용된 노트북</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Select one or more notebooks for access</source>
+        <translation>접근을 허용할 노트북을 하나 이상 선택</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Read saved notes and search (notes:read)</source>
+        <translation>저장된 노트 읽기 및 검색 (notes:read)</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Read live editor text (notes:read-live)</source>
+        <translation>편집기 텍스트 실시간 읽기 (notes:read-live)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Create and edit notes (notes:write)</source>
+        <translation>노트 생성 및 편집 (notes:write)</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Trash notes (notes:trash)</source>
+        <translation>노트를 휴지통으로 이동 (notes:trash)</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Issue Token</source>
+        <translation>토큰 발급</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Enter a client label, select at least one notebook and permission, and choose a valid expiry option.</source>
+        <translation>클라이언트 레이블을 입력하고 노트북과 권한을 하나 이상 선택한 후 올바른 유효 기간 옵션을 선택하세요.</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Token Issued</source>
+        <translation>토큰 발급 완료</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Copy this bearer token now and keep it private. It will not be shown again.</source>
+        <translation>지금 이 Bearer 토큰을 복사하여 안전하게 보관하세요. 다시 표시되지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="-86"/>
+        <source>Permissions</source>
+        <translation>권한</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 컨트롤러를 사용할 수 없습니다.</translation>
     </message>
 </context>
 <context>
@@ -6831,6 +7363,14 @@
     </message>
 </context>
 <context>
+    <name>vnotex::NoteOperationService</name>
+    <message>
+        <location filename="../../../core/services/noteoperationservice.cpp" line="+35"/>
+        <source>The note operation could not complete. Check its error code and saved status.</source>
+        <translation>노트 작업을 완료하지 못했습니다. 오류 코드와 저장 상태를 확인하세요.</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::NoteTemplateSelector</name>
     <message>
         <location filename="../../../widgets/dialogs/notetemplateselector.cpp" line="+33"/>
@@ -6851,7 +7391,7 @@
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+728"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+730"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>잠금 해제 실패: 비밀번호가 잘못되었거나 키 데이터가 손상됨</translation>
     </message>
@@ -7011,12 +7551,12 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
     </message>
     <message>
         <location line="+6"/>
-        <location line="+2273"/>
+        <location line="+2275"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="-2251"/>
+        <location line="-2253"/>
         <source>The note encryption services are unavailable.</source>
         <translation>노트 암호화 서비스를 사용할 수 없습니다.</translation>
     </message>
@@ -7478,7 +8018,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>일부 파일의 태그를 업데이트하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+65"/>
         <source>Select Folder for the Bundle</source>
         <translation>번들을 저장할 폴더 선택</translation>
     </message>
@@ -7619,12 +8159,12 @@ Last sync init failed: error code %1</source>
 마지막 동기화 초기화 실패: 오류 코드 %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+89"/>
+        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+97"/>
         <source>(notebook root)</source>
         <translation>(노트북 루트)</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+2"/>
         <source>Reorder children of %1. Order is saved to the configuration file.</source>
         <translation>%1의 하위 항목 순서를 변경합니다. 순서는 설정 파일에 저장됩니다.</translation>
     </message>
@@ -8007,7 +8547,7 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>정렬(&amp;S)</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+56"/>
         <location line="+1179"/>
         <source>Protected Note</source>
         <translation>보호된 노트</translation>
@@ -8167,7 +8707,7 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>항목 %1개를 고정했습니다. %2개는 이미 있습니다.</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="+117"/>
+        <location filename="../../../controllers/notebooknodecontroller_reorder.cpp" line="+118"/>
         <location line="+6"/>
         <location line="+27"/>
         <source>Reorder</source>
@@ -8700,7 +9240,7 @@ Continue?</source>
         <translation>세부 정보</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+98"/>
         <source>Dismiss</source>
         <translation>닫기</translation>
     </message>
@@ -9573,23 +10113,24 @@ The legacy notebook would be kept for data backup.</source>
     <name>vnotex::QuickAccessPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/quickaccesspage.cpp" line="+43"/>
-        <location line="+208"/>
+        <location line="+23"/>
+        <location line="+205"/>
         <source>Quick Access</source>
         <translation>빠른 액세스</translation>
     </message>
     <message>
-        <location line="-199"/>
-        <location line="+42"/>
+        <location line="-220"/>
+        <location line="+45"/>
         <source>New</source>
         <translation>새로 만들기</translation>
     </message>
     <message>
-        <location line="-32"/>
+        <location line="-34"/>
         <source>One file per line: file_path, open_mode</source>
         <translation>한 줄에 파일 하나: file_path, open_mode</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+7"/>
         <source>Quick access:</source>
         <translation>빠른 액세스:</translation>
     </message>
@@ -9599,27 +10140,27 @@ The legacy notebook would be kept for data backup.</source>
         <translation>빠른 노트</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+12"/>
         <source>No scheme to show</source>
         <translation>표시할 구성 없음</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+9"/>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>Scheme</source>
         <translation>구성</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+24"/>
         <source>Folder</source>
         <translation>폴더</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Select Quick Note Folder</source>
         <translation>빠른 노트 폴더 선택</translation>
     </message>
@@ -9634,22 +10175,22 @@ The legacy notebook would be kept for data backup.</source>
         <translation>스니펫 변수를 지원합니다. 예: journal/%yyyy%/%MM%</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+12"/>
         <source>Note name</source>
         <translation>노트 이름</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Template</source>
         <translation>템플릿</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+14"/>
         <source>Open in detached window</source>
         <translation>분리된 창에서 열기</translation>
     </message>
     <message>
-        <location line="+177"/>
+        <location line="+178"/>
         <source>Quick Note Scheme</source>
         <translation>빠른 노트 구성</translation>
     </message>
@@ -10057,7 +10598,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SettingsWidget</name>
     <message>
-        <location filename="../../../widgets/settingswidget.cpp" line="+107"/>
+        <location filename="../../../widgets/settingswidget.cpp" line="+108"/>
         <source>Settings</source>
         <translation>설정</translation>
     </message>
@@ -10082,7 +10623,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>검색</translation>
     </message>
     <message>
-        <location line="+255"/>
+        <location line="+260"/>
         <source>A restart of VNote may be needed to make changes take effect. Restart VNote now?</source>
         <translation>변경 사항을 적용하려면 VNote를 다시 시작해야 할 수 있습니다. 지금 VNote를 다시 시작하시겠습니까?</translation>
     </message>
@@ -10256,7 +10797,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SortDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="+139"/>
+        <location filename="../../../widgets/dialogs/sortdialog2.cpp" line="+148"/>
         <source>Name</source>
         <translation>이름</translation>
     </message>
@@ -11056,14 +11597,14 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ThemePage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="+33"/>
-        <location line="+55"/>
+        <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="+34"/>
+        <location line="+56"/>
         <location line="+28"/>
         <source>Theme</source>
         <translation>테마</translation>
     </message>
     <message>
-        <location line="-75"/>
+        <location line="-74"/>
         <source>Refresh</source>
         <translation>새로 고침</translation>
     </message>
@@ -11127,7 +11668,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ToolTipService</name>
     <message>
-        <location filename="../../../gui/services/tooltipservice.cpp" line="+168"/>
+        <location filename="../../../gui/services/tooltipservice.cpp" line="+161"/>
         <source>VNote Tip</source>
         <translation>VNote 팁</translation>
     </message>
@@ -11328,7 +11869,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>일반 텍스트로 붙여넣기</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Previous Page</source>
         <translation>이전 페이지</translation>
     </message>
@@ -11603,7 +12144,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>작업 중</translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+286"/>
         <source>Unknown entry: %1</source>
         <translation>알 수 없는 항목: %1</translation>
     </message>
@@ -11618,6 +12159,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>설명</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Show and run entries &gt;</source>
         <translation>항목 표시 및 실행 &gt;</translation>
     </message>
@@ -11917,7 +12459,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>개요가 변경되었습니다. 탐색하려면 마인드맵을 다시 여세요.</translation>
     </message>
     <message>
-        <location line="+380"/>
+        <location line="+431"/>
         <source>New Workspace</source>
         <translation>새 작업 공간</translation>
     </message>
@@ -12437,21 +12979,21 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+542"/>
+        <location line="+551"/>
         <source>Failed to save note (%1).</source>
         <translation>노트(%1)를 저장하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="-538"/>
-        <location line="+510"/>
+        <location line="-547"/>
+        <location line="+519"/>
         <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="-893"/>
+        <location line="-902"/>
         <location line="+5"/>
-        <location line="+492"/>
+        <location line="+501"/>
         <location line="+73"/>
         <location line="+46"/>
         <location line="+26"/>
@@ -12460,7 +13002,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>읽기 전용 — 편집할 수 없음</translation>
     </message>
     <message>
-        <location line="-720"/>
+        <location line="-729"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>다른 노트를 열 수 없습니다: 주석을 저장하지 못했습니다</translation>
     </message>
@@ -12475,7 +13017,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>이 버퍼에는 저장 위치가 없습니다. 닫으면 변경 사항이 사라집니다.</translation>
     </message>
     <message>
-        <location line="+633"/>
+        <location line="+642"/>
         <source>Change Encoding</source>
         <translation>인코딩 변경</translation>
     </message>
@@ -12594,7 +13136,7 @@ Continue?</source>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.h" line="+155"/>
+        <location filename="../../../widgets/viewwindow2.h" line="+156"/>
         <source>Tools</source>
         <translation>도구</translation>
     </message>
@@ -12758,301 +13300,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>페이지에 맞추기</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::HttpApiConfig</name>
-    <message>
-        <source>HTTP API settings contain missing fields or invalid value types.</source>
-        <translation>HTTP API 설정에 누락된 필드 또는 잘못된 값 형식이 있습니다.</translation>
-    </message>
-    <message>
-        <source>The HTTP API port must be an integer from 1 to 65535.</source>
-        <translation>HTTP API 포트는 1에서 65535 사이의 정수여야 합니다.</translation>
-    </message>
-    <message>
-        <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
-        <translation>HTTP API 주소는 127.0.0.1 또는 ::1 같은 루프백 IP 주소여야 합니다.</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::HttpApiPage</name>
-    <message>
-        <source>Never</source>
-        <translation>무기한</translation>
-    </message>
-    <message>
-        <source>New</source>
-        <translation>새로 만들기</translation>
-    </message>
-    <message>
-        <source>HTTP API</source>
-        <translation>HTTP API</translation>
-    </message>
-    <message>
-        <source>For remote access, configure an HTTPS reverse proxy on this computer. VNote listens only on loopback and does not install a proxy or open firewall ports.</source>
-        <translation>원격으로 접근하려면 이 컴퓨터에 HTTPS 역방향 프록시를 구성하세요. VNote는 루프백에서만 수신하며 프록시를 설치하거나 방화벽 포트를 열지 않습니다.</translation>
-    </message>
-    <message>
-        <source>Enable HTTP API</source>
-        <translation>HTTP API 사용</translation>
-    </message>
-    <message>
-        <source>Loopback address</source>
-        <translation>루프백 주소</translation>
-    </message>
-    <message>
-        <source>Use a literal loopback address, such as 127.0.0.1 or ::1</source>
-        <translation>127.0.0.1 또는 ::1 같은 루프백 IP 주소 사용</translation>
-    </message>
-    <message>
-        <source>Port</source>
-        <translation>포트</translation>
-    </message>
-    <message>
-        <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
-        <translation>1에서 65535 사이의 포트 사용; 이미 사용 중인 포트는 자동으로 변경되지 않음</translation>
-    </message>
-    <message>
-        <source>Client Tokens</source>
-        <translation>클라이언트 토큰</translation>
-    </message>
-    <message>
-        <source>Tokens can be managed while the listener is disabled. Issuing and revoking take effect immediately and are not undone by Reset. To change permissions, revoke the token and issue a new one. Future notebooks are never granted automatically.</source>
-        <translation>수신 기능이 비활성화된 상태에서도 토큰을 관리할 수 있습니다. 발급과 취소는 즉시 적용되며 초기화로 되돌릴 수 없습니다. 권한을 변경하려면 토큰을 취소하고 새로 발급하세요. 이후 추가되는 노트북에는 접근 권한이 자동으로 부여되지 않습니다.</translation>
-    </message>
-    <message>
-        <source>Client</source>
-        <translation>클라이언트</translation>
-    </message>
-    <message>
-        <source>Token ID</source>
-        <translation>토큰 ID</translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation>권한</translation>
-    </message>
-    <message>
-        <source>Notebooks</source>
-        <translation>노트북</translation>
-    </message>
-    <message>
-        <source>Expires</source>
-        <translation>만료 시간</translation>
-    </message>
-    <message>
-        <source>Status</source>
-        <translation>상태</translation>
-    </message>
-    <message>
-        <source>Revoke</source>
-        <translation>취소</translation>
-    </message>
-    <message>
-        <source>Refresh</source>
-        <translation>새로 고침</translation>
-    </message>
-    <message>
-        <source>HTTP API controller is unavailable.</source>
-        <translation>HTTP API 컨트롤러를 사용할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Expired</source>
-        <translation>만료됨</translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <translation>활성</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation>비활성화됨</translation>
-    </message>
-    <message>
-        <source>Revoke Token</source>
-        <translation>토큰 취소</translation>
-    </message>
-    <message>
-        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
-        <translation>이 토큰을 취소하시겠습니까? 대기 중인 요청은 즉시 접근 권한을 잃으며 이미 확정된 변경 사항은 되돌릴 수 없습니다.</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::NewHttpApiTokenDialog</name>
-    <message>
-        <source>Copy</source>
-        <translation>복사</translation>
-    </message>
-    <message>
-        <source>Expiry</source>
-        <translation>유효 기간</translation>
-    </message>
-    <message>
-        <source>1 day</source>
-        <translation>1일</translation>
-    </message>
-    <message>
-        <source>7 days</source>
-        <translation>7일</translation>
-    </message>
-    <message>
-        <source>30 days</source>
-        <translation>30일</translation>
-    </message>
-    <message>
-        <source>60 days</source>
-        <translation>60일</translation>
-    </message>
-    <message>
-        <source>90 days</source>
-        <translation>90일</translation>
-    </message>
-    <message>
-        <source>180 days</source>
-        <translation>180일</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>무기한</translation>
-    </message>
-    <message>
-        <source>Issue Client Token</source>
-        <translation>클라이언트 토큰 발급</translation>
-    </message>
-    <message>
-        <source>Choose explicit notebook grants and permissions. Live reads may expose unsaved editor text. Write changes notes; trash moves notes to the recycle bin.</source>
-        <translation>노트북 접근 권한과 작업 권한을 명시적으로 선택하세요. 실시간 읽기는 저장하지 않은 편집기 텍스트를 노출할 수 있습니다. 쓰기는 노트를 변경하고 휴지통 이동은 노트를 휴지통으로 옮깁니다.</translation>
-    </message>
-    <message>
-        <source>Client label</source>
-        <translation>클라이언트 레이블</translation>
-    </message>
-    <message>
-        <source>Allowed notebooks</source>
-        <translation>허용된 노트북</translation>
-    </message>
-    <message>
-        <source>Select one or more notebooks for access</source>
-        <translation>접근을 허용할 노트북을 하나 이상 선택</translation>
-    </message>
-    <message>
-        <source>Read saved notes and search (notes:read)</source>
-        <translation>저장된 노트 읽기 및 검색 (notes:read)</translation>
-    </message>
-    <message>
-        <source>Read live editor text (notes:read-live)</source>
-        <translation>편집기 텍스트 실시간 읽기 (notes:read-live)</translation>
-    </message>
-    <message>
-        <source>Create and edit notes (notes:write)</source>
-        <translation>노트 생성 및 편집 (notes:write)</translation>
-    </message>
-    <message>
-        <source>Trash notes (notes:trash)</source>
-        <translation>노트를 휴지통으로 이동 (notes:trash)</translation>
-    </message>
-    <message>
-        <source>Issue Token</source>
-        <translation>토큰 발급</translation>
-    </message>
-    <message>
-        <source>Enter a client label, select at least one notebook and permission, and choose a valid expiry option.</source>
-        <translation>클라이언트 레이블을 입력하고 노트북과 권한을 하나 이상 선택한 후 올바른 유효 기간 옵션을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Token Issued</source>
-        <translation>토큰 발급 완료</translation>
-    </message>
-    <message>
-        <source>Copy this bearer token now and keep it private. It will not be shown again.</source>
-        <translation>지금 이 Bearer 토큰을 복사하여 안전하게 보관하세요. 다시 표시되지 않습니다.</translation>
-    </message>
-    <message>
-        <source>Permissions</source>
-        <translation>권한</translation>
-    </message>
-    <message>
-        <source>HTTP API controller is unavailable.</source>
-        <translation>HTTP API 컨트롤러를 사용할 수 없습니다.</translation>
-    </message>
-</context>
-<context>
-    <name>ApiAuth</name>
-    <message>
-        <source>Token administration must run on the owner thread</source>
-        <translation>토큰 관리는 소유자 스레드에서 실행되어야 함</translation>
-    </message>
-    <message>
-        <source>The token registry is invalid</source>
-        <translation>토큰 레지스트리가 잘못됨</translation>
-    </message>
-    <message>
-        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
-        <translation>노트북, 유효한 권한, 레이블 및 올바른 유효 기간 옵션을 선택</translation>
-    </message>
-    <message>
-        <source>The token limit of 64 has been reached</source>
-        <translation>토큰 한도인 64개에 도달함</translation>
-    </message>
-    <message>
-        <source>The token no longer exists</source>
-        <translation>토큰이 더 이상 존재하지 않음</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::HttpApiController</name>
-    <message>
-        <source>Token revocation failed</source>
-        <translation>토큰 취소 실패</translation>
-    </message>
-    <message>
-        <source>Service disabled</source>
-        <translation>서비스 비활성화됨</translation>
-    </message>
-    <message>
-        <source>HTTP API configuration is unavailable</source>
-        <translation>HTTP API 설정을 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>Could not load HTTP API credentials (%1)</source>
-        <translation>HTTP API 인증 정보를 불러올 수 없음(%1)</translation>
-    </message>
-    <message>
-        <source>HTTP API is shutting down</source>
-        <translation>HTTP API를 종료하는 중</translation>
-    </message>
-    <message>
-        <source>Invalid HTTP API settings: %1</source>
-        <translation>잘못된 HTTP API 설정: %1</translation>
-    </message>
-    <message>
-        <source>Waiting for application startup</source>
-        <translation>애플리케이션 시작 대기 중</translation>
-    </message>
-    <message>
-        <source>Could not start HTTP API (%1)</source>
-        <translation>HTTP API를 시작할 수 없음(%1)</translation>
-    </message>
-    <message>
-        <source>Listening on %1</source>
-        <translation>%1에서 수신 중</translation>
-    </message>
-    <message>
-        <source>Stopped</source>
-        <translation>중지됨</translation>
-    </message>
-    <message>
-        <source>Select at least one available notebook</source>
-        <translation>사용 가능한 노트북을 하나 이상 선택</translation>
-    </message>
-    <message>
-        <source>Could not issue an HTTP API token (%1)</source>
-        <translation>HTTP API 토큰을 발급할 수 없음(%1)</translation>
-    </message>
-    <message>
-        <source>Token access is blocked for this session, but revocation could not be saved (%1). The HTTP API has been stopped.</source>
-        <translation>이 세션에서는 토큰 접근이 차단되었지만 취소 정보를 저장하지 못했습니다(%1). HTTP API가 중지되었습니다.</translation>
     </message>
 </context>
 </TS>

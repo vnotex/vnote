@@ -1,28 +1,32 @@
 # Changes
-## Unreleased
-* Avoid unnecessary escapes in leading numbered headings when parsing HTML to Markdown and pasting, while preserving literal backslashes and paragraph list protection
-* Enlarge Sort Folders and Sort Notes to 800 × 600 by default and reveal the triggering folder or note as the current selected item when present
-* Open files classified as Others with the system application instead of the plaintext editor, retain inferred text/image viewers, and skip unsupported session tabs without launching external applications
-* Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
-* Preserve KaTeX and MathML formulas when parsing HTML to Markdown and pasting: prefer annotated TeX source, or recover supported MathML when browser copying strips annotations, retaining inline/display math and labeled underbraces without duplicate rendered text
-* Store HTTP API enable, loopback address and port settings in local session configuration instead of main preferences, without migrating unreleased settings
-* Fix Windows HTTP API token issuance under elevated accounts while retaining strict owner-only credential storage
-* Synchronize notification backlog scrolling tests with completed layout and preserve first-run Windows HTTP API test diagnostics
-* Avoid blank WebEngine frames when switching warm Markdown tabs by restoring page visibility before rendering children, without keeping inactive pages active
-* Keep Windows status and link-preview overlays from promoting entire tab containers to native windows, avoiding stale tab surfaces and preview focus changes
-* Audit HTTP API requests, rejected connections and asynchronous mutation outcomes with privacy-safe structured records and shared request IDs
-* Add Copy to the one-time HTTP API token dialog, remove the token-status footer, and report revocation failures through VNote notifications
-* Simplify token expiry to day presets or Never, retain the 90-day default, and show dates without detailed timestamps
-* Right-align HTTP API New/Revoke/Refresh and Theme Refresh/Open Location action rows
-* Move HTTP API token issuance into a separate dialog with a full-width notebook list and a labeled permissions group
-* Store Windows HTTP API token verifiers in the local profile instead of roaming configuration, preserving portable-profile isolation
-* Move HTTP API service status to its own row below Enable HTTP API, show Service disabled when off, and remove the duplicate endpoint line
-* Remove the unused External HTTPS URL setting; public endpoints remain configured in the reverse proxy and API clients
-* Remove note paths and raw exception details from raw-note create/rename diagnostics; verify the raw-notebook HTTP API lifecycle and nonmutating trash rejection
-* Add an opt-in, loopback-only HTTP API for local agents and HTTPS reverse-proxy clients, with independent transport, REST and VNote integration modules
-* Add owner-issued notebook-scoped API tokens with optional expiry, separate read/live-read/write/trash permissions, private verifier storage and immediate revocation controls in Settings
-* Expose bounded note listing, saved/live reads, search and conditional create/edit/append/rename/trash operations without overwriting dirty editors or exporting protected notes
-* Add strict reversible note trash without the legacy permanent-delete fallback, and preserve save/sync coordination, actual mutation outcomes and orderly API shutdown
+## v4.14.0
+A feature release with scoped HTTP automation, richer Markdown paste and smoother navigation on top of VNote 4.13.0:
+
+* **HTTP automation and security**
+    * Add an opt-in, loopback-only HTTP API for local agents and administrator-managed HTTPS reverse proxies, with notebook-scoped tokens and separate read, live-read, write and trash permissions
+    * List notes, read saved or live content, search, and conditionally create, edit, append, rename or trash notes without overwriting dirty editors or exposing protected notes
+    * Require reversible trash without falling back to permanent deletion, preserve save/sync coordination, and drain pending operations during shutdown
+    * Manage tokens in Settings with a dedicated issuance dialog, notebook and permission selection, expiry presets or Never, a 90-day default, one-time Copy and immediate revocation
+    * Store listener settings in local session configuration and Windows token verifiers in the local profile, preserving portable isolation and owner-only access, including elevated accounts
+    * Audit requests, rejected connections and asynchronous mutation outcomes with privacy-safe structured records and shared request IDs; omit note paths and raw exception details from create/rename diagnostics
+* **Editing and Markdown**
+    * Preserve KaTeX and MathML formulas when parsing HTML to Markdown and pasting: prefer annotated TeX, recover supported MathML when annotations are stripped, and retain inline/display math and labeled underbraces without duplicate rendered text
+    * Avoid unnecessary escapes in leading numbered headings while preserving literal backslashes and paragraph list protection
+    * Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
+    * Add Collapse and Expand below Export in read-mode code-block context menus
+    * Restore warm Markdown page visibility before rendering when switching tabs, avoiding blank WebEngine frames without keeping inactive pages active
+* **Navigation and mind maps**
+    * Search file names across notebooks with ordinary United Entry input; require the explicit `>` prefix for commands, show command discovery for empty input, and enable Expand All by default while retaining saved preferences
+    * Restore focus to the source content after closing previews, including the mind-map canvas
+    * Refine mind-map field menus, shortcut editors and node-anchored popups, improve node icons, and place the nonempty note indicator before the hyperlink indicator
+    * Open files classified as Others with the system application instead of the plaintext editor, retain inferred text/image viewers, and skip unsupported restored tabs without launching external applications
+* **Interface and reliability**
+    * Enlarge Sort Folders and Sort Notes to 800 × 600 by default and select the triggering folder or note when present
+    * Reserve persistent editor status rows below the content and prevent Windows status/link-preview overlays from promoting entire tab containers to native windows
+    * Stack notification action buttons vertically, unify Settings card surfaces and action alignment, restore complete theme button borders, and clarify editor toolbar option hints
+    * Select bundled release-note language from the loaded UI translation rather than the regional locale
+    * Improve native CI credential, popup and notification-layout checks, preserve first-failure diagnostics, and recover transient macOS package-mount and WebEngine-shutdown failures
+* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated
 
 ## v4.13.0
 A feature release with outline mind maps, editable node-note previews, source-aware exports and refined editing on top of VNote 4.12.0:
