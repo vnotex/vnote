@@ -44,10 +44,7 @@ void MarkdownEditorPage::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
 
   auto *menuLayout = SettingsPageHelper::addSection(
-      mainLayout, tr("Editor Menu Options"),
-      tr("Open a Markdown note in Edit mode, then use the Menu button at the top right of its "
-         "window to toggle these options."),
-      this);
+      mainLayout, tr("Editor Toolbar Options"), tr("Options in the toolbar of the editor"), this);
   const auto addMenuHint = [this, menuLayout](const QString &p_label,
                                               const QString &p_description) {
     auto *row = SettingsPageHelper::createSettingRow(p_label, p_description, nullptr, this);
