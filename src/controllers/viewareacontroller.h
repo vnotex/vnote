@@ -119,7 +119,7 @@ public:
   bool openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer, const Outline &p_outline,
                                  ID p_sourceId, quint64 p_sourceGeneration,
                                  int p_currentHeadingIndex, QString *p_error = nullptr);
-  // False with no error is a non-heading node, unavailable target or cancelled close.
+  // False with no error is a non-heading node or unavailable target.
   bool activateOutlineMindMapNode(const Buffer2 &p_buffer, const QString &p_nodeId,
                                   QString *p_error = nullptr);
   bool closeOutlineMindMapPreviews(ID p_sourceId);

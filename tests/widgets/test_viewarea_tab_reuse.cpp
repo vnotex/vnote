@@ -1014,11 +1014,8 @@ private slots:
   void outlineMindMapNavigationRoots();
   void outlineMindMapNavigationSnapshot_data();
   void outlineMindMapNavigationSnapshot();
-  void outlineMindMapNavigationConsent_data();
-  void outlineMindMapNavigationConsent();
+  void outlineMindMapNavigationPreservesDraft();
   void outlineMindMapNavigationNested();
-  void outlineMindMapNavigationCloseRace_data();
-  void outlineMindMapNavigationCloseRace();
   void markdownResourcesAndSaveIdentity_data();
   void markdownResourcesAndSaveIdentity();
   void memoryTextPersistenceAndSharing();
@@ -1243,11 +1240,14 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   QVERIFY(map);
   QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
   QVERIFY(overlay);
+  const auto preview = f->area->previewWorkspaceForWindow(sourceId);
+  const auto json = map->toJson();
   QVERIFY(clickOutlineMapNode(map, targetId));
-  QTRY_VERIFY(generated.isNull());
-  QTRY_VERIFY(map.isNull());
-  QTRY_VERIFY(overlay.isNull());
-  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(generated && map && overlay && overlay->isVisible());
+  QVERIFY(f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCOMPARE(f->order(preview), QStringList{snapshot.id()});
+  QCOMPARE(map->toJson(), json);
   if (detached) {
     QVERIFY(detachedHost && detachedHost->isVisible());
     QTRY_COMPARE(detachedHost->getViewSplit()->getCurrentViewWindow(), source.data());
@@ -1265,7 +1265,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   if (!detached)
     QCOMPARE(f->workspace(), sourceWorkspace);
   QCOMPARE(f->order(sourceWorkspace), sourceOrder);
-  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
   if (type == QLatin1String("Markdown") && reading) {
     QVERIFY(QTest::qWaitFor(
         [&] {
@@ -1360,8 +1360,22 @@ void TestViewAreaTabReuse::outlineMindMapNavigationRoots() {
   QVERIFY(generated);
   QCOMPARE(edit->textCursor().position(), before);
   QVERIFY(clickOutlineMapNode(map, QStringLiteral("root")));
-  QTRY_VERIFY(generated.isNull());
   QTRY_COMPARE(edit->textCursor().blockNumber(), titleBlock);
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(generated && map && map->isVisible());
+  const auto retainedSnapshot = generated->getBuffer();
+  const auto childBlock = edit->document()->find(QStringLiteral("## Child")).blockNumber();
+  QVERIFY(clickOutlineMapNode(map, QStringLiteral("h1")));
+  QTRY_COMPARE(edit->textCursor().blockNumber(), childBlock);
+  QVERIFY(clickOutlineMapNode(map, QStringLiteral("root")));
+  QTRY_COMPARE(edit->textCursor().blockNumber(), titleBlock);
+  // Clicking the already-selected node must still navigate in the same snapshot.
+  edit->moveCursor(QTextCursor::End);
+  QVERIFY(clickOutlineMapNode(map, QStringLiteral("root")));
+  QTRY_COMPARE(edit->textCursor().blockNumber(), titleBlock);
+  QVERIFY(generated && map);
+  QCOMPARE(generated->getBuffer().id(), retainedSnapshot.id());
+  QCOMPARE(map->toJson(), json);
 
   QVERIFY(f->create(QStringLiteral("filename.md"), navigationMarkdown().toUtf8()));
   QVERIFY(f->open(QStringLiteral("filename.md"), true).isValid());
@@ -1506,14 +1520,14 @@ void TestViewAreaTabReuse::outlineMindMapNavigationSnapshot() {
             ? QStringLiteral("root")
             : QStringLiteral("h%1").arg(newIndex);
     QVERIFY(clickOutlineMapNode(map, newNode));
-    QTRY_VERIFY(generated.isNull());
+    QVERIFY(generated && map);
     const auto expectedBlock = edit->document()->find(topic).blockNumber();
     QTRY_COMPARE(edit->textCursor().blockNumber(), expectedBlock);
   } else {
     QCOMPARE(provider->getOutline()->navigationFingerprint(), fingerprint);
     f->area->setCurrentBuffer(preview, snapshot.id(), true);
     QVERIFY(clickOutlineMapNode(map, nodeId));
-    QTRY_VERIFY(generated.isNull());
+    QVERIFY(generated && map);
     QTRY_COMPARE(f->current(), source.data());
     if (change == QLatin1String("mode")) {
       auto *reader = source->findChild<MarkdownViewer *>();
@@ -1535,18 +1549,13 @@ void TestViewAreaTabReuse::outlineMindMapNavigationSnapshot() {
     }
   }
   QCOMPARE(source->getBuffer().id(), buffer.id());
-  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(generated && map && map->isVisible());
+  QCOMPARE(f->buffers->getBufferHandle(snapshot.id()).isValid(), !stale);
+  QVERIFY(f->buffers->getBufferHandle(generated->getBuffer().id()).isValid());
 }
 
-void TestViewAreaTabReuse::outlineMindMapNavigationConsent_data() {
-  QTest::addColumn<int>("answer");
-  QTest::newRow("cancel-then-discard") << int(QMessageBox::Cancel);
-  QTest::newRow("discard") << int(QMessageBox::Discard);
-  QTest::newRow("save") << int(QMessageBox::Save);
-}
-
-void TestViewAreaTabReuse::outlineMindMapNavigationConsent() {
-  QFETCH(int, answer);
+void TestViewAreaTabReuse::outlineMindMapNavigationPreservesDraft() {
   QVERIFY(f->create(QStringLiteral("consent.md"), navigationMarkdown().toUtf8()));
   QVERIFY(f->create(QStringLiteral("draft.txt"), "Original preview\n"));
   const auto buffer = f->open(QStringLiteral("consent.md"));
@@ -1562,8 +1571,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigationConsent() {
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 30000);
   const auto target = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Beta")));
   const auto targetBlock = edit->document()->find(QStringLiteral("# Beta")).blockNumber();
-  // Sequential closure is deliberately not transactional. Put the dirty ordinary
-  // tab first, so Cancel can preserve the map as well as the unsaved draft.
+  // Navigation must leave a dirty sibling untouched without asking to save or discard.
   const auto draftBuffer = f->preview(source, f->node(QStringLiteral("draft.txt")));
   QVERIFY(draftBuffer.isValid());
   QPointer<ViewWindow2> draftWindow(f->current());
@@ -1585,25 +1593,16 @@ void TestViewAreaTabReuse::outlineMindMapNavigationConsent() {
   QVERIFY(map);
   QCOMPARE(f->order(preview), QStringList({draftBuffer.id(), snapshot.id()}));
   {
-    DialogAnswer dialog(static_cast<QMessageBox::StandardButton>(answer));
+    DialogAnswer unexpectedConsent(QMessageBox::Cancel);
     QVERIFY(clickOutlineMapNode(map, target));
-    QVERIFY(dialog.accepted());
+    QVERIFY(unexpectedConsent.accepted(0));
   }
-  if (answer == QMessageBox::Cancel) {
-    QVERIFY(generated && map && draftWindow);
-    QCOMPARE(draftWindow->getLatestContent(), draft);
-    QVERIFY(draftWindow->isModified());
-    QCOMPARE(edit->textCursor().position(), 0);
-    QCOMPARE(f->order(preview), QStringList({draftBuffer.id(), snapshot.id()}));
-    QVERIFY(!f->controller()->isPreviewWorkspaceClosing(preview));
-    f->area->setCurrentBuffer(preview, snapshot.id(), true);
-    DialogAnswer discard(QMessageBox::Discard);
-    QVERIFY(clickOutlineMapNode(map, target));
-    QVERIFY(discard.accepted());
-  }
-  QTRY_VERIFY(generated.isNull());
-  QTRY_VERIFY(draftWindow.isNull());
-  QTRY_VERIFY(map.isNull());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(generated && map && map->isVisible() && draftWindow);
+  QCOMPARE(draftWindow->getLatestContent(), draft);
+  QVERIFY(draftWindow->isModified());
+  QCOMPARE(f->order(preview), QStringList({draftBuffer.id(), snapshot.id()}));
+  QVERIFY(!f->controller()->isPreviewWorkspaceClosing(preview));
   QTRY_COMPARE(f->current(), source.data());
   QTRY_COMPARE(edit->textCursor().blockNumber(), targetBlock);
   QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
@@ -1612,10 +1611,9 @@ void TestViewAreaTabReuse::outlineMindMapNavigationConsent() {
   QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
   QCOMPARE(source->getMode(), ViewWindowMode::Edit);
   QCOMPARE(f->workspace(), main);
-  QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
-  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
-  QCOMPARE(readBytes(f->absolute(QStringLiteral("draft.txt"))),
-           answer == QMessageBox::Save ? draft.toUtf8() : QByteArray("Original preview\n"));
+  QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
+  QVERIFY(f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("draft.txt"))), QByteArray("Original preview\n"));
 }
 
 void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
@@ -1663,7 +1661,8 @@ void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
     QVERIFY(clickOutlineMapNode(map, target));
     QVERIFY(unexpectedConsent.accepted(0));
   }
-  QTRY_VERIFY(generated.isNull());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(generated);
   QTRY_COMPARE(f->current(), source.data());
   QTRY_COMPARE(edit->textCursor().blockNumber(), targetBlock);
   QVERIFY(source->isVisible());
@@ -1672,158 +1671,19 @@ void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
   QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
   QCOMPARE(source->getMode(), ViewWindowMode::Edit);
   QCOMPARE(f->workspace(), preview);
-  QCOMPARE(f->order(preview), QStringList({buffer.id(), unrelatedBuffer.id()}));
+  QCOMPARE(f->order(preview), QStringList({buffer.id(), unrelatedBuffer.id(), snapshot.id()}));
   QCOMPARE(f->order(main), QStringList{outerBuffer.id()});
   QVERIFY(outer && unrelated && unrelated->isModified());
   QCOMPARE(unrelated->getLatestContent(), draft);
   QCOMPARE(f->area->previewWorkspaceForWindow(outer->getViewWindowId()), preview);
-  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
-}
-
-void TestViewAreaTabReuse::outlineMindMapNavigationCloseRace_data() {
-  QTest::addColumn<QString>("change");
-  QTest::newRow("outline-during-consent") << QStringLiteral("outline");
-  QTest::newRow("body-during-consent") << QStringLiteral("body");
-  QTest::newRow("focus-during-consent") << QStringLiteral("focus");
-  QTest::newRow("locking-during-consent") << QStringLiteral("protection");
-  QTest::newRow("replacement-refused-during-consent") << QStringLiteral("replacement");
-}
-
-void TestViewAreaTabReuse::outlineMindMapNavigationCloseRace() {
-  QFETCH(QString, change);
-  QVERIFY(f->create(QStringLiteral("draft.txt"), "Race preview\n"));
-  QVERIFY(f->create(QStringLiteral("replacement.md"), "# Replacement\n"));
-  const auto replacement = f->open(QStringLiteral("replacement.md"), true);
-  QVERIFY(replacement.isValid());
-  QPointer<ViewWindow2> replacementWindow(f->current());
-  Buffer2 buffer;
-  if (change == QLatin1String("protection")) {
-    const auto secret =
-        f->createProtected(QStringLiteral("race.md"), navigationMarkdown().toUtf8(), true);
-    QVERIFY(!secret.isEmpty());
-    buffer = f->openProtected(secret, true);
-  } else {
-    QVERIFY(f->create(QStringLiteral("race.md"), navigationMarkdown().toUtf8()));
-    buffer = f->open(QStringLiteral("race.md"), true);
-  }
-  QVERIFY(buffer.isValid());
-  QPointer<ViewWindow2> source(f->current());
-  const auto sourceId = source->getViewWindowId();
-  const auto generation = source->getLinkOpenSettings().m_previewSourceGeneration;
-  const auto main = f->workspace();
-  auto *editor = source->findChild<MarkdownEditor *>();
-  QVERIFY(editor);
-  auto *edit = editor->getTextEdit();
-  edit->moveCursor(QTextCursor::Start);
-  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 30000);
-  const auto provider = source->getOutlineProvider();
-  const auto targetIndex = outlineTopicIndex(source, QStringLiteral("Beta"));
-  const auto target = QStringLiteral("h%1").arg(targetIndex);
-  const auto targetBlock = edit->document()->find(QStringLiteral("# Beta")).blockNumber();
-  const auto draftBuffer = f->preview(source, f->node(QStringLiteral("draft.txt")));
-  QVERIFY(draftBuffer.isValid());
-  QPointer<ViewWindow2> draftWindow(f->current());
-  auto *draftEditor = draftWindow->findChild<TextEditor *>();
-  QVERIFY(draftEditor && activateNativeHost(draftEditor->getTextEdit()));
-  draftEditor->getTextEdit()->setFocus();
-  QTRY_VERIFY(draftEditor->getTextEdit()->hasFocus());
-  appendDraft(draftEditor->getTextEdit(), QStringLiteral("Race consent draft\n"));
-  const auto draft = draftWindow->getLatestContent();
-  QTRY_VERIFY(draftWindow->isModified());
-  QString error;
-  QVERIFY(f->controller()->openOutlineMindMapPreview(buffer, *provider->getOutline(), sourceId,
-                                                     generation, -1, &error));
-  QPointer<ViewWindow2> generated(f->current());
-  QVERIFY(generated && generated->isOutlineMindMapPreview());
-  const auto snapshot = generated->getBuffer();
-  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
-  QVERIFY(map);
-  const auto preview = f->workspace();
-  bool consentObserved = false;
-  const auto cancelLocking = qScopeGuard([&] { f->buffers->cancelProtectedLocking(); });
-  {
-    DialogAnswer answer(
-        change == QLatin1String("replacement") ? QMessageBox::Cancel : QMessageBox::Discard, [&] {
-          consentObserved = true;
-          QVERIFY(source && generated && draftWindow);
-          QCOMPARE(edit->textCursor().position(), 0);
-          if (change == QLatin1String("protection")) {
-            QVERIFY(f->buffers->beginProtectedLocking());
-          } else if (change == QLatin1String("focus")) {
-            f->area->setCurrentBuffer(main, replacement.id(), true);
-            QCOMPARE(f->current(), replacementWindow.data());
-          } else if (change == QLatin1String("replacement")) {
-            FileOpenSettings settings;
-            settings.m_mode = ViewWindowMode::Edit;
-            QVERIFY(!source->replaceBuffer(replacement, settings));
-            QVERIFY(!f->controller()->closeViewWindow(sourceId, false));
-            QCOMPARE(source->getBuffer().id(), buffer.id());
-            QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
-          } else {
-            auto cursor = edit->document()->find(QStringLiteral("# Beta"));
-            QVERIFY(!cursor.isNull());
-            cursor.insertText(change == QLatin1String("outline")
-                                  ? QStringLiteral("# Renamed")
-                                  : QStringLiteral("New body.\n\n# Beta"));
-            QVERIFY(QTest::qWaitFor(
-                [&] {
-                  return change == QLatin1String("outline")
-                             ? hasOutlineTopic(source, QStringLiteral("Renamed"))
-                             : editor->getHeadings().size() > targetIndex &&
-                                   editor->getHeadings()[targetIndex].m_blockNumber ==
-                                       targetBlock + 2;
-                },
-                30000));
-          }
-        });
-    QVERIFY(clickOutlineMapNode(map, target));
-    QVERIFY(answer.accepted());
-  }
-  QVERIFY(consentObserved);
-  QVERIFY(source);
-  if (change == QLatin1String("replacement")) {
-    QVERIFY(draftWindow && draftWindow->isModified());
-    QCOMPARE(draftWindow->getLatestContent(), draft);
-    QCOMPARE(edit->textCursor().position(), 0);
-    {
-      DialogAnswer discard(QMessageBox::Discard);
-      QVERIFY(f->controller()->closePreviewWorkspace(preview));
-      QVERIFY(discard.accepted());
-    }
-    QTRY_VERIFY(generated.isNull());
-    QVERIFY(f->controller()->closeViewWindow(replacementWindow->getViewWindowId(), false));
-    QTRY_VERIFY(replacementWindow.isNull());
-    f->controller()->focusWindow(main, buffer.id());
-    f->reuse();
-    const auto incoming = f->open(QStringLiteral("replacement.md"));
-    QVERIFY(incoming.isValid());
-    QCOMPARE(f->current(), source.data());
-    QCOMPARE(source->getBuffer().id(), incoming.id());
-    QVERIFY(source->getLinkOpenSettings().m_previewSourceGeneration != generation);
-    auto *replacementEditor = source->findChild<MarkdownEditor *>();
-    QVERIFY(replacementEditor);
-    const auto cursor = replacementEditor->getTextEdit()->textCursor().position();
-    QVERIFY(!f->controller()->activateOutlineMindMapNode(snapshot, target, &error));
-    QVERIFY(error.isEmpty());
-    QCOMPARE(replacementEditor->getTextEdit()->textCursor().position(), cursor);
-  } else {
-    QTRY_VERIFY(generated.isNull());
-    QTRY_VERIFY(draftWindow.isNull());
-    if (change == QLatin1String("body") || change == QLatin1String("focus")) {
-      QTRY_COMPARE(f->current(), source.data());
-      QTRY_COMPARE(edit->textCursor().blockNumber(),
-                   targetBlock + (change == QLatin1String("body") ? 2 : 0));
-      QVERIFY(source->isVisible());
-    } else {
-      QCOMPARE(edit->textCursor().position(), 0);
-    }
-    QCOMPARE(source->getBuffer().id(), buffer.id());
-    QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
-  }
-  QTRY_VERIFY(map.isNull());
-  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
-  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
-  QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
+  QVERIFY(f->buffers->getBufferHandle(snapshot.id()).isValid());
+  // The retained map remains available as a sibling of the revealed nested source.
+  f->area->setCurrentBuffer(preview, snapshot.id(), true);
+  QVERIFY(map->isVisible());
+  QVERIFY(clickOutlineMapNode(map, target));
+  QTRY_COMPARE(f->current(), source.data());
+  QVERIFY(generated && unrelated && unrelated->isModified());
+  QCOMPARE(unrelated->getLatestContent(), draft);
 }
 
 void TestViewAreaTabReuse::outlineMindMapPreview_data() {

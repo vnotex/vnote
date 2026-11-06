@@ -305,21 +305,23 @@ colors through navigation and theme switches. Ordinary map files and their prefe
 A completed plain primary click on a node body/topic navigates to its original source heading.
 The promoted title maps to its original H1; a document-name-only root has no destination.
 Ctrl/Shift selection, keyboard/API selection, folding, dragging and other controls do not navigate.
-The controller closes the source's preview through existing save/cancel consent before revealing
-that exact source window. If the source is itself a tab in the preview, only the generated map
-closes and unrelated tabs survive. Whole-preview closure remains sequential/nontransactional;
-a later veto prevents the jump but does not restore already-closed tabs.
+Navigation reveals that exact source window without closing the preview or asking to save or
+discard its tabs. The same snapshot remains available for repeated navigation, and unrelated
+preview tabs keep their unsaved content. If the source is itself a tab in the preview, navigation
+selects it while retaining the generated map as a sibling tab. Explicit preview dismissal and
+source close, replacement, conversion and protected-note locking retain their existing cleanup.
 
 Navigation retains each provider's normal Outline behavior: Markdown uses its current mode,
 PDF follows its bookmark destination, and Typst reveals the source heading (Read enters Edit).
 The roster stores original navigable-index bits, promoted-title index and an ordered heading
 fingerprint, never another plaintext outline. `Outline::navigationFingerprint()` covers names,
-levels and placeholders, not display/reordering permissions. Validate it before consent and
+levels and placeholders, not display/reordering permissions. Validate it before navigation and
 again after source focus; changed headings require reopening the snapshot. Body-only edits use
 the current heading positions. Recheck source ID/generation/protection across callbacks, and
-retain no source outline or protected operation lease across consent. Ordinary file mind maps
+retain no source outline or protected operation lease across source focus. Ordinary file mind maps
 do not navigate other source windows. Coverage includes real bookmarked PDF/Typst destinations,
-protected/nested sources and cancellation/stale-source races in `test_viewarea_tab_reuse`.
+protected/nested sources, repeated clicks, dirty sibling preservation and stale-source rejection
+in `test_viewarea_tab_reuse`.
 
 `ViewAreaController` admits generated `vx://outline-mind-map/` buffers only with their exact
 source window/generation. Its metadata-only provenance roster survives until native view

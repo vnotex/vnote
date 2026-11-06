@@ -1121,13 +1121,12 @@ bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
       return false;
     }
   }
-  // A filename root and non-existent/placeholder heading IDs never dismiss the map.
+  // A filename root and non-existent/placeholder heading IDs have no destination.
   if (headingIndex < 0 || headingIndex >= target.m_navigableHeadings.size() ||
       !target.m_navigableHeadings.testBit(headingIndex)) {
     return false;
   }
   auto *const view = m_view;
-  const QPointer<ViewAreaController> guard(this);
   if (!view || !p_buffer.isValid() || !isOutlineMindMapSourceCurrent(target) ||
       view->findWindowIdByBufferId(target.m_workspaceId, target.m_bufferId) != target.m_windowId) {
     return false;
@@ -1137,15 +1136,6 @@ bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
     if (p_error) {
       *p_error = tr("The outline has changed. Reopen the mind map to navigate.");
     }
-    return false;
-  }
-  // The overlay host also resolves to this preview workspace; actual tab membership
-  // distinguishes a nested source which must survive the navigation close.
-  const bool nested =
-      view->getViewWindowIdsForWorkspace(target.m_workspaceId).contains(target.m_sourceWindowId);
-  const bool accepted = nested ? closeViewWindow(target.m_windowId, false)
-                               : closePreviewWorkspace(target.m_workspaceId);
-  if (!guard || !accepted || m_view != view || !isOutlineMindMapSourceCurrent(target, false)) {
     return false;
   }
   return view->navigateToOutlineHeading(target.m_sourceWindowId, target.m_sourceGeneration,
