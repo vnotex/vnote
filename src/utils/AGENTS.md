@@ -43,10 +43,13 @@ caller owns trimming and its final fallback. Candidates are evaluated lazily.
 
 `DocsUtils::setLocale()` receives the language of the loaded VNote translation catalog
 from startup, not the regional-format locale or the first system UI preference. Its
-expanded UI tags feed the shared matcher. Search paths retain priority: try localized
-documents, then `en_US`, before moving to the next path. Both help and upgrade release
-notes use this lookup. Coverage: `tests/utils/test_docsutils.cpp`; theme and tip behavior
-remain covered by `test_theme_core` and `test_configmgr2`.
+expanded UI tags feed the shared matcher. `DocsUtils::getUiLanguages()` exposes that
+same list by const reference for daily and random dashboard tips, without changing
+regional formatting. The locale state/accessors are inline so tip-only consumers do
+not need the document filesystem implementation. Search paths retain priority: try
+localized documents, then `en_US`, before moving to the next path. Both help and upgrade
+release notes use this lookup. Coverage: `test_docsutils`, `test_theme_core`,
+`test_configmgr2` and `test_greetingsticker`.
 
 ## C++ to web translations
 

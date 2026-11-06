@@ -1,6 +1,7 @@
 #ifndef DOCSUTILS_H
 #define DOCSUTILS_H
 
+#include <QLocale>
 #include <QStringList>
 
 namespace vnotex {
@@ -16,11 +17,15 @@ public:
   static void addSearchPath(const QString &p_path);
 
   // Language of the loaded VNote catalog, or en_US for untranslated source text.
-  static void setLocale(const QString &p_locale);
+  static void setLocale(const QString &p_locale) {
+    s_uiLanguages = QLocale(p_locale).uiLanguages();
+  }
+
+  static const QStringList &getUiLanguages() { return s_uiLanguages; }
 
 private:
   static QStringList s_searchPaths;
-  static QStringList s_uiLanguages;
+  inline static QStringList s_uiLanguages{QStringLiteral("en_US")};
 };
 } // namespace vnotex
 

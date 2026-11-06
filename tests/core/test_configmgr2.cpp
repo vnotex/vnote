@@ -26,6 +26,7 @@
 #include <core/webresource.h>
 #include <core/widgetconfig.h>
 #include <gui/services/tooltipservice.h>
+#include <utils/docsutils.h>
 #include <utils/fileutils2.h>
 
 #include <temp_dir_fixture.h>
@@ -2645,6 +2646,7 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
   const QLocale previousLocale;
   const auto restore = qScopeGuard([&] {
     QLocale::setDefault(previousLocale);
+    DocsUtils::setLocale(QStringLiteral("en_US"));
     m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), healthy);
     m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
                                         healthySession);
@@ -2655,7 +2657,7 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
   QVERIFY(!m_configService->updateConfigByName(
       DataLocation::App, QStringLiteral("vnotex"),
       QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
-                  {"core", QJsonObject{{"toolTipsEnabled", true}}}}));
+                  {"core", QJsonObject{{"toolTipsEnabled", true}, {"locale", ""}}}}));
   const auto seed = [&](int p_index) {
     return m_configService->updateConfigByName(
         DataLocation::Local, QStringLiteral("session"),
@@ -2703,8 +2705,11 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
        QStringLiteral("Last")},
   };
   for (const auto &test : cases) {
-    const auto restoreLocale = qScopeGuard([&] { QLocale::setDefault(previousLocale); });
-    QLocale::setDefault(QLocale(QString::fromLatin1(test.locale)));
+    const auto locale = QString::fromLatin1(test.locale);
+    const QLocale regionalLocale(locale == QStringLiteral("en_US") ? QStringLiteral("zh_CN")
+                                                                   : QStringLiteral("en_US"));
+    QLocale::setDefault(regionalLocale);
+    DocsUtils::setLocale(locale);
     QVERIFY(!seed(test.index));
     const auto path = tmp.createFile(QStringLiteral("selection.json"), test.catalog);
     ConfigMgr2 mgr(m_configService);
@@ -2721,6 +2726,7 @@ void TestConfigMgr2::testToolTips_localeFallbackAndInvalidCatalog() {
     QVERIFY(producer.showTipIfDue(today.addDays(1)));
     QCOMPARE(notifications.messages().size(), 2);
     QCOMPARE(notifications.messages().last().m_text, test.next);
+    QCOMPARE(QLocale(), regionalLocale);
   }
 
   QLocale::setDefault(QLocale(QStringLiteral("en_US")));

@@ -21,6 +21,7 @@
 #include <gui/services/stickerfactory.h>
 #include <gui/services/tooltipservice.h>
 #include <temp_dir_fixture.h>
+#include <utils/docsutils.h>
 #include <widgets/dashboard/greetingsticker.h>
 
 #include <functional>
@@ -346,17 +347,27 @@ void TestGreetingSticker::test_repeatedLocalHour() {
 
 void TestGreetingSticker::test_localizedCatalog_data() {
   QTest::addColumn<QString>("locale");
+  QTest::addColumn<QString>("regionalLocale");
   QTest::addColumn<QString>("expected");
-  QTest::newRow("chinese") << QStringLiteral("zh_CN") << QStringLiteral("中文");
-  QTest::newRow("fallback") << QStringLiteral("ja_JP") << QStringLiteral("English");
+  QTest::newRow("chinese-ui-english-region")
+      << QStringLiteral("zh_CN") << QStringLiteral("en_US") << QStringLiteral("中文");
+  QTest::newRow("english-ui-chinese-region")
+      << QStringLiteral("en_US") << QStringLiteral("zh_CN") << QStringLiteral("English");
+  QTest::newRow("fallback") << QStringLiteral("ja_JP") << QStringLiteral("zh_CN")
+                            << QStringLiteral("English");
 }
 
 void TestGreetingSticker::test_localizedCatalog() {
   QFETCH(QString, locale);
+  QFETCH(QString, regionalLocale);
   QFETCH(QString, expected);
   const QLocale previousLocale;
-  const auto restore = qScopeGuard([&] { QLocale::setDefault(previousLocale); });
-  QLocale::setDefault(QLocale(locale));
+  const auto restore = qScopeGuard([&] {
+    QLocale::setDefault(previousLocale);
+    DocsUtils::setLocale(QStringLiteral("en_US"));
+  });
+  QLocale::setDefault(QLocale(regionalLocale));
+  DocsUtils::setLocale(locale);
   TempDirFixture tmp;
   QVERIFY(tmp.isValid());
   const auto path =

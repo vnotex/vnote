@@ -6,7 +6,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
-#include <QLocale>
 #include <QPointer>
 #include <QRandomGenerator>
 #include <QResource>
@@ -17,6 +16,7 @@
 #include <core/servicelocator.h>
 #include <core/services/notificationservice.h>
 #include <core/sessionconfig.h>
+#include <utils/docsutils.h>
 #include <utils/localeutils.h>
 
 #include <utility>
@@ -89,7 +89,7 @@ QString ToolTipService::randomTip(const QString &p_catalogPath) {
     return {};
   }
 
-  const auto uiLanguages = QLocale().uiLanguages();
+  const auto &uiLanguages = DocsUtils::getUiLanguages();
   quint32 count = 0;
   QString selected;
   for (const auto &item : tips) {
@@ -133,9 +133,8 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
     return false;
   }
 
-  // Match the UI language preferences used by QTranslator, not the regional
-  // formatting locale (which can differ when following the system language).
-  const auto uiLanguages = QLocale().uiLanguages();
+  // Follow the loaded VNote catalog, just like bundled documents.
+  const auto &uiLanguages = DocsUtils::getUiLanguages();
   const int count = tips.size();
   int position = sessionConfig.getNextToolTipIndex() % count;
   QString text;

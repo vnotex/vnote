@@ -78,13 +78,15 @@ reset therefore restarts daily eligibility and rotation without undoing opt-out.
 keys, then retires the old main-config keys through normal persistence. Explicit
 session values, including an empty date and index zero, take precedence.
 
-Select catalog translations using `QLocale().uiLanguages()` in preference order through
-`findLocalizedValue()` in `utils/localeutils.h` (shared with theme names and bundled docs).
-The tip callback trims each candidate; after no usable match, fall back to `en_US`.
+Daily and random dashboard tips use `DocsUtils::getUiLanguages()`, the expanded language
+tags of the VNote translation catalog loaded at startup, just like bundled documents.
+Do not use `QLocale().uiLanguages()` or `getLocaleToUse()`: Qt can skip an untranslated
+system preference (including English) and load a later catalog, independently of the
+regional-format locale. Both tip paths pass the resolved tags to `findLocalizedValue()`
+in `utils/localeutils.h`; trim each candidate and fall back to `en_US` on no usable match.
 The helper's tag/canonical/language ordering is documented in `utils/AGENTS.md`.
-Do not use `getLocaleToUse()` here: it returns the regional-format locale, which
-can differ from the system UI language. Startup already applies explicit language
-settings through `QLocale::setDefault()` before tips are produced.
+Coverage: `test_configmgr2` and `test_greetingsticker` deliberately conflict the loaded
+catalog language with the regional locale, including the default language setting.
 
 Keep the producer stack-scoped after the main-window startup hook. Its retained
 opt-out action captures only a `QPointer<ConfigMgr2>`; no producer or config-field

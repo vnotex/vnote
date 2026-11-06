@@ -9,13 +9,8 @@
 using namespace vnotex;
 
 QStringList DocsUtils::s_searchPaths;
-QStringList DocsUtils::s_uiLanguages{QStringLiteral("en_US")};
 
 void DocsUtils::addSearchPath(const QString &p_path) { s_searchPaths.append(p_path); }
-
-void DocsUtils::setLocale(const QString &p_locale) {
-  s_uiLanguages = QLocale(p_locale).uiLanguages();
-}
 
 QString DocsUtils::getDocText(const QString &p_baseName) {
   auto filePath = getDocFile(p_baseName);
