@@ -162,60 +162,36 @@ void OutlineView::dropEvent(QDropEvent *p_event) {
 
 bool OutlineView::canAcceptDrop(const QModelIndex &p_target,
                                 QAbstractItemView::DropIndicatorPosition p_position) const {
-  if (!m_reorderingEnabled || m_filterActive || !m_draggedIndex.isValid() ||
-      !m_draggedIndex.data(OutlineModel::ReorderableRole).toBool()) {
+  if (!m_reorderingEnabled || m_filterActive || !m_draggedIndex.isValid()) {
     return false;
   }
-
-  if (p_position != OnViewport) {
-    if (!p_target.isValid() || !p_target.data(OutlineModel::ReorderableRole).toBool() ||
-        p_target == m_draggedIndex || isDraggedSubtreeIndex(p_target)) {
-      return false;
-    }
-  }
-
-  const int sourceLevel = m_draggedIndex.data(OutlineModel::HeadingLevelRole).toInt();
-  int targetLevel = sourceLevel;
-  if (p_position == OnItem) {
-    targetLevel = p_target.data(OutlineModel::HeadingLevelRole).toInt() + 1;
-  } else if (p_position == AboveItem || p_position == BelowItem) {
-    targetLevel = p_target.data(OutlineModel::HeadingLevelRole).toInt();
-  } else if (p_position == OnViewport) {
-    targetLevel = rootHeadingLevelAfterMove();
-  } else {
+  auto *proxy = qobject_cast<QSortFilterProxyModel *>(model());
+  const auto *outlineModel = qobject_cast<OutlineModel *>(proxy ? proxy->sourceModel() : model());
+  if (!outlineModel) {
     return false;
   }
-
-  const int delta = targetLevel - sourceLevel;
-  return targetLevel >= 1 && maximumHeadingLevel(m_draggedIndex) + delta <= 6;
-}
-
-bool OutlineView::isDraggedSubtreeIndex(const QModelIndex &p_index) const {
-  for (QModelIndex ancestor = p_index; ancestor.isValid(); ancestor = ancestor.parent()) {
-    if (ancestor == m_draggedIndex) {
-      return true;
-    }
+  OutlineDropPosition position;
+  switch (p_position) {
+  case OnItem:
+    position = OutlineDropPosition::OnItem;
+    break;
+  case AboveItem:
+    position = OutlineDropPosition::AboveItem;
+    break;
+  case BelowItem:
+    position = OutlineDropPosition::BelowItem;
+    break;
+  case OnViewport:
+    position = OutlineDropPosition::OnViewport;
+    break;
+  default:
+    return false;
   }
-  return false;
-}
-
-int OutlineView::maximumHeadingLevel(const QModelIndex &p_root) const {
-  int maximum = p_root.data(OutlineModel::HeadingLevelRole).toInt();
-  for (int row = 0; row < model()->rowCount(p_root); ++row) {
-    maximum = qMax(maximum, maximumHeadingLevel(model()->index(row, 0, p_root)));
-  }
-  return maximum;
-}
-
-int OutlineView::rootHeadingLevelAfterMove() const {
-  int minimum = 7;
-  for (int row = 0; row < model()->rowCount(); ++row) {
-    const QModelIndex index = model()->index(row, 0);
-    if (!isDraggedSubtreeIndex(index)) {
-      minimum = qMin(minimum, index.data(OutlineModel::HeadingLevelRole).toInt());
-    }
-  }
-  return minimum == 7 ? m_draggedIndex.data(OutlineModel::HeadingLevelRole).toInt() : minimum;
+  return outlineModel
+      ->planMove(m_draggedIndex.data(OutlineModel::HeadingIndexRole).toInt(),
+                 p_target.isValid() ? p_target.data(OutlineModel::HeadingIndexRole).toInt() : -1,
+                 position)
+      .isValid();
 }
 
 void OutlineView::clearDropIndicator() {

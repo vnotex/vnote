@@ -1,7 +1,7 @@
-// Tests for the edit-mode "Copy Link" heading action seams.
+// Tests for heading links and Markdown/Typst source section reordering.
 //
-// Both seams under test are pure static helpers on MarkdownEditorController, so
-// neither a GUI nor a web view is required:
+// The link seams are pure static helpers on MarkdownEditorController, and
+// OutlineSectionEditor reorders QTextDocument sections without a GUI or web view:
 //
 //   * MarkdownEditorController::isLinkableHeadingLine - the context-menu gate
 //     that decides whether the clicked block is an ATX heading worth offering a
@@ -21,7 +21,10 @@
 #include <QTextDocument>
 #include <QUrl>
 
+#include <limits>
+
 #include <controllers/markdowneditorcontroller.h>
+#include <controllers/outlinesectioneditor.h>
 #include <utils/pathutils.h>
 
 using namespace vnotex;
@@ -29,7 +32,7 @@ using namespace vnotex;
 namespace tests {
 
 namespace {
-using Heading = MarkdownEditorController::HeadingBlockInfo;
+using Heading = OutlineSectionEditor::HeadingBlockInfo;
 
 Heading heading(const QString &p_text, const QString &p_source, int p_level) {
   Heading result;
@@ -73,6 +76,13 @@ private slots:
   void reorderRejectsInvalidRequests();
   void reorderMapsCursorAndOverriddenSelection();
   void reorderUndoRedoIsSingleStep();
+  void typstReorderPreservesDeepHierarchy();
+  void typstReorderMapsUnicodeSelection();
+  void typstReorderHandlesDocumentBoundaries_data();
+  void typstReorderHandlesDocumentBoundaries();
+  void typstReorderCarriesHeadingIndentation();
+  void typstReorderUndoRedoIsSingleStep();
+  void typstReorderRejectsInvalidRequests();
 
 private:
   // Create an existing file under the temp dir so that PathUtils::pathToUrl
@@ -268,7 +278,7 @@ void TestMarkdownHeadingLink::reorderMovesNestedSectionAndRelevels() {
                                      heading(original, QStringLiteral("# B"), 1)};
 
   const auto result =
-      MarkdownEditorController::reorderHeadingBlock(&document, headings, 1, -1, 2, 0, 0, -1, -1);
+      OutlineSectionEditor::reorderHeadingBlock(&document, headings, 1, -1, 2, 0, 0, -1, -1);
 
   QVERIFY(result.moved);
   QCOMPARE(document.toPlainText(),
@@ -284,7 +294,7 @@ void TestMarkdownHeadingLink::reorderPlacesSiblingBeforeTarget() {
                                      heading(original, QStringLiteral("# End"), 1)};
 
   const auto result =
-      MarkdownEditorController::reorderHeadingBlock(&document, headings, 2, 1, 2, 0, 0, -1, -1);
+      OutlineSectionEditor::reorderHeadingBlock(&document, headings, 2, 1, 2, 0, 0, -1, -1);
 
   QVERIFY(result.moved);
   QCOMPARE(document.toPlainText(), QStringLiteral("# A\n## Two\ntwo\n## One\none\n# End"));
@@ -296,7 +306,7 @@ void TestMarkdownHeadingLink::reorderPreservesAtxAndSetextSyntax() {
     QTextDocument document(original);
     const QVector<Heading> headings = {heading(original, QStringLiteral("  ## *Child* ###"), 2)};
     const auto result =
-        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 4, 0, 0, -1, -1);
+        OutlineSectionEditor::reorderHeadingBlock(&document, headings, 0, -1, 4, 0, 0, -1, -1);
     QVERIFY(result.moved);
     QCOMPARE(document.toPlainText(), QStringLiteral("  #### *Child* ###"));
   }
@@ -308,7 +318,7 @@ void TestMarkdownHeadingLink::reorderPreservesAtxAndSetextSyntax() {
                                        heading(original, QStringLiteral("Two\n---"), 2),
                                        heading(original, QStringLiteral("# End"), 1)};
     const auto result =
-        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, 2, 2, 0, 0, -1, -1);
+        OutlineSectionEditor::reorderHeadingBlock(&document, headings, 0, 2, 2, 0, 0, -1, -1);
     QVERIFY(result.moved);
     QCOMPARE(document.toPlainText(), QStringLiteral("One\n---\n### Two\n# End"));
   }
@@ -318,7 +328,7 @@ void TestMarkdownHeadingLink::reorderPreservesAtxAndSetextSyntax() {
     QTextDocument document(original);
     const QVector<Heading> headings = {heading(original, QStringLiteral("Title\n---"), 2)};
     const auto result =
-        MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
+        OutlineSectionEditor::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
     QVERIFY(result.moved);
     QCOMPARE(document.toPlainText(), QStringLiteral("Title\n==="));
   }
@@ -349,8 +359,8 @@ void TestMarkdownHeadingLink::reorderHandlesDocumentBoundaries() {
   const QVector<Heading> headings = {heading(original, QStringLiteral("# A"), 1),
                                      heading(original, QStringLiteral("# B"), 1)};
 
-  const auto result = MarkdownEditorController::reorderHeadingBlock(&document, headings, source,
-                                                                    before, 1, 0, 0, -1, -1);
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(&document, headings, source, before,
+                                                                1, 0, 0, -1, -1);
 
   QVERIFY(result.moved);
   QCOMPARE(document.toPlainText(), expected);
@@ -365,8 +375,8 @@ void TestMarkdownHeadingLink::reorderRejectsInvalidRequests() {
 
   auto rejected = [&](const QVector<Heading> &p_headings, int p_source, int p_before, int p_level) {
     QTextDocument document(original);
-    const auto result = MarkdownEditorController::reorderHeadingBlock(
-        &document, p_headings, p_source, p_before, p_level, 0, 0, -1, -1);
+    const auto result = OutlineSectionEditor::reorderHeadingBlock(&document, p_headings, p_source,
+                                                                  p_before, p_level, 0, 0, -1, -1);
     QVERIFY(!result.moved);
     QCOMPARE(document.toPlainText(), original);
   };
@@ -385,8 +395,8 @@ void TestMarkdownHeadingLink::reorderRejectsInvalidRequests() {
   const QVector<Heading> deepHeadings = {heading(deepText, QStringLiteral("##### Five"), 5),
                                          heading(deepText, QStringLiteral("###### Six"), 6),
                                          heading(deepText, QStringLiteral("# End"), 1)};
-  const auto overflow = MarkdownEditorController::reorderHeadingBlock(&deepDocument, deepHeadings,
-                                                                      0, -1, 6, 0, 0, -1, -1);
+  const auto overflow = OutlineSectionEditor::reorderHeadingBlock(&deepDocument, deepHeadings, 0,
+                                                                  -1, 6, 0, 0, -1, -1);
   QVERIFY(!overflow.moved);
   QCOMPARE(deepDocument.toPlainText(), deepText);
 }
@@ -399,7 +409,7 @@ void TestMarkdownHeadingLink::reorderMapsCursorAndOverriddenSelection() {
   const int bodyStart = original.indexOf(QStringLiteral("body"));
   const int endPosition = original.indexOf(QStringLiteral("end")) + 1;
 
-  const auto result = MarkdownEditorController::reorderHeadingBlock(
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
       &document, headings, 0, -1, 1, bodyStart + 1, endPosition, bodyStart, bodyStart + 4);
 
   QVERIFY(result.moved);
@@ -420,7 +430,7 @@ void TestMarkdownHeadingLink::reorderUndoRedoIsSingleStep() {
                                      heading(original, QStringLiteral("# B"), 1)};
 
   const auto result =
-      MarkdownEditorController::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
+      OutlineSectionEditor::reorderHeadingBlock(&document, headings, 0, -1, 1, 0, 0, -1, -1);
   QVERIFY(result.moved);
   QCOMPARE(document.toPlainText(), reordered);
   QVERIFY(document.isUndoAvailable());
@@ -430,6 +440,188 @@ void TestMarkdownHeadingLink::reorderUndoRedoIsSingleStep() {
   QVERIFY(!document.isUndoAvailable());
   document.redo();
   QCOMPARE(document.toPlainText(), reordered);
+}
+
+void TestMarkdownHeadingLink::typstReorderPreservesDeepHierarchy() {
+  const QString original = QStringLiteral(
+      "= A\nbody A\n== Child\nchild\n======== Deep\ndeep\n= B\n========= Existing\nstay");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("= A"), 1),
+                                     heading(original, QStringLiteral("== Child"), 2),
+                                     heading(original, QStringLiteral("======== Deep"), 8),
+                                     heading(original, QStringLiteral("= B"), 1),
+                                     heading(original, QStringLiteral("========= Existing"), 9)};
+
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
+      &document, headings, 0, -1, 7, 0, 0, -1, -1, OutlineSectionEditor::Syntax::Typst);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(),
+           QStringLiteral("= B\n========= Existing\nstay\n======= A\nbody A\n======== "
+                          "Child\nchild\n============== Deep\ndeep"));
+}
+
+void TestMarkdownHeadingLink::typstReorderMapsUnicodeSelection() {
+  const QString emoji = QString::fromUtf8("\xF0\x9F\xA7\xAD");
+  const QString title = QStringLiteral("= First ") + emoji;
+  const QString body = QStringLiteral("\u4e2d") + emoji + QStringLiteral("\u6587");
+  const QString original = title + QLatin1Char('\n') + body + QStringLiteral("\n= Last\nend");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, title, 1),
+                                     heading(original, QStringLiteral("= Last"), 1)};
+  const int bodyStart = original.indexOf(body);
+  const int outside = original.indexOf(QStringLiteral("end")) + 1;
+
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
+      &document, headings, 0, -1, 3, bodyStart + 1, outside, bodyStart, bodyStart + body.size(),
+      OutlineSectionEditor::Syntax::Typst);
+
+  QVERIFY(result.moved);
+  const QString reordered = document.toPlainText();
+  QCOMPARE(reordered, QStringLiteral("= Last\nend\n==") + title + QLatin1Char('\n') + body);
+  QCOMPARE(reordered.mid(result.cursorPosition, emoji.size()), emoji);
+  QCOMPARE(reordered.at(result.cursorAnchor), QLatin1Char('n'));
+  QCOMPARE(reordered.mid(result.selectionStart, result.selectionEnd - result.selectionStart), body);
+}
+
+void TestMarkdownHeadingLink::typstReorderHandlesDocumentBoundaries_data() {
+  QTest::addColumn<QString>("original");
+  QTest::addColumn<int>("source");
+  QTest::addColumn<int>("before");
+  QTest::addColumn<QString>("expected");
+
+  QTest::newRow("first-to-last-unterminated")
+      << QStringLiteral("= A\na\n= B\nb") << 0 << -1 << QStringLiteral("= B\nb\n= A\na");
+  QTest::newRow("first-to-last-terminated")
+      << QStringLiteral("= A\na\n= B\nb\n") << 0 << -1 << QStringLiteral("= B\nb\n= A\na\n");
+  QTest::newRow("last-to-first-unterminated")
+      << QStringLiteral("= A\na\n= B\nb") << 1 << 0 << QStringLiteral("= B\nb\n= A\na");
+  QTest::newRow("last-to-first-terminated")
+      << QStringLiteral("= A\na\n= B\nb\n") << 1 << 0 << QStringLiteral("= B\nb\n= A\na\n");
+  QTest::newRow("preamble-last-to-first") << QStringLiteral("// lead\n= A\na\n= B\nb") << 1 << 0
+                                          << QStringLiteral("// lead\n= B\nb\n= A\na");
+}
+
+void TestMarkdownHeadingLink::typstReorderHandlesDocumentBoundaries() {
+  QFETCH(QString, original);
+  QFETCH(int, source);
+  QFETCH(int, before);
+  QFETCH(QString, expected);
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("= A"), 1),
+                                     heading(original, QStringLiteral("= B"), 1)};
+
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
+      &document, headings, source, before, 1, 0, 0, -1, -1, OutlineSectionEditor::Syntax::Typst);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), expected);
+}
+
+void TestMarkdownHeadingLink::typstReorderCarriesHeadingIndentation() {
+  const QString original = QStringLiteral("  = A\na\n\t= B\nb");
+  QTextDocument document(original);
+  const QVector<Heading> headings = {heading(original, QStringLiteral("= A"), 1),
+                                     heading(original, QStringLiteral("= B"), 1)};
+
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
+      &document, headings, 1, 0, 2, 0, 0, -1, -1, OutlineSectionEditor::Syntax::Typst);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), QStringLiteral("\t== B\nb\n  = A\na"));
+}
+
+void TestMarkdownHeadingLink::typstReorderUndoRedoIsSingleStep() {
+  const QString original = QStringLiteral("= A\na\n== Child\nc\n= B\nb\n");
+  const QString reordered = QStringLiteral("= B\nb\n======= A\na\n======== Child\nc\n");
+  QTextDocument document(original);
+  document.clearUndoRedoStacks();
+  const QVector<Heading> headings = {heading(original, QStringLiteral("= A"), 1),
+                                     heading(original, QStringLiteral("== Child"), 2),
+                                     heading(original, QStringLiteral("= B"), 1)};
+
+  const auto result = OutlineSectionEditor::reorderHeadingBlock(
+      &document, headings, 0, -1, 7, 0, 0, -1, -1, OutlineSectionEditor::Syntax::Typst);
+
+  QVERIFY(result.moved);
+  QCOMPARE(document.toPlainText(), reordered);
+  QVERIFY(document.isUndoAvailable());
+  document.undo();
+  QCOMPARE(document.toPlainText(), original);
+  QVERIFY(!document.isUndoAvailable());
+  document.redo();
+  QCOMPARE(document.toPlainText(), reordered);
+  QVERIFY(!document.isRedoAvailable());
+}
+
+void TestMarkdownHeadingLink::typstReorderRejectsInvalidRequests() {
+  const QString original = QStringLiteral("= A\n== Child\n= B");
+  const QVector<Heading> headings = {heading(original, QStringLiteral("= A"), 1),
+                                     heading(original, QStringLiteral("== Child"), 2),
+                                     heading(original, QStringLiteral("= B"), 1)};
+  const auto rejected = [&](const QString &p_text, const QVector<Heading> &p_headings, int p_source,
+                            int p_before, int p_level,
+                            OutlineSectionEditor::Syntax p_syntax =
+                                OutlineSectionEditor::Syntax::Typst) {
+    QTextDocument document(p_text);
+    document.clearUndoRedoStacks();
+    const auto result = OutlineSectionEditor::reorderHeadingBlock(
+        &document, p_headings, p_source, p_before, p_level, 2, 1, 0, 1, p_syntax);
+    QVERIFY(!result.moved);
+    QCOMPARE(document.toPlainText(), p_text);
+    QCOMPARE(result.cursorPosition, 2);
+    QCOMPARE(result.cursorAnchor, 1);
+    QCOMPARE(result.selectionStart, 0);
+    QCOMPARE(result.selectionEnd, 1);
+    QVERIFY(!document.isUndoAvailable());
+  };
+
+  rejected(original, headings, -1, -1, 1);
+  rejected(original, headings, 0, -2, 1);
+  rejected(original, headings, 0, 3, 1);
+  rejected(original, headings, 0, 1, 1);
+  rejected(original, headings, 0, 2, 1); // No movement or level change.
+  rejected(original, headings, 0, -1, 0);
+  rejected(original, headings, 0, -1, std::numeric_limits<int>::max()); // Descendant overflow.
+  rejected(original, headings, 2, 0, std::numeric_limits<int>::max());  // Document size overflow.
+  rejected(original, headings, 0, -1, 2, static_cast<OutlineSectionEditor::Syntax>(-1));
+  rejected(original, headings, 0, -1, 2, OutlineSectionEditor::Syntax::Markdown);
+
+  QVector<Heading> invalid = headings;
+  invalid[1].level = 3;
+  rejected(original, invalid, 0, -1, 2);
+  invalid = headings;
+  invalid[1].endPos = original.size() + 1;
+  rejected(original, invalid, 0, -1, 2);
+  invalid = headings;
+  invalid[1].startPos = invalid[0].startPos;
+  rejected(original, invalid, 0, -1, 2);
+
+  const QString markdown = QStringLiteral("# A\n# B");
+  rejected(
+      markdown,
+      {heading(markdown, QStringLiteral("# A"), 1), heading(markdown, QStringLiteral("# B"), 1)}, 0,
+      -1, 2);
+  const QString setext = QStringLiteral("Title\n===\n= B");
+  rejected(
+      setext,
+      {heading(setext, QStringLiteral("Title\n==="), 1), heading(setext, QStringLiteral("= B"), 1)},
+      0, -1, 2);
+  const QString missingSpace = QStringLiteral("=A\n= B");
+  rejected(missingSpace,
+           {heading(missingSpace, QStringLiteral("=A"), 1),
+            heading(missingSpace, QStringLiteral("= B"), 1)},
+           0, -1, 2);
+  const QString functional = QStringLiteral("#heading[Title]\n= B");
+  rejected(functional,
+           {heading(functional, QStringLiteral("#heading[Title]"), 1),
+            heading(functional, QStringLiteral("= B"), 1)},
+           0, -1, 2);
+  const QString inlineHeading = QStringLiteral("text = A\n= B");
+  rejected(inlineHeading,
+           {heading(inlineHeading, QStringLiteral("= A"), 1),
+            heading(inlineHeading, QStringLiteral("= B"), 1)},
+           0, -1, 2);
 }
 
 } // namespace tests

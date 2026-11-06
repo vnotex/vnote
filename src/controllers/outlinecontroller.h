@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QSharedPointer>
 
+#include <widgets/outlineprovider.h>
+
 class QTimer;
 
 namespace vnotex {
@@ -82,9 +84,7 @@ private:
 
   struct PendingReorder {
     QSharedPointer<Outline> m_outline;
-    int m_sourceHeadingIndex = -1;
-    int m_beforeHeadingIndex = -1;
-    int m_targetLevel = -1;
+    OutlineMove m_move;
   };
 
   ServiceLocator &m_services;

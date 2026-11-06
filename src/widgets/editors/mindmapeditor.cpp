@@ -149,6 +149,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
       markModified();
     }
   });
+  connect(this, &m3::qt::MindMapEditor::pendingEditChanged, this,
+          [this](bool) { emit insertionAvailabilityChanged(); });
   connect(this, &m3::qt::MindMapEditor::nodeImageActivated, this,
           [this](const QString &, const QImage &p_image) { showImage(p_image); });
   connect(this, &m3::qt::MindMapEditor::nodeImageContextMenuRequested, this,
@@ -810,6 +812,13 @@ MindMapEditor::MimeSnapshot MindMapEditor::snapshotMimeData(const QMimeData *p_s
 }
 
 bool MindMapEditor::canInsert() const { return canEdit() && selectedNodeIds().size() == 1; }
+
+bool MindMapEditor::canReorderOutline() const { return canEdit() && !hasPendingEdit(); }
+
+bool MindMapEditor::reorderOutlineNode(const QString &p_sourceId, const QString &p_parentId,
+                                       int p_index) {
+  return canReorderOutline() && m3::qt::MindMapEditor::moveNode(p_sourceId, p_parentId, p_index);
+}
 
 bool MindMapEditor::canInsertFromMimeData(const QMimeData *p_source,
                                           MimeInsertionSource p_origin) const {

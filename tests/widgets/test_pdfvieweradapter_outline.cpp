@@ -79,6 +79,8 @@ private slots:
   void outlineModelReorderDefaultsOff();
   void outlineModelExposesReorderEligibility();
   void adjacentReparentRequestsConfirmation();
+  void reorderHonorsNativeTreePlacement();
+  void reorderCancelsStaleConfirmation();
   void outlineModelReplacementDisablesReordering();
   void producerNumberingGuaranteeSurvivesPanelToggles();
   void automaticPolicyDisplaysExpectedNames_data();
@@ -509,9 +511,100 @@ void TestPdfViewerAdapterOutline::adjacentReparentRequestsConfirmation() {
   QCOMPARE(confirmationSpy.first().first().toString(), QStringLiteral("C"));
   controller.confirmReorder(true);
   QCOMPARE(moveSpy.count(), 1);
-  QCOMPARE(moveSpy.first().at(0).toInt(), 2);
-  QCOMPARE(moveSpy.first().at(1).toInt(), -1);
-  QCOMPARE(moveSpy.first().at(2).toInt(), 2);
+  const auto move = qvariant_cast<vnotex::OutlineMove>(moveSpy.first().first());
+  QCOMPARE(move.m_sourceHeadingIndex, 2);
+  QCOMPARE(move.m_beforeHeadingIndex, -1);
+  QCOMPARE(move.m_targetLevel, 2);
+  QCOMPARE(move.m_parentHeadingIndex, 0);
+}
+
+void TestPdfViewerAdapterOutline::reorderHonorsNativeTreePlacement() {
+  using namespace vnotex;
+  auto outline = QSharedPointer<Outline>::create();
+  outline->m_reorderSupported = true;
+  outline->m_maxLevel = INT_MAX;
+  outline->m_headings = {
+      Outline::Heading(QStringLiteral("Root"), 1), Outline::Heading(QStringLiteral("A"), 2),
+      Outline::Heading(QStringLiteral("Deep"), 7), Outline::Heading(QStringLiteral("B"), 2),
+      Outline::Heading(QStringLiteral("Orphan"), 1)};
+  for (auto &heading : outline->m_headings) {
+    heading.m_reorderable = true;
+    heading.m_acceptsChildren = true;
+  }
+  outline->m_headings[0].m_reorderable = false;
+  OutlineModel model;
+  model.setOutline(outline);
+  const auto root = model.indexForHeadingIndex(0);
+  QVERIFY(!(model.flags(root) & Qt::ItemIsDragEnabled));
+  QVERIFY(model.flags(root) & Qt::ItemIsDropEnabled);
+  QVERIFY(!model.planMove(0, 3, OutlineDropPosition::OnItem).isValid());
+  QVERIFY(!model.planMove(3, 0, OutlineDropPosition::AboveItem).isValid());
+  QVERIFY(!model.planMove(3, 0, OutlineDropPosition::BelowItem).isValid());
+  QVERIFY(!model.planMove(1, 2, OutlineDropPosition::OnItem).isValid());
+
+  const auto intoRoot = model.planMove(4, 0, OutlineDropPosition::OnItem);
+  QVERIFY(intoRoot.isValid());
+  QCOMPARE(intoRoot.m_parentHeadingIndex, 0);
+  QCOMPARE(intoRoot.m_beforeHeadingIndex, -1);
+  QCOMPARE(intoRoot.m_targetLevel, 2);
+  const auto sibling = model.planMove(1, 3, OutlineDropPosition::BelowItem);
+  QVERIFY(sibling.isValid());
+  QCOMPARE(sibling.m_parentHeadingIndex, 0);
+  QCOMPARE(sibling.m_beforeHeadingIndex, 4);
+  const auto detach = model.planMove(1, -1, OutlineDropPosition::OnViewport);
+  QVERIFY(detach.isValid());
+  QCOMPARE(detach.m_parentHeadingIndex, -1);
+  QCOMPARE(detach.m_beforeHeadingIndex, -1);
+  QCOMPARE(detach.m_targetLevel, 1);
+  const auto deep = model.planMove(3, 2, OutlineDropPosition::OnItem);
+  QVERIFY(deep.isValid());
+  QCOMPARE(deep.m_targetLevel, 8);
+  QCOMPARE(deep.m_parentHeadingIndex, 2);
+
+  // A map without orphans still detaches to level one, not beneath its root.
+  outline->m_headings.removeLast();
+  const auto noOrphans = outline->planMove(1, -1, OutlineDropPosition::OnViewport);
+  QVERIFY(noOrphans.isValid());
+  QCOMPARE(noOrphans.m_targetLevel, 1);
+  QCOMPARE(noOrphans.m_parentHeadingIndex, -1);
+  outline->m_maxLevel = 6;
+  QVERIFY(!outline->planMove(3, 2, OutlineDropPosition::OnItem).isValid());
+  outline->m_maxLevel = INT_MAX;
+  outline->m_headings[2].m_level = INT_MAX;
+  QVERIFY(!outline->planMove(3, 2, OutlineDropPosition::OnItem).isValid());
+}
+
+void TestPdfViewerAdapterOutline::reorderCancelsStaleConfirmation() {
+  using namespace vnotex;
+  ServiceLocator services;
+  OutlineController controller(services);
+  auto provider = QSharedPointer<OutlineProvider>::create();
+  auto outline = QSharedPointer<Outline>::create();
+  outline->m_reorderSupported = true;
+  outline->m_headings = {Outline::Heading(QStringLiteral("A"), 1),
+                         Outline::Heading(QStringLiteral("B"), 1)};
+  for (auto &heading : outline->m_headings) {
+    heading.m_reorderable = true;
+  }
+  provider->setOutline(outline);
+  controller.setOutlineProvider(provider);
+  QSignalSpy requested(provider.data(), &OutlineProvider::moveRequested);
+  controller.requestItemMove(1, 0, OutlineDropPosition::AboveItem);
+  provider->setOutline(QSharedPointer<Outline>::create(*outline));
+  controller.confirmReorder(true);
+  QCOMPARE(requested.count(), 0);
+  controller.requestItemMove(1, 0, OutlineDropPosition::AboveItem);
+  provider->setReorderSupported(false);
+  controller.confirmReorder(true);
+  QCOMPARE(requested.count(), 0);
+  provider->setReorderSupported(true);
+  controller.requestItemMove(1, 0, OutlineDropPosition::AboveItem);
+  controller.confirmReorder(false);
+  QCOMPARE(requested.count(), 0);
+  controller.requestItemMove(1, 0, OutlineDropPosition::AboveItem);
+  controller.setOutlineProvider({});
+  controller.confirmReorder(true);
+  QCOMPARE(requested.count(), 0);
 }
 
 void TestPdfViewerAdapterOutline::producerNumberingGuaranteeSurvivesPanelToggles() {
@@ -800,9 +893,10 @@ void TestPdfViewerAdapterOutline::numberedGapOutlinePreservesMoveIndices() {
     QCOMPARE(confirmationSpy.count(), 1);
     controller.confirmReorder(true);
     QCOMPARE(moveSpy.count(), 1);
-    QCOMPARE(moveSpy.at(0).at(0).toInt(), lastHeadingIndex);
-    QCOMPARE(moveSpy.at(0).at(1).toInt(), deepHeadingIndex);
-    QCOMPARE(moveSpy.at(0).at(2).toInt(), 4);
+    const auto move = qvariant_cast<vnotex::OutlineMove>(moveSpy.first().first());
+    QCOMPARE(move.m_sourceHeadingIndex, lastHeadingIndex);
+    QCOMPARE(move.m_beforeHeadingIndex, deepHeadingIndex);
+    QCOMPARE(move.m_targetLevel, 4);
   }
 }
 

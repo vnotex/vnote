@@ -23,6 +23,7 @@ class InlineBanner;
 class PresentationToolBarEffect;
 class TypstViewWindowController;
 class ZoomToolBar;
+struct OutlineMove;
 
 class TypstViewWindow : public ViewWindow2 {
   Q_OBJECT
@@ -135,6 +136,9 @@ private:
   void setupOutlineProvider();
   void refreshOutline(const QVector<vte::TypstHeadingInfo> &p_headings);
   void clearOutline();
+  bool canReorderOutline() const;
+  void updateOutlineReorderSupport();
+  void reorderOutline(const OutlineMove &p_move);
   bool navigateToHeading(int p_index, bool p_focus);
   bool isActiveFileHeading(const vte::TypstHeadingInfo &p_heading) const;
   void updateCurrentHeading();
@@ -163,6 +167,7 @@ private:
   QSharedPointer<OutlineProvider> m_outlineProvider;
   // Index-aligned with the published outline, including repeated and imported headings.
   QVector<vte::TypstHeadingInfo> m_outlineHeadings;
+  QVector<vte::TypstSourceHeadingInfo> m_outlineSourceHeadings;
 
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;

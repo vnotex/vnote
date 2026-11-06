@@ -4,13 +4,14 @@
 #include <QSet>
 #include <QTreeView>
 
+#include <widgets/outlineprovider.h>
+
 class QDragEnterEvent;
 class QDragMoveEvent;
 class QDropEvent;
 
 namespace vnotex {
 
-enum class OutlineDropPosition { OnItem, AboveItem, BelowItem, OnViewport };
 // A QTreeView subclass for displaying the outline (table of contents) tree.
 // Display-only: reads heading data from OutlineModel and emits signals when
 // the user activates a heading. Does not contain business logic.
@@ -70,9 +71,6 @@ private:
 
   bool canAcceptDrop(const QModelIndex &p_target,
                      QAbstractItemView::DropIndicatorPosition p_position) const;
-  bool isDraggedSubtreeIndex(const QModelIndex &p_index) const;
-  int maximumHeadingLevel(const QModelIndex &p_root) const;
-  int rootHeadingLevelAfterMove() const;
   void updateDragDropMode();
   void clearDropIndicator();
 

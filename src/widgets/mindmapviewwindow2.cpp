@@ -274,6 +274,7 @@ void MindMapViewWindow2::syncInsertionActions() {
     m_insertLinkAction->setEnabled(available);
     m_insertImageAction->setEnabled(available);
   }
+  syncOutlineReorderSupported();
 }
 
 void MindMapViewWindow2::refreshInsertionShortcuts() {
@@ -666,13 +667,18 @@ void MindMapViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_
 void MindMapViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);
   m_mode = ViewWindowMode::Edit;
+  syncOutlineReorderSupported();
 }
 
 void MindMapViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
   ViewWindow2::handleNodeRetargeted(p_newNodeId);
   ++m_generation;
   // Rename/move updates resource policy only; drafts, history and camera stay native-owned.
+  const QPointer<MindMapViewWindow2> guard(this);
   m_editor->setBuffer(getBuffer());
+  if (guard) {
+    refreshOutline();
+  }
 }
 
 void MindMapViewWindow2::handleEditorConfigChange() {
@@ -687,6 +693,13 @@ void MindMapViewWindow2::handleEditorConfigChange() {
   if (guard) {
     refreshInsertionShortcuts();
     syncInsertionActions();
+  }
+  // Preview provenance is attached after construction; replace the initial ordinary
+  // map headings before that snapshot is shown.
+  if (guard && isOutlineMindMapPreview()) {
+    refreshOutline();
+  }
+  if (guard) {
     applyEditorPalette();
   }
 }
@@ -768,7 +781,8 @@ QSharedPointer<OutlineProvider> MindMapViewWindow2::getOutlineProvider() const {
 void MindMapViewWindow2::setupOutlineProvider() {
   m_outlineProvider = QSharedPointer<OutlineProvider>::create();
   m_outlineProvider->setAutoSectionNumberAllowed(false);
-  m_outlineProvider->setReorderSupported(false);
+  connect(m_outlineProvider.data(), &OutlineProvider::moveRequested, this,
+          &MindMapViewWindow2::reorderOutline);
   connect(m_outlineProvider.data(), &OutlineProvider::headingClicked, this, [this](int p_index) {
     if (!m_contentLoaded || p_index < 0 || p_index >= m_outlineNodeIds.size()) {
       return;
@@ -779,7 +793,96 @@ void MindMapViewWindow2::setupOutlineProvider() {
   });
 }
 
+bool MindMapViewWindow2::canReorderOutline() const {
+  return m_contentLoaded && m_propagateEditorToBuffer && isEnabled() &&
+         m_mode == ViewWindowMode::Edit && !isOutlineMindMapPreview() && m_editor &&
+         getBuffer().isValid() && !getBuffer().isReadOnly() && m_editor->canReorderOutline();
+}
+
+void MindMapViewWindow2::syncOutlineReorderSupported() {
+  m_outlineProvider->setReorderSupported(m_outlineGeneration == m_generation &&
+                                         canReorderOutline());
+}
+
+void MindMapViewWindow2::reorderOutline(const OutlineMove &p_move) {
+  const auto outline = m_outlineProvider->getOutline();
+  if (!outline || !outline->m_reorderSupported || m_outlineGeneration != m_generation ||
+      !canReorderOutline()) {
+    return;
+  }
+  const int source = p_move.m_sourceHeadingIndex;
+  const int before = p_move.m_beforeHeadingIndex;
+  const int parent = p_move.m_parentHeadingIndex;
+  const auto &headings = outline->m_headings;
+  if (source <= 0 || source >= headings.size() || before < -1 || before >= headings.size() ||
+      parent < -1 || parent >= headings.size() || !headings.at(source).m_reorderable ||
+      headings.size() != m_outlineNodeIds.size()) {
+    return;
+  }
+  const qint64 targetLevel = parent < 0 ? 1 : qint64(headings.at(parent).m_level) + 1;
+  if (targetLevel != p_move.m_targetLevel || targetLevel > INT_MAX ||
+      (parent >= 0 && !headings.at(parent).m_acceptsChildren)) {
+    return;
+  }
+  int sourceEnd = source + 1;
+  while (sourceEnd < headings.size() &&
+         headings.at(sourceEnd).m_level > headings.at(source).m_level) {
+    ++sourceEnd;
+  }
+  if ((parent >= source && parent < sourceEnd) || (before >= source && before < sourceEnd) ||
+      before == 0) {
+    return;
+  }
+
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  // Retain every ID from this publication before any native getter can reenter.
+  const QStringList nodeIds = m_outlineNodeIds;
+  const QString sourceId = nodeIds.at(source);
+  const QString parentId = parent < 0 ? QString() : nodeIds.at(parent);
+  const auto entries = m_editor->outline();
+  if (!guard || generation != m_generation || m_outlineGeneration != generation ||
+      m_outlineProvider->getOutline() != outline || !canReorderOutline() ||
+      entries.size() != headings.size()) {
+    return;
+  }
+  for (int i = 0; i < entries.size(); ++i) {
+    const auto &entry = entries.at(i);
+    if (entry.id != nodeIds.at(i) || entry.level != headings.at(i).m_level ||
+        entry.topic != headings.at(i).m_name) {
+      return;
+    }
+  }
+
+  const auto parentIndex = [&headings](int p_index) {
+    for (int i = p_index - 1; i >= 0; --i) {
+      if (headings.at(i).m_level < headings.at(p_index).m_level) {
+        return i;
+      }
+    }
+    return -1;
+  };
+  int childIndex = -1;
+  // The shared anchor may be the following parent's sibling, not one of its children.
+  // Such an anchor means append under the explicit parent, never detach to the forest.
+  if (before >= 0 && parentIndex(before) == parent) {
+    childIndex = 0;
+    for (int i = parent + 1; i < before; ++i) {
+      if (i != 0 && (i < source || i >= sourceEnd) && headings.at(i).m_level == targetLevel) {
+        ++childIndex;
+      }
+    }
+  }
+  // No flush or draft acceptance: the adapter rechecks its protected lease and
+  // performs exactly one native transaction. documentChanged owns history/refresh.
+  if (guard && generation == m_generation && m_outlineGeneration == generation &&
+      m_outlineProvider->getOutline() == outline && canReorderOutline()) {
+    m_editor->reorderOutlineNode(sourceId, parentId, childIndex);
+  }
+}
+
 void MindMapViewWindow2::clearOutline() {
+  m_outlineGeneration = 0;
   m_outlineNodeIds.clear();
   m_outlineIndexes.clear();
   const QPointer<MindMapViewWindow2> guard(this);
@@ -810,6 +913,8 @@ void MindMapViewWindow2::refreshOutline() {
     return;
   }
   auto outline = QSharedPointer<Outline>::create();
+  outline->m_maxLevel = INT_MAX;
+  outline->m_reorderSupported = canReorderOutline();
   outline->m_headings.reserve(entries.size());
   QStringList nodeIds;
   nodeIds.reserve(entries.size());
@@ -818,12 +923,16 @@ void MindMapViewWindow2::refreshOutline() {
   for (const auto &entry : entries) {
     indexes.insert(entry.id, nodeIds.size());
     nodeIds.append(entry.id);
-    outline->m_headings.append(Outline::Heading(entry.topic, entry.level));
+    Outline::Heading heading(entry.topic, entry.level);
+    heading.m_reorderable = !isOutlineMindMapPreview() && nodeIds.size() > 1;
+    heading.m_acceptsChildren = !isOutlineMindMapPreview();
+    outline->m_headings.append(std::move(heading));
   }
   m_outlineNodeIds = std::move(nodeIds);
   m_outlineIndexes = std::move(indexes);
+  m_outlineGeneration = generation;
   m_outlineProvider->setOutline(outline);
-  if (guard && generation == m_generation) {
+  if (guard && generation == m_generation && m_outlineProvider->getOutline() == outline) {
     updateCurrentHeading();
   }
 }

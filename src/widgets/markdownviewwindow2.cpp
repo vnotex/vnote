@@ -49,6 +49,7 @@
 #include <controllers/markdownrendercontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
 #include <controllers/markdownwebjobcontroller.h>
+#include <controllers/outlinesectioneditor.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/logging.h>
@@ -1698,7 +1699,7 @@ void MarkdownViewWindow2::setupOutlineProvider() {
   });
 
   connect(m_outlineProvider.data(), &OutlineProvider::moveRequested, this,
-          [this](int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel) {
+          [this](const OutlineMove &p_move) {
             if (m_mode != ViewWindowMode::Edit || !m_editor || m_editor->isReadOnly()) {
               return;
             }
@@ -1709,15 +1710,17 @@ void MarkdownViewWindow2::setupOutlineProvider() {
             }
 
             const auto &editorHeadings = m_editor->getHeadings();
-            if (p_sourceHeadingIndex < 0 || p_sourceHeadingIndex >= editorHeadings.size() ||
-                p_beforeHeadingIndex < -1 || p_beforeHeadingIndex >= editorHeadings.size()) {
+            if (p_move.m_sourceHeadingIndex < 0 ||
+                p_move.m_sourceHeadingIndex >= editorHeadings.size() ||
+                p_move.m_beforeHeadingIndex < -1 ||
+                p_move.m_beforeHeadingIndex >= editorHeadings.size()) {
               return;
             }
 
-            QVector<MarkdownEditorController::HeadingBlockInfo> headings;
+            QVector<OutlineSectionEditor::HeadingBlockInfo> headings;
             headings.reserve(editorHeadings.size());
             for (const auto &heading : editorHeadings) {
-              MarkdownEditorController::HeadingBlockInfo info;
+              OutlineSectionEditor::HeadingBlockInfo info;
               info.level = heading.m_level;
               info.startPos = heading.m_startPos;
               info.endPos = heading.m_endPos;
@@ -1736,9 +1739,10 @@ void MarkdownViewWindow2::setupOutlineProvider() {
               selectionEnd = selection.end();
             }
 
-            const auto moveResult = MarkdownEditorController::reorderHeadingBlock(
-                textEdit->document(), headings, p_sourceHeadingIndex, p_beforeHeadingIndex,
-                p_targetLevel, cursor.position(), cursor.anchor(), selectionStart, selectionEnd);
+            const auto moveResult = OutlineSectionEditor::reorderHeadingBlock(
+                textEdit->document(), headings, p_move.m_sourceHeadingIndex,
+                p_move.m_beforeHeadingIndex, p_move.m_targetLevel, cursor.position(),
+                cursor.anchor(), selectionStart, selectionEnd);
             if (!moveResult.moved) {
               return;
             }
@@ -1917,6 +1921,7 @@ void MarkdownViewWindow2::connectEditorSignals() {
       outline->m_headings[i].m_reorderable =
           editorHeadings[i].m_startPos >= 0 &&
           editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
+      outline->m_headings[i].m_acceptsChildren = outline->m_headings[i].m_reorderable;
     }
 
     const auto &buffer = getBuffer();
@@ -2405,6 +2410,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       outline->m_headings[i].m_reorderable =
           editorHeadings[i].m_startPos >= 0 &&
           editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
+      outline->m_headings[i].m_acceptsChildren = outline->m_headings[i].m_reorderable;
     }
     const auto &buffer = getBuffer();
     outline->m_reorderSupported =

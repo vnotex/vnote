@@ -14,6 +14,7 @@ namespace vnotex {
 
 class InlineBanner;
 class MindMapEditor;
+struct OutlineMove;
 class PresentationToolBarEffect;
 class ZoomToolBar;
 
@@ -79,6 +80,9 @@ private:
   void syncInsertionActions();
   void refreshInsertionShortcuts();
   void setupOutlineProvider();
+  bool canReorderOutline() const;
+  void syncOutlineReorderSupported();
+  void reorderOutline(const OutlineMove &p_move);
   void refreshOutline();
   void clearOutline();
   void updateCurrentHeading();
@@ -103,6 +107,7 @@ private:
   QHash<QString, int> m_outlineIndexes;
   QString m_lastEditorError;
   quint64 m_generation = 0;
+  quint64 m_outlineGeneration = 0;
   bool m_propagateEditorToBuffer = true;
   bool m_contentLoaded = false;
   bool m_printing = false;

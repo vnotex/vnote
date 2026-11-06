@@ -32,6 +32,12 @@ void OutlineModel::setOutline(const QSharedPointer<Outline> &p_outline) {
 
 bool OutlineModel::isReorderSupported() const { return m_reorderSupported; }
 
+OutlineMove OutlineModel::planMove(int p_sourceHeadingIndex, int p_targetHeadingIndex,
+                                   OutlineDropPosition p_position) const {
+  return m_outline ? m_outline->planMove(p_sourceHeadingIndex, p_targetHeadingIndex, p_position)
+                   : OutlineMove();
+}
+
 void OutlineModel::setCurrentHeadingIndex(int p_idx) { m_currentHeadingIndex = p_idx; }
 
 int OutlineModel::getCurrentHeadingIndex() const { return m_currentHeadingIndex; }
@@ -171,8 +177,12 @@ Qt::ItemFlags OutlineModel::flags(const QModelIndex &p_index) const {
 
   Qt::ItemFlags itemFlags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   const auto *node = static_cast<const OutlineNode *>(p_index.internalPointer());
-  if (m_reorderSupported && node && node->m_reorderable) {
-    itemFlags |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+  if (m_reorderSupported && node) {
+    if (node->m_reorderable) {
+      itemFlags |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+    } else if (node->m_acceptsChildren) {
+      itemFlags |= Qt::ItemIsDropEnabled;
+    }
   }
   return itemFlags;
 }
@@ -291,6 +301,7 @@ void OutlineModel::buildTree() {
     node->m_level = level;
     node->m_headingIndex = perfectToOriginal[i];
     node->m_reorderable = heading.m_reorderable;
+    node->m_acceptsChildren = heading.m_acceptsChildren;
     node->m_parent = currentParent;
 
     // Compute section number string.

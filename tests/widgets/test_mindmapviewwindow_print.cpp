@@ -21,10 +21,12 @@
 #include <QPrinter>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QTemporaryDir>
 #include <QToolButton>
 #include <QtConcurrent/QtConcurrentRun>
 
+#include <controllers/outlinecontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/mainconfig.h>
@@ -41,6 +43,7 @@
 #include <widgets/detachedwindow.h>
 #include <widgets/editors/mindmapeditor.h>
 #include <widgets/mindmapviewwindow2.h>
+#include <widgets/outlineprovider.h>
 #include <widgets/toolspanelhost.h>
 #include <widgets/viewsplit2.h>
 
@@ -90,6 +93,51 @@ QByteArray fixture() {
   nodes[0] = root;
   document.insert(QStringLiteral("nodes"), nodes);
   return QJsonDocument(document).toJson(QJsonDocument::Compact);
+}
+
+QByteArray reorderFixture() {
+  return QByteArrayLiteral(R"({
+    "schemaVersion":1,"rootId":"r","orphanIds":["o","p"],"nodes":[
+      {"id":"r","topic":"r","children":["a","c","d"]},
+      {"id":"a","topic":"a","children":["b"],"note":"Preserved note"},
+      {"id":"b","topic":"b","children":["b1"]},
+      {"id":"b1","topic":"b1","children":["b2"]},
+      {"id":"b2","topic":"b2","children":["b3"]},
+      {"id":"b3","topic":"b3","children":["b4"]},
+      {"id":"b4","topic":"b4","children":["b5"]},
+      {"id":"b5","topic":"b5"},
+      {"id":"c","topic":"c","children":["c1"]},
+      {"id":"c1","topic":"c1"},
+      {"id":"d","topic":"d"},
+      {"id":"o","topic":"o","children":["ox"]},
+      {"id":"ox","topic":"ox"},
+      {"id":"p","topic":"p"}],
+    "crossLinks":[{"id":"l","source":"a","target":"o","directed":true,
+                   "topic":"Preserved cross-link"}]})");
+}
+
+QStringList outlineNodeIds(const MindMapEditor &p_editor) {
+  QStringList ids;
+  const auto entries = p_editor.outline();
+  ids.reserve(entries.size());
+  for (const auto &entry : entries) {
+    ids.append(entry.id);
+  }
+  return ids;
+}
+
+bool hasVisibleTopic(const MindMapEditor &p_editor, const QString &p_topic) {
+  const auto *view = p_editor.findChild<QGraphicsView *>();
+  if (!view || !view->scene()) {
+    return false;
+  }
+  for (auto *item : view->scene()->items()) {
+    const auto *label = dynamic_cast<QGraphicsTextItem *>(item);
+    if (label && label->isVisible() && label->toPlainText() == p_topic) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool containsImageColor(const QImage &p_image) {
@@ -167,6 +215,14 @@ private slots:
   void livePropertiesHostHandoff();
   void detachedPropertiesPanel_data();
   void detachedPropertiesPanel();
+  void outlineReorder_data();
+  void outlineReorder();
+  void outlineRejectsRootAndInvalidMoves();
+  void outlineRejectsStaleConfirmation_data();
+  void outlineRejectsStaleConfirmation();
+  void outlineRejectsUnavailable_data();
+  void outlineRejectsUnavailable();
+  void outlineRejectsProtectedLocking();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_content, bool p_readOnly = false);
@@ -296,6 +352,309 @@ Buffer2 TestMindMapViewWindowPrint::openProtectedNote() {
                                    : error;
                       }).result();
   return result == VXCORE_OK ? m_buffers->openBufferByNodeId(noteId) : Buffer2();
+}
+
+void TestMindMapViewWindowPrint::outlineReorder_data() {
+  QTest::addColumn<QString>("sourceId");
+  QTest::addColumn<QString>("targetId");
+  QTest::addColumn<int>("position");
+  QTest::addColumn<QString>("parentId");
+  QTest::addColumn<int>("targetLevel");
+  QTest::addColumn<QString>("expectedOrder");
+  using Drop = OutlineDropPosition;
+  QTest::newRow("sibling-above") << QStringLiteral("d") << QStringLiteral("a")
+                                 << int(Drop::AboveItem) << QStringLiteral("r") << 2
+                                 << QStringLiteral("r d a b b1 b2 b3 b4 b5 c c1 o ox p");
+  QTest::newRow("sibling-below-after-source-removal")
+      << QStringLiteral("a") << QStringLiteral("c") << int(Drop::BelowItem) << QStringLiteral("r")
+      << 2 << QStringLiteral("r c c1 a b b1 b2 b3 b4 b5 d o ox p");
+  QTest::newRow("last-root-child-before-orphan")
+      << QStringLiteral("a") << QStringLiteral("d") << int(Drop::BelowItem) << QStringLiteral("r")
+      << 2 << QStringLiteral("r c c1 d a b b1 b2 b3 b4 b5 o ox p");
+  QTest::newRow("reparent-before-foreign-sibling")
+      << QStringLiteral("d") << QStringLiteral("a") << int(Drop::OnItem) << QStringLiteral("a") << 3
+      << QStringLiteral("r a b b1 b2 b3 b4 b5 d c c1 o ox p");
+  QTest::newRow("root-drop-target")
+      << QStringLiteral("o") << QStringLiteral("r") << int(Drop::OnItem) << QStringLiteral("r") << 2
+      << QStringLiteral("r a b b1 b2 b3 b4 b5 c c1 d o ox p");
+  QTest::newRow("explicit-last-parent-without-anchor")
+      << QStringLiteral("a") << QStringLiteral("p") << int(Drop::OnItem) << QStringLiteral("p") << 2
+      << QStringLiteral("r c c1 d o ox p a b b1 b2 b3 b4 b5");
+  QTest::newRow("viewport-creates-orphan")
+      << QStringLiteral("a") << QStringLiteral("") << int(Drop::OnViewport) << QStringLiteral("")
+      << 1 << QStringLiteral("r c c1 d o ox p a b b1 b2 b3 b4 b5");
+  QTest::newRow("orphan-order") << QStringLiteral("p") << QStringLiteral("o")
+                                << int(Drop::AboveItem) << QStringLiteral("") << 1
+                                << QStringLiteral("r a b b1 b2 b3 b4 b5 c c1 d p o ox");
+  QTest::newRow("orphan-reparent")
+      << QStringLiteral("o") << QStringLiteral("a") << int(Drop::OnItem) << QStringLiteral("a") << 3
+      << QStringLiteral("r a b b1 b2 b3 b4 b5 o ox c c1 d p");
+  QTest::newRow("level-nine") << QStringLiteral("d") << QStringLiteral("b5") << int(Drop::OnItem)
+                              << QStringLiteral("b5") << 9
+                              << QStringLiteral("r a b b1 b2 b3 b4 b5 d c c1 o ox p");
+  QTest::newRow("deep-descendants")
+      << QStringLiteral("c") << QStringLiteral("b4") << int(Drop::OnItem) << QStringLiteral("b4")
+      << 8 << QStringLiteral("r a b b1 b2 b3 b4 b5 c c1 d o ox p");
+  QTest::newRow("deep-viewport-orphan")
+      << QStringLiteral("b4") << QStringLiteral("") << int(Drop::OnViewport) << QStringLiteral("")
+      << 1 << QStringLiteral("r a b b1 b2 b3 c c1 d o ox p b4 b5");
+}
+
+void TestMindMapViewWindowPrint::outlineReorder() {
+  QFETCH(QString, sourceId);
+  QFETCH(QString, targetId);
+  QFETCH(int, position);
+  QFETCH(QString, parentId);
+  QFETCH(int, targetLevel);
+  QFETCH(QString, expectedOrder);
+  const auto buffer = openNote(QStringLiteral("outline.emind"), reorderFixture());
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer);
+  auto *editor = showWindow(window);
+  QVERIFY(editor);
+  QVERIFY(editor->canReorderOutline());
+  QVERIFY(editor->setExpanded(QStringLiteral("a"), false));
+  QVERIFY(editor->setExpanded(QStringLiteral("c"), false));
+  QVERIFY(!hasVisibleTopic(*editor, QStringLiteral("b")));
+  QVERIFY(!hasVisibleTopic(*editor, QStringLiteral("c1")));
+  const auto original = editor->toJson();
+  const auto originalMap = mapImage(*editor);
+  const auto ids = outlineNodeIds(*editor);
+  const auto provider = window.getOutlineProvider();
+  const auto snapshot = provider->getOutline();
+  QVERIFY(snapshot->m_reorderSupported);
+  QCOMPARE(snapshot->m_maxLevel, std::numeric_limits<int>::max());
+  QCOMPARE(snapshot->m_headings.size(), ids.size());
+  QVERIFY(!snapshot->m_headings.first().m_reorderable);
+  QVERIFY(snapshot->m_headings.first().m_acceptsChildren);
+  QVERIFY(snapshot->m_headings.at(ids.indexOf(QStringLiteral("b5"))).m_reorderable);
+  const int source = ids.indexOf(sourceId);
+  const int target = ids.indexOf(targetId);
+  const auto drop = static_cast<OutlineDropPosition>(position);
+  const auto move = snapshot->planMove(source, target, drop);
+  QVERIFY(move.isValid());
+  QCOMPARE(move.m_parentHeadingIndex, ids.indexOf(parentId));
+  QCOMPARE(move.m_targetLevel, targetLevel);
+
+  OutlineController controller(m_services);
+  controller.setOutlineProvider(provider);
+  QSignalSpy confirmation(&controller, &OutlineController::reorderConfirmationRequested);
+  QSignalSpy changed(editor, &MindMapEditor::documentChanged);
+  QSignalSpy dirty(editor, &MindMapEditor::contentsChanged);
+  controller.requestItemMove(source, target, drop);
+  QCOMPARE(confirmation.count(), 1);
+  QCOMPARE(editor->toJson(), original);
+  controller.confirmReorder(true);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(dirty.count(), 1);
+  QVERIFY(window.isModified());
+  QVERIFY(editor->isModified());
+  const auto movedIds = outlineNodeIds(*editor);
+  QCOMPARE(movedIds, expectedOrder.split(QLatin1Char(' ')));
+  const auto movedEntries = editor->outline();
+  const int movedSource = movedIds.indexOf(sourceId);
+  QCOMPARE(movedEntries.at(movedSource).level, targetLevel);
+  const auto movedDocument = QJsonDocument::fromJson(editor->toJson()).object();
+  const auto originalDocument = QJsonDocument::fromJson(original).object();
+  QCOMPARE(movedDocument.value(QStringLiteral("crossLinks")),
+           originalDocument.value(QStringLiteral("crossLinks")));
+  QCOMPARE(QJsonDocument::fromJson(editor->nodeJson(QStringLiteral("a")))
+               .object()
+               .value(QStringLiteral("note"))
+               .toString(),
+           QStringLiteral("Preserved note"));
+  for (int i = 0; i < movedEntries.size(); ++i) {
+    QCOMPARE(provider->getOutline()->m_headings.at(i).m_name, movedEntries.at(i).topic);
+    QCOMPARE(provider->getOutline()->m_headings.at(i).m_level, movedEntries.at(i).level);
+  }
+  QVERIFY(!hasVisibleTopic(*editor, QStringLiteral("b")));
+  QVERIFY(!hasVisibleTopic(*editor, QStringLiteral("c1")));
+  QVERIFY(editor->canUndo());
+  QVERIFY(editor->undo());
+  QCOMPARE(editor->toJson(), original);
+  QVERIFY(!editor->canUndo());
+  QCOMPARE(mapImage(*editor), originalMap);
+  QCOMPARE(outlineNodeIds(*editor), ids);
+  QVERIFY(editor->redo());
+  QCOMPARE(outlineNodeIds(*editor), expectedOrder.split(QLatin1Char(' ')));
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsRootAndInvalidMoves() {
+  const auto buffer = openNote(QStringLiteral("invalid-moves.emind"), reorderFixture());
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer);
+  auto *editor = showWindow(window);
+  QVERIFY(editor);
+  const auto provider = window.getOutlineProvider();
+  const auto snapshot = provider->getOutline();
+  const auto ids = outlineNodeIds(*editor);
+  const int a = ids.indexOf(QStringLiteral("a"));
+  const int b = ids.indexOf(QStringLiteral("b"));
+  const int d = ids.indexOf(QStringLiteral("d"));
+  const auto original = editor->toJson();
+  OutlineController controller(m_services);
+  controller.setOutlineProvider(provider);
+  QSignalSpy confirmation(&controller, &OutlineController::reorderConfirmationRequested);
+  QSignalSpy changed(editor, &MindMapEditor::documentChanged);
+  controller.requestItemMove(0, a, OutlineDropPosition::OnItem);
+  controller.requestItemMove(0, -1, OutlineDropPosition::OnViewport);
+  controller.requestItemMove(a, 0, OutlineDropPosition::AboveItem);
+  controller.requestItemMove(a, 0, OutlineDropPosition::BelowItem);
+  controller.requestItemMove(a, b, OutlineDropPosition::OnItem);
+  QCOMPARE(confirmation.count(), 0);
+  controller.confirmReorder(true);
+  auto malformed = snapshot->planMove(d, a, OutlineDropPosition::OnItem);
+  QVERIFY(malformed.isValid());
+  malformed.m_sourceHeadingIndex = 0;
+  provider->requestMove(malformed);
+  malformed.m_sourceHeadingIndex = d;
+  malformed.m_parentHeadingIndex = d;
+  provider->requestMove(malformed);
+  malformed.m_parentHeadingIndex = a;
+  malformed.m_targetLevel = 1;
+  provider->requestMove(malformed);
+  QCOMPARE(editor->toJson(), original);
+  QVERIFY(changed.isEmpty());
+  QVERIFY(!editor->canUndo());
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsStaleConfirmation_data() {
+  QTest::addColumn<QString>("transition");
+  QTest::newRow("outline-change") << QStringLiteral("rename");
+  QTest::newRow("buffer-generation") << QStringLiteral("reload");
+  QTest::newRow("unpublished-native-preorder") << QStringLiteral("silent-move");
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsStaleConfirmation() {
+  QFETCH(QString, transition);
+  const auto buffer = openNote(QStringLiteral("stale.emind"), reorderFixture());
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer);
+  auto *editor = showWindow(window);
+  QVERIFY(editor);
+  const auto provider = window.getOutlineProvider();
+  const auto snapshot = provider->getOutline();
+  const auto ids = outlineNodeIds(*editor);
+  OutlineController controller(m_services);
+  controller.setOutlineProvider(provider);
+  QSignalSpy confirmation(&controller, &OutlineController::reorderConfirmationRequested);
+  controller.requestItemMove(ids.indexOf(QStringLiteral("d")), ids.indexOf(QStringLiteral("a")),
+                             OutlineDropPosition::AboveItem);
+  QCOMPARE(confirmation.count(), 1);
+  if (transition == QLatin1String("rename")) {
+    QVERIFY(editor->renameNode(QStringLiteral("a"), QStringLiteral("Changed while confirming")));
+    QVERIFY(provider->getOutline() != snapshot);
+  } else if (transition == QLatin1String("reload")) {
+    window.syncEditorFromBuffer();
+    QVERIFY(provider->getOutline() != snapshot);
+  } else {
+    // Simulate an unreported native change: pointer identity alone must not authorize old IDs.
+    const QSignalBlocker blocker(editor);
+    QVERIFY(editor->reorderOutlineNode(QStringLiteral("d"), QStringLiteral("a"), -1));
+    QCOMPARE(provider->getOutline(), snapshot);
+  }
+  const auto current = editor->toJson();
+  QSignalSpy changed(editor, &MindMapEditor::documentChanged);
+  controller.confirmReorder(true);
+  QCOMPARE(editor->toJson(), current);
+  QVERIFY(changed.isEmpty());
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsUnavailable_data() {
+  QTest::addColumn<QString>("transition");
+  QTest::newRow("read-only-buffer") << QStringLiteral("buffer-read-only");
+  QTest::newRow("read-only-editor") << QStringLiteral("editor-read-only");
+  QTest::newRow("disabled-window") << QStringLiteral("disabled");
+  QTest::newRow("pending-draft") << QStringLiteral("draft");
+  QTest::newRow("invalid-content") << QStringLiteral("invalid-content");
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsUnavailable() {
+  QFETCH(QString, transition);
+  const auto buffer = openNote(QStringLiteral("unavailable.emind"), reorderFixture(),
+                               transition == QLatin1String("buffer-read-only"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer);
+  auto *editor = showWindow(window);
+  QVERIFY(editor);
+  const auto provider = window.getOutlineProvider();
+  const auto ids = outlineNodeIds(*editor);
+  const int source = ids.indexOf(QStringLiteral("d"));
+  const int target = ids.indexOf(QStringLiteral("a"));
+  OutlineController controller(m_services);
+  controller.setOutlineProvider(provider);
+  QSignalSpy confirmation(&controller, &OutlineController::reorderConfirmationRequested);
+  controller.requestItemMove(source, target, OutlineDropPosition::AboveItem);
+  QCOMPARE(confirmation.count(), transition == QLatin1String("buffer-read-only") ? 0 : 1);
+  QPointer<QPlainTextEdit> draft;
+  if (transition == QLatin1String("editor-read-only")) {
+    editor->setReadOnly(true);
+  } else if (transition == QLatin1String("disabled")) {
+    window.setEnabled(false);
+  } else if (transition == QLatin1String("draft")) {
+    draft = beginDraft(*editor);
+    QVERIFY(draft);
+    draft->setPlainText(QStringLiteral("Uncommitted outline draft"));
+    QVERIFY(editor->hasPendingEdit());
+  } else if (transition == QLatin1String("invalid-content")) {
+    QVERIFY(!editor->loadContent(QByteArrayLiteral("invalid JSON")));
+  }
+  QVERIFY(!editor->canReorderOutline());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  const auto current = editor->toJson();
+  QSignalSpy changed(editor, &MindMapEditor::documentChanged);
+  controller.confirmReorder(true);
+  OutlineMove direct;
+  direct.m_sourceHeadingIndex = source;
+  direct.m_beforeHeadingIndex = target;
+  direct.m_targetLevel = 2;
+  direct.m_parentHeadingIndex = 0;
+  provider->requestMove(direct);
+  QVERIFY(!editor->reorderOutlineNode(QStringLiteral("d"), QStringLiteral("r"), 0));
+  QCOMPARE(editor->toJson(), current);
+  QVERIFY(changed.isEmpty());
+  QVERIFY(!editor->canUndo());
+  if (draft) {
+    QVERIFY(editor->hasPendingEdit());
+    QCOMPARE(draft->toPlainText(), QStringLiteral("Uncommitted outline draft"));
+    QTest::keyClick(draft, Qt::Key_Escape);
+    QVERIFY(!editor->hasPendingEdit());
+    QVERIFY(provider->getOutline()->m_reorderSupported);
+  } else if (transition == QLatin1String("editor-read-only")) {
+    editor->setReadOnly(false);
+    QVERIFY(provider->getOutline()->m_reorderSupported);
+  } else if (transition == QLatin1String("disabled")) {
+    window.setEnabled(true);
+    QVERIFY(provider->getOutline()->m_reorderSupported);
+  }
+}
+
+void TestMindMapViewWindowPrint::outlineRejectsProtectedLocking() {
+  const auto buffer = openProtectedNote();
+  QVERIFY(buffer.isValid() && buffer.isEncrypted());
+  Window window(m_services, buffer);
+  auto *editor = showWindow(window);
+  QVERIFY(editor);
+  const auto provider = window.getOutlineProvider();
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  const auto ids = outlineNodeIds(*editor);
+  OutlineController controller(m_services);
+  controller.setOutlineProvider(provider);
+  QSignalSpy confirmation(&controller, &OutlineController::reorderConfirmationRequested);
+  controller.requestItemMove(ids.indexOf(QStringLiteral("o")), 0, OutlineDropPosition::OnItem);
+  QCOMPARE(confirmation.count(), 1);
+  const auto current = editor->toJson();
+  QVERIFY(m_buffers->beginProtectedLocking());
+  QVERIFY(!editor->canReorderOutline());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  QSignalSpy changed(editor, &MindMapEditor::documentChanged);
+  controller.confirmReorder(true);
+  QVERIFY(!editor->reorderOutlineNode(QStringLiteral("o"), QStringLiteral("r"), -1));
+  QCOMPARE(editor->toJson(), current);
+  QVERIFY(changed.isEmpty());
+  m_buffers->cancelProtectedLocking();
+  QVERIFY(editor->canReorderOutline());
+  QVERIFY(provider->getOutline()->m_reorderSupported);
 }
 
 void TestMindMapViewWindowPrint::livePropertiesHostHandoff_data() {

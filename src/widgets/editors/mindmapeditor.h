@@ -34,6 +34,9 @@ public:
   void setModified(bool p_modified);
   bool isModified() const;
   bool canInsert() const;
+  // Outline commands never commit an active draft or bypass the live buffer policy.
+  bool canReorderOutline() const;
+  bool reorderOutlineNode(const QString &p_sourceId, const QString &p_parentId, int p_index);
   void typeImage();
   void typeLink();
 

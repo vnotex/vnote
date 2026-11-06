@@ -337,14 +337,14 @@ add_qt_test(test_controllers_readonly_state
   GUILESS
 )
 
-# Edit-mode "Copy Link" for Markdown headings: the two pure seams
-# (MarkdownEditorController::isLinkableHeadingLine / composeHeadingLink). The
-# anchor itself is computed on the web side and is covered by the manual parity
-# matrix instead. pathutils.cpp comes from core_services -- do NOT add it to
-# SOURCES or MSVC reports duplicate symbols.
+# Markdown heading links and shared Markdown/Typst source section reordering.
+# Native anchor semantics are covered by test_markdownhtmlrenderer.
+# pathutils.cpp comes from core_services -- do NOT add it to SOURCES or MSVC
+# reports duplicate symbols.
 add_qt_test(test_markdown_heading_link
   SOURCES
     test_markdown_heading_link.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/outlinesectioneditor.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/markdowneditorcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
   LINKS

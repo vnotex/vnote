@@ -94,6 +94,7 @@
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/statusbar.h>
 #include <widgets/imageviewer.h>
+#include <widgets/outlineprovider.h>
 #include <widgets/typstviewwindow.h>
 
 #include <atomic>
@@ -883,6 +884,14 @@ private slots:
   void initTestCase();
   void init();
   void cleanup();
+  void outlineMoveAndUndo_data();
+  void outlineMoveAndUndo();
+  void outlineHiddenBoundaries_data();
+  void outlineHiddenBoundaries();
+  void outlineUnsupportedSources_data();
+  void outlineUnsupportedSources();
+  void outlineLiveGuardsAndInvalidation();
+  void outlineReadOnlyBuffer();
   void statusPlacementFollowsMode();
   void memoryBodyRendersWithoutFileWrites_data();
   void memoryBodyRendersWithoutFileWrites();
@@ -1174,6 +1183,213 @@ void TestTypstViewWindowInsertion::show(const Buffer2 &buffer) {
   m_edit->setFocus();
   QCoreApplication::processEvents();
 }
+void TestTypstViewWindowInsertion::outlineMoveAndUndo_data() {
+  QTest::addColumn<int>("level");
+  QTest::addColumn<bool>("asChild");
+  QTest::addColumn<bool>("overridden");
+  QTest::newRow("basic") << 1 << false << false;
+  QTest::newRow("deep") << 8 << false << false;
+  QTest::newRow("deep-reparent") << 8 << true << false;
+  QTest::newRow("overridden-selection") << 1 << true << true;
+}
+
+void TestTypstViewWindowInsertion::outlineMoveAndUndo() {
+  QFETCH(int, level);
+  QFETCH(bool, asChild);
+  QFETCH(bool, overridden);
+  const auto prefix = QStringLiteral("Intro\n");
+  const auto section = QString(level, QLatin1Char('=')) + QStringLiteral(" Alpha\nalpha body\n") +
+                       QString(level + 1, QLatin1Char('=')) +
+                       QStringLiteral(" Child\nchild body\n");
+  const auto target = QString(level, QLatin1Char('=')) + QStringLiteral(" Omega\nomega body\n");
+  const auto original = prefix + section + target;
+  show(openNote(QStringLiteral("main.typst"), original));
+  QVERIFY(ready());
+  const auto provider = m_window->getOutlineProvider();
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  QCOMPARE(m_editor->getSourceHeadings().size(), 3);
+  QVERIFY(provider->getOutline()->m_maxLevel > 6);
+  const auto move = provider->getOutline()->planMove(
+      0, 2, asChild ? OutlineDropPosition::OnItem : OutlineDropPosition::BelowItem);
+  QVERIFY(move.isValid());
+  const int selectedStart = original.indexOf(QStringLiteral("alpha body"));
+  QTextCursor cursor(m_edit->document());
+  cursor.setPosition(selectedStart + 10);
+  if (!overridden)
+    cursor.setPosition(selectedStart, QTextCursor::KeepAnchor);
+  m_edit->setTextCursor(cursor);
+  if (overridden)
+    m_edit->setOverriddenSelection(selectedStart, selectedStart + 10);
+  m_edit->document()->clearUndoRedoStacks();
+  provider->requestMove(move);
+  const int resultLevel = level + (asChild ? 1 : 0);
+  const auto expected = prefix + target + QString(resultLevel, QLatin1Char('=')) +
+                        QStringLiteral(" Alpha\nalpha body\n") +
+                        QString(resultLevel + 1, QLatin1Char('=')) +
+                        QStringLiteral(" Child\nchild body\n");
+  QCOMPARE(m_edit->toPlainText(), expected);
+  QCOMPARE(m_edit->selectedText(), QStringLiteral("alpha body"));
+  if (!overridden)
+    QVERIFY(m_edit->textCursor().position() < m_edit->textCursor().anchor());
+  QVERIFY(m_edit->document()->isModified());
+  QVERIFY(m_editor->getSourceHeadings().isEmpty());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  m_edit->undo();
+  QCOMPARE(m_edit->toPlainText(), original);
+  QVERIFY(!m_edit->document()->isUndoAvailable());
+}
+
+void TestTypstViewWindowInsertion::outlineHiddenBoundaries_data() {
+  QTest::addColumn<QString>("body");
+  QTest::addColumn<QString>("expected");
+  QTest::addColumn<int>("target");
+  QTest::addColumn<bool>("asChild");
+  QTest::newRow("hidden-peer-not-swallowed")
+      << QStringLiteral("= Alpha\nalpha\n= Hidden\nhidden\n= Omega\nomega\n")
+      << QStringLiteral("= Hidden\nhidden\n= Omega\nomega\n= Alpha\nalpha\n") << 1 << false;
+  QTest::newRow("hidden-descendant-carried")
+      << QStringLiteral("= Alpha\nalpha\n== Hidden\nhidden\n= Omega\nomega\n")
+      << QStringLiteral("= Omega\nomega\n= Alpha\nalpha\n== Hidden\nhidden\n") << 1 << false;
+  QTest::newRow("inconsistent-visible-subtree")
+      << QStringLiteral("= Alpha\nalpha\n= Hidden\nhidden\n== Child\nchild\n= Omega\nomega\n")
+      << QString() << 2 << false;
+  QTest::newRow("hidden-destination-parent")
+      << QStringLiteral("= Alpha\nalpha\n= Hidden\nhidden\n= Omega\nomega\n") << QString() << 1
+      << true;
+}
+
+void TestTypstViewWindowInsertion::outlineHiddenBoundaries() {
+  QFETCH(QString, body);
+  QFETCH(QString, expected);
+  QFETCH(int, target);
+  QFETCH(bool, asChild);
+  const auto prefix =
+      QStringLiteral("#show heading.where(body: [Hidden]): set heading(outlined: false)\n");
+  const auto original = prefix + body;
+  show(openNote(QStringLiteral("main.typst"), original));
+  QVERIFY(ready());
+  const auto provider = m_window->getOutlineProvider();
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  QCOMPARE(m_editor->getSourceHeadings().size(), m_editor->getHeadings().size() + 1);
+  // In the parent mismatch row move Omega onto Alpha; otherwise append Alpha after Omega.
+  const auto move = provider->getOutline()->planMove(asChild ? target : 0, asChild ? 0 : target,
+                                                     asChild ? OutlineDropPosition::OnItem
+                                                             : OutlineDropPosition::BelowItem);
+  QVERIFY(move.isValid());
+  m_edit->document()->clearUndoRedoStacks();
+  provider->requestMove(move);
+  if (expected.isEmpty()) {
+    QCOMPARE(m_edit->toPlainText(), original);
+    QVERIFY(!m_edit->document()->isUndoAvailable());
+  } else {
+    QCOMPARE(m_edit->toPlainText(), prefix + expected);
+    m_edit->undo();
+    QCOMPARE(m_edit->toPlainText(), original);
+    QVERIFY(!m_edit->document()->isUndoAvailable());
+  }
+}
+
+void TestTypstViewWindowInsertion::outlineUnsupportedSources_data() {
+  QTest::addColumn<QString>("body");
+  QTest::newRow("nested") << QStringLiteral("#[\n== Nested\n]\n");
+  QTest::newRow("generated-hidden") << QStringLiteral("#heading(outlined: false)[Hidden]\n");
+  QTest::newRow("generated-visible") << QStringLiteral("#heading[Generated]\n");
+  QTest::newRow("imported") << QStringLiteral("#include \"chapter.typ\"\n");
+  QTest::newRow("repeated") << QStringLiteral("#for i in range(2) [\n== Repeated\n]\n");
+  QTest::newRow("indirect-make") << QStringLiteral("#let make() = [\n== Defined\n]\n#make()\n");
+  QTest::newRow("indirect-for") << QStringLiteral(
+      "#let make() = heading(outlined: false)[Hidden]\n#for i in range(2) { make() }\n");
+}
+
+void TestTypstViewWindowInsertion::outlineUnsupportedSources() {
+  QFETCH(QString, body);
+  const auto original =
+      QStringLiteral("= Alpha\nalpha\n") + body + QStringLiteral("= Omega\nomega\n");
+  const auto buffer = openNote(QStringLiteral("main.typst"), original);
+  QVERIFY(buffer.isValid());
+  QVERIFY(
+      writeBytes(QFileInfo(buffer.resolvedPath()).absolutePath() + QStringLiteral("/chapter.typ"),
+                 QByteArrayLiteral("== Imported\n")));
+  show(buffer);
+  QVERIFY(ready());
+  const auto provider = m_window->getOutlineProvider();
+  QVERIFY(provider->getOutline()->m_headings.size() >= 2);
+  QVERIFY(m_editor->getSourceHeadings().isEmpty());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  for (const auto &heading : provider->getOutline()->m_headings)
+    QVERIFY(!heading.m_reorderable);
+  m_edit->document()->clearUndoRedoStacks();
+  provider->requestMove({0, -1, 1, -1});
+  QCOMPARE(m_edit->toPlainText(), original);
+  QVERIFY(!m_edit->document()->isUndoAvailable());
+}
+
+void TestTypstViewWindowInsertion::outlineReadOnlyBuffer() {
+  const auto original = QStringLiteral("= Alpha\nalpha\n= Omega\nomega\n");
+  show(openNote(QStringLiteral("main.typst"), original, true));
+  QVERIFY(ready());
+  const auto provider = m_window->getOutlineProvider();
+  QCOMPARE(m_editor->getSourceHeadings().size(), 2);
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  // Native permission alone cannot override the live host buffer policy.
+  m_editor->setReadOnly(false);
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  m_edit->document()->clearUndoRedoStacks();
+  provider->requestMove({0, -1, 1, -1});
+  QCOMPARE(m_edit->toPlainText(), original);
+  QVERIFY(!m_edit->document()->isUndoAvailable());
+}
+
+void TestTypstViewWindowInsertion::outlineLiveGuardsAndInvalidation() {
+  const auto original = QStringLiteral("= Alpha\nalpha\n= Omega\nomega\n");
+  show(openNote(QStringLiteral("main.typst"), original));
+  QVERIFY(ready());
+  const auto provider = m_window->getOutlineProvider();
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  const auto move = provider->getOutline()->planMove(0, 1, OutlineDropPosition::BelowItem);
+  QVERIFY(move.isValid());
+  m_edit->document()->clearUndoRedoStacks();
+  const auto rejected = [&] {
+    QVERIFY(!provider->getOutline()->m_reorderSupported);
+    provider->requestMove(move);
+    QCOMPARE(m_edit->toPlainText(), original);
+    QVERIFY(!m_edit->document()->isUndoAvailable());
+  };
+  m_editor->setReadOnly(true);
+  rejected();
+  m_editor->setReadOnly(false);
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  m_edit->setReadOnly(true);
+  rejected();
+  m_edit->setReadOnly(false);
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  m_window->setMode(ViewWindowMode::Read);
+  rejected();
+  m_window->setMode(ViewWindowMode::Edit);
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  m_window->setEnabled(false);
+  rejected();
+  m_window->setEnabled(true);
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+
+  QTextCursor cursor(m_edit->document());
+  cursor.movePosition(QTextCursor::End);
+  cursor.insertText(QStringLiteral("edited"));
+  QVERIFY(m_editor->getSourceHeadings().isEmpty());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  provider->requestMove(move);
+  QCOMPARE(m_edit->toPlainText(), original + QStringLiteral("edited"));
+  m_edit->undo();
+  QCOMPARE(m_edit->toPlainText(), original);
+  QVERIFY(ready());
+  QVERIFY(provider->getOutline()->m_reorderSupported);
+  m_editor->setFileOverlay(m_editor->activeFile(), QStringLiteral("= Broken\n#let x = ("));
+  QVERIFY(m_editor->getSourceHeadings().isEmpty());
+  QVERIFY(!provider->getOutline()->m_reorderSupported);
+  provider->requestMove(move);
+  QCOMPARE(m_edit->toPlainText(), QStringLiteral("= Broken\n#let x = ("));
+}
+
 void TestTypstViewWindowInsertion::statusPlacementFollowsMode() {
   show(openNote());
   QVERIFY(m_window && m_editor && m_pdf);

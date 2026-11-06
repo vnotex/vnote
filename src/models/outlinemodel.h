@@ -11,6 +11,8 @@ class QMimeData;
 namespace vnotex {
 
 struct Outline;
+struct OutlineMove;
+enum class OutlineDropPosition;
 
 // Internal tree node for the outline model.
 struct OutlineNode {
@@ -28,6 +30,7 @@ struct OutlineNode {
   int m_headingIndex = -1;
 
   bool m_reorderable = false;
+  bool m_acceptsChildren = false;
 
   // Precomputed section number string (e.g., "1.2.").
   // Empty when section numbering is disabled.
@@ -62,6 +65,8 @@ public:
   void setOutline(const QSharedPointer<Outline> &p_outline);
 
   bool isReorderSupported() const;
+  OutlineMove planMove(int p_sourceHeadingIndex, int p_targetHeadingIndex,
+                       OutlineDropPosition p_position) const;
 
   // Set/get the current heading index (for highlighting in the view).
   void setCurrentHeadingIndex(int p_idx);

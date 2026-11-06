@@ -235,6 +235,20 @@ following `-` and continue typing `#abc` or `- item` without an inserted number.
 The result stays index-aligned with the parsed headings. This is an editor source-writing
 policy only; Markdown parsing and read-mode/outline numbering are unchanged.
 
+## Outline Reordering
+
+`OutlineController` retains the full `OutlineMove` and its `Outline` snapshot until confirmation;
+provider replacement, outline publication or permission changes retire that intent. Both the view
+and controller use `Outline::planMove()` rather than separate format-specific placement rules.
+An insertion anchor of -1 means append under the explicit parent, not necessarily document root.
+
+`OutlineSectionEditor` owns the shared QTextDocument section move, marker rewriting and position
+mapping. Markdown accepts ATX/Setext through level six; Typst accepts AST-proven top-level `=`
+headings at positive depths. The caller must supply complete, current source boundaries; marker
+validation alone does not establish Typst syntax context. All changes form one edit block and
+cursor/selection restoration happens afterward. Native mind maps use their own atomic history
+command rather than serializing/reloading JSON or passing through the text mover.
+
 ## NotificationRouter
 
 Translates already-existing subsystem failure signals into notifications. It exists because

@@ -30,6 +30,7 @@ target_sources(vnote PRIVATE
     markdownrendercontroller.cpp markdownrendercontroller.h
     markdownviewwindowcontroller.cpp markdownviewwindowcontroller.h
     outlinecontroller.cpp outlinecontroller.h
+    outlinesectioneditor.cpp outlinesectioneditor.h
     attachmentcontroller.cpp attachmentcontroller.h
     exportcontroller.cpp exportcontroller.h
     foldersharecontroller.cpp foldersharecontroller.h

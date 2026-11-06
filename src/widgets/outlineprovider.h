@@ -9,6 +9,19 @@
 #include <limits.h>
 
 namespace vnotex {
+enum class OutlineDropPosition { OnItem, AboveItem, BelowItem, OnViewport };
+
+// Placement in one published outline snapshot. The insertion anchor may be outside
+// the destination parent's subtree; native tree adapters then append to that parent.
+struct OutlineMove {
+  int m_sourceHeadingIndex = -1;
+  int m_beforeHeadingIndex = -1;
+  int m_targetLevel = -1;
+  int m_parentHeadingIndex = -1;
+
+  bool isValid() const { return m_sourceHeadingIndex >= 0; }
+};
+
 // Toc content.
 struct Outline {
   struct Heading {
@@ -27,6 +40,9 @@ struct Outline {
 
     // Whether this concrete heading may participate in reordering.
     bool m_reorderable = false;
+
+    // Allows an immovable root to receive children. Movable headings also accept them.
+    bool m_acceptsChildren = false;
   };
 
   void clear();
@@ -39,6 +55,10 @@ struct Outline {
   // Excludes display/reordering permissions and retains no heading text.
   QByteArray navigationFingerprint() const;
 
+  // Shared drop validation, used by both drag feedback and confirmed execution.
+  OutlineMove planMove(int p_sourceHeadingIndex, int p_targetHeadingIndex,
+                       OutlineDropPosition p_position) const;
+
   QVector<Heading> m_headings;
 
   // Producer guarantee: names already contain the intended section numbers.
@@ -46,6 +66,9 @@ struct Outline {
 
   // Whether this outline currently supports reordering.
   bool m_reorderSupported = false;
+
+  // Markdown's syntax limit. Other producers explicitly opt into deeper trees.
+  int m_maxLevel = 6;
 };
 
 // Used to hold toc-related data of one ViewWindow.
@@ -66,7 +89,7 @@ public:
   bool getAutoSectionNumberAllowed() const;
   void setAutoSectionNumberAllowed(bool p_allowed);
 
-  void requestMove(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
+  void requestMove(const OutlineMove &p_move);
 
   // Get current heading index in outline.
   int getCurrentHeadingIndex() const;
@@ -84,7 +107,7 @@ signals:
 
   void headingClicked(int p_idx);
 
-  void moveRequested(int p_sourceHeadingIndex, int p_beforeHeadingIndex, int p_targetLevel);
+  void moveRequested(const vnotex::OutlineMove &p_move);
 
 private:
   QSharedPointer<Outline> m_outline;
@@ -125,5 +148,7 @@ void OutlineProvider::makePerfectHeadings(const QVector<T> &p_headings,
   }
 }
 } // namespace vnotex
+
+Q_DECLARE_METATYPE(vnotex::OutlineMove)
 
 #endif // OUTLINEPROVIDER_H

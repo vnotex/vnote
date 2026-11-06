@@ -263,6 +263,32 @@ entering the existing link policy; same-document anchors scroll in place. Chromi
 `loadStarted` even for rejected link navigation, so allowing that navigation would retire the
 still-visible source bridge and break subsequent links. Genuine reload invalidation is unchanged.
 
+#### Outline section reordering
+
+Editable Markdown, ordinary mind maps and safely mapped Typst sources share the Outline
+panel/popup move contract. Above/Below changes sibling order; OnItem reparents a whole
+section/subtree. Confirmation is mandatory, filtering disables dragging, and publication,
+permission or provider changes cancel pending moves. The model never moves rows optimistically.
+
+`OutlineMove` carries source, insertion anchor, target level and explicit parent indices in one
+published snapshot. `Outline::planMove()` supplies both drag feedback and confirmed placement.
+Markdown retains its six-level limit; native maps and Typst accept deeper trees. A map's main
+root accepts children but cannot move; viewport drops detach to the orphan-root list. The map
+adapter resolves current native IDs and calls guarded `MindMapEditor::reorderOutlineNode()` once.
+Pending topic/note drafts are rejected, not committed as a second undo operation. Read-only,
+protected-locking and generated preview policies remain authoritative.
+
+Typst consumes `VTypstEditor::getSourceHeadings()`, never a regex scan or evaluated outline alone.
+The complete AST-backed source list includes hidden headings. Ambiguous source mappings
+(generated, nested, imported, repeated or level-transformed headings) remain navigation-only.
+Moves that disagree with hidden section boundaries/parents are rejected. Both text formats use
+`OutlineSectionEditor` for one undoable source edit and mapped cursor/selection restoration.
+Retire native Typst callbacks in the host destructor before member destruction: the child editor
+emits resource invalidation when QWidget later deletes it.
+
+Coverage: `test_pdfvieweradapter_outline`, `test_markdown_heading_link`,
+`test_mindmapviewwindow_print`, `test_typstviewwindow_insertion` and native `test_typsteditor`.
+
 #### Outline mind-map snapshots
 
 Markdown, PDF and Typst expose **Mind Map** (Lucide Brain, `brain_editor.svg`) immediately
