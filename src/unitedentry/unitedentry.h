@@ -102,8 +102,6 @@ private:
 
   EntryPopup *m_popup = nullptr;
 
-  QAction *m_menuIconAction = nullptr;
-
   QAction *m_busyIconAction = nullptr;
 
   bool m_activated = false;

@@ -53,6 +53,7 @@ target_sources(vnote PRIVATE
     dialogs/settings/syncpage.cpp dialogs/settings/syncpage.h
     dialogs/settings/texteditorpage.cpp dialogs/settings/texteditorpage.h
     dialogs/settings/themepage.cpp dialogs/settings/themepage.h
+    dialogs/settings/unitedentrypage.cpp dialogs/settings/unitedentrypage.h
     dialogs/settings/vipage.cpp dialogs/settings/vipage.h
     dialogs/snippetinfowidget2.cpp dialogs/snippetinfowidget2.h
     dialogs/snippetpropertiesdialog2.cpp dialogs/snippetpropertiesdialog2.h

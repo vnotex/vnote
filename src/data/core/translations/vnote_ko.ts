@@ -12129,17 +12129,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>입력하여 모든 노트북에서 파일 이름으로 검색</translation>
     </message>
     <message>
-        <location line="+43"/>
-        <source>Options</source>
-        <translation>옵션</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Expand All</source>
-        <translation>모두 펼치기</translation>
-    </message>
-    <message>
-        <location line="+17"/>
+        <location line="+67"/>
         <source>Busy</source>
         <translation>작업 중</translation>
     </message>
@@ -12162,6 +12152,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+3"/>
         <source>Show and run entries &gt;</source>
         <translation>항목 표시 및 실행 &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::UnitedEntryPage</name>
+    <message>
+        <source>United Entry</source>
+        <translation>통합 입력창</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation>모두 펼치기</translation>
+    </message>
+    <message>
+        <source>Automatically expand result groups in United Entry</source>
+        <translation>통합 입력창의 결과 그룹을 자동으로 펼치기</translation>
     </message>
 </context>
 <context>

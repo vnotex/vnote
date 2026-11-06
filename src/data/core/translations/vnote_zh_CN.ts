@@ -12129,17 +12129,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>输入以按文件名搜索所有笔记本</translation>
     </message>
     <message>
-        <location line="+43"/>
-        <source>Options</source>
-        <translation>选项</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Expand All</source>
-        <translation>全部展开</translation>
-    </message>
-    <message>
-        <location line="+17"/>
+        <location line="+67"/>
         <source>Busy</source>
         <translation>忙</translation>
     </message>
@@ -12162,6 +12152,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+3"/>
         <source>Show and run entries &gt;</source>
         <translation>显示并运行入口 &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::UnitedEntryPage</name>
+    <message>
+        <source>United Entry</source>
+        <translation>统一入口</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation>全部展开</translation>
+    </message>
+    <message>
+        <source>Automatically expand result groups in United Entry</source>
+        <translation>自动展开统一入口中的结果分组</translation>
     </message>
 </context>
 <context>

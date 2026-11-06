@@ -41,6 +41,7 @@
 #include "dialogs/settings/syncpage.h"
 #include "dialogs/settings/texteditorpage.h"
 #include "dialogs/settings/themepage.h"
+#include "dialogs/settings/unitedentrypage.h"
 #include "dialogs/settings/vipage.h"
 
 using namespace vnotex;
@@ -265,6 +266,11 @@ void SettingsWidget::setupPages() {
 
   {
     auto *page = new QuickAccessPage(m_services, this);
+    addPage(page);
+  }
+
+  {
+    auto *page = new UnitedEntryPage(m_services, this);
     addPage(page);
   }
 

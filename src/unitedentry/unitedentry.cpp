@@ -4,14 +4,12 @@
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
-#include <QCursor>
 #include <QEvent>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMenu>
 #include <QScreen>
 #include <QSignalBlocker>
 #include <QSizePolicy>
@@ -131,32 +129,7 @@ void UnitedEntry::setupUI() {
 
 void UnitedEntry::setupActions() {
   auto *themeService = m_services.get<ThemeService>();
-  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
   const auto busyFg = themeService->paletteColor("widgets#unitedentry#icon#busy#fg");
-
-  const auto menuIcon = IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg);
-  m_menuIconAction = m_comboBox->lineEdit()->addAction(menuIcon, QLineEdit::TrailingPosition);
-  m_menuIconAction->setText(tr("Options"));
-
-  auto menu = WidgetsFactory::createMenu(this);
-  m_menuIconAction->setMenu(menu);
-
-  {
-    auto *configMgr = m_services.get<ConfigMgr2>();
-    auto expandAct = menu->addAction(tr("Expand All"), this, [this, configMgr](bool checked) {
-      configMgr->getWidgetConfig().setUnitedEntryExpandAllEnabled(checked);
-      m_mgr->setExpandAllEnabled(checked);
-    });
-    expandAct->setCheckable(true);
-    expandAct->setChecked(configMgr->getWidgetConfig().getUnitedEntryExpandAllEnabled());
-    m_mgr->setExpandAllEnabled(expandAct->isChecked());
-  }
-
-  connect(m_menuIconAction, &QAction::triggered, this, [this]() {
-    const auto pos = QCursor::pos();
-    auto menu = m_menuIconAction->menu();
-    menu->exec(pos);
-  });
 
   const auto busyIcon = IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg);
   m_busyIconAction = m_comboBox->lineEdit()->addAction(busyIcon, QLineEdit::TrailingPosition);
@@ -438,6 +411,8 @@ void UnitedEntry::processInput() {
     }
 
     if (m_lastEntry) {
+      m_mgr->setExpandAllEnabled(
+          m_services.get<ConfigMgr2>()->getWidgetConfig().getUnitedEntryExpandAllEnabled());
       setBusy(true);
       m_lastEntry->process(entry.m_args,
                            std::bind(&UnitedEntry::popupWidget, this, std::placeholders::_1));
@@ -744,10 +719,8 @@ void UnitedEntry::restorePopupVisibility() {
 
 void UnitedEntry::refreshIcons() {
   auto *themeService = m_services.get<ThemeService>();
-  const auto fg = themeService->paletteColor("widgets#unitedentry#icon#fg");
   const auto busyFg = themeService->paletteColor("widgets#unitedentry#icon#busy#fg");
 
-  m_menuIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("menu.svg"), fg));
   m_busyIconAction->setIcon(IconUtils::fetchIcon(themeService->getIconFile("busy.svg"), busyFg));
 
   if (m_activateAction) {

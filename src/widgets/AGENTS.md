@@ -1075,6 +1075,14 @@ the initialized map normally. Invalid nonblank input still fails closed.
 in forced edit mode; do not launch an external editor or depend on a `MainWindow2` pointer.
 Configuration persistence remains owned by `ConfigMgr2`; this action only opens the file.
 
+### United Entry settings
+
+Settings → **United Entry** owns the searchable **Expand All** checkbox, using the existing
+`widget.unitedEntryExpandAll` preference and normal Apply/Reset behavior. The input has no
+options menu; its clear button and busy indicator remain. `UnitedEntry::processInput()` reads
+the saved preference before each entry runs, so Apply affects subsequent result population
+without a restart. Keep the manager's expansion getter independent of configuration services.
+
 ### Mind map editor settings
 
 **Separate node properties panel** defaults on in Settings → Editor → Mind Map Editor.

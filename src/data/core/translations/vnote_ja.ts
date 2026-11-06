@@ -12129,17 +12129,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>入力してすべてのノートブックのファイルを名前で検索</translation>
     </message>
     <message>
-        <location line="+43"/>
-        <source>Options</source>
-        <translation>オプション</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Expand All</source>
-        <translation>すべて展開</translation>
-    </message>
-    <message>
-        <location line="+17"/>
+        <location line="+67"/>
         <source>Busy</source>
         <translation>ビジー</translation>
     </message>
@@ -12162,6 +12152,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+3"/>
         <source>Show and run entries &gt;</source>
         <translation>エントリーを表示して実行 &gt;</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::UnitedEntryPage</name>
+    <message>
+        <source>United Entry</source>
+        <translation>ユナイテッドエントリー</translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation>すべて展開</translation>
+    </message>
+    <message>
+        <source>Automatically expand result groups in United Entry</source>
+        <translation>ユナイテッドエントリーの結果グループを自動的に展開</translation>
     </message>
 </context>
 <context>
