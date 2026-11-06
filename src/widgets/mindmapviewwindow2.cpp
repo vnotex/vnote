@@ -679,7 +679,10 @@ void MindMapViewWindow2::handleEditorConfigChange() {
   const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleEditorConfigChange();
   if (guard && m_editor) {
-    m_editor->applyConfig(!isDetached());
+    m_editor->setBasicMode(isOutlineMindMapPreview());
+    if (guard) {
+      m_editor->applyConfig(!isDetached());
+    }
   }
   if (guard) {
     refreshInsertionShortcuts();

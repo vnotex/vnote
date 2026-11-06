@@ -1004,7 +1004,7 @@ private slots:
   void outlineMindMapTitle();
   void outlineMindMapBranchColors();
   void outlineMindMapSnapshotAndLifecycle();
-  void outlineMindMapReadOnlyAndPromotion();
+  void outlineMindMapBasicModeAndPromotion();
   void outlineMindMapProtectedLifetime_data();
   void outlineMindMapProtectedLifetime();
   void outlineMindMapAdmissionFailure_data();
@@ -1958,7 +1958,8 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
   QVERIFY(generated->isOutlineMindMapPreview());
   QCOMPARE(generated->isContentProtected(), encrypted);
   QVERIFY(f->controller()->isOutlineMindMapPreview(snapshot));
-  QVERIFY(snapshot.isMemoryBacked() && snapshot.isReadOnly() && map->isReadOnly());
+  QVERIFY(snapshot.isMemoryBacked() && !snapshot.isReadOnly() && !map->isReadOnly());
+  QVERIFY(map->isBasicMode());
   QVERIFY(snapshot.resolvedPath().isEmpty() && snapshot.getResourceBasePath().isEmpty());
   QVERIFY(!snapshot.canSave() && !snapshot.canReload());
   QVERIFY(!generated->save() && !generated->reload());
@@ -2137,7 +2138,8 @@ void TestViewAreaTabReuse::outlineMindMapInitialFocus() {
     QCOMPARE(map->zoomMode(),
              zoom == 0 ? MindMapEditor::ZoomMode::Page : MindMapEditor::ZoomMode::Width);
   QCOMPARE(map->toJson(), baseline);
-  QVERIFY(map->isReadOnly() && !map->isModified() && !generated->isModified());
+  QVERIFY(map->isBasicMode() && !map->isReadOnly() && !map->isModified() &&
+          !generated->isModified());
   QVERIFY(clicks->isEmpty() && navigation.isEmpty());
   QCOMPARE(source->getLatestContent(), sourceText);
   QCOMPARE(source->getBuffer().id(), sourceBuffer.id());
@@ -2170,7 +2172,7 @@ void TestViewAreaTabReuse::outlineMindMapCursorFocus() {
   QTRY_COMPARE(map->selectedNodeId(), QStringLiteral("h%1").arg(index));
   QCOMPARE(edit->textCursor().position(), position);
   QVERIFY(navigation.isEmpty());
-  QVERIFY(generated->getBuffer().isReadOnly() && !generated->isModified());
+  QVERIFY(!generated->getBuffer().isReadOnly() && map->isBasicMode() && !generated->isModified());
   QCOMPARE(source->getBuffer().id(), sourceBuffer.id());
 }
 
@@ -2301,7 +2303,7 @@ void TestViewAreaTabReuse::outlineMindMapTitle() {
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
   auto *map = generated->findChild<MindMapEditor *>();
-  QVERIFY(map && map->isReadOnly());
+  QVERIFY(map && map->isBasicMode() && !map->isReadOnly());
   QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
            promoted >= 0 ? topics[promoted] : buffer.displayName());
   QCOMPARE(generated->getBuffer().displayName(), QStringLiteral("Mind Map: title.md"));
@@ -2361,7 +2363,7 @@ void TestViewAreaTabReuse::outlineMindMapBranchColors() {
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
   auto *map = generated->findChild<MindMapEditor *>();
-  QVERIFY(map && map->isReadOnly());
+  QVERIFY(map && map->isBasicMode() && !map->isReadOnly());
   QTRY_COMPARE(map->outline().size(), branchCount * 2 + 1);
   QSet<QString> used;
   for (int index = 0; index < branchCount; ++index) {
@@ -2519,7 +2521,7 @@ void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {
   QVERIFY(f->buffers->getBufferHandle(unrelated.id()).isValid());
 }
 
-void TestViewAreaTabReuse::outlineMindMapReadOnlyAndPromotion() {
+void TestViewAreaTabReuse::outlineMindMapBasicModeAndPromotion() {
   const QByteArray bytes("# Alpha\n\n### Deep\n\n# Beta\n");
   QVERIFY(f->create(QStringLiteral("immutable.md"), bytes));
   QVERIFY(f->create(QStringLiteral("ordinary.mmm"), mindMapBytes(QStringLiteral("Ordinary map"))));
@@ -2539,27 +2541,61 @@ void TestViewAreaTabReuse::outlineMindMapReadOnlyAndPromotion() {
   QVERIFY(map->selectNode(QStringLiteral("h0")));
   canvas->setFocus();
   QTRY_VERIFY(canvas->hasFocus());
-  const auto json = map->toJson();
+  QVERIFY(map->isBasicMode() && !map->isReadOnly() && !snapshot.isReadOnly());
+  QVERIFY(!snapshot.canSave() && !snapshot.canReload() && !map->canInsert());
+  const auto originalJson = map->toJson();
+  const auto originalNode = mapNode(map, QStringLiteral("h0"));
   const auto sourceBytes = source->getLatestContent();
   QSignalSpy mutations(map, &m3::qt::MindMapEditor::documentChanged);
-  QApplication::clipboard()->setText(QStringLiteral("Rejected paste"));
   QTest::keyClick(canvas->viewport(), Qt::Key_F2);
-  QTest::keyClicks(canvas->viewport(), "Rejected typing");
-  QTest::keyClick(canvas->viewport(), Qt::Key_Insert);
-  QTest::keyClick(canvas->viewport(), Qt::Key_Delete);
-  QTest::keyClick(canvas->viewport(), Qt::Key_V, Qt::ControlModifier);
-  QTest::keyClick(canvas->viewport(), Qt::Key_Z, Qt::ControlModifier);
   auto *draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
-  QVERIFY(!draft || !draft->isVisible());
-  QVERIFY(!map->canUndo() && !map->undo());
+  QVERIFY(draft && draft->isVisible());
+  draft->selectAll();
+  QTest::keyClicks(draft, "Edited #topic ##literal");
+  // Settings refreshes must keep both basic mode and the current topic draft.
+  generated->handleEditorConfigChange();
+  QVERIFY(map->isBasicMode() && map->hasPendingEdit() && draft->isVisible());
+  QTest::keyClick(draft, Qt::Key_Return);
+  auto expectedNode = originalNode;
+  expectedNode[QStringLiteral("topic")] = QStringLiteral("Edited #topic ##literal");
+  QCOMPARE(mapNode(map, QStringLiteral("h0")), expectedNode);
+  QCOMPARE(mutations.size(), 1);
+  QVERIFY(map->canUndo() && map->undo());
+  QCOMPARE(map->toJson(), originalJson);
+  QVERIFY(map->canRedo() && map->redo());
+  QCOMPARE(mapNode(map, QStringLiteral("h0")), expectedNode);
+  const auto json = map->toJson();
+  mutations.clear();
+  for (const auto &field :
+       {QStringLiteral("tags"), QStringLiteral("icons"), QStringLiteral("hyperLink"),
+        QStringLiteral("image"), QStringLiteral("note"), QStringLiteral("style")}) {
+    // A mixed patch must not apply even its otherwise-editable topic member.
+    const QJsonObject patch{{QStringLiteral("topic"), QStringLiteral("Rejected topic")},
+                            {field, originalNode.value(field)}};
+    QVERIFY(!map->updateNode(QStringLiteral("h0"),
+                             QJsonDocument(patch).toJson(QJsonDocument::Compact)));
+  }
+  for (const auto &name :
+       {QStringLiteral("fontSize"), QStringLiteral("toggleBold"), QStringLiteral("editTags"),
+        QStringLiteral("editIcons"), QStringLiteral("editNote")}) {
+    auto *action = map->commandAction(name);
+    QVERIFY(action && !action->isEnabled());
+  }
+  QApplication::clipboard()->setText(QStringLiteral("Rejected paste"));
+  QVERIFY(!map->commandAction(QStringLiteral("paste"))->isEnabled());
+  QTest::keyClick(canvas->viewport(), Qt::Key_V, Qt::ControlModifier);
+  map->typeLink();
+  map->typeImage();
   QCOMPARE(map->toJson(), json);
   QVERIFY(mutations.isEmpty());
-  QVERIFY(!map->isModified() && !generated->isModified() && !snapshot.isModified());
+  QVERIFY(map->isModified() && generated->isModified());
+  QVERIFY(f->buffers->syncNow(snapshot.id()));
+  QCOMPARE(QJsonDocument::fromJson(snapshot.getContentRaw()), QJsonDocument::fromJson(json));
+  QVERIFY(snapshot.isModified());
+  QVERIFY(!generated->save() && !generated->reload());
   QCOMPARE(source->getLatestContent(), sourceBytes);
   QCOMPARE(readBytes(f->absolute(QStringLiteral("immutable.md"))), bytes);
   QVERIFY(map->selectNode(QStringLiteral("h0")));
-  // The rejected typing includes Space, which remains a valid view-only fold
-  // shortcut. Establish the initial expansion without changing semantic data.
   QVERIFY(map->setExpanded(QStringLiteral("h0"), true));
   auto *fold = map->commandAction(QStringLiteral("toggleExpanded"));
   QVERIFY(fold && fold->isEnabled());
@@ -2627,6 +2663,8 @@ void TestViewAreaTabReuse::outlineMindMapReadOnlyAndPromotion() {
   QVERIFY(ordinary.isValid());
   QCOMPARE(f->current()->getBuffer().id(), ordinary.id());
   QCOMPARE(f->workspace(), preview);
+  auto *ordinaryMap = f->current()->findChild<MindMapEditor *>();
+  QVERIFY(ordinaryMap && !ordinaryMap->isBasicMode() && !ordinaryMap->isReadOnly());
   auto *overlay = source->findChild<LinkPreviewOverlay *>();
   QVERIFY(overlay);
   auto *promotion =
@@ -2636,8 +2674,26 @@ void TestViewAreaTabReuse::outlineMindMapReadOnlyAndPromotion() {
   QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
   QCOMPARE(f->order(main), mainOrder);
   QCOMPARE(f->order(preview), QStringList({snapshot.id(), ordinary.id()}));
-  QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+  bool offeredSave = true;
+  {
+    DialogAnswer cancel(QMessageBox::Cancel, [&] {
+      auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+      offeredSave = !box || box->button(QMessageBox::Save);
+    });
+    QVERIFY(!f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+    QVERIFY(cancel.accepted());
+  }
+  QVERIFY(!offeredSave && generated && generated->isModified());
+  QCOMPARE(map->toJson(), json);
+  QCOMPARE(source->getLatestContent(), sourceBytes);
+  {
+    DialogAnswer discard(QMessageBox::Discard);
+    QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+    QVERIFY(discard.accepted());
+  }
   QTRY_VERIFY(generated.isNull());
+  QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("immutable.md"))), bytes);
   QTRY_VERIFY(promotion->isEnabled());
   QVERIFY(f->controller()->canPromotePreviewWorkspace(preview));
   QVERIFY(f->controller()->openPreviewInNewTabs(preview, main));
@@ -2895,7 +2951,27 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
     QVERIFY(f->order(preview).contains(snapshot.id()));
     QVERIFY(!f->controller()->canPromotePreviewWorkspace(preview));
   } else {
-    accepted = f->controller()->lockAllProtectedNotes(&error);
+    if (operation == QLatin1String("lock") && !veto) {
+      const auto sourceContent = source->getLatestContent();
+      QVERIFY(map->isBasicMode() && !map->isReadOnly());
+      QVERIFY(map->renameNode(QStringLiteral("root"), QStringLiteral("Edited protected preview")));
+      QVERIFY(generated->isModified());
+      const auto edited = map->toJson();
+      {
+        DialogAnswer cancel(QMessageBox::Cancel);
+        QVERIFY(!f->controller()->lockAllProtectedNotes(&error));
+        QVERIFY(cancel.accepted());
+      }
+      QVERIFY(source && generated && nativeMap && source->isEnabled());
+      QVERIFY(!f->buffers->isProtectedLocking());
+      QCOMPARE(map->toJson(), edited);
+      QCOMPARE(source->getLatestContent(), sourceContent);
+      DialogAnswer discard(QMessageBox::Discard);
+      accepted = f->controller()->lockAllProtectedNotes(&error);
+      QVERIFY(discard.accepted());
+    } else {
+      accepted = f->controller()->lockAllProtectedNotes(&error);
+    }
   }
   if (veto) {
     QVERIFY(vetoSeen && !accepted);

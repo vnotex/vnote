@@ -1550,7 +1550,7 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
       window->showMessage(error);
     }
   });
-  if (p_window->m_outlineMindMapHasSectionNumber) {
+  if (p_window->m_isOutlineMindMapPreview) {
     // Construction loads the map before its snapshot policy is wired. Refresh before showing it.
     p_window->handleEditorConfigChange();
   }

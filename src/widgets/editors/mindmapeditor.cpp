@@ -263,7 +263,7 @@ void MindMapEditor::onEditNote(const QString &p_nodeId) {
             guard->m_buffer.getBuffer().isEmpty()) {
           return VXCORE_ERR_INVALID_STATE;
         }
-        if (guard->isReadOnly() || guard->m_buffer.isReadOnly()) {
+        if (guard->isReadOnly() || guard->isBasicMode() || guard->m_buffer.isReadOnly()) {
           return VXCORE_ERR_READ_ONLY;
         }
         if (!guard->isEnabled()) {
@@ -513,8 +513,8 @@ bool MindMapEditor::canUseBuffer() const {
 }
 
 bool MindMapEditor::canEdit() const {
-  return m_contentLoaded && !m_loading && isEnabled() && !isReadOnly() && !m_buffer.isReadOnly() &&
-         canUseBuffer();
+  return m_contentLoaded && !m_loading && isEnabled() && !isReadOnly() && !isBasicMode() &&
+         !m_buffer.isReadOnly() && canUseBuffer();
 }
 
 void MindMapEditor::markModified() {

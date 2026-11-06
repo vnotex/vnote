@@ -267,9 +267,9 @@ still-visible source bridge and break subsequent links. Genuine reload invalidat
 
 Markdown, PDF and Typst expose **Mind Map** (Lucide Brain, `brain_editor.svg`) immediately
 before **Outline**. The clicked
-window's published `OutlineProvider` supplies a read-only native map, without saving,
+window's published `OutlineProvider` supplies a basic-mode native map, without saving,
 reparsing or changing source mode. Each activation captures fresh memory content; open maps
-never follow later edits. When the first real outline heading is the only H1, its literal
+never follow later source edits. When the first real outline heading is the only H1, its literal
 name becomes the central topic without a duplicate heading node; its children become root
 branches. Otherwise the document name remains central. This uses outline order, not the
 position of preceding prose. A title-only outline produces a single central node. Other
@@ -297,8 +297,23 @@ Generation, visibility, enabled/content and protected-locking guards cancel stal
 Initial focus does not emit `nodeClicked`, close the preview, change source position or mutate
 snapshot JSON. Later source selection changes do not retarget the open snapshot.
 
+The generated buffer is writable scratch memory with no save/reload destination. Before
+showing it, apply m3 basic mode: node topics are editable (literal `#`/`##`), while appearance,
+tags, URL, image, icons and note remain read-only. Native structure/link editing and undo/redo
+remain available. Host resource insertion and image resizing must honor the same basic-mode
+gate. Ordinary mind-map files retain their existing full/read-only policy. Config refreshes
+must not cancel a preview's current topic draft or reset its basic mode.
+
+Preview edits synchronize only to its memory buffer, never to source Markdown/PDF/Typst.
+Closing an edited preview offers Discard/Cancel, not Save; Cancel also vetoes source close
+or protected-note locking, and Discard retires the derived content before locking keys.
+Promotion and session persistence stay forbidden. Stable original node IDs continue to
+navigate their original headings even after local renames/moves; newly inserted nodes have
+no source-heading destination. Coverage: `outlineMindMapBasicModeAndPromotion` and dirty
+protected-preview lifetime rows in `test_viewarea_tab_reuse`.
+
 Real document-root children receive automatic colors from m3's public branch palette before
-loading the read-only snapshot. Colors are distinct until the palette is exhausted; descendants
+loading the snapshot. Colors are distinct until the palette is exhausted; descendants
 inherit their branch's color and the document root stays neutral. The snapshot retains these
 colors through navigation and theme switches. Ordinary map files and their preferences are unchanged.
 
