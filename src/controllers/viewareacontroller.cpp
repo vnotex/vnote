@@ -1203,9 +1203,11 @@ bool ViewAreaController::isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
          !p_settings.m_detachedView &&
          (p_settings.m_targetWorkspaceId.isEmpty() ||
           p_settings.m_targetWorkspaceId == entry->m_workspaceId) &&
-         p_settings.m_mode == ViewWindowMode::Edit && p_settings.m_forceMode &&
-         !p_settings.m_readOnly && p_settings.m_alwaysNewWindow && p_buffer.isMemoryBacked() &&
-         !p_buffer.isReadOnly() && !p_buffer.canSave() && !p_buffer.canReload() &&
+         p_settings.m_mode == (entry->m_readOnly ? ViewWindowMode::Read : ViewWindowMode::Edit) &&
+         p_settings.m_forceMode && p_settings.m_readOnly == entry->m_readOnly &&
+         p_settings.m_alwaysNewWindow && p_buffer.isMemoryBacked() &&
+         p_buffer.isReadOnly() == entry->m_readOnly && !p_buffer.canSave() &&
+         !p_buffer.canReload() &&
          p_buffer.editorType().compare(QLatin1String("mindmap"), Qt::CaseInsensitive) == 0 &&
          isOutlineMindMapSourceCurrent(*entry);
 }
@@ -1213,6 +1215,7 @@ bool ViewAreaController::isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
 bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer,
                                                    const Outline &p_outline, ID p_sourceId,
                                                    quint64 p_sourceGeneration,
+                                                   ViewWindowMode p_sourceMode,
                                                    int p_currentHeadingIndex, QString *p_error) {
   if (p_error) {
     p_error->clear();
@@ -1232,6 +1235,7 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   provenance.m_sourceBufferId = p_sourceBuffer.id();
   provenance.m_protectedSource = p_sourceBuffer.isEncrypted();
   provenance.m_hasSectionNumber = p_outline.m_hasSectionNumber;
+  provenance.m_readOnly = p_sourceMode != ViewWindowMode::Edit || p_sourceBuffer.isReadOnly();
   if (!buffers || !workspaces || !factory || !factory->hasCreator(QStringLiteral("MindMap")) ||
       !isOutlineMindMapSourceCurrent(provenance)) {
     return fail(tr("Unable to open the outline mind map"));
@@ -1257,7 +1261,7 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   source.displayName = tr("Mind Map: %1").arg(title);
   source.editorType = QStringLiteral("MindMap");
   source.content = std::move(content);
-  source.readOnly = false;
+  source.readOnly = provenance.m_readOnly;
   const QString address = source.address;
   const QPointer<ViewAreaController> guard(this);
   m_outlineMindMapPreviews.insert(address, provenance);
@@ -1295,9 +1299,9 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   FileOpenSettings settings;
   settings.m_previewSourceWindowId = p_sourceId;
   settings.m_previewSourceGeneration = p_sourceGeneration;
-  settings.m_mode = ViewWindowMode::Edit;
+  settings.m_mode = provenance.m_readOnly ? ViewWindowMode::Read : ViewWindowMode::Edit;
   settings.m_forceMode = true;
-  settings.m_readOnly = false;
+  settings.m_readOnly = provenance.m_readOnly;
   settings.m_focus = true;
   settings.m_alwaysNewWindow = true;
   if (p_currentHeadingIndex >= 0 && p_currentHeadingIndex < provenance.m_navigableHeadings.size() &&

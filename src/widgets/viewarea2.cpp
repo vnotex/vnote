@@ -1538,13 +1538,14 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
     }
     const ID id = window->getViewWindowId();
     const auto generation = window->getBufferGeneration();
+    const auto sourceMode = window->getMode();
     const auto provider = window->getOutlineProvider();
     const Outline outline =
         provider && provider->getOutline() ? *provider->getOutline() : Outline();
     const int currentHeading = provider ? provider->getCurrentHeadingIndex() : -1;
     const Buffer2 source = window->getBuffer();
     QString error;
-    if (!self->m_controller->openOutlineMindMapPreview(source, outline, id, generation,
+    if (!self->m_controller->openOutlineMindMapPreview(source, outline, id, generation, sourceMode,
                                                        currentHeading, &error) &&
         self && window && self->isPreviewSourceCurrent(id, generation)) {
       window->showMessage(error);

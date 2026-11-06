@@ -267,7 +267,7 @@ still-visible source bridge and break subsequent links. Genuine reload invalidat
 
 Markdown, PDF and Typst expose **Mind Map** (Lucide Brain, `brain_editor.svg`) immediately
 before **Outline**. The clicked
-window's published `OutlineProvider` supplies a basic-mode native map, without saving,
+window's published `OutlineProvider` supplies a native map, without saving,
 reparsing or changing source mode. Each activation captures fresh memory content; open maps
 never follow later source edits. When the first real outline heading is the only H1, its literal
 name becomes the central topic without a duplicate heading node; its children become root
@@ -297,19 +297,28 @@ Generation, visibility, enabled/content and protected-locking guards cancel stal
 Initial focus does not emit `nodeClicked`, close the preview, change source position or mutate
 snapshot JSON. Later source selection changes do not retarget the open snapshot.
 
-The generated buffer is writable scratch memory with no save/reload destination. Before
-showing it, apply m3 basic mode: node topics are editable (literal `#`/`##`), while appearance,
-tags, URL, image, icons and note remain read-only. Native structure/link editing and undo/redo
-remain available. Host resource insertion and image resizing must honor the same basic-mode
-gate. Ordinary mind-map files retain their existing full/read-only policy. Config refreshes
-must not cancel a preview's current topic draft or reset its basic mode.
+The generated buffer is scratch memory with no save/reload destination. Capture the clicked
+source's mode with its outline, before open hooks: Read mode or a read-only source buffer
+produces a fully read-only preview. Only a writable Edit source permits preview edits; an
+invalid source mode fails closed. Store this policy in preview provenance and require both
+open settings and buffer permissions to match it during admission. Existing snapshots keep
+the captured policy even if the source later changes mode; reopening samples the new mode.
+
+All generated maps use m3 basic mode, with full read-only taking precedence. Writable previews
+allow node topics (literal `#`/`##`), native structure/existing-link editing and undo/redo;
+appearance, tags, URL, image, icons and note stay read-only. Fully read-only previews reject
+all content mutations, including topic edits. Folding, navigation and camera controls remain
+available in both. Host resource insertion, image resizing and drag-to-create links stay
+blocked. Ordinary mind-map files retain their existing full/read-only policy. Config refreshes
+must preserve the captured permissions and must not cancel a writable preview's topic draft.
 
 Preview edits synchronize only to its memory buffer, never to source Markdown/PDF/Typst.
 Closing an edited preview offers Discard/Cancel, not Save; Cancel also vetoes source close
 or protected-note locking, and Discard retires the derived content before locking keys.
 Promotion and session persistence stay forbidden. Stable original node IDs continue to
 navigate their original headings even after local renames/moves; newly inserted nodes have
-no source-heading destination. Coverage: `outlineMindMapBasicModeAndPromotion` and dirty
+no source-heading destination. Coverage: `outlineMindMapPreview`,
+`outlineMindMapPermissionCapture`, `outlineMindMapBasicModeAndPromotion` and dirty
 protected-preview lifetime rows in `test_viewarea_tab_reuse`.
 
 Real document-root children receive automatic colors from m3's public branch palette before

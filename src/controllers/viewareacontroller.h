@@ -115,10 +115,12 @@ public:
   // a different viewer before attempting to close the captured outgoing tab.
   void openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings = FileOpenSettings());
 
+  // Capture the source mode with its outline; only writable Edit sources allow preview edits.
   // A negative/unavailable current heading keeps the central node selected.
   bool openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer, const Outline &p_outline,
                                  ID p_sourceId, quint64 p_sourceGeneration,
-                                 int p_currentHeadingIndex, QString *p_error = nullptr);
+                                 ViewWindowMode p_sourceMode, int p_currentHeadingIndex,
+                                 QString *p_error = nullptr);
   // False with no error is a non-heading node or unavailable target.
   bool activateOutlineMindMapNode(const Buffer2 &p_buffer, const QString &p_nodeId,
                                   QString *p_error = nullptr);
@@ -405,6 +407,7 @@ private:
     int m_titleHeadingIndex = -1;
     bool m_hasSectionNumber = false;
     bool m_protectedSource = false;
+    bool m_readOnly = true;
     bool m_admitting = true;
     bool m_closing = false;
   };
