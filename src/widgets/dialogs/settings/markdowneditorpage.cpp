@@ -63,9 +63,10 @@ void MarkdownEditorPage::setupUI() {
               tr("Shorten long image, link and reference destinations without changing the "
                  "Markdown source (hover to see the full destination)"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
-  addMenuHint(QObject::tr("Conceal Markdown Markers"),
-              tr("Hide Markdown formatting markers without changing the source (move the caret "
-                 "into an element to reveal its markers)"));
+  addMenuHint(
+      QObject::tr("Conceal Markdown Markers"),
+      tr("Keep Markdown formatting markers hidden while editing without changing the source; "
+         "cursor movement skips them, while link syntax reveals on entry"));
 
   setupGeneralGroup();
   setupReadGroup();

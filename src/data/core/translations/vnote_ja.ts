@@ -477,8 +477,8 @@
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
-        <translation>ソースを変更せずに Markdown の書式マーカーを非表示にします。要素内にカーソルを移動すると表示されます</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>ソースを変更せず、編集中も Markdown の書式マーカーを非表示にします。カーソル移動ではマーカーをスキップし、リンク構文はカーソルが入ると表示されます</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5290,8 +5290,8 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Hide Markdown formatting markers without changing the source (move the caret into an element to reveal its markers)</source>
-        <translation>ソースを変更せずに Markdown の書式記号を非表示にします（要素内にキャレットを移動すると、その要素の記号が表示されます）</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>ソースを変更せず、編集中も Markdown の書式マーカーを非表示にします。カーソル移動ではマーカーをスキップし、リンク構文はカーソルが入ると表示されます</translation>
     </message>
     <message>
         <location line="+176"/>

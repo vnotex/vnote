@@ -87,7 +87,7 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
           vte::MarkdownConcealElement::MarkMarkers, vte::MarkdownConcealElement::InlineCodeMarkers,
           vte::MarkdownConcealElement::LinkSyntax, vte::MarkdownConcealElement::HeadingMarkers,
           vte::MarkdownConcealElement::InlineFormulaMarkers}) {
-      p_editorConfig->m_concealRules.set(kind, vte::MarkdownConcealHideSyntax{});
+      p_editorConfig->m_concealRules.set(kind);
     }
   }
 

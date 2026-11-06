@@ -14,6 +14,7 @@ A feature release with scoped HTTP automation, richer Markdown paste and smoothe
     * Avoid unnecessary escapes in leading numbered headings while preserving literal backslashes and paragraph list protection
     * Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
     * Update vtextedit to improve folded source headers and preview placement, preserve the viewport during passive layout and unfolding, and stabilize Markdown concealment during IME composition
+    * Keep concealed Markdown formatting markers hidden while editing, with marker-skipping cursor movement; preserve link reveal-on-entry and the existing concealment toggles
     * Add Collapse and Expand below Export in read-mode code-block context menus
     * Restore warm Markdown page visibility before rendering when switching tabs, avoiding blank WebEngine frames without keeping inactive pages active
 * **Navigation and mind maps**

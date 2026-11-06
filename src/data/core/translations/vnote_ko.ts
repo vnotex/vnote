@@ -949,8 +949,8 @@
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
-        <translation>소스를 변경하지 않고 Markdown 서식 마커를 숨깁니다. 요소 안으로 커서를 옮기면 마커가 표시됩니다</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>소스를 변경하지 않고 편집 중에도 Markdown 서식 마커를 숨깁니다. 커서 이동은 마커를 건너뛰며, 링크 구문은 커서가 들어가면 표시됩니다</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5290,8 +5290,8 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Hide Markdown formatting markers without changing the source (move the caret into an element to reveal its markers)</source>
-        <translation>소스를 변경하지 않고 Markdown 서식 기호를 숨깁니다(요소 안으로 커서를 이동하면 해당 기호가 표시됩니다)</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>소스를 변경하지 않고 편집 중에도 Markdown 서식 마커를 숨깁니다. 커서 이동은 마커를 건너뛰며, 링크 구문은 커서가 들어가면 표시됩니다</translation>
     </message>
     <message>
         <location line="+176"/>

@@ -477,8 +477,8 @@
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
-        <translation>在不修改源文本的情况下隐藏 Markdown 格式标记；将光标移入相应元素即可显示标记</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>编辑时保持 Markdown 格式标记隐藏，不改变源码；光标移动会跳过这些标记，链接语法则在光标移入时显示</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5290,8 +5290,8 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Hide Markdown formatting markers without changing the source (move the caret into an element to reveal its markers)</source>
-        <translation>隐藏 Markdown 格式标记，不改变源码（将光标移入元素可显示其标记）</translation>
+        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
+        <translation>编辑时保持 Markdown 格式标记隐藏，不改变源码；光标移动会跳过这些标记，链接语法则在光标移入时显示</translation>
     </message>
     <message>
         <location line="+182"/>

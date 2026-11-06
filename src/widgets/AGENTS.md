@@ -1241,8 +1241,9 @@ URL rules before independently adding any enabled marker rules. Link-syntax hidi
 link destination suffix; image/reference URL shortening remains separately controlled.
 
 Concealment is visual only: never rewrite Markdown or change dirty state, cursor or undo history.
-Hover reveals a shortened destination; moving the caret into an element reveals its grouped
-markers. Setext underlines and multiline math-block delimiters remain unchanged.
+Hover reveals a shortened destination. Formatting markers stay hidden while editing, and
+character movement skips them; link syntax still reveals on caret entry. The existing toggles
+remain independent. Setext underlines and multiline math-block delimiters remain unchanged.
 
 Every bundled `text-editor.theme` defines `markdown-editor-styles.ConcealedText` with foreground
 and background colors. `ThemeService` resolves palette tokens before vtextedit loads the theme.

@@ -444,8 +444,8 @@ QAction *ViewWindowToolBarHelper2::addAction(QMenu *p_menu, Action p_action,
     act = p_menu->addAction(QObject::tr("Conceal Markdown Markers"));
     act->setObjectName(QStringLiteral("concealMarkdownMarkersAction"));
     act->setToolTip(QObject::tr(
-        "Hide Markdown formatting markers without changing the source; move the caret into an "
-        "element to reveal them"));
+        "Keep Markdown formatting markers hidden while editing without changing the source; "
+        "cursor movement skips them, while link syntax reveals on entry"));
     act->setCheckable(true);
     break;
 
