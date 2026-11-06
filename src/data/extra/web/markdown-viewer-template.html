@@ -42,7 +42,8 @@
 
     <div id="vx-preview" style="display:none;"></div>
 
-    <!-- Need to be visible to let preview work -->
-    <div id="vx-inplace-preview"></div>
+    <!-- Keep preview layout measurable without painting into or scrolling the reader. -->
+    <div id="vx-inplace-preview" aria-hidden="true"
+         style="position:fixed;left:0;top:0;width:0;height:0;overflow:hidden;pointer-events:none;"></div>
 </body>
 </html>

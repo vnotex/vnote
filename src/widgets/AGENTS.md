@@ -1231,6 +1231,13 @@ prefetch of unused fonts. The native hidden-page regression in `test_markdownvie
 global readiness and an unrelated font pending while requiring math to wait for its own font and
 then finish reading, PNG preview and export.
 
+The template clips `#vx-inplace-preview` in a fixed zero-sized box, outside reader flow and
+scroll geometry. Keep it laid out: `display:none`, inherited visibility or opacity can break
+measurement or raster output. Each job supplies its own definite pixel width; percentage widths
+against the staging root resolve to zero. Temporary math/diagram DOM must never paint in Read,
+including during reader recreation. `test_markdownwebjobs` observes attached staging geometry
+and scroll isolation using the production template, without test-only hiding styles.
+
 ### Markdown renderer lifetime
 
 `DocumentRenderer.render()` emits `markdownContentWillChange(container)` before replacing content,

@@ -111,9 +111,7 @@ QString runtimeHtml(const QColor &p_color, const QString &p_mathJaxScript,
           QStringLiteral("window.vxOptions = %1;")
               .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact))));
   html.replace(QStringLiteral("/* VX_GLOBAL_STYLES_PLACEHOLDER */"),
-               QStringLiteral("#vx-content {font:18px Arial;color:%1;}"
-                              "#vx-inplace-preview {position:absolute;left:-100000px;top:0;}")
-                   .arg(p_color.name()));
+               QStringLiteral("#vx-content {font:18px Arial;color:%1;}").arg(p_color.name()));
   QString tags;
   if (p_protected) {
     // Production protected templates preload CSS; their math worker never uses CSS XHR.
@@ -534,6 +532,7 @@ private slots:
   void htmlMath();
   void allOperations_data();
   void allOperations();
+  void previewWorkspaceDoesNotAffectReader();
   void graphAlgorithms_data();
   void graphAlgorithms();
   void rasterGeometry_data();
@@ -1371,6 +1370,60 @@ void TestMarkdownWebJobs::allOperations() {
   QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.documentGeneration")).toString(),
            generation);
   QCOMPARE(rendered.count(), 1);
+}
+
+void TestMarkdownWebJobs::previewWorkspaceDoesNotAffectReader() {
+  Runtime runtime(false);
+  QObject owner;
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  const auto document = runtime.renderDocument(QStringLiteral("# Reader\n\nVisible note content."));
+  QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+  QVERIFY(evaluate(runtime.page, QStringLiteral(R"JS((() => {
+    const root = document.getElementById('vx-inplace-preview');
+    const reader = document.getElementById('vx-content');
+    const scrollSize = () => [document.documentElement.scrollWidth,
+                              document.documentElement.scrollHeight].join(',');
+    const readerRect = () => JSON.stringify(reader.getBoundingClientRect());
+    const initialScroll = scrollSize(), initialReader = readerRect();
+    window.previewIsolation = {laidOut:false, scrollStable:true, readerStable:true, hit:false};
+    window.previewObserver = new MutationObserver(() => {
+      const state = window.previewIsolation;
+      for (const job of root.children) {
+        const rect = job.getBoundingClientRect();
+        if (rect.width >= 2000 && rect.height > 0) state.laidOut = true;
+        state.scrollStable &&= scrollSize() === initialScroll;
+        state.readerStable &&= readerRect() === initialReader;
+        const x = Math.max(0, Math.min(innerWidth - 1, rect.x + rect.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, rect.y + rect.height / 2));
+        state.hit ||= root.contains(document.elementFromPoint(x, y));
+      }
+    });
+    previewObserver.observe(root, {childList:true, subtree:true, attributes:true});
+    return true;
+  })())JS"))
+              .toBool());
+
+  for (const auto &operation :
+       {QStringLiteral("markdown.previewMath"), QStringLiteral("markdown.previewGraph")}) {
+    evaluate(runtime.page, QStringLiteral("previewIsolation.laidOut = false;"));
+    const bool math = operation == QStringLiteral("markdown.previewMath");
+    const auto job = submit(runtime.session, operation,
+                            preview(math ? QStringLiteral("$\\frac{a^2+1}{\\sqrt{b}}$")
+                                         : QStringLiteral("graph TD\n A[Alpha] --> B[Beta]"),
+                                    QStringLiteral("mermaid"), 1, 1, 2000),
+                            &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 30000);
+    QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
+    QVERIFY(inkPixels(image(job->result.value)) > 30);
+    const auto state = evaluateObject(runtime.page, QStringLiteral("window.previewIsolation"));
+    // Observe while attached, not after runPreview's finally has removed the job DOM.
+    QVERIFY(state.value(QStringLiteral("laidOut")).toBool());
+    QVERIFY(state.value(QStringLiteral("scrollStable")).toBool());
+    QVERIFY(state.value(QStringLiteral("readerStable")).toBool());
+    QVERIFY(!state.value(QStringLiteral("hit")).toBool());
+  }
+  evaluate(runtime.page, QStringLiteral("previewObserver.disconnect();"));
 }
 
 void TestMarkdownWebJobs::graphAlgorithms_data() {
