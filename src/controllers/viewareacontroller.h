@@ -125,6 +125,7 @@ public:
   bool closeOutlineMindMapPreviews(ID p_sourceId);
   bool isOutlineMindMapPreview(const Buffer2 &p_buffer) const;
   bool isProtectedOutlineMindMapPreview(const Buffer2 &p_buffer) const;
+  bool getOutlineMindMapHasSectionNumber(const Buffer2 &p_buffer) const;
 
   // Open a widget-based content (e.g., Settings) as a tab in the view area.
   // Creates a virtual buffer, checks for duplicate tabs across all workspaces,
@@ -402,6 +403,7 @@ private:
     QByteArray m_outlineFingerprint;
     QBitArray m_navigableHeadings;
     int m_titleHeadingIndex = -1;
+    bool m_hasSectionNumber = false;
     bool m_protectedSource = false;
     bool m_admitting = true;
     bool m_closing = false;

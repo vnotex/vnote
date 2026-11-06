@@ -1196,6 +1196,11 @@ bool ViewAreaController::isProtectedOutlineMindMapPreview(const Buffer2 &p_buffe
   return entry != m_outlineMindMapPreviews.constEnd() && entry->m_protectedSource;
 }
 
+bool ViewAreaController::getOutlineMindMapHasSectionNumber(const Buffer2 &p_buffer) const {
+  const auto entry = m_outlineMindMapPreviews.constFind(p_buffer.nodeId().relativePath);
+  return entry != m_outlineMindMapPreviews.constEnd() && entry->m_hasSectionNumber;
+}
+
 bool ViewAreaController::isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
                                                         const FileOpenSettings &p_settings) const {
   const auto entry = m_outlineMindMapPreviews.constFind(p_buffer.nodeId().relativePath);
@@ -1236,6 +1241,7 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   provenance.m_sourceGeneration = p_sourceGeneration;
   provenance.m_sourceBufferId = p_sourceBuffer.id();
   provenance.m_protectedSource = p_sourceBuffer.isEncrypted();
+  provenance.m_hasSectionNumber = p_outline.m_hasSectionNumber;
   if (!buffers || !workspaces || !factory || !factory->hasCreator(QStringLiteral("MindMap")) ||
       !isOutlineMindMapSourceCurrent(provenance)) {
     return fail(tr("Unable to open the outline mind map"));

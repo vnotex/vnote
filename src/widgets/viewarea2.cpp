@@ -1529,6 +1529,8 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
       m_controller->isOutlineMindMapPreview(p_window->getBuffer());
   p_window->m_isProtectedOutlineMindMapPreview =
       m_controller->isProtectedOutlineMindMapPreview(p_window->getBuffer());
+  p_window->m_outlineMindMapHasSectionNumber =
+      m_controller->getOutlineMindMapHasSectionNumber(p_window->getBuffer());
   if (p_window->m_isProtectedOutlineMindMapPreview && p_window->m_printAction) {
     p_window->m_printAction->setEnabled(false);
   }
@@ -1570,6 +1572,10 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
       window->showMessage(error);
     }
   });
+  if (p_window->m_outlineMindMapHasSectionNumber) {
+    // Construction loads the map before its snapshot policy is wired. Refresh before showing it.
+    p_window->handleEditorConfigChange();
+  }
 }
 
 void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,

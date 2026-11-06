@@ -1841,6 +1841,10 @@ void TestViewAreaTabReuse::outlineMindMapPreview_data() {
 }
 
 void TestViewAreaTabReuse::outlineMindMapPreview() {
+  auto &editorSettings = f->config->getEditorConfig();
+  auto &mapSettings = editorSettings.getMindMapEditorConfig();
+  mapSettings.setAutoSectionNumbering(true);
+  editorSettings.setSectionNumberPattern(QStringLiteral("1.1."));
   QFETCH(QString, type);
   QFETCH(bool, reading);
   QFETCH(bool, readOnly);
@@ -1926,6 +1930,40 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
   auto *map = generated->findChild<MindMapEditor *>();
   QVERIFY(map);
   QTRY_COMPARE(map->outline().size(), 4);
+  const auto labels = [map] {
+    QStringList result;
+    for (auto *item : map->findChild<QGraphicsView *>()->scene()->items()) {
+      if (auto *text = qgraphicsitem_cast<QGraphicsTextItem *>(item)) {
+        result.append(text->toPlainText());
+      }
+    }
+    result.sort();
+    return result;
+  };
+  const auto expectedLabels = [&](bool p_numbering, const QString &p_suffix) {
+    QStringList result{buffer.displayName()};
+    const QStringList numbers{QStringLiteral("1"), QStringLiteral("1.1"), QStringLiteral("2")};
+    for (int i = 0; i < headingIndexes.size(); ++i) {
+      const auto prefix = p_numbering && !captured.m_hasSectionNumber
+                              ? numbers[i] + p_suffix + QLatin1Char(' ')
+                              : QString();
+      result.append(prefix + captured.m_headings[headingIndexes[i]].m_name);
+    }
+    result.sort();
+    return result;
+  };
+  QCOMPARE(labels(), expectedLabels(true, QStringLiteral(".")));
+  // Later producer metadata must not change the already-captured map's policy.
+  auto changedOutline = QSharedPointer<Outline>::create(captured);
+  changedOutline->m_hasSectionNumber = !captured.m_hasSectionNumber;
+  published->setOutline(changedOutline);
+  mapSettings.setAutoSectionNumbering(false);
+  generated->handleEditorConfigChange();
+  QCOMPARE(labels(), expectedLabels(false, QStringLiteral(".")));
+  mapSettings.setAutoSectionNumbering(true);
+  editorSettings.setSectionNumberPattern(QStringLiteral("1.1)"));
+  generated->handleEditorConfigChange();
+  QCOMPARE(labels(), expectedLabels(true, QStringLiteral(")")));
   QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
            buffer.displayName());
   QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({alphaId, betaId}));

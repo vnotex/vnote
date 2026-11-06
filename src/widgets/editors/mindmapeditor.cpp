@@ -483,7 +483,8 @@ void MindMapEditor::applyConfig(bool p_allowSeparatePropertiesPanel) {
   const m3::qt::EditorConfig::Style style{settings.getFontFamily(), settings.getFontPointSize()};
   setConfirmSubtreeDeletion(settings.getConfirmSubtreeDeletion());
   setAutoRandomBranchColor(settings.getAutoRandomBranchColor());
-  const bool numbering = settings.getAutoSectionNumbering();
+  const bool numbering = settings.getAutoSectionNumbering() &&
+                         !(m_viewWindow && m_viewWindow->getOutlineMindMapHasSectionNumber());
   const bool separateProperties =
       p_allowSeparatePropertiesPanel && settings.getSeparateNodePropertiesPanel();
   const auto pattern = manager->getEditorConfig().getSectionNumberPattern();

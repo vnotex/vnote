@@ -94,6 +94,7 @@ public:
   virtual bool supportsBufferReplacement() const { return false; }
   bool replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings);
   bool isOutlineMindMapPreview() const { return m_isOutlineMindMapPreview; }
+  bool getOutlineMindMapHasSectionNumber() const { return m_outlineMindMapHasSectionNumber; }
   bool isContentProtected() const {
     return m_buffer.isEncrypted() || m_isProtectedOutlineMindMapPreview;
   }
@@ -745,6 +746,7 @@ private:
   std::function<bool()> m_closeOutlineMindMapPreviews;
   bool m_isOutlineMindMapPreview = false;
   bool m_isProtectedOutlineMindMapPreview = false;
+  bool m_outlineMindMapHasSectionNumber = false;
   // Narrow ancestor scopes, not action enablement, while a nested editor owns focus.
   QVector<QPointer<QShortcut>> m_previewScopedShortcuts;
 

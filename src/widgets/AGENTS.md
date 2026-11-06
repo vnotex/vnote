@@ -277,6 +277,12 @@ heading IDs and the document-based preview tab name remain unchanged. Synthetic 
 are omitted; real empty/numbered/Unicode names remain literal. Missing/invalid outlines never
 open blank maps.
 
+The snapshot also captures `Outline::m_hasSectionNumber`. When true, the native editor must
+not add automatic section numbers to its already-numbered topics, even after editor settings
+change. Later source metadata cannot change that captured policy. Unnumbered snapshots and
+ordinary maps continue to follow the mind-map numbering preference. Rendered-label coverage:
+`test_viewarea_tab_reuse::outlineMindMapPreview`.
+
 Opening captures the clicked provider's current heading index with the outline, before open
 hooks can change selection. A valid real index selects its `h<original-index>` node, or `root`
 for the promoted title; missing/out-of-range/placeholder selections retain the central node.
