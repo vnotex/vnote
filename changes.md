@@ -13,6 +13,7 @@ A feature release with scoped HTTP automation, richer Markdown paste and smoothe
     * Preserve KaTeX and MathML formulas when parsing HTML to Markdown and pasting: prefer annotated TeX, recover supported MathML when annotations are stripped, and retain inline/display math and labeled underbraces without duplicate rendered text
     * Avoid unnecessary escapes in leading numbered headings while preserving literal backslashes and paragraph list protection
     * Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
+    * Update vtextedit to improve folded source headers and preview placement, preserve the viewport during passive layout and unfolding, and stabilize Markdown concealment during IME composition
     * Add Collapse and Expand below Export in read-mode code-block context menus
     * Restore warm Markdown page visibility before rendering when switching tabs, avoiding blank WebEngine frames without keeping inactive pages active
 * **Navigation and mind maps**
