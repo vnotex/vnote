@@ -367,6 +367,18 @@ QString ViewWindow2::getName() const {
 
 QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return nullptr; }
 
+bool ViewWindow2::activateOutlineHeading(int p_index) {
+  const QPointer<OutlineProvider> provider(getOutlineProvider().data());
+  if (!isEnabled() || !provider || !provider->getOutline() || p_index < 0 ||
+      p_index >= provider->getOutline()->m_headings.size() ||
+      provider->getOutline()->m_headings[p_index].m_isPlaceholder) {
+    return false;
+  }
+  // Markdown and native mind-map handlers only scroll/select. Focusing handlers override this API.
+  emit provider->headingClicked(p_index);
+  return true;
+}
+
 QSharedPointer<CommentProvider> ViewWindow2::getCommentProvider() const { return nullptr; }
 
 QString ViewWindow2::getTitle() const {

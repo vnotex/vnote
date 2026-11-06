@@ -37,8 +37,8 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.loadPdf(p_url);
         });
 
-        adapter.outlineItemScrollRequested.connect(function(p_index) {
-            window.vxcore.gotoOutlineItem(p_index);
+        adapter.outlineItemScrollRequested.connect(function(p_index, p_focus) {
+            window.vxcore.gotoOutlineItem(p_index, p_focus);
         });
 
         // MUST be unconditional: this is one of the two inputs of the publish

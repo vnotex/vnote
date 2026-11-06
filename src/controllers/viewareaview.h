@@ -55,7 +55,7 @@ public:
   virtual bool closePreviewsForSources(const QVector<ID> &p_sourceIds) = 0;
   virtual QStringList previewWorkspacesForSourceNotebook(const QString &p_notebookId) const = 0;
 
-  // Snapshot navigation: validate before consent and again after revealing the source.
+  // Snapshot navigation: validate the source and navigate without activating its window.
   virtual bool isOutlineHeadingCurrent(ID p_sourceId, quint64 p_generation, int p_headingIndex,
                                        const QByteArray &p_fingerprint) const = 0;
   virtual bool navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,

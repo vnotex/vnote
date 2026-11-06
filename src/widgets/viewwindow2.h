@@ -146,6 +146,10 @@ public:
   // Subclasses that support outlines (e.g., MarkdownViewWindow2) override this.
   virtual QSharedPointer<OutlineProvider> getOutlineProvider() const;
 
+  // Navigate without activating this window or moving keyboard focus.
+  // Returns false for an unsupported outline or unavailable heading.
+  virtual bool activateOutlineHeading(int p_index);
+
   // Whether this window supports the Comments dock. File types opt in explicitly.
   virtual bool isCommentsSupported() const { return false; }
 

@@ -188,7 +188,7 @@ void PdfViewerAdapter::clearOutline() {
   emit outlineChanged();
 }
 
-void PdfViewerAdapter::scrollToOutlineItem(int p_idx) {
+void PdfViewerAdapter::scrollToOutlineItem(int p_idx, bool p_focus) {
   if (p_idx < 0 || p_idx >= m_headings.size()) {
     return;
   }
@@ -200,10 +200,10 @@ void PdfViewerAdapter::scrollToOutlineItem(int p_idx) {
   }
 
   if (isReady()) {
-    emit outlineItemScrollRequested(destIndex);
+    emit outlineItemScrollRequested(destIndex, p_focus);
   } else {
     m_pendingDocumentActions.append(
-        [this, destIndex]() { emit outlineItemScrollRequested(destIndex); });
+        [this, destIndex, p_focus]() { emit outlineItemScrollRequested(destIndex, p_focus); });
   }
 }
 

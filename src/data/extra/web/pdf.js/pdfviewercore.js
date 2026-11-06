@@ -265,7 +265,7 @@ class PdfViewerCore extends VXCore {
 
     // Jump to the destination addressed by @p_index. Out-of-range and -1 are
     // inert no-ops, which is what makes a destination-less bookmark harmless.
-    gotoOutlineItem(p_index) {
+    gotoOutlineItem(p_index, p_focus) {
         if (typeof p_index !== 'number' || p_index < 0 || p_index >= this.outlineDests.length) {
             return;
         }
@@ -275,7 +275,47 @@ class PdfViewerCore extends VXCore {
             return;
         }
 
-        window.PDFViewerApplication.pdfLinkService.goToDestination(dest);
+        var app = window.PDFViewerApplication;
+        if (p_focus !== false) {
+            return app.pdfLinkService.goToDestination(dest);
+        }
+
+        // goToDestination focuses the text layer asynchronously. Resolve the same
+        // destination without that callback so an outline preview retains focus.
+        var doc = app.pdfDocument;
+        var outline = this.outlineDests;
+        if (!doc) {
+            return;
+        }
+        var current = () => app.pdfDocument === doc && this.outlineDests === outline;
+        var namedDest = typeof dest === 'string' ? dest : null;
+        return Promise.resolve(namedDest !== null ? doc.getDestination(namedDest) : dest)
+            .then(function(explicitDest) {
+                if (!current() || !Array.isArray(explicitDest)) {
+                    return;
+                }
+                var ref = explicitDest[0];
+                var page = ref && typeof ref === 'object'
+                    ? doc.cachedPageNumber(ref) || doc.getPageIndex(ref).then(index => index + 1)
+                    : Number.isInteger(ref) ? ref + 1 : 0;
+                return Promise.resolve(page).then(function(pageNumber) {
+                    if (!current() || !Number.isInteger(pageNumber) ||
+                        pageNumber < 1 || pageNumber > doc.numPages) {
+                        return;
+                    }
+                    if (app.pdfHistory) {
+                        app.pdfHistory.pushCurrentPosition();
+                        app.pdfHistory.push({namedDest, explicitDest, pageNumber});
+                    }
+                    app.pdfViewer.scrollPageIntoView({
+                        pageNumber,
+                        destArray: explicitDest,
+                        ignoreDestinationZoom: app.pdfLinkService._ignoreDestinationZoom
+                    });
+                });
+            }).catch(function(error) {
+                console.error('Unable to navigate to PDF outline destination', error);
+            });
     }
 
     // === The publish rendezvous ===

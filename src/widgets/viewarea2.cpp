@@ -954,38 +954,16 @@ bool ViewArea2::isOutlineHeadingCurrent(ID p_sourceId, quint64 p_generation, int
 
 bool ViewArea2::navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
                                          const QByteArray &p_fingerprint) {
-  const QPointer<ViewArea2> self(this);
   const QPointer<ViewWindow2> source(windowForId(p_sourceId));
-  const QPointer<ViewSplit2> owner(owningSplitForWindow(p_sourceId));
-  if (!source || !owner || source->getBufferGeneration() != p_generation) {
-    return false;
-  }
-  const QString workspace = owner->getWorkspaceId();
-  const QString bufferId = source->getBuffer().id();
-  if (owner->isPreview()) {
-    m_controller->setActivePreviewWindow(workspace, p_sourceId, bufferId);
-  }
-  if (!self || !source || !owner || source->getBufferGeneration() != p_generation ||
-      windowForId(p_sourceId) != source || owningSplitForWindow(p_sourceId) != owner) {
-    return false;
-  }
-  // Unlike the ordinary-workspace focus command, this also handles a source tab
-  // nested in a preview and an original source in a detached window.
-  setCurrentBuffer(workspace, bufferId, true);
-  if (!self || !source || !owner || windowForId(p_sourceId) != source ||
-      source->getBufferGeneration() != p_generation || source->getBuffer().id() != bufferId ||
-      owner->getCurrentViewWindow() != source) {
+  if (!source || !isPreviewSourceCurrent(p_sourceId, p_generation)) {
     return false;
   }
   if (!isOutlineHeadingCurrent(p_sourceId, p_generation, p_headingIndex, p_fingerprint)) {
     source->showMessage(tr("The outline has changed. Reopen the mind map to navigate."));
     return false;
   }
-  const QPointer<OutlineProvider> provider(source->getOutlineProvider().data());
-  // Each source owns its existing Read/Edit/PDF navigation policy. The receiver
-  // can retire this view synchronously; no source/provider state is read afterward.
-  emit provider->headingClicked(p_headingIndex);
-  return true;
+  // Leave the preview's current tab and keyboard focus intact, even for nested sources.
+  return source->activateOutlineHeading(p_headingIndex);
 }
 
 ViewSplit2 *ViewArea2::hostedSplitForWorkspace(const QString &p_workspaceId) const {

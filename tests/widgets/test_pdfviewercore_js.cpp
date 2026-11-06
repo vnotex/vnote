@@ -25,10 +25,9 @@
 // nothing.
 //
 // === Why getOutline() / initializedPromise are SYNCHRONOUS thenables ===
-// The production code only ever does `.then(...).catch(...)` and `.then(...)`,
-// never `await` and never `Promise.resolve`. Stubbing them as plain objects with
-// a `then` method keeps the whole path synchronous and sidesteps QJSEngine
-// microtask scheduling entirely, so every assertion runs on settled state.
+// The publication paths consume these through `.then(...).catch(...)` and `.then(...)`.
+// Plain thenables keep those assertions synchronous. Non-focusing destination resolution uses
+// native Promise scheduling; test_viewarea_tab_reuse exercises it with a real PDF viewer.
 
 #include <QDir>
 #include <QFile>

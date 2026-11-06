@@ -61,7 +61,7 @@ public:
   void clearOutline();
 
   // Ask the web side to jump to the destination of heading @p_idx.
-  void scrollToOutlineItem(int p_idx);
+  void scrollToOutlineItem(int p_idx, bool p_focus = true);
 
   // ============ Comments ============
 
@@ -296,7 +296,7 @@ signals:
 
   // @p_index is an index into the web side's destination array, NOT an index
   // into m_headings.
-  void outlineItemScrollRequested(int p_index);
+  void outlineItemScrollRequested(int p_index, bool p_focus);
 
   void commentsUpdated(const QJsonArray &p_comments);
 

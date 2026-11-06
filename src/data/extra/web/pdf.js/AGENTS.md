@@ -343,6 +343,16 @@ events; the commands dispatch the command events. A bridge wired to
 scroll mode presentation mode forces internally (`web/viewer.mjs:20094`).
 `modeStateComesFromTheChangedEventNotTheSwitchCommand` is the gate.
 
+### Non-focusing outline navigation
+
+`PdfViewWindow2::activateOutlineHeading()` requests `scrollToOutlineItem(index, false)` through
+QWebChannel. The false-focus path resolves the named/explicit bookmark against the captured PDF
+and outline, then uses `scrollPageIntoView` with its full destination and existing zoom/history
+policy. It must not call `goToDestination`: that registers a delayed `textlayerrendered` handler
+which focuses the text layer and steals focus from the mind-map preview. Document/outline changes
+invalidate pending resolution. Ordinary Outline clicks retain `goToDestination` and its focus.
+`test_viewarea_tab_reuse::outlineMindMapNavigation` observes focus after real PDF text-layer rendering.
+
 ### The state push
 
 `attachViewerBridge(app)` subscribes to the state events and pushes ONE

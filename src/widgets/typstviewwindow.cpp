@@ -1891,13 +1891,17 @@ QSharedPointer<OutlineProvider> TypstViewWindow::getOutlineProvider() const {
   return m_outlineProvider;
 }
 
+bool TypstViewWindow::activateOutlineHeading(int p_index) {
+  return navigateToHeading(p_index, false);
+}
+
 void TypstViewWindow::setupOutlineProvider() {
   m_outlineProvider = QSharedPointer<OutlineProvider>::create();
   m_outlineProvider->setOutline(QSharedPointer<Outline>::create());
   m_outlineProvider->setAutoSectionNumberAllowed(false);
   m_outlineProvider->setReorderSupported(false);
   connect(m_outlineProvider.data(), &OutlineProvider::headingClicked, this,
-          &TypstViewWindow::navigateToHeading);
+          [this](int p_index) { navigateToHeading(p_index, true); });
 }
 
 void TypstViewWindow::clearOutline() {
@@ -1946,23 +1950,23 @@ bool TypstViewWindow::isActiveFileHeading(const vte::TypstHeadingInfo &p_heading
   return validBoundary(p_heading.m_startPos) && validBoundary(p_heading.m_endPos);
 }
 
-void TypstViewWindow::navigateToHeading(int p_index) {
+bool TypstViewWindow::navigateToHeading(int p_index, bool p_focus) {
   if (!m_sourceAvailable || !isEnabled() || p_index < 0 || p_index >= m_outlineHeadings.size()) {
-    return;
+    return false;
   }
   // Both mode changes and opening another buffer can synchronously invalidate the outline.
   const auto target = m_outlineHeadings.at(p_index);
   if (target.m_file != m_typstEditor->activeFile()) {
     if (target.m_startPos < 0 || target.m_endPos < target.m_startPos) {
       showMessage(tr("Unable to open the Typst source location"));
-      return;
+      return false;
     }
-    m_controller->requestOpenSource(target.m_file, target.m_endPos, target.m_endPos);
-    return;
+    m_controller->requestOpenSource(target.m_file, target.m_endPos, target.m_endPos, p_focus);
+    return true;
   }
   if (!isActiveFileHeading(target)) {
     showMessage(tr("Unable to open the Typst source location"));
-    return;
+    return false;
   }
 
   const QPointer<TypstViewWindow> guard(this);
@@ -1974,23 +1978,26 @@ void TypstViewWindow::navigateToHeading(int p_index) {
   };
   revealSource();
   if (!isCurrent() || !isActiveFileHeading(target)) {
-    return;
+    return false;
   }
   auto *textEdit = m_editor->getTextEdit();
   QTextCursor cursor(textEdit->document());
   cursor.setPosition(target.m_endPos);
   textEdit->setTextCursor(cursor);
   if (!isCurrent()) {
-    return;
+    return false;
   }
   textEdit->ensureCursorVisible();
   if (!isCurrent()) {
-    return;
+    return false;
   }
-  textEdit->setFocus();
+  if (p_focus) {
+    textEdit->setFocus();
+  }
   if (isCurrent()) {
     m_outlineProvider->setCurrentHeadingIndex(p_index);
   }
+  return true;
 }
 
 void TypstViewWindow::updateCurrentHeading() {

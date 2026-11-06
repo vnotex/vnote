@@ -456,6 +456,16 @@ QSharedPointer<OutlineProvider> PdfViewWindow2::getOutlineProvider() const {
   return m_outlineProvider;
 }
 
+bool PdfViewWindow2::activateOutlineHeading(int p_index) {
+  auto *viewer = adapter();
+  if (!isEnabled() || !viewer || p_index < 0 || p_index >= viewer->getOutlineHeadings().size() ||
+      viewer->getOutlineHeadings()[p_index].m_index < 0) {
+    return false;
+  }
+  viewer->scrollToOutlineItem(p_index, false);
+  return true;
+}
+
 QSharedPointer<CommentProvider> PdfViewWindow2::getCommentProvider() const {
   return m_commentProvider;
 }

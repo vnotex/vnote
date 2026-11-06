@@ -44,6 +44,7 @@ public:
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
+  bool activateOutlineHeading(int p_index) override;
 
   bool isCommentsSupported() const Q_DECL_OVERRIDE { return true; }
 

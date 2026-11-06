@@ -305,23 +305,27 @@ colors through navigation and theme switches. Ordinary map files and their prefe
 A completed plain primary click on a node body/topic navigates to its original source heading.
 The promoted title maps to its original H1; a document-name-only root has no destination.
 Ctrl/Shift selection, keyboard/API selection, folding, dragging and other controls do not navigate.
-Navigation reveals that exact source window without closing the preview or asking to save or
-discard its tabs. The same snapshot remains available for repeated navigation, and unrelated
-preview tabs keep their unsaved content. If the source is itself a tab in the preview, navigation
-selects it while retaining the generated map as a sibling tab. Explicit preview dismissal and
-source close, replacement, conversion and protected-note locking retain their existing cleanup.
+Navigation calls `ViewWindow2::activateOutlineHeading(index)`, which moves to the heading without
+activating the source window or changing keyboard focus. The preview remains the current tab and
+keeps its canvas focus and Tools panel, including when its source is a hidden sibling preview tab.
+Repeated navigation needs no tab reselection, and unrelated tabs keep their unsaved content without
+save/discard consent. Explicit preview dismissal and source close, replacement, conversion and
+protected-note locking retain their existing cleanup.
 
-Navigation retains each provider's normal Outline behavior: Markdown uses its current mode,
-PDF follows its bookmark destination, and Typst reveals the source heading (Read enters Edit).
+Markdown uses its current mode; PDF follows the bookmark destination without pdf.js's delayed
+text-layer focus; Typst reveals the source heading (Read enters Edit) without focusing it. Imported
+Typst headings open or reposition a background source tab without replacing the original source.
+Ordinary Outline clicks keep their existing focus behavior. The base activation API dispatches
+non-focusing provider handlers; PDF and Typst override it for their focus-aware navigation paths.
+
 The roster stores original navigable-index bits, promoted-title index and an ordered heading
 fingerprint, never another plaintext outline. `Outline::navigationFingerprint()` covers names,
-levels and placeholders, not display/reordering permissions. Validate it before navigation and
-again after source focus; changed headings require reopening the snapshot. Body-only edits use
-the current heading positions. Recheck source ID/generation/protection across callbacks, and
-retain no source outline or protected operation lease across source focus. Ordinary file mind maps
-do not navigate other source windows. Coverage includes real bookmarked PDF/Typst destinations,
-protected/nested sources, repeated clicks, dirty sibling preservation and stale-source rejection
-in `test_viewarea_tab_reuse`.
+levels and placeholders, not display/reordering permissions. Validate it before dispatch; changed
+headings require reopening the snapshot. Body-only edits use the current heading positions.
+Recheck source ID/generation/protection across callbacks, and retain no source outline or protected
+operation lease across navigation. Ordinary file mind maps do not navigate other source windows.
+Coverage includes real PDF/Typst destinations, protected/nested sources, repeated clicks, keyboard
+focus retention, imported Typst tabs, dirty siblings and stale outlines in `test_viewarea_tab_reuse`.
 
 `ViewAreaController` admits generated `vx://outline-mind-map/` buffers only with their exact
 source window/generation. Its metadata-only provenance roster survives until native view

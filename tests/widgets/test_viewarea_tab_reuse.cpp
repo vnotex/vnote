@@ -1016,6 +1016,7 @@ private slots:
   void outlineMindMapNavigationSnapshot();
   void outlineMindMapNavigationPreservesDraft();
   void outlineMindMapNavigationNested();
+  void outlineMindMapNavigationImportedTypst();
   void markdownResourcesAndSaveIdentity_data();
   void markdownResourcesAndSaveIdentity();
   void memoryTextPersistenceAndSharing();
@@ -1181,7 +1182,6 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   const QPointer<DetachedWindow> detachedHost(qobject_cast<DetachedWindow *>(source->window()));
   const auto mainWorkspace = f->workspace();
   const auto mainOrder = f->order(mainWorkspace);
-  const QPointer<ViewWindow2> mainCurrent(f->current());
   const auto sourceWorkspace = detachedHost ? detachedHost->getWorkspaceId() : mainWorkspace;
   const auto sourceOrder = f->order(sourceWorkspace);
   const auto mode = source->getMode();
@@ -1242,6 +1242,18 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   QVERIFY(overlay);
   const auto preview = f->area->previewWorkspaceForWindow(sourceId);
   const auto json = map->toJson();
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus());
+  bool focusLeftPreview = false;
+  const auto focusConnection =
+      connect(qApp, &QApplication::focusChanged, this, [&](QWidget *, QWidget *p_now) {
+        if (p_now && map && p_now != map && !map->isAncestorOf(p_now)) {
+          focusLeftPreview = true;
+        }
+      });
+  const auto disconnectFocus = qScopeGuard([&] { disconnect(focusConnection); });
   QVERIFY(clickOutlineMapNode(map, targetId));
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   QVERIFY(generated && map && overlay && overlay->isVisible());
@@ -1251,19 +1263,15 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   if (detached) {
     QVERIFY(detachedHost && detachedHost->isVisible());
     QTRY_COMPARE(detachedHost->getViewSplit()->getCurrentViewWindow(), source.data());
-    QCOMPARE(f->current(), mainCurrent.data());
-    QCOMPARE(f->workspace(), mainWorkspace);
     QCOMPARE(f->order(mainWorkspace), mainOrder);
-  } else {
-    QTRY_COMPARE(f->current(), source.data());
   }
+  QCOMPARE(f->current(), generated.data());
+  QCOMPARE(f->workspace(), preview);
   QVERIFY(source && source->isVisible());
   QCOMPARE(source->getViewWindowId(), sourceId);
   QCOMPARE(source->getBuffer().id(), buffer.id());
   QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
   QCOMPARE(source->getMode(), typst ? ViewWindowMode::Edit : mode);
-  if (!detached)
-    QCOMPARE(f->workspace(), sourceWorkspace);
   QCOMPARE(f->order(sourceWorkspace), sourceOrder);
   QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
   if (type == QLatin1String("Markdown") && reading) {
@@ -1283,13 +1291,19 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   } else if (pdf) {
     QTRY_COMPARE_WITH_TIMEOUT(pdf->adapter()->getViewerState().m_page, 3, 30000);
     QVERIFY(QTest::qWaitFor([&] {
-      return evaluate(pdf->page(), QStringLiteral("PDFViewerApplication.page")).toInt() == 3;
+      return evaluate(pdf->page(), QStringLiteral("PDFViewerApplication.page === 3 && "
+                                                  "PDFViewerApplication.pdfViewer.getPageView(2)?."
+                                                  "textLayer?.div?.childElementCount > 0"))
+          .toBool();
     }));
   } else {
     // Typst's outline command reveals editable source, including from Read mode.
     QTRY_COMPARE(typst->getTextEditor()->getTextEdit()->textCursor().position(), targetPosition);
     QCOMPARE(typst->getTextEditor()->getTextEdit()->textCursor().blockNumber(), targetBlock);
   }
+  QVERIFY(canvas->hasFocus());
+  QVERIFY(!focusLeftPreview);
+  QCOMPARE(f->current(), generated.data());
 }
 
 void TestViewAreaTabReuse::outlineMindMapNavigationRoots() {
@@ -1376,6 +1390,12 @@ void TestViewAreaTabReuse::outlineMindMapNavigationRoots() {
   QVERIFY(generated && map);
   QCOMPARE(generated->getBuffer().id(), retainedSnapshot.id());
   QCOMPARE(map->toJson(), json);
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(canvas->hasFocus());
+  // Keyboard selection stays in the map rather than moving the source cursor.
+  QTest::keySequence(canvas->viewport(), selectChild->shortcuts().first());
+  QCOMPARE(map->selectedNodeId(), QStringLiteral("h1"));
+  QCOMPARE(edit->textCursor().blockNumber(), titleBlock);
 
   QVERIFY(f->create(QStringLiteral("filename.md"), navigationMarkdown().toUtf8()));
   QVERIFY(f->open(QStringLiteral("filename.md"), true).isValid());
@@ -1528,7 +1548,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigationSnapshot() {
     f->area->setCurrentBuffer(preview, snapshot.id(), true);
     QVERIFY(clickOutlineMapNode(map, nodeId));
     QVERIFY(generated && map);
-    QTRY_COMPARE(f->current(), source.data());
+    QCOMPARE(f->current(), generated.data());
     if (change == QLatin1String("mode")) {
       auto *reader = source->findChild<MarkdownViewer *>();
       QVERIFY(reader);
@@ -1551,6 +1571,8 @@ void TestViewAreaTabReuse::outlineMindMapNavigationSnapshot() {
   QCOMPARE(source->getBuffer().id(), buffer.id());
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   QVERIFY(generated && map && map->isVisible());
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(map->isAncestorOf(QApplication::focusWidget()));
   QCOMPARE(f->buffers->getBufferHandle(snapshot.id()).isValid(), !stale);
   QVERIFY(f->buffers->getBufferHandle(generated->getBuffer().id()).isValid());
 }
@@ -1563,7 +1585,6 @@ void TestViewAreaTabReuse::outlineMindMapNavigationPreservesDraft() {
   QPointer<ViewWindow2> source(f->current());
   const auto sourceId = source->getViewWindowId();
   const auto generation = source->getLinkOpenSettings().m_previewSourceGeneration;
-  const auto main = f->workspace();
   auto *editor = source->findChild<MarkdownEditor *>();
   QVERIFY(editor);
   auto *edit = editor->getTextEdit();
@@ -1603,14 +1624,15 @@ void TestViewAreaTabReuse::outlineMindMapNavigationPreservesDraft() {
   QVERIFY(draftWindow->isModified());
   QCOMPARE(f->order(preview), QStringList({draftBuffer.id(), snapshot.id()}));
   QVERIFY(!f->controller()->isPreviewWorkspaceClosing(preview));
-  QTRY_COMPARE(f->current(), source.data());
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(map->isAncestorOf(QApplication::focusWidget()));
   QTRY_COMPARE(edit->textCursor().blockNumber(), targetBlock);
   QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
   QCOMPARE(source->getViewWindowId(), sourceId);
   QCOMPARE(source->getBuffer().id(), buffer.id());
   QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
   QCOMPARE(source->getMode(), ViewWindowMode::Edit);
-  QCOMPARE(f->workspace(), main);
+  QCOMPARE(f->workspace(), preview);
   QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
   QVERIFY(f->buffers->getBufferHandle(snapshot.id()).isValid());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("draft.txt"))), QByteArray("Original preview\n"));
@@ -1645,6 +1667,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
   QVERIFY(editor);
   auto *edit = editor->getTextEdit();
   edit->moveCursor(QTextCursor::Start);
+  edit->verticalScrollBar()->setValue(0);
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 30000);
   const auto target = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Beta")));
   const auto targetBlock = edit->document()->find(QStringLiteral("# Beta")).blockNumber();
@@ -1663,9 +1686,12 @@ void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
   }
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   QVERIFY(generated);
-  QTRY_COMPARE(f->current(), source.data());
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(map->isAncestorOf(QApplication::focusWidget()));
   QTRY_COMPARE(edit->textCursor().blockNumber(), targetBlock);
-  QVERIFY(source->isVisible());
+  QVERIFY(!source->isVisible());
+  QVERIFY(edit->verticalScrollBar()->value() > 0);
+  QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
   QCOMPARE(source->getViewWindowId(), sourceId);
   QCOMPARE(source->getBuffer().id(), buffer.id());
   QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, generation);
@@ -1677,13 +1703,88 @@ void TestViewAreaTabReuse::outlineMindMapNavigationNested() {
   QCOMPARE(unrelated->getLatestContent(), draft);
   QCOMPARE(f->area->previewWorkspaceForWindow(outer->getViewWindowId()), preview);
   QVERIFY(f->buffers->getBufferHandle(snapshot.id()).isValid());
-  // The retained map remains available as a sibling of the revealed nested source.
-  f->area->setCurrentBuffer(preview, snapshot.id(), true);
+  // Repeated clicks navigate the hidden sibling without selecting its tab.
   QVERIFY(map->isVisible());
   QVERIFY(clickOutlineMapNode(map, target));
-  QTRY_COMPARE(f->current(), source.data());
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(map->isAncestorOf(QApplication::focusWidget()));
   QVERIFY(generated && unrelated && unrelated->isModified());
   QCOMPARE(unrelated->getLatestContent(), draft);
+  // Opening the source tab later must reveal the heading, not its previous scroll position.
+  f->area->setCurrentBuffer(preview, buffer.id(), true);
+  QTRY_VERIFY(source->isVisible());
+  QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
+}
+
+void TestViewAreaTabReuse::outlineMindMapNavigationImportedTypst() {
+  QVERIFY(f->create(QStringLiteral("chapter.typst"), navigationTypst().toUtf8()));
+  QVERIFY(f->create(QStringLiteral("main.typst"), "#include \"chapter.typst\"\n"));
+  f->reuse();
+  const auto buffer = f->open(QStringLiteral("main.typst"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto main = f->workspace();
+  source->setMode(ViewWindowMode::Read);
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 60000);
+  auto *typst = source->findChild<vte::VTypstEditor *>();
+  QVERIFY(typst);
+  int position = -1;
+  for (const auto &heading : typst->getHeadings()) {
+    if (heading.m_title == QLatin1String("Beta")) {
+      QVERIFY(heading.m_file != typst->activeFile());
+      position = heading.m_endPos;
+    }
+  }
+  QVERIFY(position > 0);
+  const auto index = outlineTopicIndex(source, QStringLiteral("Beta"));
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source);
+  const auto preview = f->workspace();
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus());
+  bool focusLeftPreview = false;
+  const auto focusConnection =
+      connect(qApp, &QApplication::focusChanged, this, [&](QWidget *, QWidget *p_now) {
+        if (p_now && p_now != map && !map->isAncestorOf(p_now)) {
+          focusLeftPreview = true;
+        }
+      });
+  const auto disconnectFocus = qScopeGuard([&] { disconnect(focusConnection); });
+  QPointer<ViewWindow2> imported;
+  // First create the background source window; then navigate it again without activation.
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    QVERIFY(clickOutlineMapNode(map, QStringLiteral("h%1").arg(index)));
+    if (!imported) {
+      for (auto *window : f->area->findChildren<ViewWindow2 *>()) {
+        if (window->getNodeId() == f->node(QStringLiteral("chapter.typst"))) {
+          imported = window;
+          break;
+        }
+      }
+    }
+    QVERIFY(imported);
+    auto *chapter = imported->findChild<vte::VTypstEditor *>();
+    QVERIFY(chapter);
+    QTRY_COMPARE(chapter->getTextEditor()->getTextEdit()->textCursor().position(), position);
+    QCOMPARE(source->getBuffer().id(), buffer.id());
+    QCOMPARE(f->current(), generated.data());
+    QCOMPARE(f->workspace(), preview);
+    QCOMPARE(f->coreCurrent(main), buffer.id());
+    QCOMPARE(f->order(main), QStringList({buffer.id(), imported->getBuffer().id()}));
+    QVERIFY(canvas->hasFocus());
+    QVERIFY(!focusLeftPreview);
+    chapter->getTextEditor()->getTextEdit()->moveCursor(QTextCursor::Start);
+  }
+  // Ordinary Outline activation keeps its existing focus-taking behavior.
+  disconnect(focusConnection);
+  emit source->getOutlineProvider()->headingClicked(index);
+  QTRY_COMPARE(f->current(), imported.data());
+  QVERIFY(imported->isAncestorOf(QApplication::focusWidget()));
 }
 
 void TestViewAreaTabReuse::outlineMindMapPreview_data() {

@@ -33,7 +33,7 @@ public:
   void trackInsertedImage(const QString &p_assetIdentifier);
   void clearObsoleteImages();
 
-  void requestOpenSource(const QString &p_file, int p_start, int p_end);
+  void requestOpenSource(const QString &p_file, int p_start, int p_end, bool p_focus = true);
   // Apply caller routing only after resolving an allowed local file; external consent
   // and internal source-location navigation retain their existing policy.
   void requestOpenLink(const QUrl &p_url, const FileOpenSettings &p_settings = FileOpenSettings());

@@ -35,6 +35,7 @@ public:
 
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
+  bool activateOutlineHeading(int p_index) override;
   bool isEncodingSupported() const override { return true; }
   bool supportsBufferReplacement() const override { return true; }
   void setMode(ViewWindowMode p_mode) override;
@@ -134,7 +135,7 @@ private:
   void setupOutlineProvider();
   void refreshOutline(const QVector<vte::TypstHeadingInfo> &p_headings);
   void clearOutline();
-  void navigateToHeading(int p_index);
+  bool navigateToHeading(int p_index, bool p_focus);
   bool isActiveFileHeading(const vte::TypstHeadingInfo &p_heading) const;
   void updateCurrentHeading();
   void setupPdfToolBar(QToolBar *p_toolBar);

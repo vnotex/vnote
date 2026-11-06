@@ -587,7 +587,8 @@ NodeIdentifier TypstViewWindowController::resolveIndexedFile(const QString &p_ab
   return node;
 }
 
-void TypstViewWindowController::requestOpenSource(const QString &p_file, int p_start, int p_end) {
+void TypstViewWindowController::requestOpenSource(const QString &p_file, int p_start, int p_end,
+                                                  bool p_focus) {
   if (!resourceAvailable() || !isProjectPath(p_file) || p_start < 0 || p_end < p_start ||
       (m_buffer.isMemoryBacked() && p_file == m_project.mainFile)) {
     emit errorOccurred(tr("Unable to open the Typst source location"));
@@ -613,6 +614,7 @@ void TypstViewWindowController::requestOpenSource(const QString &p_file, int p_s
   settings.m_mode = ViewWindowMode::Edit;
   settings.m_forceMode = true;
   settings.m_cursorOffset = p_start;
+  settings.m_focus = p_focus;
   // BufferService owns hooks and adopts the target's existing/notebook read-only state.
   const auto generation = m_generation;
   const QPointer<TypstViewWindowController> guard(this);
