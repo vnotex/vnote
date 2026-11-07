@@ -613,10 +613,7 @@ void ViewWindow2::addToolBar(QToolBar *p_bar) {
     // The narrow native extension cannot fit normal tool button insets or the native border.
     extension->setStyleSheet(
         QStringLiteral("#qt_toolbar_ext_button { margin: 0; padding: 0; border: none; }"));
-    // Theme QSS assigns an icon during polish; apply our themed menu icon afterwards.
-    extension->ensurePolished();
   }
-  ViewWindowToolBarHelper2::refreshToolBarIcons(p_bar, m_services);
 
   // Enable drag-drop on toolbar for attachment support.
   p_bar->setAcceptDrops(true);
