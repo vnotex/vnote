@@ -188,6 +188,13 @@ cmake --build build --config Release --target test_error test_exception test_pat
 
 `core_services` links **neither `Qt::Widgets` nor `VTextEdit`** — see [`../src/core/services/AGENTS.md`](../src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract). Practical consequence for tests: a target that needs QtWidgets or vtextedit headers must say so in its own `LINKS`; nothing arrives transitively through `core_services` any more.
 
+`test_viewsplit2_reload_menu` and `test_view_window2_readonly_toolbar` use the existing
+application-source recipe in `widgets/CMakeLists.txt` to execute production `ViewWindow2`
+methods. Do not restore test-local copies of `reload()`, `save()` or `addAction()`, or add
+vtable stubs when the base interface changes. Reload fixtures retain position observers
+and unregister active writers before destruction; native dialogs can trigger focus-driven
+editor synchronization, so dirty reload checks assert buffer and disk outcomes.
+
 ## Run Tests
 
 **Windows (Qt DLLs must be in PATH):**

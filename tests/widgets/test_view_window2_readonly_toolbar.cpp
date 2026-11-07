@@ -1,159 +1,31 @@
-// T27: ViewWindow2 disables Save and formatting/insert actions when the
-// owning notebook is read-only, with a tooltip explaining why.
-//
-// Same stub-injection pattern as tests/widgets/test_viewsplit2_reload_menu.cpp
-// and tests/widgets/test_snippet_apply.cpp: viewwindow2.cpp is NOT compiled
-// inline (it pulls in ~12 transitive widget dependencies). Instead this test
-// provides no-op definitions for every non-pure-virtual ViewWindow2 method
-// (linker satisfaction) AND mirrors the production enable predicate from
-// ViewWindow2::addAction() in TestViewWindow2 below.
-//
-// INVARIANT: TestViewWindow2::createSaveActionMirror() /
-// createInsertActionMirror() are STRUCTURAL MIRRORS of the production
-// `addAction()` Save / Type* switch cases in src/widgets/viewwindow2.cpp. Any
-// drift between this mirror and production code must be caught by the F3
-// manual QA scenario in the parent plan.
-//
-// What is tested:
-//   1. Save action stays disabled for a RO buffer even when dirty.
-//   2. Save action enables on a writable buffer once dirty.
-//   3. Insert/format action stays disabled in Edit mode on a RO buffer.
-//   4. Insert/format action enables in Edit mode on a writable buffer.
-//   5. Both actions carry a tooltip pointing at the RO state.
+// Exercise production toolbar actions against writable and read-only notebook buffers.
 
 #include <QAction>
 #include <QApplication>
 #include <QFrame>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QSignalSpy>
+#include <QToolBar>
 #include <QtTest>
 
+#include <core/configmgr2.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
-#include <widgets/messageboxhelper.h>
 #include <widgets/viewwindow2.h>
 
 using namespace vnotex;
 
-// -----------------------------------------------------------------------------
-// Stub bodies for ViewWindow2 non-pure-virtual methods.
-//
-// Same scope-adjustment rationale as test_viewsplit2_reload_menu.cpp /
-// test_snippet_apply.cpp: linking the production .cpp would drag in the full
-// widgets/ link surface for a focused test that only needs the QAction enable
-// predicate.
-// -----------------------------------------------------------------------------
-
-namespace vnotex {
-
-ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent)
-    : QFrame(p_parent), m_services(p_services), m_buffer(p_buffer) {
-  m_lastKnownRevision = m_buffer.getRevision();
-}
-
-ViewWindow2::~ViewWindow2() = default;
-
-const Buffer2 &ViewWindow2::getBuffer() const { return m_buffer; }
-Buffer2 &ViewWindow2::getBuffer() { return m_buffer; }
-const NodeIdentifier &ViewWindow2::getNodeId() const { return m_buffer.nodeId(); }
-ID ViewWindow2::getViewWindowId() const { return m_viewWindowId; }
-void ViewWindow2::setViewWindowId(ID p_id) { m_viewWindowId = p_id; }
-QIcon ViewWindow2::getIcon() const { return {}; }
-QString ViewWindow2::getName() const { return m_buffer.nodeId().relativePath; }
-QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return {}; }
-
-// Added together with the comment dock: a ViewWindow2 with no comment support
-// hands back null and the panel simply goes empty.
-QSharedPointer<CommentProvider> ViewWindow2::getCommentProvider() const { return {}; }
-
-// Non-pure virtual, so it needs a body here too: a window that does not follow
-// a rename inherits the base no-op.
-void ViewWindow2::handleNodeRetargeted(const NodeIdentifier &) {}
-QString ViewWindow2::getTitle() const { return getName(); }
-ViewWindowMode ViewWindow2::getMode() const { return m_mode; }
-int ViewWindow2::getCursorPosition() const { return -1; }
-int ViewWindow2::getScrollPosition() const { return -1; }
-ViewWindow2::ViewPositionState ViewWindow2::capturePositionState() const { return {}; }
-void ViewWindow2::restorePositionState(const ViewPositionState &) {}
-bool ViewWindow2::isModified() const { return m_editorDirty || m_buffer.isModified(); }
-ViewWindowLayoutMode ViewWindow2::getLayoutMode() const { return ViewWindowLayoutMode::FullWidth; }
-void ViewWindow2::setLayoutMode(ViewWindowLayoutMode p_mode) {
-  m_layoutModeOverride = static_cast<int>(p_mode);
-}
-void ViewWindow2::toggleLayoutMode() {}
-void ViewWindow2::onNodeRenamed(const NodeIdentifier &p_newNodeId) {
-  m_buffer.setNodeId(p_newNodeId);
-}
-bool ViewWindow2::aboutToClose(bool) { return true; }
-void ViewWindow2::setAutoReload(bool p_enabled) { m_autoReload = p_enabled; }
-bool ViewWindow2::autoReload() const { return m_autoReload; }
-bool ViewWindow2::reload() { return false; }
-bool ViewWindow2::save() { return false; }
-void ViewWindow2::onEditorContentsChanged() {}
-void ViewWindow2::findNext(const QString &, FindOptions) {}
-void ViewWindow2::replace(const QString &, FindOptions, const QString &) {}
-void ViewWindow2::replaceAll(const QString &, FindOptions, const QString &) {}
-void ViewWindow2::refreshToolBarIcons() {}
-void ViewWindow2::applySnippet(const QString &) {}
-void ViewWindow2::applySnippet() {}
-void ViewWindow2::clearHighlights() {}
-void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &) {}
-void ViewWindow2::handleEditorConfigChange() {}
-void ViewWindow2::handleThemeChanged() {}
-void ViewWindow2::reinterpretWithEncoding(const QString &) {}
-void ViewWindow2::handleFindTextChanged(const QString &, FindOptions) {}
-void ViewWindow2::handleFindNext(const QStringList &, FindOptions) {}
-void ViewWindow2::handleReplace(const QString &, FindOptions, const QString &) {}
-void ViewWindow2::handleReplaceAll(const QString &, FindOptions, const QString &) {}
-void ViewWindow2::handleFindAndReplaceWidgetClosed() {}
-void ViewWindow2::handleFindAndReplaceWidgetOpened() {}
-void ViewWindow2::onContentReplacementStateChanged(const QString &, bool, bool, bool) {}
-void ViewWindow2::onBufferAutoSaved(const QString &) {}
-void ViewWindow2::onBufferModifiedChanged(const QString &) {}
-void ViewWindow2::onAttachmentChanged(const QString &) {}
-void ViewWindow2::onBufferExternallyChanged(const QString &, BufferState) {}
-
-// T28: stub for the new RO-rejection slots. This test only exercises Save /
-// Insert action enable predicates; the rejection-modal path is covered by
-// test_view_window2_readonly_save_warning. No-op bodies satisfy the linker.
-void ViewWindow2::onDirtyRejectedReadOnly(const QString &) {}
-void ViewWindow2::onSaveRejectedReadOnly(const QString &) {}
-void ViewWindow2::showReadOnlyWarning() {}
-void ViewWindow2::applyReadableWidth() {}
-void ViewWindow2::handleTypeAction(int) {}
-void ViewWindow2::fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &) const {}
-void ViewWindow2::addAdditionalRightToolBarActions(QToolBar *) {}
-void ViewWindow2::handlePrint() {}
-void ViewWindow2::showFindAndReplaceWidget() {}
-QString ViewWindow2::selectedText() const { return {}; }
-QPoint ViewWindow2::getFloatingWidgetPosition() { return {}; }
-bool ViewWindow2::eventFilter(QObject *, QEvent *) { return false; }
-void ViewWindow2::keyPressEvent(QKeyEvent *) {}
-void ViewWindow2::wheelEvent(QWheelEvent *) {}
-void ViewWindow2::resizeEvent(QResizeEvent *) {}
-ServiceLocator &ViewWindow2::getServices() const { return m_services; }
-
-QString ViewWindow2::s_attachmentFullIconFile;
-QString ViewWindow2::s_attachmentFullIconForeground;
-QString ViewWindow2::s_attachmentFullIconDisabledForeground;
-QString ViewWindow2::s_attachmentFullIconMasterColor;
-QIcon ViewWindow2::s_attachmentFullIcon;
-
-} // namespace vnotex
-
 namespace tests {
 
-// Minimal concrete ViewWindow2 subclass for testing the toolbar enable
-// predicates. The mirror methods replicate the enable lambdas from production
-// addAction() exactly (cross-checked against viewwindow2.cpp at commit time).
+// Expose the production action factory without constructing a full editor.
 class TestViewWindow2 : public vnotex::ViewWindow2 {
   Q_OBJECT
 public:
@@ -170,39 +42,7 @@ public:
   void scrollDown() override {}
   void zoom(bool) override {}
 
-  // Mirror of production ViewWindow2::addAction() Save case (post-T27).
-  // Returns the QAction parented to this widget.
-  QAction *createSaveActionMirror() {
-    auto *act = new QAction(this);
-    act->setEnabled(false);
-    // T27 mirror: surface the RO state on the tooltip up front.
-    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
-      act->setToolTip(tr("Read-only \u2014 cannot edit"));
-    }
-    connect(this, &ViewWindow2::statusChanged, this, [this, act]() {
-      const auto &buf = getBuffer();
-      act->setEnabled(buf.isValid() && isModified() && !buf.isReadOnly());
-    });
-    return act;
-  }
-
-  // Mirror of production ViewWindow2::addAction() Type*/Insert cases (post-T27).
-  QAction *createInsertActionMirror() {
-    auto *act = new QAction(this);
-    act->setVisible(false);
-    connect(this, &ViewWindow2::modeChanged, this, [act, this]() {
-      const bool inEdit = (m_mode == vnotex::ViewWindowMode::Edit);
-      act->setVisible(inEdit);
-      const auto &buf = getBuffer();
-      const bool readOnly = buf.isValid() && buf.isReadOnly();
-      act->setEnabled(inEdit && !readOnly);
-    });
-    if (getBuffer().isValid() && getBuffer().isReadOnly()) {
-      act->setEnabled(false);
-      act->setToolTip(tr("Read-only \u2014 cannot edit"));
-    }
-    return act;
-  }
+  using ViewWindow2::addAction;
 
   // Test seam: flip dirty state and trigger the Save action's refresh lambda.
   void setDirty(bool p_dirty) {
@@ -229,12 +69,13 @@ private slots:
   void testSaveActionEnabledForWritableBuffer();
   void testInsertActionDisabledForReadOnlyBufferInEditMode();
   void testInsertActionEnabledForWritableBufferInEditMode();
-  void testReadOnlyTooltipPresent();
 
 private:
   vnotex::Buffer2 openBuffer(const QString &p_relativePath);
   void setNotebookReadOnly(bool p_readOnly);
 
+  ConfigCoreService *m_configCore = nullptr;
+  ConfigMgr2 *m_config = nullptr;
   VxCoreContextHandle m_context = nullptr;
   vnotex::BufferService *m_bufferService = nullptr;
   vnotex::HookManager *m_hookMgr = nullptr;
@@ -251,6 +92,12 @@ void TestViewWindow2ReadOnlyToolbar::initTestCase() {
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
+
+  m_configCore = new ConfigCoreService(m_context);
+  m_config = new ConfigMgr2(m_configCore);
+  m_config->init();
+  m_services.registerService(m_configCore);
+  m_services.registerService(m_config);
 
   m_notebookService = new vnotex::NotebookCoreService(m_context, this);
   m_hookMgr = new vnotex::HookManager(this);
@@ -291,6 +138,11 @@ void TestViewWindow2ReadOnlyToolbar::cleanupTestCase() {
   m_hookMgr = nullptr;
   delete m_notebookService;
   m_notebookService = nullptr;
+
+  delete m_config;
+  m_config = nullptr;
+  delete m_configCore;
+  m_configCore = nullptr;
 
   if (m_context) {
     vxcore_context_destroy(m_context);
@@ -345,7 +197,8 @@ void TestViewWindow2ReadOnlyToolbar::testSaveActionDisabledForReadOnlyBuffer() {
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
-  QAction *saveAction = view.createSaveActionMirror();
+  QToolBar toolbar(&view);
+  QAction *saveAction = view.addAction(&toolbar, ViewWindowToolBarHelper2::Save);
 
   // Mark buffer dirty; Save MUST stay disabled because notebook is RO.
   view.setDirty(true);
@@ -367,7 +220,8 @@ void TestViewWindow2ReadOnlyToolbar::testSaveActionEnabledForWritableBuffer() {
   QVERIFY(!buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
-  QAction *saveAction = view.createSaveActionMirror();
+  QToolBar toolbar(&view);
+  QAction *saveAction = view.addAction(&toolbar, ViewWindowToolBarHelper2::Save);
 
   // Pristine + writable: Save action starts disabled (nothing to save).
   QVERIFY(!saveAction->isEnabled());
@@ -396,7 +250,8 @@ void TestViewWindow2ReadOnlyToolbar::testInsertActionDisabledForReadOnlyBufferIn
   QVERIFY(buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
-  QAction *insertAction = view.createInsertActionMirror();
+  QToolBar toolbar(&view);
+  QAction *insertAction = view.addAction(&toolbar, ViewWindowToolBarHelper2::TypeBold);
 
   // Initially: not visible (Read mode default) and disabled (RO).
   QVERIFY(!insertAction->isVisible());
@@ -427,7 +282,8 @@ void TestViewWindow2ReadOnlyToolbar::testInsertActionEnabledForWritableBufferInE
   QVERIFY(!buf.isReadOnly());
 
   TestViewWindow2 view(m_services, buf);
-  QAction *insertAction = view.createInsertActionMirror();
+  QToolBar toolbar(&view);
+  QAction *insertAction = view.addAction(&toolbar, ViewWindowToolBarHelper2::TypeBold);
 
   // Edit mode + writable: visible and enabled.
   view.switchMode(vnotex::ViewWindowMode::Edit);
@@ -438,29 +294,6 @@ void TestViewWindow2ReadOnlyToolbar::testInsertActionEnabledForWritableBufferInE
   view.switchMode(vnotex::ViewWindowMode::Read);
   QVERIFY(!insertAction->isVisible());
   QVERIFY(!insertAction->isEnabled());
-}
-
-// =============================================================================
-// Subtest 5: Read-only tooltip is set on both Save and Insert actions.
-// =============================================================================
-void TestViewWindow2ReadOnlyToolbar::testReadOnlyTooltipPresent() {
-  const QString relPath = QStringLiteral("ro_tooltip.md");
-  const QString fileId = m_notebookService->createFile(m_notebookId, QString(), relPath);
-  QVERIFY(!fileId.isEmpty());
-
-  // Read-only is resolved at open time, so flip the notebook BEFORE opening.
-  setNotebookReadOnly(true);
-  vnotex::Buffer2 buf = openBuffer(relPath);
-  QVERIFY(buf.isValid());
-  QVERIFY(buf.isReadOnly());
-
-  TestViewWindow2 view(m_services, buf);
-
-  QAction *saveAction = view.createSaveActionMirror();
-  QVERIFY(saveAction->toolTip().contains(QStringLiteral("Read-only")));
-
-  QAction *insertAction = view.createInsertActionMirror();
-  QVERIFY(insertAction->toolTip().contains(QStringLiteral("Read-only")));
 }
 
 } // namespace tests

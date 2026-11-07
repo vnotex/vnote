@@ -681,55 +681,8 @@ set_tests_properties(test_open_notebook_dialog2_cancel PROPERTIES
   TIMEOUT 180
 )
 
-# T3: ViewWindow2::reload() (commit 94c53d36) + ViewSplit2 Reload menu (commit bf44c324).
-# NOT GUILESS — needs QApplication for QMessageBox automation in dirty-buffer
-# subtests (Save / Discard / Cancel branches).
-#
-# Scope adjustment: viewwindow2.cpp is NOT compiled inline because that would
-# pull in ~12 transitive widget deps (attachmentpopup2, findandreplacewidget2,
-# editreaddiscardaction, ...). Instead this test uses the stub-injection
-# pattern from test_snippet_apply: viewwindow2.h provides the class shape
-# (via AUTOMOC) and the test cpp defines no-op bodies for every ViewWindow2
-# non-pure-virtual method to satisfy the linker. TestViewWindow2 then
-# replicates the production reload() logic (see file header for rationale).
-add_qt_test(test_viewsplit2_reload_menu
-  SOURCES
-    test_viewsplit2_reload_menu.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-  LINKS
-    core_services
-    vxcore
-    VTextEdit
-    Qt6::Widgets
-)
-target_include_directories(test_viewsplit2_reload_menu PRIVATE
-  ${CMAKE_SOURCE_DIR}/src/gui
-)
-target_compile_definitions(test_viewsplit2_reload_menu PRIVATE VNOTE_TESTING)
-
-# T27: ViewWindow2 disables Save/Insert actions on read-only buffer.
-# Same stub-injection pattern as test_viewsplit2_reload_menu — viewwindow2.cpp
-# is not compiled inline to avoid pulling in ~12 widget transitive deps.
-# NOT GUILESS — QAction belongs to QtGui, and the production runtime path
-# materializes inside a real QFrame so we use QTEST_MAIN.
-add_qt_test(test_view_window2_readonly_toolbar
-  SOURCES
-    test_view_window2_readonly_toolbar.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-  LINKS
-    core_services
-    vxcore
-    VTextEdit
-    Qt6::Widgets
-)
-target_include_directories(test_view_window2_readonly_toolbar PRIVATE
-  ${CMAKE_SOURCE_DIR}/src/gui
-)
-
 # T28: ViewWindow2 modal warning on read-only save attempts, with cooldown.
-# Same stub-injection pattern as T27 / test_viewsplit2_reload_menu —
+# This isolated warning fixture uses stub injection —
 # viewwindow2.cpp is not compiled inline. The test enables the
 # testSetReadOnlyWarningSuppressModal seam so QMessageBox::exec() does not
 # block the event loop while still ticking the cooldown counter.
@@ -1724,6 +1677,19 @@ foreach(_source IN LISTS _markdown_window_sources)
 endforeach()
 get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
 find_package(Qt6 REQUIRED COMPONENTS Pdf)
+# Reload and read-only actions must execute ViewWindow2, not test-local copies.
+foreach(_view_window_test test_viewsplit2_reload_menu test_view_window2_readonly_toolbar)
+  add_qt_test(${_view_window_test}
+    SOURCES ${_view_window_test}.cpp ${_markdown_window_test_sources}
+    LINKS ${_markdown_window_links} Qt6::Pdf
+  )
+  target_include_directories(${_view_window_test} PRIVATE
+    $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+  )
+  target_compile_definitions(${_view_window_test} PRIVATE
+    $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+  )
+endforeach()
 add_qt_test(test_markdownviewwindow_lazy
   SOURCES test_markdownviewwindow_lazy.cpp ${_markdown_window_test_sources}
   LINKS ${_markdown_window_links} Qt6::Pdf
