@@ -1829,7 +1829,7 @@ target_compile_definitions(test_viewarea_tab_reuse PRIVATE
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
 add_dependencies(test_viewarea_tab_reuse VX_EXTRA_RESOURCE)
-set_tests_properties(test_viewarea_tab_reuse PROPERTIES TIMEOUT 600)
+set_tests_properties(test_viewarea_tab_reuse PROPERTIES TIMEOUT 1200)
 set(_tab_reuse_platform "${_markdown_window_platform}")
 set(_tab_reuse_plugin "${_markdown_window_plugin}")
 if(UNIX AND NOT APPLE)

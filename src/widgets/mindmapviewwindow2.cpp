@@ -7,6 +7,7 @@
 #include <QGraphicsView>
 #include <QKeySequence>
 #include <QMenu>
+#include <QMessageBox>
 #include <QPainter>
 #include <QPalette>
 #include <QPointer>
@@ -75,6 +76,84 @@ QWidget *MindMapViewWindow2::getToolsPanel() {
     panel->setParent(this);
   }
   return panel.data();
+}
+
+bool MindMapViewWindow2::isOutlineSourceEditBusy() const {
+  return m_editor && m_editor->isSourceEditBusy();
+}
+
+bool MindMapViewWindow2::isModified() const {
+  // Accepted edits already belong to the source. The memory buffer is only a cache,
+  // and its modified bit says nothing about the source's save state.
+  return isOutlineMindMapPreview() ? m_editor && m_editor->hasPendingEdit()
+                                   : ViewWindow2::isModified();
+}
+
+bool MindMapViewWindow2::aboutToClose(bool p_force) {
+  if (!isOutlineMindMapPreview()) {
+    return ViewWindow2::aboutToClose(p_force);
+  }
+  if (isOutlineSourceRetirementBlocked()) {
+    return false;
+  }
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  const auto current = [&] { return guard && generation == guard->m_generation; };
+  // Keep the widget/caret/local undo intact if capture is rejected or close is cancelled.
+  const bool committed =
+      !m_editor || !m_editor->hasPendingEdit() || m_editor->commitActiveEdit(true);
+  if (!current()) {
+    return false;
+  }
+  if (!committed) {
+    if (p_force) {
+      return false;
+    }
+    setViewFullScreen(false);
+    if (!current()) {
+      return false;
+    }
+    const int response = questionSaveOrDiscard(
+        tr("Close mind map (%1) with an unapplied topic edit?").arg(getName()),
+        tr("The topic edit could not be applied to the source. Discard only this draft? "
+           "Changes already applied to the source will be kept."));
+    if (!current() || response != QMessageBox::Discard || isOutlineSourceRetirementBlocked()) {
+      return false;
+    }
+    // commitActiveEdit(false) accepts a draft; only the explicit discard API abandons it.
+    if (!m_editor->discardActiveEdit() || !current()) {
+      return false;
+    }
+  }
+  // Reuse ordinary snapshot failure and writer unregistration, without a scratch prompt.
+  // This captures only the derived memory buffer and never clears the source's dirty state.
+  return ViewWindow2::aboutToClose(p_force);
+}
+
+void MindMapViewWindow2::setOutlineSourceEditHandler(m3::qt::SourceEditHandler p_handler,
+                                                     m3::qt::SourceEditApproval p_approve) {
+  if (isOutlineMindMapPreview() && !m_outlineSourceEditRetired && m_editor &&
+      !m_editor->hasSourceEditHandler()) {
+    m_editor->setSourceEditHandler(std::move(p_handler), std::move(p_approve));
+  }
+}
+
+bool MindMapViewWindow2::synchronizeOutlineSourceTopics(
+    const QVector<m3::qt::OutlineEntry> &p_entries) {
+  return isOutlineMindMapPreview() && !m_outlineSourceEditRetired && m_contentLoaded &&
+         m_propagateEditorToBuffer && m_editor && !m_editor->isSourceEditBusy() &&
+         m_editor->synchronizeSourceTopics(p_entries);
+}
+
+void MindMapViewWindow2::retireOutlineSourceEditHandler() {
+  if (isOutlineMindMapPreview() && m_editor && !m_editor->isSourceEditBusy()) {
+    // Retirement must not turn a still-alive deferred-delete widget into a scratch editor.
+    // Accepted close has already committed or explicitly discarded its pending draft.
+    m_outlineSourceEditRetired = true;
+    m_editor->setReadOnly(true);
+    // Drop source callbacks and paired history before the source can release plaintext/keys.
+    m_editor->setSourceEditHandler({});
+  }
 }
 
 void MindMapViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
@@ -176,13 +255,23 @@ void MindMapViewWindow2::connectEditorSignals() {
       onEditorContentsChanged();
     }
   });
+  connect(m_editor, &m3::qt::MindMapEditor::pendingEditChanged, this, [this](bool) {
+    if (isOutlineMindMapPreview()) {
+      emit statusChanged();
+    }
+  });
   connect(m_editor, &MindMapEditor::statusMessageRequested, this, [this](const QString &p_message) {
     m_lastEditorError = p_message;
     showMessage(p_message);
   });
   connect(m_editor, &m3::qt::MindMapEditor::documentChanged, this, [this]() {
     if (m_propagateEditorToBuffer && m_contentLoaded) {
+      const QPointer<MindMapViewWindow2> guard(this);
       refreshOutline();
+      if (guard && isOutlineMindMapPreview()) {
+        // Native commit/replay has left its busy phase before documentChanged.
+        emit outlineSourceEditPublished();
+      }
     }
   });
   connect(m_editor, &m3::qt::MindMapEditor::selectionChanged, this,
@@ -488,6 +577,10 @@ void MindMapViewWindow2::releaseBufferResources() {
   m_propagateEditorToBuffer = false;
   m_contentLoaded = false;
   const QPointer<MindMapViewWindow2> guard(this);
+  retireOutlineSourceEditHandler();
+  if (!guard) {
+    return;
+  }
   // Revoke insertion dialogs, image overlays, image requests and link consent
   // while the base still owns the outgoing identity. No native widget is rebuilt.
   m_editor->setBuffer(Buffer2());
@@ -513,6 +606,14 @@ void MindMapViewWindow2::bindBufferResources() {
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {
+  if (isOutlineMindMapPreview()) {
+    // Initial construction loads before provenance is attached. Thereafter this
+    // memory buffer is only a derived cache, never a document/reload authority.
+    // In particular, capture during modal move approval must not reload the model
+    // on focus restoration, cancel a draft, or replace its paired source history.
+    m_lastKnownRevision = getBuffer().isValid() ? getBuffer().getRevision() : 0;
+    return;
+  }
   const QPointer<MindMapViewWindow2> guard(this);
   const auto generation = ++m_generation;
   const bool propagate = m_propagateEditorToBuffer;
@@ -682,6 +783,8 @@ void MindMapViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId)
 }
 
 void MindMapViewWindow2::handleEditorConfigChange() {
+  if (m_outlineSourceEditRetired)
+    return;
   const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleEditorConfigChange();
   if (guard && m_editor) {

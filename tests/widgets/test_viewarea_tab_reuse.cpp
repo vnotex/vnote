@@ -1,5 +1,9 @@
 #include <QtTest>
 
+#ifdef Q_OS_WIN
+#include <QtCore/qt_windows.h>
+#endif
+
 #include <vtextedit/typstruntime.h>
 
 #include <QAbstractScrollArea>
@@ -65,6 +69,7 @@
 #include <core/markdowneditorconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/buffercoreservice.h>
 #include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
 #include <core/services/configcoreservice.h>
@@ -119,6 +124,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <stdexcept>
 
 using namespace vnotex;
 
@@ -236,6 +242,17 @@ void appendDraft(vte::VTextEdit *p_edit, const QString &p_text) {
   cursor.movePosition(QTextCursor::End);
   cursor.insertText(p_text);
   p_edit->setTextCursor(cursor);
+}
+
+OutlineSourceEdit outlineSourceRequest(ViewWindow2 *p_source, OutlineSourceEdit::Kind p_kind) {
+  const auto snapshot = p_source->outlineSourceSnapshot();
+  OutlineSourceEdit request;
+  request.m_kind = p_kind;
+  request.m_expectedRevision = snapshot.m_revision;
+  if (snapshot.m_outline) {
+    request.m_expectedFingerprint = snapshot.m_outline->navigationFingerprint();
+  }
+  return request;
 }
 
 // Own the timer for the duration of the synchronous operation. A missing/wrong dialog
@@ -385,6 +402,14 @@ bool activateNativeHost(QWidget *p_target) {
   // Native children can cover a fullscreen host's entire exposed region.
   if (!QTest::qWaitFor(surfaceExposed))
     return false;
+#ifdef Q_OS_WIN
+  // Qt activation can succeed internally while another desktop window still covers
+  // this process. Keep only this owned test host above it; retain real hit testing.
+  if (QGuiApplication::platformName() == QLatin1String("windows") &&
+      !SetWindowPos(reinterpret_cast<HWND>(host->winId()), HWND_TOPMOST, 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
+    return false;
+#endif
   host->raise();
   host->activateWindow();
   // Xvfb need not have a window manager to update Qt's active QWidget.
@@ -522,20 +547,55 @@ QToolButton *outlineMindMapButton(ViewWindow2 *p_window) {
 }
 
 bool clickOutlineMindMap(ViewWindow2 *p_window) {
+  const QPointer<ViewWindow2> source(p_window);
   const QPointer<QToolButton> button(outlineMindMapButton(p_window));
-  if (!button ||
-      !QTest::qWaitFor([&] { return button && button->isVisible() && button->isEnabled(); },
-                       30000) ||
-      !activateNativeHost(button))
+  const auto fail = [&](const char *stage) {
+    qWarning() << "Outline Mind Map native click failed at" << stage << "source" << source.data()
+               << "sourceVisible" << (source && source->isVisible()) << "sourceGeometry"
+               << (source ? source->geometry() : QRect()) << "activeWindow"
+               << QApplication::activeWindow() << "focusWidget" << QApplication::focusWidget()
+               << "focusWindow" << QGuiApplication::focusWindow() << "modal"
+               << QApplication::activeModalWidget() << "popup" << QApplication::activePopupWidget();
+    if (button) {
+      const auto center = button->mapToGlobal(button->rect().center());
+      auto *hit = QApplication::widgetAt(center);
+      auto *host = button->window();
+      auto *native = host ? host->windowHandle() : nullptr;
+      qWarning() << "button" << button.data() << "visible" << button->isVisible() << "enabled"
+                 << button->isEnabled() << "geometry" << button->geometry() << "visibleRegion"
+                 << button->visibleRegion().boundingRect() << "globalCenter" << center << "hit"
+                 << hit << "hitGeometry" << (hit ? hit->geometry() : QRect()) << "action"
+                 << button->defaultAction() << "host" << host << "hostGeometry"
+                 << (host ? host->geometry() : QRect()) << "native" << native << "exposed"
+                 << (native && native->isExposed());
+    }
+    for (auto *widget : QApplication::topLevelWidgets()) {
+      if (widget->isVisible())
+        qWarning() << "visible top-level" << widget << widget->geometry();
+    }
     return false;
+  };
+  if (!button)
+    return fail("missing toolbar button");
+  if (!QTest::qWaitFor([&] { return button && button->isVisible() && button->isEnabled(); }, 30000))
+    return fail("button visibility/enablement");
+  if (!activateNativeHost(button))
+    return fail("native host activation");
   if (!QTest::qWaitFor([&] {
         if (!button || !button->isVisible() || !button->isEnabled())
           return false;
         auto *hit = QApplication::widgetAt(button->mapToGlobal(button->rect().center()));
         return hit == button || (hit && button->isAncestorOf(hit));
       }))
-    return false;
-  return clickNativeSurface(button, button->rect().center());
+    return fail("native hit test");
+  QSignalSpy requests(source, &ViewWindow2::outlineMindMapRequested);
+  if (!clickNativeSurface(button, button->rect().center()))
+    return fail("native surface delivery");
+  // Native dispatch may return before the toolbar consumes the release event.
+  // Admission hooks may destroy the sender before later signal observers run.
+  if (!QTest::qWaitFor([&] { return !source || !button || !requests.isEmpty(); }))
+    return fail("outline request or sender retirement acknowledgement");
+  return true;
 }
 
 bool hasOutlineTopic(ViewWindow2 *p_window, const QString &p_topic) {
@@ -637,6 +697,71 @@ QStringList mapChildren(MindMapEditor *p_map, const QString &p_id) {
   for (const auto &child : mapNode(p_map, p_id).value(QStringLiteral("children")).toArray())
     children.append(child.toString());
   return children;
+}
+
+bool waitForSourceMap(ViewWindow2 *p_source, MindMapEditor *p_map) {
+  const QPointer<ViewWindow2> source(p_source);
+  const QPointer<MindMapEditor> map(p_map);
+  return QTest::qWaitFor(
+      [&] {
+        if (!source || !map || map->isSourceEditBusy())
+          return false;
+        const auto snapshot = source->outlineSourceSnapshot();
+        if (snapshot.m_revision < 0 || !snapshot.m_outline)
+          return false;
+        QStringList topics;
+        for (const auto &heading : snapshot.m_outline->m_headings) {
+          if (!heading.m_isPlaceholder)
+            topics.append(heading.m_name);
+        }
+        const auto entries = map->outline();
+        const int offset = entries.size() - topics.size();
+        if (offset < 0 || offset > 1)
+          return false;
+        for (int i = 0; i < topics.size(); ++i) {
+          if (entries[i + offset].topic != topics[i])
+            return false;
+        }
+        return true;
+      },
+      60000);
+}
+
+QPlainTextEdit *beginMapTopic(MindMapEditor *p_map, const QString &p_id) {
+  auto *canvas = p_map->findChild<QGraphicsView *>();
+  if (!canvas || !activateNativeHost(canvas->viewport()) || !p_map->selectNode(p_id))
+    return nullptr;
+  canvas->setFocus();
+  if (!QTest::qWaitFor([&] { return canvas->hasFocus(); }))
+    return nullptr;
+  QTest::keyClick(canvas->viewport(), Qt::Key_F2);
+  auto *draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  return draft && draft->isVisible() ? draft : nullptr;
+}
+
+bool dragMapNodeOnto(MindMapEditor *p_map, const QString &p_from, const QString &p_to) {
+  auto *canvas = p_map->findChild<QGraphicsView *>();
+  if (!canvas || !activateNativeHost(canvas->viewport()) ||
+      !p_map->setLayoutDirection(MindMapEditor::LayoutDirection::Right))
+    return false;
+  p_map->commandAction(QStringLiteral("fit"))->trigger();
+  const auto point = [&](const QString &id) {
+    if (!p_map->selectNode(id))
+      return QPoint(-1, -1);
+    const auto items = canvas->scene()->selectedItems();
+    return items.size() == 1 ? canvas->mapFromScene(items.first()->sceneBoundingRect().center())
+                             : QPoint(-1, -1);
+  };
+  const auto to = point(p_to);
+  const auto from = point(p_from);
+  if (!canvas->viewport()->rect().contains(from) || !canvas->viewport()->rect().contains(to))
+    return false;
+  QTest::mousePress(canvas->viewport(), Qt::LeftButton, Qt::NoModifier, from);
+  QMouseEvent motion(QEvent::MouseMove, QPointF(to), QPointF(canvas->viewport()->mapToGlobal(to)),
+                     Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(canvas->viewport(), &motion);
+  QTest::mouseRelease(canvas->viewport(), Qt::LeftButton, Qt::NoModifier, to);
+  return true;
 }
 
 bool protectedMapExportDenied(MindMapEditor *p_map) {
@@ -994,6 +1119,18 @@ private slots:
   void previewMindMapNoteOwnership_data();
   void previewMindMapNoteOwnership();
   void outlineMindMapPreview_data();
+  void markdownOutlineSourceEditing();
+  void markdownOutlineSourceGuards();
+  void markdownOutlineSourceNormalization();
+  void outlineMindMapSourceEditing();
+  void outlineMindMapSourceSavePolicy_data();
+  void outlineMindMapSourceSavePolicy();
+  void outlineMindMapSourceClose_data();
+  void outlineMindMapSourceClose();
+  void outlineMindMapSourceGuards_data();
+  void outlineMindMapSourceGuards();
+  void outlineMindMapSourceHistory_data();
+  void outlineMindMapSourceHistory();
   void outlineMindMapPreview();
   void outlineMindMapPermissionCapture_data();
   void outlineMindMapPermissionCapture();
@@ -1097,6 +1234,1696 @@ void TestViewAreaTabReuse::init() {
 void TestViewAreaTabReuse::cleanup() {
   f.reset();
   directory.reset();
+}
+
+void TestViewAreaTabReuse::markdownOutlineSourceEditing() {
+  const QString original = QStringLiteral(
+      "# Book\n\nIntro\n\n## Alpha\n\nA body\n\n### Child\n\nChild body\n\n## Beta\n\nB body\n");
+  QVERIFY(f->create(QStringLiteral("adapter.md"), original.toUtf8()));
+  const auto buffer = f->open(QStringLiteral("adapter.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  auto *edit = editor->getTextEdit();
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QCOMPARE(source->getLatestContent(), original);
+  QTextCursor cursor(edit->document());
+  cursor.setPosition(original.indexOf(QStringLiteral("A body")) + 2);
+  edit->setTextCursor(cursor);
+  edit->setOverriddenSelection(original.indexOf(QStringLiteral("Child body")),
+                               original.indexOf(QStringLiteral("Child body")) + 5);
+  QLineEdit focusTarget(f->area.get());
+  focusTarget.setGeometry(10, 10, 120, 25);
+  focusTarget.show();
+  focusTarget.setFocus();
+  QTRY_COMPARE(QApplication::focusWidget(), &focusTarget);
+
+  QVector<QSharedPointer<OutlineSourceEditReceipt>> receipts;
+  QStringList states{original};
+  auto rename = outlineSourceRequest(source, OutlineSourceEdit::Kind::Rename);
+  rename.m_placement.m_sourceHeadingIndex = 1;
+  rename.m_topic = QStringLiteral("Renamed # [x] & Ω");
+  const auto renamed = source->applyOutlineSourceEdit(rename, false);
+  QVERIFY(renamed && renamed->m_pending);
+  QVERIFY(!source->isOutlineSourceEditBusy());
+  QCOMPARE(QApplication::focusWidget(), &focusTarget);
+  QTRY_VERIFY_WITH_TIMEOUT(!renamed->m_pending, 30000);
+  QVERIFY(!renamed->m_stale);
+  QTRY_VERIFY(source->outlineSourceSnapshot().m_revision >= 0);
+  QVERIFY(hasOutlineTopic(source, rename.m_topic));
+  QString expected = original;
+  expected.replace(QStringLiteral("## Alpha"),
+                   QStringLiteral("## Renamed &#35; &#91;x&#93; &#38; Ω"));
+  QCOMPARE(source->getLatestContent(), expected);
+  QCOMPARE(edit->textCursor().position(), expected.indexOf(QStringLiteral("A body")) + 2);
+  QCOMPARE(edit->getSelection().start(), expected.indexOf(QStringLiteral("Child body")));
+  QCOMPARE(edit->getSelection().end(), expected.indexOf(QStringLiteral("Child body")) + 5);
+  receipts.append(renamed);
+  states.append(expected);
+
+  auto move = outlineSourceRequest(source, OutlineSourceEdit::Kind::Move);
+  move.m_placement =
+      source->outlineSourceSnapshot().m_outline->planMove(3, 1, OutlineDropPosition::AboveItem);
+  QVERIFY(move.m_placement.isValid());
+  const auto moved = source->applyOutlineSourceEdit(move, false);
+  QVERIFY(moved);
+  QTRY_VERIFY_WITH_TIMEOUT(!moved->m_pending, 30000);
+  QVERIFY(!moved->m_stale);
+  expected = QStringLiteral("# Book\n\nIntro\n\n## Beta\n\nB body\n"
+                            "## Renamed &#35; &#91;x&#93; &#38; Ω\n\nA body\n\n"
+                            "### Child\n\nChild body\n\n");
+  QCOMPARE(source->getLatestContent(), expected);
+  receipts.append(moved);
+  states.append(expected);
+
+  move = outlineSourceRequest(source, OutlineSourceEdit::Kind::Move);
+  move.m_placement =
+      source->outlineSourceSnapshot().m_outline->planMove(2, 1, OutlineDropPosition::OnItem);
+  QVERIFY(move.m_placement.isValid());
+  const auto reparented = source->applyOutlineSourceEdit(move, false);
+  QVERIFY(reparented);
+  QTRY_VERIFY_WITH_TIMEOUT(!reparented->m_pending, 30000);
+  QVERIFY(!reparented->m_stale);
+  expected.replace(QStringLiteral("## Renamed"), QStringLiteral("### Renamed"));
+  expected.replace(QStringLiteral("### Child"), QStringLiteral("#### Child"));
+  QCOMPARE(source->getLatestContent(), expected);
+  receipts.append(reparented);
+  states.append(expected);
+
+  auto insert = outlineSourceRequest(source, OutlineSourceEdit::Kind::Insert);
+  insert.m_placement.m_parentHeadingIndex = 0;
+  insert.m_placement.m_targetLevel = 2;
+  insert.m_topic = QStringLiteral("Gamma");
+  const auto inserted = source->applyOutlineSourceEdit(insert, false);
+  QVERIFY(inserted);
+  QTRY_VERIFY_WITH_TIMEOUT(!inserted->m_pending, 30000);
+  QVERIFY(!inserted->m_stale);
+  expected += QStringLiteral("## Gamma\n");
+  QCOMPARE(source->getLatestContent(), expected);
+  receipts.append(inserted);
+  states.append(expected);
+  QCOMPARE(inserted->m_afterHeadingPositions.size(), 5);
+  QVERIFY(source->activateOutlineHeading(4));
+  QCOMPARE(edit->textCursor().block().text(), QStringLiteral("## Gamma"));
+  QCOMPARE(QApplication::focusWidget(), &focusTarget);
+  QVERIFY(source->isModified());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("adapter.md"))), original.toUtf8());
+
+  // A normal cache capture may advance Buffer2 without focusing this source.
+  // Paired history must adopt that validated revision, not reject its own next group.
+  QVERIFY(f->buffers->syncNow(buffer.id()));
+  for (int i = receipts.size() - 1; i >= 0; --i) {
+    QVERIFY(receipts[i]->m_undo());
+    QCOMPARE(edit->document()->availableUndoSteps(), receipts[i]->m_beforeUndoSteps);
+    QTRY_VERIFY_WITH_TIMEOUT(!receipts[i]->m_pending, 30000);
+    QVERIFY(!receipts[i]->m_stale);
+    QCOMPARE(source->getLatestContent(), states[i]);
+  }
+  for (int i = 0; i < receipts.size(); ++i) {
+    QVERIFY(receipts[i]->m_redo());
+    QTRY_VERIFY_WITH_TIMEOUT(!receipts[i]->m_pending, 30000);
+    QVERIFY(!receipts[i]->m_stale);
+    QCOMPARE(source->getLatestContent(), states[i + 1]);
+    QCOMPARE(edit->document()->availableUndoSteps(), receipts[i]->m_afterUndoSteps);
+  }
+  QCOMPARE(QApplication::focusWidget(), &focusTarget);
+}
+
+void TestViewAreaTabReuse::markdownOutlineSourceGuards() {
+  const QString original = QStringLiteral("# Book\n\n## Alpha\n\nBody\n");
+  QVERIFY(f->create(QStringLiteral("adapter-guards.md"), original.toUtf8()));
+  const auto buffer = f->open(QStringLiteral("adapter-guards.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  auto request = outlineSourceRequest(source, OutlineSourceEdit::Kind::Rename);
+  request.m_placement.m_sourceHeadingIndex = 1;
+  request.m_topic = QStringLiteral("Changed");
+  const auto sourceKey = reinterpret_cast<quintptr>(source.data());
+  const quintptr otherKey = reinterpret_cast<quintptr>(this);
+  const auto restoreWriter = [&] {
+    f->buffers->registerActiveWriter(buffer.id(), sourceKey,
+                                     [source] { return source->getLatestContent(); });
+  };
+  const auto writerCleanup = qScopeGuard(restoreWriter);
+  f->buffers->unregisterActiveWriter(buffer.id(), sourceKey);
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(request, false));
+  f->buffers->registerActiveWriter(buffer.id(), otherKey,
+                                   [] { return QStringLiteral("# Other writer\n"); });
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(request, false));
+  f->buffers->registerActiveWriter(buffer.id(), otherKey, []() -> QString {
+    throw std::runtime_error("writer capture rejected");
+  });
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(request, false));
+  restoreWriter();
+  QCOMPARE(source->getLatestContent(), original);
+
+  auto wrong = request;
+  --wrong.m_expectedRevision;
+  QVERIFY(!source->applyOutlineSourceEdit(wrong, false));
+  wrong = request;
+  wrong.m_expectedFingerprint.append('x');
+  QVERIFY(!source->applyOutlineSourceEdit(wrong, false));
+  editor->setReadOnly(true);
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(request, false));
+  editor->setReadOnly(false);
+  source->setNoteConversionFrozen(true);
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(request, false));
+  source->setNoteConversionFrozen(false);
+  restoreWriter();
+  QTRY_VERIFY(source->outlineSourceSnapshot().m_revision >= 0);
+  request = outlineSourceRequest(source, OutlineSourceEdit::Kind::Rename);
+  request.m_placement.m_sourceHeadingIndex = 1;
+  request.m_topic = QStringLiteral("Changed");
+  const auto receipt = source->applyOutlineSourceEdit(request, false);
+  QVERIFY(receipt);
+  QTRY_VERIFY_WITH_TIMEOUT(!receipt->m_pending, 30000);
+  QVERIFY(!receipt->m_stale);
+  const auto accepted = source->getLatestContent();
+  auto cursor = editor->getTextEdit()->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  cursor.beginEditBlock();
+  cursor.insertText(QStringLiteral("\nIndependent body edit\n"));
+  cursor.endEditBlock();
+  const auto independent = source->getLatestContent();
+  QVERIFY(!receipt->m_undo());
+  QCOMPARE(source->getLatestContent(), independent);
+  // Even returning to the same numerical undo boundary cannot revive a retired authorization.
+  editor->document()->undo();
+  QCOMPARE(source->getLatestContent(), accepted);
+  QCOMPARE(editor->document()->availableUndoSteps(), receipt->m_afterUndoSteps);
+  QVERIFY(!receipt->m_undo());
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  const auto generation = source->outlineSourceSnapshot().m_contentGeneration;
+  editor->getHighlighter()->rehighlight();
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QCOMPARE(source->outlineSourceSnapshot().m_contentGeneration, generation);
+  source->setMode(ViewWindowMode::Read);
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+}
+
+void TestViewAreaTabReuse::markdownOutlineSourceNormalization() {
+  f->config->getEditorConfig().getMarkdownEditorConfig().setAutoSectionNumberInEditModeEnabled(
+      true);
+  QVERIFY(
+      f->create(QStringLiteral("adapter-numbered.md"), "# Book\n\n## Alpha\n\nBody\n\n## Beta\n"));
+  const auto buffer = f->open(QStringLiteral("adapter-numbered.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QVERIFY(source->outlineSourceSnapshot().m_outline->m_hasSectionNumber);
+  const auto before = source->getLatestContent();
+  bool joined = false;
+  bool pendingInsidePublication = false;
+  QSharedPointer<OutlineSourceEditReceipt> receipt;
+  const auto provenanceConnection = connect(
+      editor->document(), &QTextDocument::contentsChange, this, [&](int, int removed, int added) {
+        if (removed != 0 || added != 0) {
+          joined |=
+              editor->sourceEditState() == vte::VMarkdownEditor::SourceEditState::ApplyingJoined;
+        }
+      });
+  const auto publicationConnection = connect(editor, &MarkdownEditor::headingsChanged, this, [&] {
+    if (receipt && receipt->m_pending) {
+      pendingInsidePublication = true;
+      QVERIFY(editor->sourceEditState() != vte::VMarkdownEditor::SourceEditState::Settled);
+      QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+    }
+  });
+  const auto disconnectObservers = qScopeGuard([&] {
+    disconnect(provenanceConnection);
+    disconnect(publicationConnection);
+  });
+  auto rename = outlineSourceRequest(source, OutlineSourceEdit::Kind::Rename);
+  rename.m_placement.m_sourceHeadingIndex = 1;
+  rename.m_topic = QStringLiteral("First");
+  receipt = source->applyOutlineSourceEdit(rename, false);
+  QVERIFY(receipt && receipt->m_pending);
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!source->applyOutlineSourceEdit(rename, false));
+  QTRY_VERIFY_WITH_TIMEOUT(!receipt->m_pending, 30000);
+  QVERIFY(!receipt->m_stale);
+  QVERIFY(joined && pendingInsidePublication);
+  QTRY_VERIFY(source->outlineSourceSnapshot().m_revision >= 0);
+  const auto normalized = source->getLatestContent();
+  const auto outline = source->outlineSourceSnapshot().m_outline;
+  QVERIFY(outline->m_headings[1].m_name.endsWith(QStringLiteral("First")));
+  QVERIFY(outline->m_headings[1].m_name != QStringLiteral("First"));
+  QVERIFY(source->activateOutlineHeading(1));
+  QCOMPARE(editor->getTextEdit()->textCursor().blockNumber(),
+           editor->document()->findBlock(receipt->m_afterHeadingPositions[1]).blockNumber());
+
+  auto second = outlineSourceRequest(source, OutlineSourceEdit::Kind::Rename);
+  second.m_placement.m_sourceHeadingIndex = 1;
+  // Inline editing starts from the published numbered topic, not an unnumbered title.
+  second.m_topic = outline->m_headings[1].m_name + QStringLiteral(" extended");
+  const auto secondReceipt = source->applyOutlineSourceEdit(second, false);
+  QVERIFY(secondReceipt);
+  QTRY_VERIFY_WITH_TIMEOUT(!secondReceipt->m_pending, 30000);
+  QVERIFY(!secondReceipt->m_stale);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[1].m_name, second.m_topic);
+  QVERIFY(secondReceipt->m_undo());
+  QTRY_VERIFY_WITH_TIMEOUT(!secondReceipt->m_pending, 30000);
+  QVERIFY(!secondReceipt->m_stale);
+  QCOMPARE(source->getLatestContent(), normalized);
+  QVERIFY(receipt->m_undo());
+  QTRY_VERIFY_WITH_TIMEOUT(!receipt->m_pending, 30000);
+  QVERIFY(!receipt->m_stale);
+  QCOMPARE(source->getLatestContent(), before);
+  QVERIFY(receipt->m_redo());
+  QTRY_VERIFY_WITH_TIMEOUT(!receipt->m_pending, 30000);
+  QVERIFY(!receipt->m_stale);
+  QCOMPARE(source->getLatestContent(), normalized);
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceEditing() {
+  const QString original = QStringLiteral(
+      "# Book\n\nIntro\n\n## Alpha\n\nA body\n\n### Child\n\nChild body\n\n## Beta\n\nB body\n");
+  QVERIFY(f->create(QStringLiteral("source-map.md"), original.toUtf8()));
+  const auto buffer = f->open(QStringLiteral("source-map.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  const auto alpha = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Alpha")));
+  const auto beta = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Beta")));
+  const auto child = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Child")));
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  const auto initialJson = map->toJson();
+  QSignalSpy noOpChanges(map, &m3::qt::MindMapEditor::documentChanged);
+  QVERIFY(map->renameNode(alpha, QStringLiteral("Alpha")));
+  QVERIFY(map->moveNode(alpha, QStringLiteral("root"), 0));
+  QVERIFY(!map->renameNode(alpha, QStringLiteral("Rejected\nmultiline")));
+  QVERIFY(map->addNode(alpha, QStringLiteral("Rejected") + QChar(0)).isEmpty());
+  QCOMPARE(map->toJson(), initialJson);
+  QCOMPARE(source->getLatestContent(), original);
+  QVERIFY(noOpChanges.isEmpty() && !map->canUndo());
+  const auto branchStyle = mapNode(map, alpha).value(QStringLiteral("style"));
+  const auto zoom = map->zoomFactor();
+  QVERIFY(map->setExpanded(alpha, false));
+  auto *draft = beginMapTopic(map, alpha);
+  QVERIFY(draft);
+  const QString literal = QStringLiteral("Renamed # [x] & Ω");
+  draft->selectAll();
+  draft->insertPlainText(literal);
+  const auto caret = draft->textCursor().position();
+  generated->handleEditorConfigChange();
+  QVERIFY(draft->isVisible() && map->hasPendingEdit());
+  QCOMPARE(draft->textCursor().position(), caret);
+  QTest::keyClick(draft, Qt::Key_Return);
+  QString expected = original;
+  expected.replace(QStringLiteral("## Alpha"),
+                   QStringLiteral("## Renamed &#35; &#91;x&#93; &#38; Ω"));
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(waitForSourceMap(source, map));
+  QVERIFY(hasOutlineTopic(source, literal));
+  QCOMPARE(mapNode(map, alpha).value(QStringLiteral("topic")).toString(), literal);
+  QCOMPARE(mapNode(map, alpha).value(QStringLiteral("style")), branchStyle);
+  QCOMPARE(map->zoomFactor(), zoom);
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(canvas->hasFocus());
+  QCOMPARE(map->selectedNodeId(), alpha);
+  for (auto *item : canvas->scene()->items()) {
+    auto *label = dynamic_cast<QGraphicsTextItem *>(item);
+    if (label && (label->toPlainText() == QLatin1String("Child") ||
+                  label->toPlainText().endsWith(QLatin1String(" Child"))))
+      QVERIFY(!label->isVisible());
+  }
+  QVERIFY(map->setExpanded(alpha, true));
+
+  // The actual sibling-move shortcut uses the same approval as a canvas drag.
+  QVERIFY(map->selectNode(beta));
+  {
+    DialogAnswer accept(QMessageBox::Yes, [&] {
+      auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+      QVERIFY(box && box->defaultButton() == box->button(QMessageBox::No));
+      QCOMPARE(source->getLatestContent(), expected);
+    });
+    QTest::keyClick(canvas->viewport(), Qt::Key_Up, Qt::ControlModifier);
+    QVERIFY(accept.accepted());
+  }
+  expected = QStringLiteral("# Book\n\nIntro\n\n## Beta\n\nB body\n"
+                            "## Renamed &#35; &#91;x&#93; &#38; Ω\n\nA body\n\n"
+                            "### Child\n\nChild body\n\n");
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({beta, alpha}));
+  const auto beforeDrag = map->toJson();
+  {
+    DialogAnswer decline(QMessageBox::No);
+    QVERIFY(dragMapNodeOnto(map, alpha, beta));
+    QVERIFY(decline.accepted());
+  }
+  QCOMPARE(map->toJson(), beforeDrag);
+  QCOMPARE(source->getLatestContent(), expected);
+  {
+    DialogAnswer accept(QMessageBox::Yes);
+    QVERIFY(dragMapNodeOnto(map, alpha, beta));
+    QVERIFY(accept.accepted());
+  }
+  expected.replace(QStringLiteral("## Renamed"), QStringLiteral("### Renamed"));
+  expected.replace(QStringLiteral("### Child"), QStringLiteral("#### Child"));
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(mapChildren(map, beta), QStringList({alpha}));
+  QCOMPARE(mapChildren(map, alpha), QStringList({child}));
+  QCOMPARE(mapNode(map, alpha).value(QStringLiteral("style")), branchStyle);
+  QVERIFY(!map->moveNode(beta, child));
+  QVERIFY(!map->moveNode(QStringLiteral("root"), beta));
+  QCOMPARE(source->getLatestContent(), expected);
+
+  // Enter adds a sibling, Tab adds a child, Escape retains the new empty section.
+  QVERIFY(map->selectNode(beta));
+  canvas->setFocus();
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return);
+  const auto gamma = map->selectedNodeId();
+  QVERIFY(!gamma.isEmpty() && gamma != beta && !gamma.startsWith(QLatin1Char('h')));
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible() && draft->toPlainText().isEmpty());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Gamma"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  expected += QStringLiteral("## Gamma\n");
+  QCOMPARE(source->getLatestContent(), expected);
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return, Qt::ShiftModifier);
+  const auto beforeGamma = map->selectedNodeId();
+  QVERIFY(!beforeGamma.isEmpty() && beforeGamma != gamma);
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Before Gamma"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  expected.replace(QStringLiteral("## Gamma"), QStringLiteral("## Before Gamma\n\n## Gamma"));
+  QCOMPARE(source->getLatestContent(), expected);
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({beta, beforeGamma, gamma}));
+  QVERIFY(map->selectNode(gamma));
+  QTest::keyClick(canvas->viewport(), Qt::Key_Tab);
+  const auto delta = map->selectedNodeId();
+  QVERIFY(!delta.isEmpty() && delta != gamma);
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Delta"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  expected += QStringLiteral("\n### Delta\n");
+  QCOMPARE(source->getLatestContent(), expected);
+  QTest::keyClick(canvas->viewport(), Qt::Key_Insert);
+  const auto empty = map->selectedNodeId();
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QTest::keyClick(draft, Qt::Key_Escape);
+  QVERIFY(waitForSourceMap(source, map));
+  expected += QStringLiteral("\n#### \n");
+  QCOMPARE(source->getLatestContent(), expected);
+  QCOMPARE(mapChildren(map, delta), QStringList({empty}));
+  QVERIFY(mapNode(map, empty).value(QStringLiteral("topic")).toString().isEmpty());
+  for (const auto &entry :
+       QVector<QPair<QString, QString>>{{alpha, QStringLiteral("### Renamed")},
+                                        {child, QStringLiteral("#### Child")},
+                                        {gamma, QStringLiteral("## Gamma")},
+                                        {beforeGamma, QStringLiteral("## Before Gamma")},
+                                        {delta, QStringLiteral("### Delta")},
+                                        {empty, QStringLiteral("#### ")}}) {
+    QVERIFY(clickOutlineMapNode(map, entry.first));
+    QTRY_VERIFY(editor->getTextEdit()->textCursor().block().text().startsWith(entry.second));
+    QCOMPARE(f->current(), generated.data());
+    QVERIFY(canvas->hasFocus());
+  }
+  QVERIFY(map->updateNode(QStringLiteral("root"), QByteArray("{\"topic\":\"Renamed book\"}")));
+  QVERIFY(waitForSourceMap(source, map));
+  expected.replace(QStringLiteral("# Book"), QStringLiteral("# Renamed book"));
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(clickOutlineMapNode(map, QStringLiteral("root")));
+  QCOMPARE(editor->getTextEdit()->textCursor().blockNumber(), 0);
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return);
+  const auto rootChild = map->selectedNodeId();
+  QVERIFY(rootChild != QStringLiteral("root") && !rootChild.isEmpty());
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QTest::keyClick(draft, Qt::Key_Escape);
+  QVERIFY(waitForSourceMap(source, map));
+  expected += QStringLiteral("\n## \n");
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(mapChildren(map, QStringLiteral("root")).contains(rootChild));
+  QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Renamed book"));
+  QVERIFY(source->isModified());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("source-map.md"))), original.toUtf8());
+
+  // Real placeholder gaps must not allow a descendant to overflow Markdown's H6 limit.
+  QVERIFY(f->create(
+      QStringLiteral("levels.md"),
+      "# Levels\n\n## Branch\n\n###### Deep\n\n## Other\n\n##### Target\n\n###### Six\n"));
+  QVERIFY(f->open(QStringLiteral("levels.md"), true).isValid());
+  source = f->current();
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  const auto branch =
+      QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Branch")));
+  const auto six = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Six")));
+  const auto target =
+      QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Target")));
+  QVERIFY(clickOutlineMindMap(source));
+  map = f->current()->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  // The initial fold depth hides H6; reveal it before exercising its native shortcut.
+  QVERIFY(map->revealNode(six));
+  QVERIFY(clickOutlineMapNode(map, six));
+  QCOMPARE(map->selectedNodeId(), six);
+  const auto levelsText = source->getLatestContent();
+  const auto levelsJson = map->toJson();
+  QVERIFY(map->addNode(six, QStringLiteral("Too deep")).isEmpty());
+  QVERIFY(!map->moveNode(branch, target));
+  canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus());
+  QTest::keyClick(canvas->viewport(), Qt::Key_Insert);
+  QCOMPARE(map->toJson(), levelsJson);
+  QCOMPARE(source->getLatestContent(), levelsText);
+  QVERIFY(!map->hasPendingEdit());
+
+  // The native projection omits leading placeholder levels: both headings are
+  // root children, but a sibling of First is H4, not the document's top-level H2.
+  const QString gapOriginal = QStringLiteral("#### First\nbody\n## Peer\nbody\n");
+  QVERIFY(f->create(QStringLiteral("gap-siblings.md"), gapOriginal.toUtf8()));
+  QVERIFY(f->open(QStringLiteral("gap-siblings.md"), true).isValid());
+  source = f->current();
+  editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  const auto first = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("First")));
+  const auto peer = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Peer")));
+  QVERIFY(clickOutlineMindMap(source));
+  generated = f->current();
+  map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({first, peer}));
+  canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas && activateNativeHost(canvas->viewport()));
+  QVERIFY(map->selectNode(first));
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus());
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return);
+  const auto afterFirst = map->selectedNodeId();
+  QVERIFY(!afterFirst.isEmpty() && afterFirst != first);
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("After First"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  QString gapExpected = QStringLiteral("#### First\nbody\n\n#### After First\n\n## Peer\nbody\n");
+  QCOMPARE(source->getLatestContent(), gapExpected);
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({first, afterFirst, peer}));
+  const auto afterIndex = outlineTopicIndex(source, QStringLiteral("After First"));
+  QVERIFY(afterIndex >= 0);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[afterIndex].m_level, 4);
+  QVERIFY(clickOutlineMapNode(map, afterFirst));
+  QCOMPARE(editor->getTextEdit()->textCursor().block().text(), QStringLiteral("#### After First"));
+
+  // At the same H4/H2 boundary, adding before Peer must follow the clicked
+  // H2 sibling, not the preceding H4 node or the projection's uniform depth.
+  QVERIFY(map->selectNode(peer));
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return, Qt::ShiftModifier);
+  const auto beforePeer = map->selectedNodeId();
+  QVERIFY(!beforePeer.isEmpty() && beforePeer != peer);
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Before Peer"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  gapExpected.replace(QStringLiteral("## Peer"), QStringLiteral("## Before Peer\n\n## Peer"));
+  QCOMPARE(source->getLatestContent(), gapExpected);
+  const auto beforePeerIndex = outlineTopicIndex(source, QStringLiteral("Before Peer"));
+  QVERIFY(beforePeerIndex >= 0);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[beforePeerIndex].m_level, 2);
+  QCOMPARE(mapChildren(map, QStringLiteral("root")),
+           QStringList({first, afterFirst, beforePeer, peer}));
+
+  QVERIFY(map->selectNode(first));
+  QTest::keyClick(canvas->viewport(), Qt::Key_Return, Qt::ShiftModifier);
+  const auto beforeFirst = map->selectedNodeId();
+  QVERIFY(!beforeFirst.isEmpty() && beforeFirst != first);
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Before First"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  gapExpected.prepend(QStringLiteral("#### Before First\n\n"));
+  QCOMPARE(source->getLatestContent(), gapExpected);
+  QCOMPARE(mapChildren(map, QStringLiteral("root")),
+           QStringList({beforeFirst, first, afterFirst, beforePeer, peer}));
+  const auto beforeIndex = outlineTopicIndex(source, QStringLiteral("Before First"));
+  QVERIFY(beforeIndex >= 0);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[beforeIndex].m_level, 4);
+
+  // An ordinary root-child append has no clicked sibling: use the document's
+  // top-level H2 instead, while retaining the unmapped filename root identity.
+  QVERIFY(map->selectNode(QStringLiteral("root")));
+  QTest::keyClick(canvas->viewport(), Qt::Key_Tab);
+  const auto topLevel = map->selectedNodeId();
+  QVERIFY(!topLevel.isEmpty() && topLevel != QStringLiteral("root"));
+  draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QVERIFY(waitForSourceMap(source, map));
+  draft->insertPlainText(QStringLiteral("Top level"));
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  gapExpected += QStringLiteral("\n## Top level\n");
+  QCOMPARE(source->getLatestContent(), gapExpected);
+  const auto topIndex = outlineTopicIndex(source, QStringLiteral("Top level"));
+  QVERIFY(topIndex >= 0);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[topIndex].m_level, 2);
+  QCOMPARE(mapChildren(map, QStringLiteral("root")),
+           QStringList({beforeFirst, first, afterFirst, beforePeer, peer, topLevel}));
+  QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
+           source->getBuffer().displayName());
+  QVERIFY(!map->renameNode(QStringLiteral("root"), QStringLiteral("Still not a heading")));
+  QCOMPARE(source->getLatestContent(), gapExpected);
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("gap-siblings.md"))), gapOriginal.toUtf8());
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceSavePolicy_data() {
+  QTest::addColumn<int>("policy");
+  QTest::addColumn<bool>("numbering");
+  QTest::addColumn<bool>("saveFailure");
+  for (const auto policy :
+       {AutoSavePolicy::None, AutoSavePolicy::AutoSave, AutoSavePolicy::BackupFile}) {
+    for (bool numbering : {false, true}) {
+      const auto name = QByteArray::number(int(policy)) + (numbering ? "-numbered" : "-plain");
+      QTest::newRow(name.constData()) << int(policy) << numbering << false;
+    }
+  }
+  QTest::newRow("autosave-real-write-failure") << int(AutoSavePolicy::AutoSave) << false << true;
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceSavePolicy() {
+  QFETCH(int, policy);
+  QFETCH(bool, numbering);
+  QFETCH(bool, saveFailure);
+  const bool automatic = policy == int(AutoSavePolicy::AutoSave);
+  const bool backup = policy == int(AutoSavePolicy::BackupFile);
+  BufferCoreService coreBuffers(f->context);
+  auto &markdown = f->config->getEditorConfig().getMarkdownEditorConfig();
+  markdown.setAutoSectionNumberEnabled(numbering);
+  markdown.setAutoSectionNumberInEditModeEnabled(numbering);
+  const auto name = QStringLiteral("source-policy.md");
+  const QByteArray original("# Book\n\nIntro\n\n## Alpha\n\nA body\n\n## Beta\n\nB body\n");
+  QVERIFY(f->create(name, original));
+  const auto buffer = f->open(name);
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_hasSectionNumber, numbering);
+  // Numbering's initial normalization is not part of the preview edit under test.
+  QVERIFY(source->save());
+  QTRY_VERIFY(!f->buffers->isSaveQueueBusy(buffer.id()) && !source->isModified());
+  const auto baseline = source->getLatestContent();
+  QCOMPARE(readBytes(f->absolute(name)), baseline.toUtf8());
+  const auto alpha = QStringLiteral("h1");
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
+  QVERIFY(map && waitForSourceMap(source, map));
+  const auto previewBuffer = generated->getBuffer();
+  QVERIFY(!previewBuffer.canSave() && !previewBuffer.canReload());
+  QVERIFY(!generated->isModified() && !map->hasPendingEdit());
+
+  auto *timer = f->buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  const auto interval = timer->interval();
+  timer->setInterval(60 * 60 * 1000);
+  f->buffers->setAutoSavePolicy(static_cast<AutoSavePolicy>(policy));
+  const auto restorePolicy = qScopeGuard([&] {
+    f->buffers->setAutoSavePolicy(AutoSavePolicy::None);
+    timer->setInterval(interval);
+  });
+  const auto tick = [&] {
+    return QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection);
+  };
+  QSignalSpy errors(f->buffers->asQObject(), SIGNAL(saveError(QString, QString)));
+  QStringList sourceStates{baseline};
+  QVector<QByteArray> mapStates{map->toJson()};
+  QVector<int> undoSteps{editor->document()->availableUndoSteps()};
+  QPointer<QPlainTextEdit> draft(beginMapTopic(map, alpha));
+  QVERIFY(draft);
+  const auto discardTestDraft = qScopeGuard([&] {
+    if (map)
+      map->discardActiveEdit();
+  });
+  for (const auto &topic :
+       {QStringLiteral("Inline # [x] & title"), QStringLiteral("Second # [x] & title")}) {
+    draft->selectAll();
+    // Never press Enter: the ordinary timer must capture this live native input.
+    QTest::keyClicks(draft, topic);
+    QVERIFY(draft->hasFocus() && map->hasPendingEdit() && generated->isModified());
+    QCOMPARE(source->getLatestContent(), sourceStates.last());
+    if (sourceStates.size() == 1)
+      QVERIFY(!source->isModified());
+    const auto caret = draft->textCursor().position();
+    const auto localUndoSteps = draft->document()->availableUndoSteps();
+    QVERIFY(localUndoSteps > 0);
+    generated->handleEditorConfigChange();
+    QVERIFY(draft->isVisible() && draft->hasFocus() && map->hasPendingEdit());
+    QCOMPARE(draft->toPlainText(), topic);
+    QCOMPARE(draft->textCursor().position(), caret);
+    QVERIFY(tick());
+    QVERIFY(!map->hasPendingEdit() && !generated->isModified());
+    QVERIFY(source->isModified());
+    QVERIFY(waitForSourceMap(source, map));
+    QString expected = baseline;
+    auto encoded = topic;
+    encoded.replace(QStringLiteral("# [x] &"), QStringLiteral("&#35; &#91;x&#93; &#38;"));
+    expected.replace(QStringLiteral("Alpha"), encoded);
+    QCOMPARE(source->getLatestContent(), expected);
+    const auto published = mapNode(map, alpha).value(QStringLiteral("topic")).toString();
+    QVERIFY(hasOutlineTopic(source, published));
+    QVERIFY(published.endsWith(topic));
+    QCOMPARE(published != topic, numbering);
+    // Authoritative numbering changes the map topic, never the active literal input.
+    QVERIFY(draft && draft->isVisible() && draft->hasFocus());
+    QCOMPARE(draft->toPlainText(), topic);
+    QCOMPARE(draft->textCursor().position(), caret);
+    QCOMPARE(draft->document()->availableUndoSteps(), localUndoSteps);
+    QVERIFY(!map->hasPendingEdit() && !generated->isModified());
+    QCOMPARE(f->current(), generated.data());
+    const auto generation = source->outlineSourceSnapshot().m_contentGeneration;
+    const auto settledUndoSteps = editor->document()->availableUndoSteps();
+    const auto settledJson = map->toJson();
+    QSignalSpy duplicateEdits(map, &m3::qt::MindMapEditor::documentChanged);
+    // Source and generated cache occupy an unordered dirty set. A second tick
+    // persists the source even when the first tick visited it before this draft.
+    QTRY_VERIFY(!f->buffers->isSaveQueueBusy(buffer.id()));
+    QVERIFY(tick());
+    QTRY_VERIFY(!f->buffers->isSaveQueueBusy(buffer.id()) && source->isModified() == !automatic);
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->outlineSourceSnapshot().m_contentGeneration, generation);
+    QCOMPARE(editor->document()->availableUndoSteps(), settledUndoSteps);
+    QCOMPARE(map->toJson(), settledJson);
+    QVERIFY(duplicateEdits.isEmpty());
+    QVERIFY(!generated->isModified() && !map->hasPendingEdit());
+    QCOMPARE(QJsonDocument::fromJson(previewBuffer.getContentRaw()),
+             QJsonDocument::fromJson(settledJson));
+    QCOMPARE(readBytes(f->absolute(name)), automatic ? expected.toUtf8() : baseline.toUtf8());
+    QCOMPARE(source->isModified(), !automatic);
+    if (automatic) {
+      QCOMPARE(f->buffers->currentRevision(buffer.id()),
+               f->buffers->lastSavedRevision(buffer.id()));
+      QVERIFY(!f->buffers->isDirty(buffer.id()));
+    } else {
+      QVERIFY(f->buffers->currentRevision(buffer.id()) >
+              f->buffers->lastSavedRevision(buffer.id()));
+      QVERIFY(buffer.isModified());
+      if (backup) {
+        const auto backupPath = coreBuffers.getBackupPath(buffer.id());
+        QVERIFY(!backupPath.isEmpty());
+        QVERIFY(readBytes(backupPath).contains(expected.toUtf8()));
+      }
+    }
+    // Local draft undo survives capture/reconciliation, and is not source undo.
+    if (numbering) {
+      QTest::keyClick(draft, Qt::Key_Z, Qt::ControlModifier);
+      QVERIFY(draft->toPlainText() != topic);
+      QVERIFY(map->hasPendingEdit() && generated->isModified());
+      QCOMPARE(source->getLatestContent(), expected);
+      QTest::keyClick(draft, Qt::Key_Y, Qt::ControlModifier);
+      QCOMPARE(draft->toPlainText(), topic);
+      QCOMPARE(draft->textCursor().position(), caret);
+      QVERIFY(!map->hasPendingEdit() && !generated->isModified());
+      QCOMPARE(source->outlineSourceSnapshot().m_contentGeneration, generation);
+    }
+    sourceStates.append(expected);
+    mapStates.append(settledJson);
+    undoSteps.append(settledUndoSteps);
+  }
+  QVERIFY(errors.isEmpty());
+  // End the already-accepted editor without creating a third source transaction.
+  QVERIFY(map->commitActiveEdit());
+  for (int i = sourceStates.size() - 2; i >= 0; --i) {
+    QVERIFY(map->canUndo() && map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(), sourceStates[i]);
+    QCOMPARE(map->toJson(), mapStates[i]);
+    QCOMPARE(editor->document()->availableUndoSteps(), undoSteps[i]);
+  }
+  QVERIFY(!map->canUndo());
+  for (int i = 1; i < sourceStates.size(); ++i) {
+    QVERIFY(map->canRedo() && map->redo());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(), sourceStates[i]);
+    QCOMPARE(map->toJson(), mapStates[i]);
+    QCOMPARE(editor->document()->availableUndoSteps(), undoSteps[i]);
+  }
+  QVERIFY(!map->canRedo());
+  QVERIFY(tick());
+  QTRY_VERIFY(!f->buffers->isSaveQueueBusy(buffer.id()) && source->isModified() == !automatic);
+  const auto finalSource = sourceStates.last();
+  const auto finalTopic = mapNode(map, alpha).value(QStringLiteral("topic")).toString();
+  {
+    DialogAnswer unexpected(QMessageBox::Cancel);
+    QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+    QVERIFY(unexpected.accepted(0));
+  }
+  QTRY_VERIFY(generated.isNull());
+  QTRY_VERIFY(!f->buffers->getBufferHandle(previewBuffer.id()).isValid());
+  QVERIFY(source);
+  QCOMPARE(source->getLatestContent(), finalSource);
+  QCOMPARE(source->isModified(), !automatic);
+  QCOMPARE(readBytes(f->absolute(name)), automatic ? finalSource.toUtf8() : baseline.toUtf8());
+  if (backup)
+    QVERIFY(readBytes(coreBuffers.getBackupPath(buffer.id())).contains(finalSource.toUtf8()));
+  QVERIFY(clickOutlineMindMap(source));
+  generated = f->current();
+  QVERIFY(generated->getBuffer().id() != previewBuffer.id());
+  map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  QCOMPARE(mapNode(map, alpha).value(QStringLiteral("topic")).toString(), finalTopic);
+  QVERIFY(!generated->isModified() && !map->canUndo());
+
+  if (saveFailure) {
+    QVERIFY(map->renameNode(alpha, QStringLiteral("Real failed save")));
+    QVERIFY(waitForSourceMap(source, map));
+    const auto unsaved = source->getLatestContent();
+    const auto path = f->absolute(name);
+    const auto heldPath = path + QStringLiteral(".test-held");
+    bool moved = false;
+    bool obstructed = false;
+    const auto restoreFile = qScopeGuard([&] {
+      if (obstructed)
+        QDir().rmdir(path);
+      if (moved)
+        QFile::rename(heldPath, path);
+    });
+    const auto savedRevision = f->buffers->lastSavedRevision(buffer.id());
+    {
+      // Queue a genuine disk save, then obstruct its destination while the real
+      // notebook I/O gate keeps the worker from racing the filesystem change.
+      NotebookIoGate::ScopedTryLock gate(*f->gate, f->notebook, 1000);
+      QVERIFY(gate.isLocked());
+      QVERIFY(tick());
+      QVERIFY(f->buffers->isSaveQueueBusy(buffer.id()));
+      QVERIFY(source->isModified() && !generated->isModified());
+      moved = QFile::rename(path, heldPath);
+      QVERIFY(moved);
+      obstructed = QDir().mkdir(path);
+      QVERIFY(obstructed);
+    }
+    QTRY_VERIFY_WITH_TIMEOUT(!f->buffers->isSaveQueueBusy(buffer.id()) && !errors.isEmpty(), 30000);
+    QCOMPARE(errors.last().at(0).toString(), buffer.id());
+    QVERIFY(!errors.last().at(1).toString().isEmpty());
+    QVERIFY(source->isModified() && f->buffers->isDirty(buffer.id()));
+    QVERIFY(!generated->isModified());
+    QCOMPARE(source->getLatestContent(), unsaved);
+    QCOMPARE(f->buffers->lastSavedRevision(buffer.id()), savedRevision);
+    QCOMPARE(readBytes(heldPath), finalSource.toUtf8());
+    QVERIFY(QDir().rmdir(path));
+    obstructed = false;
+    QVERIFY(QFile::rename(heldPath, path));
+    moved = false;
+    DialogAnswer unexpected(QMessageBox::Cancel);
+    QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+    QVERIFY(unexpected.accepted(0));
+    QTRY_VERIFY(generated.isNull());
+    QCOMPARE(source->getLatestContent(), unsaved);
+    QVERIFY(source->isModified());
+    QCOMPARE(readBytes(path), finalSource.toUtf8());
+  }
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceClose_data() {
+  QTest::addColumn<QString>("operation");
+  QTest::addColumn<bool>("nested");
+  for (const auto *operation : {"preview", "preview-forced", "source", "host", "reject-preview",
+                                "reject-source", "reject-host", "reject-lock"}) {
+    for (bool nested : {false, true}) {
+      if (!nested && QByteArray(operation).contains("host"))
+        continue;
+      const auto name = QByteArray(operation) + (nested ? "-hidden-sibling" : "-main");
+      QTest::newRow(name.constData()) << QString::fromLatin1(operation) << nested;
+    }
+  }
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceClose() {
+  QFETCH(QString, operation);
+  QFETCH(bool, nested);
+  const bool rejected = operation.startsWith(QLatin1String("reject-"));
+  const bool protectedSource = operation == QLatin1String("reject-lock");
+  f->config->getEditorConfig().getMarkdownEditorConfig().setAutoSectionNumberEnabled(false);
+  const QByteArray original("# Book\n\n## Alpha\n\nA body\n\n## Beta\n");
+  const auto name = QStringLiteral("source-close.md");
+  QString secret;
+  if (protectedSource) {
+    secret = f->createProtected(name, original, true);
+    QVERIFY(!secret.isEmpty());
+  } else {
+    QVERIFY(f->create(name, original));
+  }
+  QPointer<ViewWindow2> outer;
+  Buffer2 buffer;
+  if (nested) {
+    QVERIFY(f->create(QStringLiteral("close-owner.txt"), "Outer preview owner"));
+    QVERIFY(f->open(QStringLiteral("close-owner.txt")).isValid());
+    outer = f->current();
+    if (protectedSource) {
+      auto settings = outer->getLinkOpenSettings();
+      settings.m_mode = ViewWindowMode::Edit;
+      buffer = f->buffers->openBufferByNodeId(secret, settings);
+    } else {
+      buffer = f->preview(outer, f->node(name));
+    }
+  } else {
+    buffer = protectedSource ? f->openProtected(secret) : f->open(name);
+  }
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceWorkspace = f->workspace();
+  const auto sourceId = source->getViewWindowId();
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
+  QVERIFY(map && waitForSourceMap(source, map));
+  const auto previewBuffer = generated->getBuffer();
+  const auto generatedId = generated->getViewWindowId();
+  if (nested) {
+    QCOMPARE(f->workspace(), sourceWorkspace);
+    QVERIFY(!source->isVisible());
+  }
+  auto *timer = f->buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  const auto interval = timer->interval();
+  timer->setInterval(60 * 60 * 1000);
+  const auto restoreTimer = qScopeGuard([&] { timer->setInterval(interval); });
+  QVERIFY(map->renameNode(QStringLiteral("h1"), QStringLiteral("Accepted before close")));
+  QVERIFY(waitForSourceMap(source, map));
+  const auto acceptedSource = source->getLatestContent();
+  const auto acceptedJson = map->toJson();
+  QVERIFY(source->isModified() && !generated->isModified());
+  QPointer<QPlainTextEdit> draft(beginMapTopic(map, QStringLiteral("h1")));
+  QVERIFY(draft);
+  draft->selectAll();
+  const auto draftText =
+      rejected ? QStringLiteral("Unapplied\nmultiline draft") : QStringLiteral("Captured on close");
+  if (rejected)
+    draft->insertPlainText(draftText);
+  else
+    QTest::keyClicks(draft, draftText);
+  QVERIFY(map->hasPendingEdit() && generated->isModified());
+  QCOMPARE(source->getLatestContent(), acceptedSource);
+  const auto discardTestDraft = qScopeGuard([&] {
+    if (map)
+      map->discardActiveEdit();
+  });
+  if (rejected) {
+    const auto caret = draft->textCursor().position();
+    {
+      DialogAnswer unexpected(QMessageBox::Cancel);
+      QVERIFY(!f->controller()->closeViewWindow(generatedId, true));
+      QVERIFY(unexpected.accepted(0));
+    }
+    QVERIFY(source && generated && map && draft && draft->isVisible());
+    QVERIFY(map->hasPendingEdit() && generated->isModified());
+    QCOMPARE(draft->toPlainText(), draftText);
+    QCOMPARE(draft->textCursor().position(), caret);
+    QCOMPARE(map->toJson(), acceptedJson);
+    bool onlyDraftConsent = false;
+    QString error;
+    {
+      DialogAnswer cancel(QMessageBox::Cancel, [&] {
+        auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+        onlyDraftConsent = box && !box->button(QMessageBox::Save);
+      });
+      if (operation == QLatin1String("reject-lock"))
+        QVERIFY(!f->controller()->lockAllProtectedNotes(&error));
+      else if (operation == QLatin1String("reject-source"))
+        QVERIFY(!f->controller()->closeViewWindow(sourceId, false));
+      else if (operation == QLatin1String("reject-host"))
+        QVERIFY(!f->controller()->closePreviewWorkspace(sourceWorkspace));
+      else
+        QVERIFY(!f->controller()->closeViewWindow(generatedId, false));
+      QVERIFY(cancel.accepted());
+    }
+    QVERIFY(onlyDraftConsent && source && generated && map && draft && draft->isVisible());
+    QVERIFY(source->isEnabled() && !f->buffers->isProtectedLocking());
+    QVERIFY(generated->isModified() && map->hasPendingEdit());
+    QCOMPARE(draft->toPlainText(), draftText);
+    QCOMPARE(draft->textCursor().position(), caret);
+    QCOMPARE(source->getLatestContent(), acceptedSource);
+    QCOMPARE(map->toJson(), acceptedJson);
+    QVERIFY(f->buffers->getBufferHandle(previewBuffer.id()).isValid());
+    {
+      DialogAnswer discard(QMessageBox::Discard);
+      QVERIFY(f->controller()->closeViewWindow(generatedId, false));
+      QVERIFY(discard.accepted());
+    }
+    QTRY_VERIFY(generated.isNull());
+    QTRY_VERIFY(!f->buffers->getBufferHandle(previewBuffer.id()).isValid());
+    QVERIFY(source && source->isModified());
+    QCOMPARE(source->getLatestContent(), acceptedSource);
+    QVERIFY(!source->getLatestContent().contains(QStringLiteral("Unapplied")));
+    if (protectedSource) {
+      QVERIFY(source->save());
+      QVERIFY(
+          !readBytes(f->absolute(buffer.nodeId().relativePath)).contains("Accepted before close"));
+      DialogAnswer unexpected(QMessageBox::Cancel);
+      QVERIFY2(f->controller()->lockAllProtectedNotes(&error), qPrintable(error));
+      QVERIFY(unexpected.accepted(0));
+      QTRY_VERIFY(source.isNull());
+      QByteArray password("reuse-test-password");
+      QCOMPARE(f->controller()->unlockNoteEncryption(f->notebook, buffer.nodeId().relativePath,
+                                                     password),
+               VXCORE_OK);
+      QVERIFY(f->openProtected(secret, true).isValid());
+      QCOMPARE(f->current()->getLatestContent(), acceptedSource);
+    } else {
+      QCOMPARE(readBytes(f->absolute(name)), original);
+      // The surviving source still owns ordinary Save/Discard/Cancel consent.
+      DialogAnswer cancel(QMessageBox::Cancel);
+      QVERIFY(!f->controller()->closeViewWindow(sourceId, false));
+      QVERIFY(cancel.accepted());
+      QVERIFY(source && source->isModified());
+    }
+    return;
+  }
+
+  const auto expected = QString::fromUtf8(original).replace(QStringLiteral("Alpha"), draftText);
+  if (operation == QLatin1String("source") || operation == QLatin1String("host")) {
+    bool committedBeforeSourceConsent = false;
+    DialogAnswer save(QMessageBox::Save, [&] {
+      committedBeforeSourceConsent = source && source->getLatestContent() == expected;
+    });
+    if (operation == QLatin1String("host"))
+      QVERIFY(f->controller()->closePreviewWorkspace(sourceWorkspace));
+    else
+      QVERIFY(f->controller()->closeViewWindow(sourceId, false));
+    QVERIFY(save.accepted());
+    QVERIFY(committedBeforeSourceConsent);
+    QTRY_VERIFY(source.isNull());
+    QTRY_VERIFY(generated.isNull());
+    QCOMPARE(readBytes(f->absolute(name)), expected.toUtf8());
+    QVERIFY(!nested || outer);
+  } else {
+    DialogAnswer unexpected(QMessageBox::Cancel);
+    QVERIFY(
+        f->controller()->closeViewWindow(generatedId, operation.endsWith(QLatin1String("forced"))));
+    QVERIFY(unexpected.accepted(0));
+    QTRY_VERIFY(generated.isNull());
+    QVERIFY(source && source->isModified());
+    QCOMPARE(source->getLatestContent(), expected);
+    QCOMPARE(readBytes(f->absolute(name)), original);
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+    QVERIFY(clickOutlineMindMap(source));
+    generated = f->current();
+    map = generated->findChild<MindMapEditor *>();
+    QVERIFY(map && waitForSourceMap(source, map));
+    QCOMPARE(mapNode(map, QStringLiteral("h1")).value(QStringLiteral("topic")).toString(),
+             draftText);
+    QVERIFY(!generated->isModified());
+  }
+  QTRY_VERIFY(!f->buffers->getBufferHandle(previewBuffer.id()).isValid());
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceGuards_data() {
+  QTest::addColumn<QString>("guard");
+  for (const auto *name : {"captured-read",
+                           "live-read",
+                           "readonly",
+                           "conversion",
+                           "missing-writer",
+                           "failing-writer",
+                           "conflicting-writer",
+                           "external-heading",
+                           "source-replacement",
+                           "source-close",
+                           "preview-close",
+                           "multiple-previews",
+                           "approval",
+                           "protected-approval",
+                           "approval-revision",
+                           "approval-writer",
+                           "imported-typst",
+                           "typst-compile-failure",
+                           "typst-hidden-boundary",
+                           "pending-close-cancel",
+                           "pending-close-external"})
+    QTest::newRow(name) << QString::fromLatin1(name);
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceGuards() {
+  QFETCH(QString, guard);
+  f->config->getEditorConfig().getMarkdownEditorConfig().setAutoSectionNumberEnabled(false);
+  const QString original = QStringLiteral("# Book\n\n## Alpha\n\nBody\n\n## Beta\n");
+  const bool protectedSource = guard == QLatin1String("protected-approval");
+  const bool imported = guard == QLatin1String("imported-typst");
+  Buffer2 buffer;
+  if (protectedSource) {
+    const auto id = f->createProtected(QStringLiteral("guard.md"), original.toUtf8(), true);
+    QVERIFY(!id.isEmpty());
+    buffer = f->openProtected(id);
+  } else if (imported) {
+    QVERIFY(f->create(QStringLiteral("guard-chapter.typst"), "= Book\n\n== Alpha\n\n== Beta\n"));
+    QVERIFY(f->create(QStringLiteral("guard.typst"), "#include \"guard-chapter.typst\"\n"));
+    buffer = f->open(QStringLiteral("guard.typst"));
+  } else if (guard == QLatin1String("typst-compile-failure")) {
+    QVERIFY(f->create(QStringLiteral("guard.typst"), "= Alpha\n#let value = 42\n= Beta\n#value\n"));
+    buffer = f->open(QStringLiteral("guard.typst"));
+  } else if (guard == QLatin1String("typst-hidden-boundary")) {
+    QVERIFY(f->create(QStringLiteral("guard.typst"),
+                      "#show heading.where(body: [Hidden]): set heading(outlined: false)\n"
+                      "= Alpha\nalpha\n= Hidden\nhidden\n= Beta\nbeta\n"));
+    buffer = f->open(QStringLiteral("guard.typst"));
+  } else {
+    QVERIFY(f->create(QStringLiteral("guard.md"), original.toUtf8()));
+    buffer = f->open(QStringLiteral("guard.md"));
+  }
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto main = f->workspace();
+  if (guard == QLatin1String("captured-read"))
+    source->setMode(ViewWindowMode::Read);
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 60000);
+  if (guard != QLatin1String("captured-read") && !imported)
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  const auto alpha = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Alpha")));
+  const auto beta = QStringLiteral("h%1").arg(outlineTopicIndex(source, QStringLiteral("Beta")));
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
+  QVERIFY(map);
+  const auto previewBuffer = generated->getBuffer();
+  const auto preview = f->workspace();
+  const auto json = map->toJson();
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QString expected = source->getLatestContent();
+  const auto writerKey = reinterpret_cast<quintptr>(source.data());
+  const auto restoreWriter = qScopeGuard([&] {
+    if (source && source->getBuffer().id() == buffer.id())
+      f->buffers->registerActiveWriter(buffer.id(), writerKey, [source] {
+        return source ? source->getLatestContent() : QString();
+      });
+  });
+
+  if (guard == QLatin1String("typst-hidden-boundary")) {
+    QVERIFY(!map->isReadOnly() && waitForSourceMap(source, map));
+    QVERIFY(!hasOutlineTopic(source, QStringLiteral("Hidden")));
+    // The full source roster, not the visible Alpha/Beta siblings, owns this boundary.
+    QVERIFY(map->addNode(alpha, QStringLiteral("Wrong parent")).isEmpty());
+    QCOMPARE(source->getLatestContent(), expected);
+    QCOMPARE(map->toJson(), json);
+    const auto added = map->addNode(QStringLiteral("root"), QStringLiteral("Visible sibling"), 1);
+    QVERIFY(!added.isEmpty());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(),
+             QStringLiteral(
+                 "#show heading.where(body: [Hidden]): set heading(outlined: false)\n"
+                 "= Alpha\nalpha\n= Hidden\nhidden\n\n= #\"Visible sibling\"\n\n= Beta\nbeta\n"));
+    QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({alpha, added, beta}));
+    QVERIFY(clickOutlineMapNode(map, added));
+    auto *typst = source->findChild<vte::VTypstEditor *>();
+    QVERIFY(typst);
+    QVERIFY(typst->getTextEditor()->getTextEdit()->textCursor().block().text().contains(
+        QStringLiteral("Visible sibling")));
+    QVERIFY(map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(), expected);
+    QCOMPARE(map->toJson(), json);
+    QVERIFY(map->redo());
+    QVERIFY(waitForSourceMap(source, map));
+    QVERIFY(map->renameNode(added, QStringLiteral("Renamed sibling")));
+    QVERIFY(waitForSourceMap(source, map));
+    QVERIFY(source->getLatestContent().contains(QStringLiteral("= Hidden\nhidden\n")));
+    return;
+  }
+
+  if (guard == QLatin1String("typst-compile-failure")) {
+    auto *typst = source->findChild<vte::VTypstEditor *>();
+    QVERIFY(typst && !map->isReadOnly());
+    bool invalidationBeforeCompiling = false;
+    bool readyBeforePublication = false;
+    QObject observers;
+    connect(typst, &vte::VTypstEditor::headingsUpdated, &observers,
+            [&](const QVector<vte::TypstHeadingInfo> &headings) {
+              if (headings.isEmpty() && source->isOutlineSourceEditBusy()) {
+                invalidationBeforeCompiling |=
+                    typst->compileStatus() == vte::VTypstEditor::CompileStatus::Ready;
+                QVERIFY(map->isSourceEditBusy());
+                QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+              }
+            });
+    connect(typst, &vte::VTypstEditor::compileStatusChanged, &observers,
+            [&](vte::VTypstEditor::CompileStatus status, const QString &) {
+              if (status == vte::VTypstEditor::CompileStatus::Ready) {
+                readyBeforePublication = true;
+                QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+                QVERIFY(!map->renameNode(alpha, QStringLiteral("Before paired publication")));
+              }
+            });
+    {
+      DialogAnswer yes(QMessageBox::Yes);
+      QVERIFY(map->moveNode(beta, QStringLiteral("root"), 0));
+      QVERIFY(yes.accepted());
+    }
+    QVERIFY(invalidationBeforeCompiling);
+    const auto broken = QStringLiteral("= Beta\n#value\n= Alpha\n#let value = 42\n");
+    QCOMPARE(source->getLatestContent(), broken);
+    QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Error,
+                              60000);
+    const auto brokenMap = map->toJson();
+    QVERIFY(!map->renameNode(alpha, QStringLiteral("After failed compilation")));
+    QCOMPARE(source->getLatestContent(), broken);
+    QCOMPARE(map->toJson(), brokenMap);
+    QVERIFY(map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QVERIFY(readyBeforePublication);
+    QCOMPARE(source->getLatestContent(), expected);
+    QCOMPARE(map->toJson(), json);
+    QVERIFY(map->redo());
+    QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Error,
+                              60000);
+    QCOMPARE(source->getLatestContent(), broken);
+    QVERIFY(map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QVERIFY(map->renameNode(alpha, QStringLiteral("Literal \"quote\" \\ Ω")));
+    QVERIFY(waitForSourceMap(source, map));
+    QVERIFY(hasOutlineTopic(source, QStringLiteral("Literal \"quote\" \\ Ω")));
+    QVERIFY(source->getLatestContent().startsWith(
+        QStringLiteral("= #\"Literal \\\"quote\\\" \\\\ Ω\"\n")));
+    return;
+  }
+
+  if (guard.startsWith(QLatin1String("pending-close-"))) {
+    QVERIFY(editor);
+    QVERIFY(map->renameNode(alpha, QStringLiteral("Published during close consent")));
+    QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+    const auto acceptedSource = source->getLatestContent();
+    const auto acceptedJson = map->toJson();
+    QVERIFY(map->selectNode(alpha));
+    map->commandAction(QStringLiteral("editTopic"))->trigger();
+    auto *canvas = map->findChild<QGraphicsView *>();
+    QVERIFY(canvas);
+    QPointer<QPlainTextEdit> draft(
+        canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor")));
+    QVERIFY(draft && draft->isVisible());
+    draft->selectAll();
+    const auto unapplied = QStringLiteral("Unapplied\nmultiline draft");
+    draft->insertPlainText(unapplied);
+    QVERIFY(map->hasPendingEdit());
+    const auto discardTestDraft = qScopeGuard([map] {
+      if (map)
+        map->discardActiveEdit();
+    });
+    const bool external = guard == QLatin1String("pending-close-external");
+    QString expectedAfterConsent = acceptedSource;
+    {
+      DialogAnswer cancel(QMessageBox::Cancel, [&] {
+        // The source receipt really settles while the controller defers its
+        // reconciliation for close consent, not merely while helper flags idle.
+        QVERIFY(QTest::qWaitFor(
+            [&] {
+              return source->outlineSourceSnapshot().m_revision >= 0 &&
+                     hasOutlineTopic(source, QStringLiteral("Published during close consent"));
+            },
+            30000));
+        if (external) {
+          const auto settledGeneration = source->outlineSourceSnapshot().m_contentGeneration;
+          QTextCursor cursor(editor->document());
+          cursor.beginEditBlock();
+          cursor.insertText(QStringLiteral("Independent preamble Ω\n\n"));
+          cursor.endEditBlock();
+          expectedAfterConsent.prepend(QStringLiteral("Independent preamble Ω\n\n"));
+          QVERIFY(QTest::qWaitFor(
+              [&] {
+                const auto snapshot = source->outlineSourceSnapshot();
+                return snapshot.m_revision >= 0 && snapshot.m_contentGeneration > settledGeneration;
+              },
+              30000));
+        }
+      });
+      QVERIFY(!f->controller()->closeViewWindow(source->getViewWindowId(), false));
+      QVERIFY(cancel.accepted());
+    }
+    QVERIFY(source && generated && map && draft && draft->isVisible());
+    QCOMPARE(draft->toPlainText(), unapplied);
+    QCOMPARE(source->getLatestContent(), expectedAfterConsent);
+    // Remove only the test-owned unapplied draft: history must reject because
+    // provenance is stale, not because this multiline draft still blocks it.
+    QVERIFY(map->discardActiveEdit());
+    QVERIFY(!map->hasPendingEdit());
+    if (external) {
+      const auto externalUndoSteps = editor->document()->availableUndoSteps();
+      QVERIFY(!map->undo());
+      QVERIFY(!map->redo());
+      QVERIFY(!map->renameNode(alpha, QStringLiteral("Cannot reauthorize moved cursors")));
+      QCOMPARE(editor->document()->availableUndoSteps(), externalUndoSteps);
+      QCOMPARE(source->getLatestContent(), expectedAfterConsent);
+      QCOMPARE(map->toJson(), acceptedJson);
+    } else {
+      QVERIFY(waitForSourceMap(source, map));
+      QVERIFY(map->renameNode(alpha, QStringLiteral("After cancelled close")));
+      QVERIFY(waitForSourceMap(source, map));
+      QVERIFY(map->undo());
+      QVERIFY(waitForSourceMap(source, map));
+      QCOMPARE(source->getLatestContent(), acceptedSource);
+    }
+    return;
+  }
+
+  if (guard.contains(QLatin1String("approval"))) {
+    QVERIFY(editor);
+    bool observed = false;
+    bool accepted = false;
+    {
+      DialogAnswer yes(QMessageBox::Yes, [&] {
+        observed = true;
+        QVERIFY(map->isSourceEditBusy());
+        QVERIFY(!map->renameNode(alpha, QStringLiteral("Nested rename")));
+        QVERIFY(map->addNode(alpha, QStringLiteral("Nested add")).isEmpty());
+        QVERIFY(!map->loadJson(json));
+        QVERIFY(!map->undo());
+        QVERIFY(!f->controller()->closeViewWindow(source->getViewWindowId(), false));
+        QVERIFY(!f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+        QVERIFY(!source->reload());
+        if (protectedSource) {
+          QString error;
+          QVERIFY(!f->controller()->lockAllProtectedNotes(&error));
+          QVERIFY(!error.isEmpty() && !f->buffers->isProtectedLocking());
+          QVERIFY(source->isEnabled());
+        }
+        // Exercise capture, rather than a clean-cache no-op, in this nested event loop.
+        f->buffers->markDirty(previewBuffer.id());
+        QVERIFY(f->buffers->syncNow(previewBuffer.id()));
+        QCOMPARE(QJsonDocument::fromJson(previewBuffer.getContentRaw()),
+                 QJsonDocument::fromJson(json));
+        QCOMPARE(source->getLatestContent(), expected);
+        QCOMPARE(map->toJson(), json);
+        if (guard == QLatin1String("approval-revision")) {
+          appendDraft(editor->getTextEdit(), QStringLiteral("\nIndependent body edit\n"));
+          expected = source->getLatestContent();
+        } else if (guard == QLatin1String("approval-writer")) {
+          f->buffers->unregisterActiveWriter(buffer.id(), writerKey);
+        }
+      });
+      accepted = map->moveNode(beta, QStringLiteral("root"), 0);
+      QVERIFY(yes.accepted());
+    }
+    QVERIFY(observed && source && generated && map);
+    QVERIFY2(accepted == (guard == QLatin1String("approval") || protectedSource),
+             qPrintable(QStringLiteral("accepted=%1 enabled=%2 readonly=%3 error=%4")
+                            .arg(accepted)
+                            .arg(map->isEnabled())
+                            .arg(map->isReadOnly())
+                            .arg(map->lastError())));
+    if (accepted) {
+      QVERIFY(waitForSourceMap(source, map));
+      QVERIFY(source->getLatestContent().indexOf(QStringLiteral("## Beta")) <
+              source->getLatestContent().indexOf(QStringLiteral("## Alpha")));
+      QVERIFY(map->renameNode(alpha, QStringLiteral("After approval")));
+      QVERIFY(waitForSourceMap(source, map));
+      QVERIFY(map->undo());
+      QVERIFY(waitForSourceMap(source, map));
+    } else {
+      QCOMPARE(map->toJson(), json);
+      QCOMPARE(source->getLatestContent(), expected);
+    }
+    return;
+  }
+
+  if (guard == QLatin1String("multiple-previews")) {
+    // Clicking outside a live preview intentionally dismisses it. Admit the second
+    // projection through the same controller entry point without dismissing the first.
+    const auto intent = source->getPreviewOpenSettings();
+    const auto provider = source->getOutlineProvider();
+    QString error;
+    QVERIFY2(f->controller()->openOutlineMindMapPreview(
+                 buffer, *provider->getOutline(), source->getViewWindowId(),
+                 intent.m_previewSourceGeneration, source->getMode(),
+                 provider->getCurrentHeadingIndex(), &error),
+             qPrintable(error));
+    QTRY_VERIFY(f->current() && f->current() != generated &&
+                f->current()->findChild<MindMapEditor *>());
+    QPointer<ViewWindow2> other(f->current());
+    auto *otherMap = other->findChild<MindMapEditor *>();
+    QVERIFY(other != generated && otherMap && waitForSourceMap(source, otherMap));
+    QCOMPARE(f->area->previewWorkspaceForWindow(source->getViewWindowId()), preview);
+    QCOMPARE(f->workspace(), preview);
+    QCOMPARE(f->order(preview), QStringList({previewBuffer.id(), other->getBuffer().id()}));
+    QVERIFY(generated && map && other->getBuffer().id() != previewBuffer.id());
+    const auto otherJson = otherMap->toJson();
+    f->area->setCurrentBuffer(preview, previewBuffer.id(), true);
+    QTRY_COMPARE(f->current(), generated.data());
+    QVERIFY(map->renameNode(alpha, QStringLiteral("First preview owns this change")));
+    QVERIFY(waitForSourceMap(source, map));
+    expected = source->getLatestContent();
+    QVERIFY(!otherMap->renameNode(alpha, QStringLiteral("Stale second preview")));
+    QVERIFY(otherMap->addNode(alpha, QStringLiteral("Stale addition")).isEmpty());
+    QVERIFY(!otherMap->undo());
+    QCOMPARE(otherMap->toJson(), otherJson);
+    QCOMPARE(source->getLatestContent(), expected);
+    QVERIFY(map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(), original);
+    // Returning to the original bytes does not revive the other binding.
+    QVERIFY(!otherMap->renameNode(alpha, QStringLiteral("Still stale")));
+    return;
+  }
+
+  if (guard == QLatin1String("source-replacement") || guard == QLatin1String("source-close") ||
+      guard == QLatin1String("preview-close")) {
+    if (guard == QLatin1String("source-replacement")) {
+      QVERIFY(f->create(QStringLiteral("guard-replacement.md"), "# Replacement\n"));
+      f->controller()->focusWindow(main, buffer.id());
+      f->reuse();
+      const auto replacement = f->open(QStringLiteral("guard-replacement.md"));
+      QVERIFY(replacement.isValid());
+      QCOMPARE(source->getBuffer().id(), replacement.id());
+      expected = source->getLatestContent();
+    } else {
+      QVERIFY(f->controller()->closeViewWindow(guard == QLatin1String("source-close")
+                                                   ? source->getViewWindowId()
+                                                   : generated->getViewWindowId(),
+                                               false));
+    }
+    // Check during deferred QObject teardown as well as after the host retires.
+    if (map)
+      QVERIFY(!map->renameNode(alpha, QStringLiteral("Retired callback")));
+    QTRY_VERIFY(generated.isNull());
+    QVERIFY(map.isNull());
+    QString error;
+    const m3::qt::SourceEdit edit{
+        m3::qt::SourceEdit::Kind::RenameNode, alpha, {}, -1, QStringLiteral("Retired provenance")};
+    QVERIFY(!f->controller()->applyOutlineMindMapEdit(previewBuffer, edit, &error));
+    if (source)
+      QCOMPARE(source->getLatestContent(), expected);
+    return;
+  }
+
+  if (guard == QLatin1String("captured-read")) {
+    source->setMode(ViewWindowMode::Edit);
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+    generated->handleEditorConfigChange();
+    QVERIFY(map->isReadOnly());
+  } else if (guard == QLatin1String("live-read")) {
+    source->setMode(ViewWindowMode::Read);
+  } else if (guard == QLatin1String("readonly")) {
+    QVERIFY(editor);
+    editor->setReadOnly(true);
+  } else if (guard == QLatin1String("conversion")) {
+    source->setNoteConversionFrozen(true);
+  } else if (guard == QLatin1String("missing-writer")) {
+    f->buffers->unregisterActiveWriter(buffer.id(), writerKey);
+  } else if (guard == QLatin1String("failing-writer")) {
+    f->buffers->registerActiveWriter(
+        buffer.id(), reinterpret_cast<quintptr>(this),
+        []() -> QString { throw std::runtime_error("writer capture rejected"); });
+  } else if (guard == QLatin1String("conflicting-writer")) {
+    // A real split owns a different live QTextDocument for this same Buffer2.
+    f->controller()->focusWindow(main, buffer.id());
+    f->controller()->splitViewSplit(main, Direction::Right, true);
+    auto *other = f->current();
+    QVERIFY(other && other != source && other->getBuffer().id() == buffer.id());
+    // Split admission uses default open settings, which may create a reader.
+    other->setMode(ViewWindowMode::Edit);
+    QTRY_COMPARE(other->getMode(), ViewWindowMode::Edit);
+    QTRY_VERIFY(other->findChild<MarkdownEditor *>());
+    auto *otherEditor = other->findChild<MarkdownEditor *>();
+    QVERIFY(editor && otherEditor->document() != editor->document());
+    QTRY_VERIFY_WITH_TIMEOUT(other->outlineSourceSnapshot().m_revision >= 0, 30000);
+    QVERIFY(activateNativeHost(otherEditor->getTextEdit()->viewport()));
+    otherEditor->getTextEdit()->setFocus();
+    QTRY_VERIFY(otherEditor->getTextEdit()->hasFocus());
+    appendDraft(otherEditor->getTextEdit(), QStringLiteral("\nConflicting split body\n"));
+    QVERIFY(other->getLatestContent() != source->getLatestContent());
+    QString writerText;
+    bool hasWriter = false;
+    QVERIFY(f->buffers->captureActiveWriterContent(buffer.id(), &writerText, &hasWriter));
+    QVERIFY(hasWriter);
+    QCOMPARE(writerText, other->getLatestContent());
+  } else if (guard == QLatin1String("external-heading")) {
+    QVERIFY(editor);
+    auto cursor = editor->document()->find(QStringLiteral("Alpha"));
+    QVERIFY(!cursor.isNull());
+    cursor.insertText(QStringLiteral("External heading"));
+    QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("External heading")), 30000);
+    expected = source->getLatestContent();
+  } else {
+    QVERIFY(imported);
+    QVERIFY(map->isReadOnly() && previewBuffer.isReadOnly());
+    QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  }
+  QVERIFY(!map->renameNode(alpha, QStringLiteral("Rejected rename")));
+  QVERIFY(map->addNode(alpha, QStringLiteral("Rejected child")).isEmpty());
+  QVERIFY(!map->moveNode(beta, alpha));
+  QVERIFY(!map->undo() && !map->redo());
+  QCOMPARE(map->toJson(), json);
+  QCOMPARE(source->getLatestContent(), expected);
+  if (guard == QLatin1String("conversion"))
+    source->setNoteConversionFrozen(false);
+  if (guard == QLatin1String("readonly"))
+    editor->setReadOnly(false);
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceHistory_data() {
+  QTest::addColumn<QByteArray>("bytes");
+  QTest::addColumn<bool>("numbering");
+  QTest::addColumn<bool>("sourceUndo");
+  const QByteArray standard(
+      "# Book\n\nIntro\n\n## Alpha\n\nA body\n\n### Child\n\nChild body\n\n## Beta\n\nB body\n");
+  QTest::newRow("plain") << standard << false << false;
+  QTest::newRow("numbered-normalization") << standard << true << false;
+  QTest::newRow("external-source-undo") << standard << false << true;
+  QTest::newRow("duplicate-placeholder-gaps")
+      << QByteArray("# Book\n\n### Same\n\nFirst body\n\n##### Child\n\nChild body\n\n### "
+                    "Same\n\nLast body\n")
+      << false << false;
+  QTest::newRow("setext-unicode-preamble")
+      << QStringLiteral("Preamble Ω 😀\n\nBook\n====\n\nSame\n----\n\nFirst body Ω\n\n### "
+                        "Child\n\nChild body\n\nSame\n----\n\nLast body\n")
+             .toUtf8()
+      << false << false;
+  QTest::newRow("filename-root")
+      << QByteArray(
+             "Preamble\n\n# Same\n\nFirst body\n\n### Child\n\nChild body\n\n# Same\n\nLast body\n")
+      << false << false;
+  auto crlf = standard;
+  crlf.replace("\n", "\r\n");
+  QTest::newRow("crlf-disk") << crlf << false << false;
+}
+
+void TestViewAreaTabReuse::outlineMindMapSourceHistory() {
+  QFETCH(QByteArray, bytes);
+  QFETCH(bool, numbering);
+  QFETCH(bool, sourceUndo);
+  f->config->getEditorConfig().getMarkdownEditorConfig().setAutoSectionNumberInEditModeEnabled(
+      numbering);
+  const bool crlfDisk = qstrcmp(QTest::currentDataTag(), "crlf-disk") == 0;
+  // The default editor policy is LF, not preservation of the input file's endings.
+  // Exercise the existing file-preserving policy rather than changing BufferService.
+  if (crlfDisk)
+    f->config->getEditorConfig().setLineEndingPolicy(LineEndingPolicy::File);
+  QVERIFY(f->create(QStringLiteral("history-map.md"), bytes));
+  const auto buffer = f->open(QStringLiteral("history-map.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  if (crlfDisk)
+    QCOMPARE(source->getLatestContent().toUtf8(), bytes);
+  const auto initialOutline = source->outlineSourceSnapshot().m_outline;
+  QVector<int> real;
+  for (int i = 0; i < initialOutline->m_headings.size(); ++i) {
+    if (!initialOutline->m_headings[i].m_isPlaceholder)
+      real.append(i);
+  }
+  const bool filenameRoot = qstrcmp(QTest::currentDataTag(), "filename-root") == 0;
+  const auto alpha = QStringLiteral("h%1").arg(real[filenameRoot ? 0 : 1]);
+  const auto beta = QStringLiteral("h%1").arg(real.last());
+  const auto child = QStringLiteral("h%1").arg(real[filenameRoot ? 1 : 2]);
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  if (filenameRoot) {
+    const auto json = map->toJson();
+    const auto text = source->getLatestContent();
+    QVERIFY(!map->renameNode(QStringLiteral("root"), QStringLiteral("Not a source heading")));
+    QVERIFY(!map->moveNode(QStringLiteral("root"), alpha));
+    QCOMPARE(map->toJson(), json);
+    QCOMPARE(source->getLatestContent(), text);
+  }
+  QStringList sourceStates{source->getLatestContent()};
+  QVector<QByteArray> mapStates{map->toJson()};
+  QVector<int> undoSteps{editor->document()->availableUndoSteps()};
+  const auto remember = [&] {
+    sourceStates.append(source->getLatestContent());
+    mapStates.append(map->toJson());
+    undoSteps.append(editor->document()->availableUndoSteps());
+  };
+  {
+    DialogAnswer yes(QMessageBox::Yes);
+    QVERIFY(map->moveNode(beta, QStringLiteral("root"), 0));
+    QVERIFY(yes.accepted());
+  }
+  QVERIFY(waitForSourceMap(source, map));
+  remember();
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({beta, alpha}));
+  QCOMPARE(mapChildren(map, alpha), QStringList({child}));
+  QVERIFY(map->renameNode(alpha, QStringLiteral("Renamed # [x] & Ω")));
+  const auto firstWrite = source->getLatestContent();
+  const auto firstMap = map->toJson();
+  // No event-loop turn: the post-write parser generation has not acknowledged this edit.
+  QVERIFY(source->outlineSourceSnapshot().m_revision < 0);
+  QVERIFY(!map->renameNode(alpha, QStringLiteral("Must not join a pending source command")));
+  QCOMPARE(source->getLatestContent(), firstWrite);
+  QCOMPARE(map->toJson(), firstMap);
+  QPointer<QPlainTextEdit> pendingDraft;
+  const QString pendingTopic = QStringLiteral("Renamed # [x] & Ω extended");
+  if (numbering) {
+    QVERIFY(map->selectNode(alpha));
+    map->commandAction(QStringLiteral("editTopic"))->trigger();
+    pendingDraft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+    QVERIFY(pendingDraft && pendingDraft->isVisible());
+    pendingDraft->selectAll();
+    pendingDraft->insertPlainText(pendingTopic);
+    const auto caret = pendingDraft->textCursor().position();
+    QVERIFY(!map->commitActiveEdit(true));
+    QVERIFY(pendingDraft->isVisible() && map->hasPendingEdit() && !map->isReadOnly());
+    QCOMPARE(pendingDraft->textCursor().position(), caret);
+    QCOMPARE(pendingDraft->toPlainText(), pendingTopic);
+  }
+  QVERIFY(waitForSourceMap(source, map));
+  remember();
+  const auto published = source->outlineSourceSnapshot().m_outline;
+  const auto renamedTopic = mapNode(map, alpha).value(QStringLiteral("topic")).toString();
+  QVERIFY(renamedTopic.endsWith(QStringLiteral("Renamed # [x] & Ω")));
+  const auto renamedIndex = outlineTopicIndex(source, renamedTopic);
+  QVERIFY(renamedIndex >= 0);
+  QCOMPARE(renamedTopic, published->m_headings[renamedIndex].m_name);
+  if (qstrcmp(QTest::currentDataTag(), "setext-unicode-preamble") == 0) {
+    QVERIFY(source->getLatestContent().startsWith(QStringLiteral("Preamble Ω 😀\n\nBook\n====\n")));
+    QVERIFY(source->getLatestContent().contains(
+        QStringLiteral("Renamed &#35; &#91;x&#93; &#38; Ω\n----\n")));
+  }
+  if (numbering)
+    QVERIFY(renamedTopic != QStringLiteral("Renamed # [x] & Ω"));
+  if (pendingDraft) {
+    QCOMPARE(pendingDraft->toPlainText(), pendingTopic);
+    QVERIFY(pendingDraft->isVisible() && map->hasPendingEdit());
+    QVERIFY(map->commitActiveEdit());
+    QVERIFY(waitForSourceMap(source, map));
+    remember();
+    QVERIFY(mapNode(map, alpha).value(QStringLiteral("topic")).toString().endsWith(pendingTopic));
+  }
+  QVERIFY(clickOutlineMapNode(map, alpha));
+  QVERIFY(editor->getTextEdit()->textCursor().block().text().contains(QStringLiteral("Renamed")));
+
+  const auto added = map->addNode(QStringLiteral("root"), QString());
+  QVERIFY(!added.isEmpty());
+  QVERIFY(waitForSourceMap(source, map));
+  remember();
+  const auto insertedIndex = source->outlineSourceSnapshot().m_outline->m_headings.size() - 1;
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_headings[insertedIndex].m_level,
+           filenameRoot ? 1 : 2);
+  auto *draft = beginMapTopic(map, added);
+  QVERIFY(draft);
+  draft->selectAll();
+  draft->insertPlainText(QStringLiteral("Gamma Ω"));
+  // Config refresh must neither rebind the source handler nor truncate its native history.
+  generated->handleEditorConfigChange();
+  QVERIFY(draft->isVisible() && map->hasPendingEdit());
+  QTest::keyClick(draft, Qt::Key_Return);
+  QVERIFY(waitForSourceMap(source, map));
+  remember();
+  QVERIFY(clickOutlineMapNode(map, added));
+  QVERIFY(editor->getTextEdit()->textCursor().block().text().contains(QStringLiteral("Gamma Ω")));
+  QCOMPARE(f->current(), generated.data());
+  QVERIFY(canvas->hasFocus());
+
+  // Buffer cache capture advances its own revision independently of QTextDocument history.
+  QVERIFY(f->buffers->syncNow(buffer.id()));
+  QByteArray expectedDisk = bytes;
+  if (crlfDisk) {
+    QVERIFY(source->save());
+    // QTextDocument is LF internally; the ordinary editor serializer retains CRLF.
+    expectedDisk = editor->document()->toPlainText().toUtf8();
+    expectedDisk.replace("\n", "\r\n");
+    QCOMPARE(sourceStates.last().toUtf8(), expectedDisk);
+    QCOMPARE(readBytes(f->absolute(QStringLiteral("history-map.md"))), expectedDisk);
+  }
+  for (int cycle = 0; cycle < 2; ++cycle) {
+    for (int i = sourceStates.size() - 2; i >= 0; --i) {
+      QVERIFY(map->canUndo() && map->undo());
+      QVERIFY(waitForSourceMap(source, map));
+      QCOMPARE(source->getLatestContent(), sourceStates[i]);
+      QCOMPARE(map->toJson(), mapStates[i]);
+      QCOMPARE(editor->document()->availableUndoSteps(), undoSteps[i]);
+      QCOMPARE(f->current(), generated.data());
+    }
+    QVERIFY(!map->canUndo());
+    for (int i = 1; i < sourceStates.size(); ++i) {
+      QVERIFY(map->canRedo() && map->redo());
+      QVERIFY(waitForSourceMap(source, map));
+      QCOMPARE(source->getLatestContent(), sourceStates[i]);
+      QCOMPARE(map->toJson(), mapStates[i]);
+      QCOMPARE(editor->document()->availableUndoSteps(), undoSteps[i]);
+    }
+    QVERIFY(!map->canRedo());
+  }
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("history-map.md"))), expectedDisk);
+  const auto acceptedMap = map->toJson();
+  if (sourceUndo) {
+    editor->document()->undo();
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+    QCOMPARE(source->getLatestContent(), sourceStates[sourceStates.size() - 2]);
+  } else {
+    auto cursor = editor->getTextEdit()->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.beginEditBlock();
+    cursor.insertText(QStringLiteral("\nIndependent body edit Ω\n"));
+    cursor.endEditBlock();
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  }
+  const auto external = source->getLatestContent();
+  QVERIFY(!map->undo());
+  QVERIFY(!map->renameNode(alpha, QStringLiteral("Retired binding")));
+  QCOMPARE(source->getLatestContent(), external);
+  QCOMPARE(map->toJson(), acceptedMap);
+  if (!sourceUndo) {
+    // Neither navigation's body-only tolerance nor returning to the same undo
+    // boundary grants this old map permission to consume the source's next group.
+    QVERIFY(clickOutlineMapNode(map, alpha));
+    editor->document()->undo();
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+    QCOMPARE(source->getLatestContent(), sourceStates.last());
+    QVERIFY(!map->undo());
+    QVERIFY(!map->renameNode(alpha, QStringLiteral("Still retired")));
+  }
 }
 
 void TestViewAreaTabReuse::outlineMindMapNavigation_data() {
@@ -1277,7 +3104,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   QCOMPARE(f->order(sourceWorkspace), sourceOrder);
   QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
   if (type == QLatin1String("Markdown") && reading) {
-    QVERIFY(QTest::qWaitFor(
+    const bool navigated = QTest::qWaitFor(
         [&] {
           const auto geometry = readerHeadingGeometry(reader, 2);
           return !geometry.isEmpty() && geometry.value(QStringLiteral("scroll")).toDouble() > 100 &&
@@ -1285,7 +3112,10 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
                  geometry.value(QStringLiteral("bottom")).toDouble() <
                      geometry.value(QStringLiteral("height")).toDouble();
         },
-        30000));
+        30000);
+    QVERIFY2(navigated, QJsonDocument::fromVariant(readerHeadingGeometry(reader, 2))
+                            .toJson(QJsonDocument::Compact)
+                            .constData());
   } else if (type == QLatin1String("Markdown")) {
     QTRY_COMPARE(markdown->getTextEdit()->textCursor().blockNumber(), targetBlock);
     QVERIFY(markdown->getTextEdit()->viewport()->rect().intersects(
@@ -1875,6 +3705,8 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
         return realHeadings == 3;
       },
       30000));
+  if (!reading && !readOnly && type != QLatin1String("Pdf"))
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 60000);
   const auto captured = *published->getOutline();
   QVector<int> headingIndexes;
   for (int i = 0; i < captured.m_headings.size(); ++i) {
@@ -1964,7 +3796,7 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
   QCOMPARE(generated->isContentProtected(), encrypted);
   QVERIFY(f->controller()->isOutlineMindMapPreview(snapshot));
   QVERIFY(snapshot.isMemoryBacked() && map->isBasicMode());
-  const bool previewReadOnly = reading || readOnly;
+  const bool previewReadOnly = reading || readOnly || type == QLatin1String("Pdf");
   QCOMPARE(snapshot.isReadOnly(), previewReadOnly);
   QCOMPARE(map->isReadOnly(), previewReadOnly);
   QVERIFY(snapshot.resolvedPath().isEmpty() && snapshot.getResourceBasePath().isEmpty());
@@ -2059,6 +3891,8 @@ void TestViewAreaTabReuse::outlineMindMapPermissionCapture() {
   const auto changedMode = reading ? ViewWindowMode::Edit : ViewWindowMode::Read;
   source->setMode(initialMode);
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Child")), 30000);
+  if (!reading)
+    QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
   const auto sourceText = source->getLatestContent();
   bool changedDuringOpen = false;
   const auto hook = f->hooks->addAction<ViewWindowOpenEvent>(
@@ -2228,7 +4062,8 @@ void TestViewAreaTabReuse::outlineMindMapInitialFocus() {
     QCOMPARE(map->zoomMode(),
              zoom == 0 ? MindMapEditor::ZoomMode::Page : MindMapEditor::ZoomMode::Width);
   QCOMPARE(map->toJson(), baseline);
-  QVERIFY(map->isBasicMode() && !map->isReadOnly() && !map->isModified() &&
+  // This presentation fixture is not the source editor's certified heading snapshot.
+  QVERIFY(map->isBasicMode() && map->isReadOnly() && !map->isModified() &&
           !generated->isModified());
   QVERIFY(clicks->isEmpty() && navigation.isEmpty());
   QCOMPARE(source->getLatestContent(), sourceText);
@@ -2393,7 +4228,7 @@ void TestViewAreaTabReuse::outlineMindMapTitle() {
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
   auto *map = generated->findChild<MindMapEditor *>();
-  QVERIFY(map && map->isBasicMode() && !map->isReadOnly());
+  QVERIFY(map && map->isBasicMode() && map->isReadOnly());
   QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
            promoted >= 0 ? topics[promoted] : buffer.displayName());
   QCOMPARE(generated->getBuffer().displayName(), QStringLiteral("Mind Map: title.md"));
@@ -2453,7 +4288,7 @@ void TestViewAreaTabReuse::outlineMindMapBranchColors() {
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
   auto *map = generated->findChild<MindMapEditor *>();
-  QVERIFY(map && map->isBasicMode() && !map->isReadOnly());
+  QVERIFY(map && map->isBasicMode() && map->isReadOnly());
   QTRY_COMPARE(map->outline().size(), branchCount * 2 + 1);
   QSet<QString> used;
   for (int index = 0; index < branchCount; ++index) {
@@ -2620,6 +4455,7 @@ void TestViewAreaTabReuse::outlineMindMapBasicModeAndPromotion() {
   QPointer<ViewWindow2> source(f->current());
   const auto main = f->workspace();
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Beta")), 30000);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
   QVERIFY(clickOutlineMindMap(source));
   QPointer<ViewWindow2> generated(f->current());
   const auto snapshot = generated->getBuffer();
@@ -2650,9 +4486,18 @@ void TestViewAreaTabReuse::outlineMindMapBasicModeAndPromotion() {
   expectedNode[QStringLiteral("topic")] = QStringLiteral("Edited #topic ##literal");
   QCOMPARE(mapNode(map, QStringLiteral("h0")), expectedNode);
   QCOMPARE(mutations.size(), 1);
+  QVERIFY(waitForSourceMap(source, map));
+  QString acceptedSource = sourceBytes;
+  acceptedSource.replace(QStringLiteral("# Alpha"),
+                         QStringLiteral("# Edited &#35;topic &#35;&#35;literal"));
+  QCOMPARE(source->getLatestContent(), acceptedSource);
   QVERIFY(map->canUndo() && map->undo());
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(source->getLatestContent(), sourceBytes);
   QCOMPARE(map->toJson(), originalJson);
   QVERIFY(map->canRedo() && map->redo());
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(source->getLatestContent(), acceptedSource);
   QCOMPARE(mapNode(map, QStringLiteral("h0")), expectedNode);
   const auto json = map->toJson();
   mutations.clear();
@@ -2667,23 +4512,40 @@ void TestViewAreaTabReuse::outlineMindMapBasicModeAndPromotion() {
   }
   for (const auto &name :
        {QStringLiteral("fontSize"), QStringLiteral("toggleBold"), QStringLiteral("editTags"),
-        QStringLiteral("editIcons"), QStringLiteral("editNote")}) {
+        QStringLiteral("editIcons"), QStringLiteral("editNote"), QStringLiteral("deleteSelection"),
+        QStringLiteral("addOrphan"), QStringLiteral("detachNode"), QStringLiteral("editLink")}) {
     auto *action = map->commandAction(name);
     QVERIFY(action && !action->isEnabled());
   }
   QApplication::clipboard()->setText(QStringLiteral("Rejected paste"));
   QVERIFY(!map->commandAction(QStringLiteral("paste"))->isEnabled());
   QTest::keyClick(canvas->viewport(), Qt::Key_V, Qt::ControlModifier);
+  // Copy remains available, but even native subtree MIME must not enable paste.
+  auto *copy = map->commandAction(QStringLiteral("copy"));
+  QVERIFY(copy && copy->isEnabled());
+  copy->trigger();
+  QVERIFY(QApplication::clipboard()->mimeData()->hasFormat(
+      QStringLiteral("application/x-m3-nodes+json")));
+  QVERIFY(!map->commandAction(QStringLiteral("paste"))->isEnabled());
+  QTest::keyClick(canvas->viewport(), Qt::Key_V, Qt::ControlModifier);
+  QTest::keyClick(canvas->viewport(), Qt::Key_Delete);
+  QVERIFY(!map->removeNode(QStringLiteral("h0")));
+  QVERIFY(map->addNode({}, QStringLiteral("Orphan")).isEmpty());
+  QVERIFY(map->addNodes(QStringLiteral("root"), QByteArray("[{\"topic\":\"Batch\"}]")).isEmpty());
+  QVERIFY(!map->moveNode(QStringLiteral("h0"), {}));
+  QVERIFY(map->addLink(QStringLiteral("h0"), QStringLiteral("h3"), false).isEmpty());
   map->typeLink();
   map->typeImage();
   QCOMPARE(map->toJson(), json);
   QVERIFY(mutations.isEmpty());
-  QVERIFY(map->isModified() && generated->isModified());
+  // Accepted edits belong to the source, not to an independently unsaved map.
+  QVERIFY(map->isModified() && !generated->isModified() && !map->hasPendingEdit());
   QVERIFY(f->buffers->syncNow(snapshot.id()));
   QCOMPARE(QJsonDocument::fromJson(snapshot.getContentRaw()), QJsonDocument::fromJson(json));
   QVERIFY(snapshot.isModified());
   QVERIFY(!generated->save() && !generated->reload());
-  QCOMPARE(source->getLatestContent(), sourceBytes);
+  QCOMPARE(source->getLatestContent(), acceptedSource);
+  QVERIFY(source->isModified());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("immutable.md"))), bytes);
   QVERIFY(map->selectNode(QStringLiteral("h0")));
   QVERIFY(map->setExpanded(QStringLiteral("h0"), true));
@@ -2764,25 +4626,16 @@ void TestViewAreaTabReuse::outlineMindMapBasicModeAndPromotion() {
   QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
   QCOMPARE(f->order(main), mainOrder);
   QCOMPARE(f->order(preview), QStringList({snapshot.id(), ordinary.id()}));
-  bool offeredSave = true;
   {
-    DialogAnswer cancel(QMessageBox::Cancel, [&] {
-      auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
-      offeredSave = !box || box->button(QMessageBox::Save);
-    });
-    QVERIFY(!f->controller()->closeViewWindow(generated->getViewWindowId(), false));
-    QVERIFY(cancel.accepted());
-  }
-  QVERIFY(!offeredSave && generated && generated->isModified());
-  QCOMPARE(map->toJson(), json);
-  QCOMPARE(source->getLatestContent(), sourceBytes);
-  {
-    DialogAnswer discard(QMessageBox::Discard);
+    // A synchronized derived cache never asks to discard accepted source edits.
+    DialogAnswer unexpected(QMessageBox::Cancel);
     QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
-    QVERIFY(discard.accepted());
+    QVERIFY(unexpected.accepted(0));
   }
   QTRY_VERIFY(generated.isNull());
   QTRY_VERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QCOMPARE(source->getLatestContent(), acceptedSource);
+  QVERIFY(source->isModified());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("immutable.md"))), bytes);
   QTRY_VERIFY(promotion->isEnabled());
   QVERIFY(f->controller()->canPromotePreviewWorkspace(preview));
@@ -2848,6 +4701,7 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
     f->area->setCurrentBuffer(sourceWorkspace, buffer.id(), true);
   }
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QString::fromUtf8(sentinel)), 30000);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
   const auto outline = *source->getOutlineProvider()->getOutline();
   bool admissionLockObserved = false;
   int admissionHook = -1;
@@ -3042,23 +4896,23 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
     QVERIFY(!f->controller()->canPromotePreviewWorkspace(preview));
   } else {
     if (operation == QLatin1String("lock") && !veto) {
-      const auto sourceContent = source->getLatestContent();
+      QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
       QVERIFY(map->isBasicMode() && !map->isReadOnly());
-      QVERIFY(map->renameNode(QStringLiteral("root"), QStringLiteral("Edited protected preview")));
-      QVERIFY(generated->isModified());
-      const auto edited = map->toJson();
-      {
-        DialogAnswer cancel(QMessageBox::Cancel);
-        QVERIFY(!f->controller()->lockAllProtectedNotes(&error));
-        QVERIFY(cancel.accepted());
-      }
-      QVERIFY(source && generated && nativeMap && source->isEnabled());
-      QVERIFY(!f->buffers->isProtectedLocking());
-      QCOMPARE(map->toJson(), edited);
-      QCOMPARE(source->getLatestContent(), sourceContent);
-      DialogAnswer discard(QMessageBox::Discard);
+      QVERIFY(map->renameNode(QStringLiteral("h1"), QStringLiteral("Edited protected preview")));
+      QVERIFY(waitForSourceMap(source, map));
+      const auto acceptedSource = source->getLatestContent();
+      QVERIFY(acceptedSource.contains(QStringLiteral("## Edited protected preview")));
+      QVERIFY(!generated->isModified() && source->isModified());
+      // Locking owns protected-source persistence; there is no independently
+      // unsaved map to discard after the accepted source has been saved.
+      QVERIFY(source->save());
+      QCOMPARE(source->getLatestContent(), acceptedSource);
+      QVERIFY(!source->isModified() && !generated->isModified());
+      QVERIFY(!readBytes(f->absolute(buffer.nodeId().relativePath))
+                   .contains("Edited protected preview"));
+      DialogAnswer unexpected(QMessageBox::Cancel);
       accepted = f->controller()->lockAllProtectedNotes(&error);
-      QVERIFY(discard.accepted());
+      QVERIFY(unexpected.accepted(0));
     } else {
       accepted = f->controller()->lockAllProtectedNotes(&error);
     }
@@ -3114,6 +4968,9 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
         VXCORE_OK);
     QVERIFY(f->openProtected(secret, true).isValid());
     QVERIFY(f->current()->getLatestContent().contains(QString::fromUtf8(sentinel)));
+    if (operation == QLatin1String("lock") && !veto)
+      QVERIFY(
+          f->current()->getLatestContent().contains(QStringLiteral("## Edited protected preview")));
   }
 }
 

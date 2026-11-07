@@ -37,6 +37,10 @@ public:
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
   bool activateOutlineHeading(int p_index) override;
+  OutlineSourceSnapshot outlineSourceSnapshot() const override;
+  QSharedPointer<OutlineSourceEditReceipt> applyOutlineSourceEdit(const OutlineSourceEdit &p_edit,
+                                                                  bool p_focus) override;
+  bool isOutlineSourceEditBusy() const override { return m_applyingOutlineSourceEdit; }
   bool isEncodingSupported() const override { return true; }
   bool supportsBufferReplacement() const override { return true; }
   void setMode(ViewWindowMode p_mode) override;
@@ -139,6 +143,13 @@ private:
   bool canReorderOutline() const;
   void updateOutlineReorderSupport();
   void reorderOutline(const OutlineMove &p_move);
+  bool outlineSourceWriterCurrent() const;
+  bool outlineSourceHeadingsCurrent() const;
+  void invalidateOutlineSourceEdits();
+  void reconcileOutlineSourceEdit(bool p_publication);
+  bool replayOutlineSourceEdit(const QSharedPointer<OutlineSourceEditReceipt> &p_receipt,
+                               bool p_undo, quint64 p_authorization, quint64 p_generation,
+                               const QString &p_bufferId, const QString &p_activeFile);
   bool navigateToHeading(int p_index, bool p_focus);
   bool isActiveFileHeading(const vte::TypstHeadingInfo &p_heading) const;
   void updateCurrentHeading();
@@ -168,6 +179,10 @@ private:
   // Index-aligned with the published outline, including repeated and imported headings.
   QVector<vte::TypstHeadingInfo> m_outlineHeadings;
   QVector<vte::TypstSourceHeadingInfo> m_outlineSourceHeadings;
+  QSharedPointer<OutlineSourceEditReceipt> m_pendingOutlineSourceEdit;
+  quint64 m_outlineContentGeneration = 0;
+  quint64 m_outlineHistoryAuthorization = 0;
+  bool m_applyingOutlineSourceEdit = false;
 
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;

@@ -40,6 +40,9 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -527,6 +530,7 @@ private slots:
   void nativeSaveRoundTripKeepsHistory();
   void invalidContentFailsClosedAndRecovers();
   void pendingDraftAndRejectedSnapshot();
+  void sourceLinkedDraftCaptureAndConfig();
   void autosaveKeepsInlineEditor_data();
   void autosaveKeepsInlineEditor();
   void readOnlyStillNavigates();
@@ -957,6 +961,204 @@ void TestMindMapEditor::pendingDraftAndRejectedSnapshot() {
   QVERIFY(!editor.hasPendingEdit());
   QVERIFY(editor.isModified());
   QCOMPARE(editor.contentForSave(), corrected);
+}
+
+void TestMindMapEditor::sourceLinkedDraftCaptureAndConfig() {
+  const auto originalMap = fixture();
+  auto buffer = openNote(QStringLiteral("source-linked.emind"), originalMap);
+  QVERIFY(buffer.isValid());
+  const auto sourceText = [](const QString &p_topic) {
+    return QStringLiteral("# Root\n\n## %1\n\nBody\n\n### Hidden descendant\n").arg(p_topic);
+  };
+  QTextDocument source;
+  source.setPlainText(sourceText(QStringLiteral("Child")));
+  source.setModified(false);
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  editor.setBasicMode(true);
+  int hostCalls = 0;
+  int acceptedCalls = 0;
+  bool accept = true;
+  editor.setSourceEditHandler(
+      [&](const m3::qt::SourceEdit &p_edit) -> std::optional<m3::qt::SourceEditCommand> {
+        ++hostCalls;
+        if (!accept || p_edit.kind != m3::qt::SourceEdit::Kind::RenameNode ||
+            p_edit.nodeId != QStringLiteral("a")) {
+          return std::nullopt;
+        }
+        const auto heading = source.findBlockByNumber(2);
+        if (heading.text() !=
+            QStringLiteral("## ") +
+                node(editor, p_edit.nodeId).value(QStringLiteral("topic")).toString()) {
+          return std::nullopt;
+        }
+        const QPointer<QTextDocument> document(&source);
+        const int before = source.availableUndoSteps();
+        const auto after = std::make_shared<int>(-1);
+        // Allocate the paired history before the real source edit, as a production host must.
+        m3::qt::SourceEditCommand command{
+            [document, before, after] {
+              if (!document || !document->isUndoAvailable() ||
+                  document->availableUndoSteps() != *after) {
+                return false;
+              }
+              document->undo();
+              return document && document->availableUndoSteps() == before;
+            },
+            [document, before, after] {
+              if (!document || !document->isRedoAvailable() ||
+                  document->availableUndoSteps() != before) {
+                return false;
+              }
+              document->redo();
+              return document && document->availableUndoSteps() == *after;
+            }};
+        QTextCursor cursor(&source);
+        cursor.setPosition(heading.position() + 3);
+        cursor.setPosition(heading.position() + heading.length() - 1, QTextCursor::KeepAnchor);
+        cursor.beginEditBlock();
+        cursor.insertText(p_edit.topic);
+        cursor.endEditBlock();
+        *after = source.availableUndoSteps();
+        ++acceptedCalls;
+        return command;
+      });
+  bool sourcePublishedFirst = true;
+  connect(&editor, &m3::qt::MindMapEditor::documentChanged, &editor, [&] {
+    sourcePublishedFirst =
+        sourcePublishedFirst &&
+        source.findBlockByNumber(2).text() ==
+            QStringLiteral("## ") +
+                node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString();
+  });
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  editor.zoom(0.8);
+  const auto camera = view->transform();
+  const auto initialMap = editor.toJson();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  QSignalSpy semantic(&editor, &m3::qt::MindMapEditor::documentChanged);
+  const QPointer<QPlainTextEdit> input = beginDraft(editor);
+  QVERIFY(input);
+  input->selectAll();
+  QTest::keyClicks(input, "Linked autosave draft");
+  const auto firstTopic = input->toPlainText();
+  auto caret = input->textCursor();
+  caret.setPosition(7);
+  caret.setPosition(15, QTextCursor::KeepAnchor);
+  input->setTextCursor(caret);
+  const int draftUndoSteps = input->document()->availableUndoSteps();
+  QVERIFY(draftUndoSteps > 0);
+  QVERIFY(editor.hasPendingEdit() && editor.isModified() && !dirty.isEmpty());
+  QCOMPARE(source.toPlainText(), sourceText(QStringLiteral("Child")));
+  QCOMPARE(editor.toJson(), initialMap);
+  QVERIFY(semantic.isEmpty());
+
+  // This is the BufferService writer-capture boundary, not a native Enter acceptance.
+  const auto firstSaved = editor.contentForSave();
+  QCOMPARE(source.toPlainText(), sourceText(firstTopic));
+  QVERIFY(source.isModified());
+  QVERIFY(sourcePublishedFirst);
+  QCOMPARE(hostCalls, 1);
+  QCOMPARE(acceptedCalls, 1);
+  QCOMPARE(semantic.count(), 1);
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QCOMPARE(input->textCursor().position(), caret.position());
+  QCOMPARE(input->textCursor().anchor(), caret.anchor());
+  QCOMPARE(input->document()->availableUndoSteps(), draftUndoSteps);
+  QVERIFY(!editor.hasPendingEdit());
+  QCOMPARE(editor.contentForSave(), firstSaved);
+  QCOMPARE(hostCalls, 1);
+  QCOMPARE(editor.selectedNodeId(), QStringLiteral("a"));
+  QCOMPARE(view->transform(), camera);
+
+  input->moveCursor(QTextCursor::End);
+  QTest::keyClicks(input, " rejected");
+  const auto rejectedTopic = input->toPlainText();
+  caret = input->textCursor();
+  caret.setPosition(4);
+  caret.setPosition(11, QTextCursor::KeepAnchor);
+  input->setTextCursor(caret);
+  const int rejectedUndoSteps = input->document()->availableUndoSteps();
+  const int sourceRevision = source.revision();
+  const int sourceUndoSteps = source.availableUndoSteps();
+  accept = false;
+  auto &settings = m_config->getEditorConfig().getMindMapEditorConfig();
+  settings.setFontPointSize(18);
+  settings.setAutoSectionNumbering(true);
+  editor.setBasicMode(true);
+  editor.applyConfig();
+  QVERIFY(editor.hasSourceEditHandler());
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QCOMPARE(input->font().pointSize(), 18);
+  QCOMPARE(input->toPlainText(), rejectedTopic);
+  QCOMPARE(input->textCursor().position(), caret.position());
+  QCOMPARE(input->textCursor().anchor(), caret.anchor());
+  QCOMPARE(input->document()->availableUndoSteps(), rejectedUndoSteps);
+  QCOMPARE(hostCalls, 1);
+  QCOMPARE(editor.toJson(), firstSaved.toUtf8());
+  QCOMPARE(source.revision(), sourceRevision);
+
+  // A valid native topic rejected by the source must not publish a map or a history entry.
+  QVERIFY_EXCEPTION_THROWN(editor.contentForSave(), std::runtime_error);
+  QCOMPARE(hostCalls, 2);
+  QCOMPARE(acceptedCalls, 1);
+  QCOMPARE(source.toPlainText(), sourceText(firstTopic));
+  QCOMPARE(source.revision(), sourceRevision);
+  QCOMPARE(source.availableUndoSteps(), sourceUndoSteps);
+  QCOMPARE(editor.toJson(), firstSaved.toUtf8());
+  QCOMPARE(semantic.count(), 1);
+  QVERIFY(editor.hasPendingEdit());
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QCOMPARE(input->toPlainText(), rejectedTopic);
+  QCOMPARE(input->textCursor().position(), caret.position());
+  QCOMPARE(input->textCursor().anchor(), caret.anchor());
+  QCOMPARE(input->document()->availableUndoSteps(), rejectedUndoSteps);
+  input->undo();
+  QVERIFY(input->toPlainText() != rejectedTopic);
+  QCOMPARE(source.toPlainText(), sourceText(firstTopic));
+  QCOMPARE(editor.toJson(), firstSaved.toUtf8());
+  input->redo();
+  QCOMPARE(input->toPlainText(), rejectedTopic);
+  QCOMPARE(hostCalls, 2);
+
+  accept = true;
+  const auto secondSaved = editor.contentForSave();
+  QCOMPARE(hostCalls, 3);
+  QCOMPARE(acceptedCalls, 2);
+  QCOMPARE(semantic.count(), 2);
+  QCOMPARE(source.toPlainText(), sourceText(rejectedTopic));
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QVERIFY(!editor.hasPendingEdit());
+  input->moveCursor(QTextCursor::End);
+  QTest::keyClicks(input, " discard only this");
+  QVERIFY(editor.hasPendingEdit());
+  QVERIFY(editor.discardActiveEdit());
+  QVERIFY(!editor.hasPendingEdit());
+  QCOMPARE(editor.contentForSave(), secondSaved);
+  QCOMPARE(source.toPlainText(), sourceText(rejectedTopic));
+  QCOMPARE(hostCalls, 3);
+
+  // Rejection/discard added no paired history; each accepted capture undoes one source group.
+  QVERIFY(editor.undo());
+  QCOMPARE(source.toPlainText(), sourceText(firstTopic));
+  QCOMPARE(editor.toJson(), firstSaved.toUtf8());
+  QVERIFY(editor.undo());
+  QCOMPARE(source.toPlainText(), sourceText(QStringLiteral("Child")));
+  QCOMPARE(editor.toJson(), initialMap);
+  QVERIFY(!editor.undo());
+  QVERIFY(editor.redo());
+  QCOMPARE(source.toPlainText(), sourceText(firstTopic));
+  QVERIFY(editor.redo());
+  QCOMPARE(source.toPlainText(), sourceText(rejectedTopic));
+  QCOMPARE(editor.toJson(), secondSaved.toUtf8());
+  QVERIFY(sourcePublishedFirst);
+  QCOMPARE(hostCalls, 3);
+  // Capturing the derived map never claims source durability or saves a standalone map.
+  QVERIFY(source.isModified());
+  QCOMPARE(buffer.getContentRaw(), originalMap);
+  QCOMPARE(readFile(buffer.resolvedPath()), originalMap);
 }
 
 void TestMindMapEditor::autosaveKeepsInlineEditor_data() {

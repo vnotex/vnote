@@ -3,6 +3,7 @@
 
 #include <QColor>
 #include <QHash>
+#include <m3/qt/editor.h>
 
 #include "viewwindow2.h"
 
@@ -28,6 +29,8 @@ public:
   bool supportsBufferReplacement() const override { return true; }
 
   QString getLatestContent() const override;
+  bool isModified() const override;
+  bool aboutToClose(bool p_force) override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
   bool IsToolsPanelSupported() const override;
   QString getToolsPanelTitle() const override;
@@ -35,6 +38,15 @@ public:
   void setMode(ViewWindowMode p_mode) override;
   void applyFileOpenSettings(const FileOpenSettings &p_settings) override;
   void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) override;
+  bool isOutlineSourceEditBusy() const override;
+  void setOutlineSourceEditHandler(m3::qt::SourceEditHandler p_handler,
+                                   m3::qt::SourceEditApproval p_approve);
+  bool synchronizeOutlineSourceTopics(const QVector<m3::qt::OutlineEntry> &p_entries);
+  void retireOutlineSourceEditHandler();
+
+signals:
+  // The native model/history and presentation have already published the source edit.
+  void outlineSourceEditPublished();
 
 public slots:
   void handleEditorConfigChange() override;
@@ -110,6 +122,7 @@ private:
   quint64 m_outlineGeneration = 0;
   bool m_propagateEditorToBuffer = true;
   bool m_contentLoaded = false;
+  bool m_outlineSourceEditRetired = false;
   bool m_printing = false;
 };
 

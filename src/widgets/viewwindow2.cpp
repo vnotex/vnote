@@ -74,20 +74,19 @@ QString ViewWindow2::s_attachmentFullIconMasterColor;
 
 QIcon ViewWindow2::s_attachmentFullIcon;
 
-namespace {
-int questionSaveOrDiscard(ViewWindow2 *p_view, const QString &p_text,
-                          const QString &p_information) {
-  if (p_view->getBuffer().canSave()) {
+int ViewWindow2::questionSaveOrDiscard(const QString &p_text, const QString &p_information) {
+  if (getBuffer().canSave()) {
     return MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Question, p_text,
-                                                       p_information, QString(), p_view);
+                                                       p_information, QString(), this);
   }
   QMessageBox box(QMessageBox::Question, QObject::tr("Discard Changes"), p_text,
-                  QMessageBox::Discard | QMessageBox::Cancel, p_view);
+                  QMessageBox::Discard | QMessageBox::Cancel, this);
   box.setInformativeText(p_information);
   box.setDefaultButton(QMessageBox::Cancel);
   return box.exec();
 }
 
+namespace {
 ViewWindow2 *viewWindowForFocus(QWidget *p_widget) {
   for (auto *widget = p_widget; widget; widget = widget->parentWidget()) {
     if (auto *view = qobject_cast<ViewWindow2 *>(widget)) {
@@ -205,9 +204,9 @@ Buffer2 &ViewWindow2::getBuffer() { return m_buffer; }
 const NodeIdentifier &ViewWindow2::getNodeId() const { return m_buffer.nodeId(); }
 
 bool ViewWindow2::replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings) {
-  if (m_bufferReplacementInProgress || !supportsBufferReplacement() || !m_buffer.isValid() ||
-      m_buffer.nodeId().isVirtual() || !p_buffer.isValid() || p_buffer.nodeId().isVirtual() ||
-      p_buffer.id() == m_buffer.id()) {
+  if (isOutlineSourceRetirementBlocked() || m_bufferReplacementInProgress ||
+      !supportsBufferReplacement() || !m_buffer.isValid() || m_buffer.nodeId().isVirtual() ||
+      !p_buffer.isValid() || p_buffer.nodeId().isVirtual() || p_buffer.id() == m_buffer.id()) {
     return false;
   }
   QPointer<ViewWindow2> guard(this);
@@ -462,7 +461,7 @@ bool ViewWindow2::isModified() const {
 // ============ Lifecycle ============
 
 void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
-  if (m_noteConversionFrozen == p_frozen) {
+  if (m_noteConversionFrozen == p_frozen || (p_frozen && isOutlineSourceRetirementBlocked())) {
     return;
   }
   m_noteConversionFrozen = p_frozen;
@@ -490,7 +489,7 @@ void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
 }
 
 bool ViewWindow2::aboutToClose(bool p_force) {
-  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
+  if (isOutlineSourceRetirementBlocked() || m_noteConversionFrozen || m_contentReplacementFrozen) {
     return false;
   }
   QPointer<ViewWindow2> guard(this);
@@ -508,7 +507,7 @@ bool ViewWindow2::aboutToClose(bool p_force) {
 
   if (!p_force && isModified()) {
     const int ret = questionSaveOrDiscard(
-        this, tr("Close note (%1) with unsaved changes?").arg(getName()),
+        tr("Close note (%1) with unsaved changes?").arg(getName()),
         m_buffer.canSave()
             ? tr("Your changes will be lost if you don't save them.")
             : tr("This buffer has no save destination. Closing it will lose its changes."));
@@ -1309,7 +1308,7 @@ void ViewWindow2::setAutoReload(bool p_enabled) { m_autoReload = p_enabled; }
 bool ViewWindow2::autoReload() const { return m_autoReload; }
 
 bool ViewWindow2::reload() {
-  if (m_contentReplacementFrozen)
+  if (isOutlineSourceRetirementBlocked() || m_contentReplacementFrozen)
     return false;
   if (!m_buffer.canReload()) {
     return false;
@@ -1329,7 +1328,7 @@ bool ViewWindow2::reload() {
   if (wasDirty) {
     // Ask to save changes.
     int ret = questionSaveOrDiscard(
-        this, tr("Reload note (%1) and discard unsaved changes?").arg(getName()),
+        tr("Reload note (%1) and discard unsaved changes?").arg(getName()),
         m_buffer.isFileBacked() ? tr("Note path (%1).").arg(m_buffer.resolvedPath()) : QString());
     switch (ret) {
     case QMessageBox::Save:
@@ -1996,7 +1995,7 @@ void ViewWindow2::discardChangesAndRead() {
   if (isModified()) {
     // Ask to save changes.
     int ret = questionSaveOrDiscard(
-        this, tr("Discard changes to note (%1)?").arg(getName()),
+        tr("Discard changes to note (%1)?").arg(getName()),
         m_buffer.isFileBacked() ? tr("Note path (%1).").arg(m_buffer.resolvedPath()) : QString());
     switch (ret) {
     case QMessageBox::Save:

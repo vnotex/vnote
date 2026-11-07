@@ -12,6 +12,11 @@
 #include <core/fileopensettings.h>
 #include <core/global.h>
 #include <core/nodeidentifier.h>
+#include <widgets/outlineprovider.h>
+
+namespace m3::qt {
+struct OutlineEntry;
+}
 
 namespace vnotex {
 
@@ -60,6 +65,17 @@ public:
                                        const QByteArray &p_fingerprint) const = 0;
   virtual bool navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
                                         const QByteArray &p_fingerprint) = 0;
+
+  virtual OutlineSourceSnapshot outlineSourceSnapshot(ID, quint64) const { return {}; }
+  virtual QSharedPointer<OutlineSourceEditReceipt>
+  applyOutlineSourceEdit(ID, quint64, const OutlineSourceEdit &, bool) {
+    return {};
+  }
+
+  virtual bool confirmOutlineSourceMove(ID, quint64, const OutlineSourceEdit &) { return false; }
+  virtual bool synchronizeOutlineMindMapTopics(ID, const QVector<m3::qt::OutlineEntry> &) {
+    return false;
+  }
 
   // Buffer/window management
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,

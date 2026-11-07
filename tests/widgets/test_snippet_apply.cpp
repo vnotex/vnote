@@ -58,6 +58,8 @@ QString ViewWindow2::getName() const { return {}; }
 
 QSharedPointer<OutlineProvider> ViewWindow2::getOutlineProvider() const { return {}; }
 
+bool ViewWindow2::activateOutlineHeading(int) { return false; }
+
 // Added together with the comment dock: a ViewWindow2 with no comment support
 // hands back null and the panel simply goes empty.
 QSharedPointer<CommentProvider> ViewWindow2::getCommentProvider() const { return {}; }
@@ -75,6 +77,8 @@ ViewWindow2::ViewPositionState ViewWindow2::capturePositionState() const { retur
 void ViewWindow2::restorePositionState(const ViewPositionState &) {}
 
 bool ViewWindow2::aboutToClose(bool) { return true; }
+
+bool ViewWindow2::isModified() const { return m_editorDirty || m_buffer.isModified(); }
 
 void ViewWindow2::applySnippet(const QString &) {}
 

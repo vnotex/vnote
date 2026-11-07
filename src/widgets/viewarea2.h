@@ -112,6 +112,15 @@ public:
                                const QByteArray &p_fingerprint) const override;
   bool navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
                                 const QByteArray &p_fingerprint) override;
+  OutlineSourceSnapshot outlineSourceSnapshot(ID p_sourceId, quint64 p_generation) const override;
+  QSharedPointer<OutlineSourceEditReceipt> applyOutlineSourceEdit(ID p_sourceId,
+                                                                  quint64 p_generation,
+                                                                  const OutlineSourceEdit &p_edit,
+                                                                  bool p_focus) override;
+  bool confirmOutlineSourceMove(ID p_sourceId, quint64 p_generation,
+                                const OutlineSourceEdit &p_edit) override;
+  bool synchronizeOutlineMindMapTopics(ID p_previewId,
+                                       const QVector<m3::qt::OutlineEntry> &p_entries) override;
   QString previewWorkspaceForWindow(ID p_windowId) const override;
   bool isPreviewWorkspaceAvailable(const QString &p_workspaceId) const override;
   bool hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
@@ -193,6 +202,7 @@ private:
   void wireSplitSignals(ViewSplit2 *p_split);
   void wirePreviewSplitSignals(ViewSplit2 *p_split);
   void saveAllViewWindows();
+  bool isPreviewWorkspaceLive(const QString &p_workspaceId) const;
   void updatePreviewAnchor(const QString &p_workspaceId);
   bool rebindPreviewWorkspaceSource(const QString &p_workspaceId, ID p_sourceId);
 

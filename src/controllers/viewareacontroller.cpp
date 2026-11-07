@@ -1,5 +1,6 @@
 #include "viewareacontroller.h"
 
+#include <QBitArray>
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QDesktopServices>
@@ -18,7 +19,7 @@
 #include <QScopeGuard>
 #include <QScopedValueRollback>
 #include <QSet>
-#include <QStringView>
+#include <QTextDocument>
 #include <QThread>
 #include <QTimer>
 #include <QUrl>
@@ -515,6 +516,10 @@ bool ViewAreaController::isNoteConversionBlocked() const {
       return true;
     }
   }
+  for (const auto &preview : m_outlineMindMapPreviews) {
+    if (preview.m_approving || preview.m_inFlight || preview.m_reconciling)
+      return true;
+  }
   return false;
 }
 
@@ -876,7 +881,8 @@ bool ViewAreaController::lockAllProtectedNotes(QString *p_error) {
     return fail(tr("A protected operation is in progress. Finish it before locking."));
   }
   for (const auto &entry : m_outlineMindMapPreviews) {
-    if (entry.m_protectedSource && entry.m_admitting) {
+    if ((entry.m_protectedSource && entry.m_admitting) || entry.m_approving || entry.m_inFlight ||
+        entry.m_reconciling) {
       return fail(tr("A protected operation is in progress. Finish it before locking."));
     }
   }
@@ -1069,28 +1075,661 @@ void ViewAreaController::setView(ViewAreaView *p_view) { m_view = p_view; }
 
 bool ViewAreaController::isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview,
                                                        bool p_requireVisible) const {
+  // Callers may pass a roster element. Copy only identity before invoking the view.
+  const QString sourceBufferId = p_preview.m_sourceBufferId;
+  const ID sourceWindowId = p_preview.m_sourceWindowId;
+  const quint64 generation = p_preview.m_sourceGeneration;
+  const bool protectedSource = p_preview.m_protectedSource;
+  const QPointer<const ViewAreaController> guard(this);
   auto *buffers = m_services.get<BufferService>();
-  if (!buffers || !m_view || buffers->isProtectedLocking() ||
-      buffers->isContentReplacementActive(p_preview.m_sourceBufferId) ||
-      (p_requireVisible &&
-       !m_view->isPreviewSourceCurrent(p_preview.m_sourceWindowId, p_preview.m_sourceGeneration))) {
+  auto *const view = m_view;
+  if (!buffers || !view || buffers->isProtectedLocking() ||
+      buffers->isContentReplacementActive(sourceBufferId) ||
+      (p_requireVisible && !view->isPreviewSourceCurrent(sourceWindowId, generation)) || !guard)
     return false;
-  }
-  const auto source = buffers->getBufferHandle(p_preview.m_sourceBufferId);
+  const auto source = buffers->getBufferHandle(sourceBufferId);
   if (!source.isValid() || source.getBuffer().isEmpty() ||
-      !m_view->findWindowIdsByNode(source.nodeId(), false).contains(p_preview.m_sourceWindowId)) {
+      !view->findWindowIdsByNode(source.nodeId(), false).contains(sourceWindowId) || !guard)
     return false;
-  }
   for (const auto &conversion : m_noteConversions) {
-    if (conversion->m_nodeId == source.nodeId()) {
+    if (conversion->m_nodeId == source.nodeId())
       return false;
-    }
   }
-  if (p_preview.m_protectedSource) {
+  if (protectedSource) {
     const auto lease = source.acquireProtectedLease();
     return source.isEncrypted() && lease && lease->isCurrent();
   }
   return !source.isEncrypted();
+}
+
+bool ViewAreaController::mapOutlineMindMapBinding(const Outline &p_outline, bool p_promotedTitle,
+                                                  OutlineMindMapBinding &p_binding) {
+  QHash<QString, int> indices;
+  QHash<QString, QString> parents;
+  QVector<int> levels;
+  QVector<int> ancestors;
+  indices.reserve(p_binding.m_ids.size());
+  parents.reserve(p_binding.m_ids.size());
+  levels.reserve(p_binding.m_ids.size());
+  int real = 0;
+  for (int i = 0; i < p_outline.m_headings.size(); ++i) {
+    const auto &heading = p_outline.m_headings[i];
+    if (heading.m_level < 1)
+      return false;
+    while (!ancestors.isEmpty() && levels[ancestors.back()] >= heading.m_level)
+      ancestors.pop_back();
+    if (heading.m_isPlaceholder)
+      continue;
+    if (real >= p_binding.m_ids.size())
+      return false;
+    const auto &id = p_binding.m_ids[real];
+    if (id.isEmpty() || indices.contains(id) ||
+        (id == QLatin1String("root")) != (p_promotedTitle && real == 0))
+      return false;
+    indices.insert(id, i);
+    parents.insert(id, id == QLatin1String("root") ? QString()
+                       : ancestors.isEmpty()       ? QStringLiteral("root")
+                                                   : p_binding.m_ids[ancestors.back()]);
+    levels.append(heading.m_level);
+    ancestors.append(real++);
+  }
+  if (real != p_binding.m_ids.size())
+    return false;
+  p_binding.m_headingIndices.swap(indices);
+  p_binding.m_parents.swap(parents);
+  p_binding.m_levels.swap(levels);
+  return true;
+}
+
+bool ViewAreaController::resolveOutlineMindMapPlacement(const OutlineMindMapPreview &p_preview,
+                                                        const OutlineSourceSnapshot &p_snapshot,
+                                                        const m3::qt::SourceEdit &p_edit,
+                                                        OutlineSourceEdit &p_sourceEdit,
+                                                        OutlineMindMapBinding &p_after) {
+  if (!p_snapshot.m_outline || p_snapshot.m_revision < 0)
+    return false;
+  const auto &outline = *p_snapshot.m_outline;
+  const auto &binding = p_preview.m_binding;
+  const auto source = binding.m_headingIndices.value(p_edit.nodeId, -1);
+  const bool adding = p_edit.kind == m3::qt::SourceEdit::Kind::AddNode;
+  const bool moving = p_edit.kind == m3::qt::SourceEdit::Kind::MoveNode;
+  if ((!adding && source < 0) ||
+      (adding && (p_edit.nodeId.isEmpty() || p_edit.nodeId == QLatin1String("root") ||
+                  binding.m_headingIndices.contains(p_edit.nodeId))))
+    return false;
+  p_sourceEdit.m_expectedRevision = p_snapshot.m_revision;
+  p_sourceEdit.m_expectedFingerprint = p_preview.m_outlineFingerprint;
+  p_sourceEdit.m_topic = p_edit.topic;
+  p_after = binding;
+  if (p_edit.kind == m3::qt::SourceEdit::Kind::RenameNode) {
+    if (outline.m_headings[source].m_name == p_edit.topic)
+      return false;
+    p_sourceEdit.m_kind = OutlineSourceEdit::Kind::Rename;
+    p_sourceEdit.m_placement.m_sourceHeadingIndex = source;
+    return true;
+  }
+  if ((!adding && !moving) || p_edit.index < -1 || p_edit.parentId.isEmpty() ||
+      p_edit.nodeId == QLatin1String("root"))
+    return false;
+  const int parent = binding.m_headingIndices.value(p_edit.parentId, -1);
+  if (parent < 0 && (p_edit.parentId != QLatin1String("root") || p_preview.m_promotedTitle))
+    return false;
+  if (parent >= 0 && !outline.m_headings[parent].m_acceptsChildren &&
+      !outline.m_headings[parent].m_reorderable)
+    return false;
+  const auto subtreeEnd = [&outline](int p_heading) {
+    int end = p_heading + 1;
+    while (end < outline.m_headings.size() &&
+           outline.m_headings[end].m_level > outline.m_headings[p_heading].m_level)
+      ++end;
+    return end;
+  };
+  const int sourceEnd = moving ? subtreeEnd(source) : -1;
+  if (moving && parent >= source && parent < sourceEnd)
+    return false;
+  QVector<QString> siblings;
+  for (const auto &id : binding.m_ids) {
+    if (id != p_edit.nodeId && binding.m_parents.value(id) == p_edit.parentId)
+      siblings.append(id);
+  }
+  const int index = p_edit.index < 0 ? int(siblings.size()) : p_edit.index;
+  if (index > siblings.size())
+    return false;
+  const int next = index < siblings.size() ? binding.m_headingIndices.value(siblings[index]) : -1;
+  if (moving) {
+    OutlineMove placement;
+    if (next >= 0) {
+      placement = outline.planMove(source, next, OutlineDropPosition::AboveItem);
+    } else if (!siblings.isEmpty()) {
+      placement = outline.planMove(source, binding.m_headingIndices.value(siblings.back()),
+                                   OutlineDropPosition::BelowItem);
+    } else if (parent >= 0) {
+      placement = outline.planMove(source, parent, OutlineDropPosition::OnItem);
+    } else {
+      // The sole document-root subtree already occupies this position.
+      return false;
+    }
+    if (!placement.isValid() || placement.m_parentHeadingIndex != parent)
+      return false;
+    p_sourceEdit.m_kind = OutlineSourceEdit::Kind::Move;
+    p_sourceEdit.m_placement = placement;
+  } else {
+    qint64 level = parent < 0 ? outline.m_maxLevel : qint64(outline.m_headings[parent].m_level) + 1;
+    if (!p_edit.siblingId.isEmpty()) {
+      // The same native boundary can mean After(H4) or Before(H2). Its index
+      // alone cannot identify the heading whose absolute source level to retain.
+      const auto anchor = siblings.indexOf(p_edit.siblingId);
+      if (p_edit.index < 0 || anchor < 0 || (index != anchor && index != anchor + 1))
+        return false;
+      level = outline.m_headings[binding.m_headingIndices.value(p_edit.siblingId)].m_level;
+    } else if (parent < 0) {
+      for (const auto &id : siblings)
+        level = qMin(level, qint64(outline.m_headings[binding.m_headingIndices.value(id)].m_level));
+    }
+    if (level < 1 || level > outline.m_maxLevel)
+      return false;
+    int before = next;
+    if (before < 0 && parent >= 0) {
+      before = subtreeEnd(parent);
+      while (before < outline.m_headings.size() && outline.m_headings[before].m_isPlaceholder)
+        ++before;
+      if (before == outline.m_headings.size())
+        before = -1;
+    }
+    p_sourceEdit.m_kind = OutlineSourceEdit::Kind::Insert;
+    p_sourceEdit.m_placement = {-1, before, int(level), parent};
+  }
+  const auto &placement = p_sourceEdit.m_placement;
+  const int insertion = placement.m_beforeHeadingIndex < 0 ? int(outline.m_headings.size())
+                                                           : placement.m_beforeHeadingIndex;
+  // A flattened synthetic branch must never steal a section from its real source parent.
+  int actualParent = -1;
+  for (int i = insertion - 1; i >= 0; --i) {
+    if (moving && i >= source && i < sourceEnd)
+      continue;
+    if (!outline.m_headings[i].m_isPlaceholder &&
+        outline.m_headings[i].m_level < placement.m_targetLevel) {
+      actualParent = i;
+      break;
+    }
+  }
+  if (actualParent != parent)
+    return false;
+  QVector<QString> movedIds;
+  QVector<int> movedLevels;
+  if (moving) {
+    for (int i = 0; i < binding.m_ids.size(); ++i) {
+      const auto &id = binding.m_ids[i];
+      const int heading = binding.m_headingIndices.value(id);
+      bool descendant = id == p_edit.nodeId;
+      for (QString ancestor = binding.m_parents.value(id); !descendant && !ancestor.isEmpty();
+           ancestor = binding.m_parents.value(ancestor))
+        descendant = ancestor == p_edit.nodeId;
+      if (descendant != (heading >= source && heading < sourceEnd))
+        return false;
+      if (!descendant)
+        continue;
+      const qint64 level = qint64(binding.m_levels[i]) + placement.m_targetLevel -
+                           outline.m_headings[source].m_level;
+      if (level < 1 || level > outline.m_maxLevel)
+        return false;
+      movedIds.append(id);
+      movedLevels.append(int(level));
+    }
+  } else {
+    movedIds.append(p_edit.nodeId);
+    movedLevels.append(placement.m_targetLevel);
+    p_after.m_headingIndices.insert(p_edit.nodeId, -1);
+  }
+  p_after.m_ids.clear();
+  p_after.m_levels.clear();
+  const auto appendMoved = [&] {
+    p_after.m_ids.append(movedIds);
+    p_after.m_levels.append(movedLevels);
+  };
+  for (int i = 0; i < binding.m_ids.size(); ++i) {
+    const auto &id = binding.m_ids[i];
+    const int heading = binding.m_headingIndices.value(id);
+    if (heading == insertion)
+      appendMoved();
+    if (moving && heading >= source && heading < sourceEnd)
+      continue;
+    p_after.m_ids.append(id);
+    p_after.m_levels.append(binding.m_levels[i]);
+  }
+  if (insertion == outline.m_headings.size())
+    appendMoved();
+  p_after.m_parents.insert(p_edit.nodeId, p_edit.parentId);
+  return p_after.m_ids.size() == binding.m_ids.size() + (adding ? 1 : 0);
+}
+
+bool ViewAreaController::prepareOutlineMindMapEdit(
+    const QString &p_address, const QString &p_bufferId, const m3::qt::SourceEdit &p_edit,
+    OutlineMindMapPreview &p_preview, OutlineSourceEdit &p_sourceEdit,
+    OutlineMindMapBinding &p_after, QString *p_error) {
+  const auto fail = [p_error](const QString &p_message) {
+    if (p_error)
+      *p_error = p_message;
+    return false;
+  };
+  const auto found = m_outlineMindMapPreviews.constFind(p_address);
+  if (found == m_outlineMindMapPreviews.cend() || found->m_bufferId != p_bufferId)
+    return fail(tr("The source outline has changed. Reopen the mind map to edit."));
+  p_preview = *found;
+  if (p_preview.m_stale)
+    return fail(tr("The source outline has changed. Reopen the mind map to edit."));
+  if (p_preview.m_approving || p_preview.m_inFlight || p_preview.m_pending ||
+      p_preview.m_reconciling)
+    return fail(tr("The source outline is still updating."));
+  const QPointer<ViewAreaController> guard(this);
+  if (p_preview.m_readOnly || p_preview.m_admitting || p_preview.m_closing ||
+      !isOutlineMindMapSourceCurrent(p_preview) || !guard || !m_view ||
+      m_view->findWindowIdByBufferId(p_preview.m_workspaceId, p_bufferId) != p_preview.m_windowId)
+    return fail(tr("The source outline is not editable."));
+  const auto snapshot =
+      m_view->outlineSourceSnapshot(p_preview.m_sourceWindowId, p_preview.m_sourceGeneration);
+  if (!guard)
+    return false;
+  const auto current = m_outlineMindMapPreviews.constFind(p_address);
+  if (current == m_outlineMindMapPreviews.cend() || current->m_bufferId != p_bufferId ||
+      current->m_windowId != p_preview.m_windowId ||
+      current->m_operation != p_preview.m_operation || current->m_closing || current->m_stale ||
+      current->m_inFlight || current->m_approving || current->m_pending ||
+      !isOutlineMindMapSourceCurrent(p_preview) || !guard)
+    return fail(tr("The source outline has changed. Reopen the mind map to edit."));
+  if (snapshot.m_contentGeneration != p_preview.m_contentGeneration ||
+      (snapshot.m_revision >= 0 &&
+       (!snapshot.m_outline ||
+        snapshot.m_outline->navigationFingerprint() != p_preview.m_outlineFingerprint))) {
+    m_outlineMindMapPreviews[p_address].m_stale = true;
+    return fail(tr("The source outline has changed. Reopen the mind map to edit."));
+  }
+  if (snapshot.m_revision < 0)
+    return fail(tr("The source outline is not ready for editing."));
+  // Highlight-only document revisions do not retire a content binding.
+  p_preview.m_sourceRevision = snapshot.m_revision;
+  m_outlineMindMapPreviews[p_address].m_sourceRevision = snapshot.m_revision;
+  if (!resolveOutlineMindMapPlacement(p_preview, snapshot, p_edit, p_sourceEdit, p_after))
+    return fail(tr("This change is not supported by the source outline."));
+  return true;
+}
+
+bool ViewAreaController::approveOutlineMindMapEdit(const Buffer2 &p_preview,
+                                                   const m3::qt::SourceEdit &p_edit,
+                                                   QString *p_error) {
+  if (p_error)
+    p_error->clear();
+  if (!p_preview.isValid() || p_preview.isReadOnly() ||
+      p_edit.kind != m3::qt::SourceEdit::Kind::MoveNode)
+    return false;
+  const QString address = p_preview.nodeId().relativePath;
+  const QString bufferId = p_preview.id();
+  OutlineMindMapPreview before;
+  OutlineSourceEdit request;
+  OutlineMindMapBinding after;
+  if (!prepareOutlineMindMapEdit(address, bufferId, p_edit, before, request, after, p_error))
+    return false;
+  const QPointer<ViewAreaController> guard(this);
+  m_outlineMindMapPreviews[address].m_approving = true;
+  m_outlineMindMapPreviews[address].m_approvedRevision = -1;
+  // No protected lease crosses this view-owned modal consent phase.
+  const bool accepted =
+      m_view->confirmOutlineSourceMove(before.m_sourceWindowId, before.m_sourceGeneration, request);
+  if (!guard)
+    return false;
+  auto current = m_outlineMindMapPreviews.find(address);
+  if (current == m_outlineMindMapPreviews.end() || current->m_bufferId != bufferId ||
+      current->m_windowId != before.m_windowId)
+    return false;
+  current->m_approving = false;
+  reconcileOutlineMindMapPreview(address);
+  if (!guard || !accepted)
+    return false;
+  OutlineMindMapPreview revalidated;
+  OutlineSourceEdit checked;
+  OutlineMindMapBinding checkedAfter;
+  if (!prepareOutlineMindMapEdit(address, bufferId, p_edit, revalidated, checked, checkedAfter,
+                                 p_error) ||
+      revalidated.m_contentGeneration != before.m_contentGeneration ||
+      revalidated.m_outlineFingerprint != before.m_outlineFingerprint ||
+      checked.m_placement.m_sourceHeadingIndex != request.m_placement.m_sourceHeadingIndex ||
+      checked.m_placement.m_beforeHeadingIndex != request.m_placement.m_beforeHeadingIndex ||
+      checked.m_placement.m_parentHeadingIndex != request.m_placement.m_parentHeadingIndex ||
+      checked.m_placement.m_targetLevel != request.m_placement.m_targetLevel)
+    return false;
+  m_outlineMindMapPreviews[address].m_approvedMove = checked.m_placement;
+  m_outlineMindMapPreviews[address].m_approvedRevision = checked.m_expectedRevision;
+  return true;
+}
+
+std::optional<m3::qt::SourceEditCommand>
+ViewAreaController::applyOutlineMindMapEdit(const Buffer2 &p_preview,
+                                            const m3::qt::SourceEdit &p_edit, QString *p_error) {
+  if (p_error)
+    p_error->clear();
+  if (!p_preview.isValid() || p_preview.isReadOnly())
+    return std::nullopt;
+  const QString address = p_preview.nodeId().relativePath;
+  const QString bufferId = p_preview.id();
+  OutlineMindMapPreview before;
+  OutlineSourceEdit request;
+  OutlineMindMapBinding after;
+  if (!prepareOutlineMindMapEdit(address, bufferId, p_edit, before, request, after, p_error))
+    return std::nullopt;
+  if (p_edit.kind == m3::qt::SourceEdit::Kind::MoveNode &&
+      (before.m_approvedRevision != request.m_expectedRevision ||
+       before.m_approvedMove.m_sourceHeadingIndex != request.m_placement.m_sourceHeadingIndex ||
+       before.m_approvedMove.m_beforeHeadingIndex != request.m_placement.m_beforeHeadingIndex ||
+       before.m_approvedMove.m_parentHeadingIndex != request.m_placement.m_parentHeadingIndex ||
+       before.m_approvedMove.m_targetLevel != request.m_placement.m_targetLevel))
+    return std::nullopt;
+  const auto source = m_services.get<BufferService>()->getBufferHandle(before.m_sourceBufferId);
+  const auto lease = before.m_protectedSource ? source.acquireProtectedLease() : nullptr;
+  if (before.m_protectedSource && (!lease || !lease->isCurrent()))
+    return std::nullopt;
+  const auto command = QSharedPointer<OutlineMindMapCommand>::create();
+  command->m_before = before.m_binding;
+  command->m_after = std::move(after);
+  const QPointer<ViewAreaController> guard(this);
+  m3::qt::SourceEditCommand nativeCommand;
+  nativeCommand.undo = [guard, address, bufferId, windowId = before.m_windowId, command] {
+    return guard && guard->replayOutlineMindMapEdit(address, bufferId, windowId, command, true);
+  };
+  nativeCommand.redo = [guard, address, bufferId, windowId = before.m_windowId, command] {
+    return guard && guard->replayOutlineMindMapEdit(address, bufferId, windowId, command, false);
+  };
+  // All binding and callback storage exists before the adapter can publish synchronously.
+  {
+    auto &entry = m_outlineMindMapPreviews[address];
+    entry.m_binding = command->m_after;
+    entry.m_receipt.reset();
+    entry.m_approvedRevision = -1;
+    entry.m_pending = true;
+    entry.m_inFlight = true;
+    entry.m_reconcileDeferred = true;
+    ++entry.m_operation;
+  }
+  command->m_receipt = m_view->applyOutlineSourceEdit(before.m_sourceWindowId,
+                                                      before.m_sourceGeneration, request, false);
+  if (!guard)
+    return std::nullopt;
+  auto current = m_outlineMindMapPreviews.find(address);
+  if (current == m_outlineMindMapPreviews.end() || current->m_bufferId != bufferId ||
+      current->m_windowId != before.m_windowId)
+    return std::nullopt;
+  if (!command->m_receipt) {
+    current->m_binding = before.m_binding;
+    current->m_receipt = before.m_receipt;
+    current->m_pending = false;
+    current->m_inFlight = false;
+    if (p_error)
+      *p_error = tr("The source rejected this outline change.");
+    // No source write occurred. Do not reconcile/replace a native projection inside apply.
+    return std::nullopt;
+  }
+  current->m_receipt = command->m_receipt;
+  // Native publication owns the end of inFlight, not return from this source callback.
+  return std::optional<m3::qt::SourceEditCommand>(std::move(nativeCommand));
+}
+
+bool ViewAreaController::replayOutlineMindMapEdit(
+    const QString &p_address, const QString &p_bufferId, ID p_windowId,
+    const QSharedPointer<OutlineMindMapCommand> &p_command, bool p_undo) {
+  if (!p_command || !p_command->m_receipt)
+    return false;
+  const auto found = m_outlineMindMapPreviews.constFind(p_address);
+  if (found == m_outlineMindMapPreviews.cend())
+    return false;
+  const auto before = *found;
+  const auto receipt = p_command->m_receipt;
+  const QPointer<ViewAreaController> guard(this);
+  if (before.m_bufferId != p_bufferId || before.m_windowId != p_windowId || before.m_readOnly ||
+      before.m_admitting || before.m_closing || before.m_approving || before.m_inFlight ||
+      before.m_reconciling || (before.m_pending && before.m_receipt != receipt) ||
+      !isOutlineMindMapSourceCurrent(before) || !guard || !m_view ||
+      m_view->findWindowIdByBufferId(before.m_workspaceId, p_bufferId) != p_windowId)
+    return false;
+  const auto preview = m_services.get<BufferService>()->getBufferHandle(p_bufferId);
+  if (!preview.isValid() || preview.isReadOnly())
+    return false;
+  const auto source = m_services.get<BufferService>()->getBufferHandle(before.m_sourceBufferId);
+  const auto lease = before.m_protectedSource ? source.acquireProtectedLease() : nullptr;
+  if (before.m_protectedSource && (!lease || !lease->isCurrent()))
+    return false;
+  // The adapter, not stale parser state, authorizes the exact Qt undo group. In particular
+  // a compile-failed accepted operation must remain undoable without a usable snapshot.
+  const auto replay = p_undo ? receipt->m_undo : receipt->m_redo;
+  if (!replay)
+    return false;
+  {
+    auto &entry = m_outlineMindMapPreviews[p_address];
+    entry.m_binding = p_undo ? p_command->m_before : p_command->m_after;
+    entry.m_receipt = receipt;
+    entry.m_pending = true;
+    entry.m_inFlight = true;
+    entry.m_reconcileDeferred = true;
+    entry.m_approvedRevision = -1;
+    ++entry.m_operation;
+  }
+  const bool accepted = replay();
+  if (!guard)
+    return false;
+  auto current = m_outlineMindMapPreviews.find(p_address);
+  if (current == m_outlineMindMapPreviews.end() || current->m_bufferId != p_bufferId ||
+      current->m_windowId != p_windowId)
+    return false;
+  if (!accepted) {
+    current->m_binding = before.m_binding;
+    current->m_receipt = before.m_receipt;
+    current->m_pending = before.m_pending;
+    current->m_inFlight = false;
+    return false;
+  }
+  return true;
+}
+
+bool ViewAreaController::isOutlineMindMapEditBusy(const Buffer2 &p_preview) const {
+  const auto found = m_outlineMindMapPreviews.constFind(p_preview.nodeId().relativePath);
+  return found != m_outlineMindMapPreviews.cend() && found->m_bufferId == p_preview.id() &&
+         (found->m_approving || found->m_inFlight || found->m_reconciling);
+}
+
+bool ViewAreaController::isOutlineMindMapSourceBusy(ID p_sourceId) const {
+  if (p_sourceId == InvalidViewWindowId)
+    return false;
+  for (const auto &entry : m_outlineMindMapPreviews) {
+    if (entry.m_sourceWindowId == p_sourceId && !entry.m_closing &&
+        (entry.m_admitting || entry.m_approving || entry.m_inFlight || entry.m_reconciling ||
+         m_transitioningWindows.contains(entry.m_windowId)))
+      return true;
+  }
+  return false;
+}
+
+void ViewAreaController::finishOutlineMindMapEdit(const Buffer2 &p_preview) {
+  const QString address = p_preview.nodeId().relativePath;
+  auto found = m_outlineMindMapPreviews.find(address);
+  if (found == m_outlineMindMapPreviews.end() || found->m_bufferId != p_preview.id())
+    return;
+  found->m_inFlight = false;
+  reconcileOutlineMindMapPreview(address);
+}
+
+void ViewAreaController::reconcileOutlineMindMapSource(ID p_sourceId, quint64 p_generation) {
+  QStringList addresses;
+  for (auto it = m_outlineMindMapPreviews.cbegin(); it != m_outlineMindMapPreviews.cend(); ++it) {
+    if (it->m_sourceWindowId == p_sourceId && it->m_sourceGeneration == p_generation)
+      addresses.append(it.key());
+  }
+  const QPointer<ViewAreaController> guard(this);
+  for (const auto &address : addresses) {
+    reconcileOutlineMindMapPreview(address);
+    if (!guard)
+      return;
+  }
+}
+
+void ViewAreaController::resumeOutlineMindMapReconciliation() {
+  QStringList addresses;
+  for (auto it = m_outlineMindMapPreviews.cbegin(); it != m_outlineMindMapPreviews.cend(); ++it) {
+    if (it->m_reconcileDeferred)
+      addresses.append(it.key());
+  }
+  const QPointer<ViewAreaController> guard(this);
+  for (const auto &address : addresses) {
+    reconcileOutlineMindMapPreview(address);
+    if (!guard)
+      return;
+  }
+}
+
+void ViewAreaController::reconcileOutlineMindMapPreview(const QString &p_address) {
+  const auto found = m_outlineMindMapPreviews.constFind(p_address);
+  if (found == m_outlineMindMapPreviews.cend() || found->m_closing)
+    return;
+  const auto before = *found;
+  if (before.m_admitting || before.m_approving || before.m_inFlight || before.m_reconciling ||
+      m_transitioningWindows.contains(before.m_windowId) ||
+      m_transitioningWindows.contains(before.m_sourceWindowId) ||
+      isPreviewWorkspaceClosing(before.m_workspaceId)) {
+    m_outlineMindMapPreviews[p_address].m_reconcileDeferred = true;
+    return;
+  }
+  if (before.m_readOnly)
+    return;
+  const QPointer<ViewAreaController> guard(this);
+  m_outlineMindMapPreviews[p_address].m_reconciling = true;
+  m_outlineMindMapPreviews[p_address].m_reconcileDeferred = false;
+  const auto finish =
+      qScopeGuard([guard, p_address, bufferId = before.m_bufferId, operation = before.m_operation] {
+        if (!guard)
+          return;
+        auto current = guard->m_outlineMindMapPreviews.find(p_address);
+        if (current == guard->m_outlineMindMapPreviews.end() || current->m_bufferId != bufferId ||
+            current->m_operation != operation)
+          return;
+        current->m_reconciling = false;
+        const bool deferred = current->m_reconcileDeferred;
+        if (deferred)
+          guard->reconcileOutlineMindMapPreview(p_address);
+      });
+  if (!isOutlineMindMapSourceCurrent(before) || !guard || !m_view ||
+      m_view->findWindowIdByBufferId(before.m_workspaceId, before.m_bufferId) != before.m_windowId)
+    return;
+  const auto receipt = before.m_receipt;
+  if (before.m_pending) {
+    if (!receipt || receipt->m_pending)
+      return;
+    if (receipt->m_stale) {
+      auto current = m_outlineMindMapPreviews.find(p_address);
+      if (current != m_outlineMindMapPreviews.end()) {
+        current->m_pending = false;
+        current->m_receipt.reset();
+        current->m_stale = true;
+      }
+      return;
+    }
+  }
+  const auto snapshot =
+      m_view->outlineSourceSnapshot(before.m_sourceWindowId, before.m_sourceGeneration);
+  if (!guard)
+    return;
+  auto current = m_outlineMindMapPreviews.find(p_address);
+  if (current == m_outlineMindMapPreviews.end() || current->m_bufferId != before.m_bufferId ||
+      current->m_windowId != before.m_windowId || current->m_operation != before.m_operation ||
+      current->m_closing)
+    return;
+  if (!before.m_pending) {
+    if (snapshot.m_contentGeneration != before.m_contentGeneration ||
+        (snapshot.m_revision >= 0 &&
+         (!snapshot.m_outline ||
+          snapshot.m_outline->navigationFingerprint() != before.m_outlineFingerprint))) {
+      current->m_stale = true;
+      current->m_approvedRevision = -1;
+    } else if (snapshot.m_revision >= 0) {
+      current->m_sourceRevision = snapshot.m_revision;
+    }
+    return;
+  }
+  // Receipt settlement is acknowledged by the adapter only after its authoritative
+  // publication. An old outline/state wake or temporary writer restriction is not it.
+  if (snapshot.m_revision < 0 || !snapshot.m_outline || receipt->m_pending)
+    return;
+  const auto &levels =
+      receipt->m_awaitingBefore ? receipt->m_beforeHeadingLevels : receipt->m_afterHeadingLevels;
+  const auto &visible = receipt->m_awaitingBefore ? receipt->m_beforeVisibleHeadings
+                                                  : receipt->m_afterVisibleHeadings;
+  const auto &positions = receipt->m_awaitingBefore ? receipt->m_beforeHeadingPositions
+                                                    : receipt->m_afterHeadingPositions;
+  const auto &headings = snapshot.m_outline->m_headings;
+  bool matches = !receipt->m_stale && receipt->m_document &&
+                 receipt->m_contentGeneration == snapshot.m_contentGeneration &&
+                 levels.size() == visible.size() && levels.size() == positions.size() &&
+                 levels.size() == receipt->m_trackedHeadingStarts.size() &&
+                 snapshot.m_headingPositions.size() == headings.size();
+  int headingIndex = 0;
+  int real = 0;
+  for (int i = 0; matches && i < levels.size(); ++i) {
+    const auto &marker = receipt->m_trackedHeadingStarts[i];
+    matches = marker.document() == receipt->m_document && marker.position() == positions[i];
+    if (!visible[i])
+      continue;
+    while (headingIndex < headings.size() && headings[headingIndex].m_isPlaceholder)
+      ++headingIndex;
+    matches = matches && headingIndex < headings.size() && real < before.m_binding.m_ids.size() &&
+              headings[headingIndex].m_level == levels[i] &&
+              levels[i] == before.m_binding.m_levels[real] &&
+              snapshot.m_headingPositions[headingIndex] == marker.position();
+    ++headingIndex;
+    ++real;
+  }
+  while (headingIndex < headings.size() && headings[headingIndex].m_isPlaceholder)
+    ++headingIndex;
+  matches = matches && headingIndex == headings.size() && real == before.m_binding.m_ids.size();
+  auto binding = before.m_binding;
+  matches = matches &&
+            mapOutlineMindMapBinding(*snapshot.m_outline, before.m_promotedTitle, binding) &&
+            binding.m_levels == before.m_binding.m_levels &&
+            binding.m_parents == before.m_binding.m_parents;
+  if (!matches) {
+    current->m_pending = false;
+    current->m_receipt.reset();
+    current->m_stale = true;
+    return;
+  }
+  QVector<m3::qt::OutlineEntry> topics;
+  QHash<QString, int> depths;
+  topics.reserve(binding.m_ids.size() + (before.m_promotedTitle ? 0 : 1));
+  depths.insert(QStringLiteral("root"), 1);
+  if (!before.m_promotedTitle) {
+    const auto source = m_services.get<BufferService>()->getBufferHandle(before.m_sourceBufferId);
+    auto title = source.displayName();
+    topics.append({QStringLiteral("root"), title.isEmpty() ? tr("Document") : title, 1});
+  }
+  for (const auto &id : binding.m_ids) {
+    const int depth =
+        id == QLatin1String("root") ? 1 : depths.value(binding.m_parents.value(id)) + 1;
+    depths.insert(id, depth);
+    topics.append({id, headings[binding.m_headingIndices.value(id)].m_name, depth});
+  }
+  // No roster reference survives native publication: synchronization emits documentChanged.
+  const bool synchronized = m_view->synchronizeOutlineMindMapTopics(before.m_windowId, topics);
+  if (!guard)
+    return;
+  current = m_outlineMindMapPreviews.find(p_address);
+  if (current == m_outlineMindMapPreviews.end() || current->m_bufferId != before.m_bufferId ||
+      current->m_windowId != before.m_windowId || current->m_operation != before.m_operation ||
+      current->m_closing)
+    return;
+  current->m_pending = false;
+  current->m_receipt.reset();
+  current->m_stale = !synchronized;
+  if (synchronized) {
+    current->m_binding = std::move(binding);
+    current->m_outlineFingerprint = snapshot.m_outline->navigationFingerprint();
+    current->m_sourceRevision = snapshot.m_revision;
+    current->m_contentGeneration = snapshot.m_contentGeneration;
+  }
 }
 
 bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
@@ -1100,34 +1739,20 @@ bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
   }
   const auto entry = m_outlineMindMapPreviews.constFind(p_buffer.nodeId().relativePath);
   if (entry == m_outlineMindMapPreviews.constEnd() || entry->m_bufferId != p_buffer.id() ||
-      entry->m_admitting || entry->m_closing || entry->m_windowId == InvalidViewWindowId) {
+      entry->m_admitting || entry->m_closing || entry->m_pending || entry->m_inFlight ||
+      entry->m_approving || entry->m_reconciling || entry->m_windowId == InvalidViewWindowId) {
     return false;
   }
   const auto target = *entry;
-  int headingIndex = -1;
-  if (p_nodeId == QLatin1String("root")) {
-    headingIndex = target.m_titleHeadingIndex;
-  } else if (p_nodeId.startsWith(QLatin1Char('h')) && p_nodeId.size() > 1) {
-    const auto digits = QStringView(p_nodeId).sliced(1);
-    if ((digits.size() > 1 && digits.front() == QLatin1Char('0')) ||
-        std::any_of(digits.begin(), digits.end(), [](QChar p_char) {
-          return p_char < QLatin1Char('0') || p_char > QLatin1Char('9');
-        })) {
-      return false;
-    }
-    bool valid = false;
-    headingIndex = digits.toInt(&valid);
-    if (!valid || headingIndex == target.m_titleHeadingIndex) {
-      return false;
-    }
-  }
-  // A filename root and non-existent/placeholder heading IDs have no destination.
-  if (headingIndex < 0 || headingIndex >= target.m_navigableHeadings.size() ||
-      !target.m_navigableHeadings.testBit(headingIndex)) {
+  // Only admitted stable IDs navigate. In particular there is no original-index alias
+  // for a promoted root, placeholder, or heading that has moved since admission.
+  const int headingIndex = target.m_binding.m_headingIndices.value(p_nodeId, -1);
+  if (headingIndex < 0) {
     return false;
   }
   auto *const view = m_view;
-  if (!view || !p_buffer.isValid() || !isOutlineMindMapSourceCurrent(target) ||
+  const QPointer<ViewAreaController> guard(this);
+  if (!view || !p_buffer.isValid() || !isOutlineMindMapSourceCurrent(target) || !guard ||
       view->findWindowIdByBufferId(target.m_workspaceId, target.m_bufferId) != target.m_windowId) {
     return false;
   }
@@ -1138,6 +1763,9 @@ bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
     }
     return false;
   }
+  if (!guard || m_view != view ||
+      !m_outlineMindMapPreviews.contains(p_buffer.nodeId().relativePath))
+    return false;
   return view->navigateToOutlineHeading(target.m_sourceWindowId, target.m_sourceGeneration,
                                         headingIndex, target.m_outlineFingerprint);
 }
@@ -1148,7 +1776,7 @@ bool ViewAreaController::closeOutlineMindMapPreviews(ID p_sourceId) {
   for (auto entry = m_outlineMindMapPreviews.cbegin(); entry != m_outlineMindMapPreviews.cend();
        ++entry) {
     if (entry->m_sourceWindowId == p_sourceId) {
-      if (entry->m_admitting) {
+      if (entry->m_admitting || entry->m_approving || entry->m_inFlight || entry->m_reconciling) {
         return false;
       }
       keys.append(entry.key());
@@ -1245,16 +1873,35 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   if (provenance.m_protectedSource && (!lease || !lease->isCurrent())) {
     return fail(tr("Unable to open the outline mind map"));
   }
+  const QPointer<ViewAreaController> guard(this);
+  const auto snapshot = m_view->outlineSourceSnapshot(p_sourceId, p_sourceGeneration);
+  if (!guard || !isOutlineMindMapSourceCurrent(provenance))
+    return fail(tr("Unable to open the outline mind map"));
+  provenance.m_outlineFingerprint = p_outline.navigationFingerprint();
+  provenance.m_sourceRevision = snapshot.m_revision;
+  provenance.m_contentGeneration = snapshot.m_contentGeneration;
+  provenance.m_readOnly =
+      provenance.m_readOnly || snapshot.m_revision < 0 || !snapshot.m_outline ||
+      snapshot.m_outline->navigationFingerprint() != provenance.m_outlineFingerprint;
   QString title = p_sourceBuffer.displayName();
   if (title.isEmpty()) {
     title = tr("Document");
   }
-  auto content = outlineMindMapContent(title, p_outline, provenance.m_titleHeadingIndex,
-                                       provenance.m_navigableHeadings, p_error);
+  int titleHeadingIndex = -1;
+  QBitArray navigableHeadings;
+  auto content =
+      outlineMindMapContent(title, p_outline, titleHeadingIndex, navigableHeadings, p_error);
   if (content.isEmpty()) {
     return false;
   }
-  provenance.m_outlineFingerprint = p_outline.navigationFingerprint();
+  provenance.m_promotedTitle = titleHeadingIndex >= 0;
+  for (int i = 0; i < p_outline.m_headings.size(); ++i) {
+    if (!p_outline.m_headings[i].m_isPlaceholder)
+      provenance.m_binding.m_ids.append(i == titleHeadingIndex ? QStringLiteral("root")
+                                                               : QStringLiteral("h%1").arg(i));
+  }
+  if (!mapOutlineMindMapBinding(p_outline, provenance.m_promotedTitle, provenance.m_binding))
+    return fail(tr("Unable to create a mind map from this outline"));
   MemoryBufferSource source;
   source.address = QStringLiteral("vx://outline-mind-map/%1")
                        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
@@ -1263,7 +1910,6 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   source.content = std::move(content);
   source.readOnly = provenance.m_readOnly;
   const QString address = source.address;
-  const QPointer<ViewAreaController> guard(this);
   m_outlineMindMapPreviews.insert(address, provenance);
   bool admitted = false;
   const auto finish = qScopeGuard([guard, address, &admitted, &lease] {
@@ -1290,6 +1936,8 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
     if (guard && !admitted) {
       emit guard->windowsChanged();
     }
+    if (guard && admitted)
+      guard->reconcileOutlineMindMapPreview(address);
   });
   // Publish pending policy before any open hook can attempt promotion.
   emit windowsChanged();
@@ -1304,11 +1952,9 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   settings.m_readOnly = provenance.m_readOnly;
   settings.m_focus = true;
   settings.m_alwaysNewWindow = true;
-  if (p_currentHeadingIndex >= 0 && p_currentHeadingIndex < provenance.m_navigableHeadings.size() &&
-      provenance.m_navigableHeadings.testBit(p_currentHeadingIndex)) {
-    settings.m_anchor = p_currentHeadingIndex == provenance.m_titleHeadingIndex
-                            ? QStringLiteral("root")
-                            : QStringLiteral("h%1").arg(p_currentHeadingIndex);
+  if (p_currentHeadingIndex >= 0 && p_currentHeadingIndex < navigableHeadings.size() &&
+      navigableHeadings.testBit(p_currentHeadingIndex)) {
+    settings.m_anchor = provenance.m_binding.m_headingIndices.key(p_currentHeadingIndex);
   }
   VxCoreError error = VXCORE_OK;
   const auto buffer = buffers->openMemoryBuffer(std::move(source), settings, &error);
@@ -1987,6 +2633,8 @@ void ViewAreaController::rejectPreviewWindow(ID p_windowId, const QString &p_buf
   for (auto &entry : m_outlineMindMapPreviews) {
     if (entry.m_windowId == p_windowId) {
       entry.m_closing = true;
+      entry.m_receipt.reset();
+      entry.m_pending = false;
     }
   }
   m_failedPreviewAdmissions.insert(p_windowId, {p_workspaceId, p_bufferId});
@@ -2454,11 +3102,19 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
   if (p_windowId == InvalidViewWindowId || !m_view || m_transitioningWindows.contains(p_windowId)) {
     return false;
   }
+  for (const auto &entry : m_outlineMindMapPreviews) {
+    if ((entry.m_windowId == p_windowId || entry.m_sourceWindowId == p_windowId) &&
+        (entry.m_approving || entry.m_inFlight || entry.m_reconciling))
+      return false;
+  }
   const QPointer<ViewAreaController> guard(this);
   m_transitioningWindows.insert(p_windowId);
   const auto transitionGuard = qScopeGuard([guard, p_windowId]() {
     if (guard) {
       guard->m_transitioningWindows.remove(p_windowId);
+      // Publication may have completed inside a cancelled modal close. Checking
+      // and the transition guard must both be gone before topics can reconcile.
+      guard->resumeOutlineMindMapReconciliation();
     }
   });
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
@@ -2527,6 +3183,8 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
     for (auto &entry : m_outlineMindMapPreviews) {
       if (entry.m_windowId == p_windowId) {
         entry.m_closing = true;
+        entry.m_receipt.reset();
+        entry.m_pending = false;
       }
     }
   }
@@ -2592,6 +3250,8 @@ bool ViewAreaController::closePreviewWorkspace(const QString &p_workspaceId) {
       if (guard) {
         removeEmptyPreviewWorkspace(p_workspaceId);
       }
+      if (guard)
+        resumeOutlineMindMapReconciliation();
       return false;
     }
   }

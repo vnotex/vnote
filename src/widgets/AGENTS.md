@@ -294,8 +294,8 @@ Coverage: `test_pdfvieweradapter_outline`, `test_markdown_heading_link`,
 Markdown, PDF and Typst expose **Mind Map** (Lucide Brain, `brain_editor.svg`) immediately
 before **Outline**. The clicked
 window's published `OutlineProvider` supplies a native map, without saving,
-reparsing or changing source mode. Each activation captures fresh memory content; open maps
-never follow later source edits. When the first real outline heading is the only H1, its literal
+reparsing or changing source mode. Each activation captures a fresh source-bound projection.
+When the first real outline heading is the only H1, its literal
 name becomes the central topic without a duplicate heading node; its children become root
 branches. Otherwise the document name remains central. This uses outline order, not the
 position of preceding prose. A title-only outline produces a single central node. Other
@@ -323,36 +323,71 @@ Generation, visibility, enabled/content and protected-locking guards cancel stal
 Initial focus does not emit `nodeClicked`, close the preview, change source position or mutate
 snapshot JSON. Later source selection changes do not retarget the open snapshot.
 
-The generated buffer is scratch memory with no save/reload destination. Capture the clicked
-source's mode with its outline, before open hooks: Read mode or a read-only source buffer
-produces a fully read-only preview. Only a writable Edit source permits preview edits; an
-invalid source mode fails closed. Store this policy in preview provenance and require both
-open settings and buffer permissions to match it during admission. Existing snapshots keep
-the captured policy even if the source later changes mode; reopening samples the new mode.
+The generated buffer remains memory-backed with no separate save/reload destination. Capture
+source mode, current parser eligibility, document revision and text generation before open hooks.
+Only a writable Edit source with a current validated Markdown/Typst source mapping is editable;
+Read/read-only sources, PDF and unsupported/unready mappings are navigation-only. Captured
+read-only never upgrades later; current source restrictions can revoke edit authorization.
+Invalid or overlapping parser ranges must fail closed, not be repaired by guessed source mapping.
 
-All generated maps use m3 basic mode, with full read-only taking precedence. Writable previews
-allow node topics (literal `#`/`##`), native structure/existing-link editing and undo/redo;
-appearance, tags, URL, image, icons and note stay read-only. Fully read-only previews reject
-all content mutations, including topic edits. Folding, navigation and camera controls remain
-available in both. Host resource insertion, image resizing and drag-to-create links stay
-blocked. Ordinary mind-map files retain their existing full/read-only policy. Config refreshes
-must preserve the captured permissions and must not cancel a writable preview's topic draft.
+Generated maps install m3's source-outline handler in addition to basic mode. Allow literal topic
+changes, one child/sibling addition and moves; reject deletion, duplicate/subtree paste, orphan
+creation/detach, all cross-links and rich metadata. A filename-only root has no editable heading;
+a promoted title can be renamed and receive children but cannot move. Add creates an empty source
+heading before inline editing; Escape retains it. Native sibling intent includes its clicked
+anchor so Enter/Shift+Enter preserve source level even across omitted placeholder levels.
+Copy, folding, selection, navigation and camera remain available. Config/theme refresh must
+preserve the handler, input, caret and local draft undo; handler rebinding resets native history.
+Ordinary mind-map files retain their existing features and save policy.
 
-Preview edits synchronize only to its memory buffer, never to source Markdown/PDF/Typst.
-Closing an edited preview offers Discard/Cancel, not Save; Cancel also vetoes source close
-or protected-note locking, and Discard retires the derived content before locking keys.
-Promotion and session persistence stay forbidden. Stable original node IDs continue to
-navigate their original headings even after local renames/moves; newly inserted nodes have
-no source-heading destination. Coverage: `outlineMindMapPreview`,
-`outlineMindMapPermissionCapture`, `outlineMindMapBasicModeAndPromotion` and dirty
-protected-preview lifetime rows in `test_viewarea_tab_reuse`.
+The Outline Dock and mind-map source moves share `Outline::planMove()` and
+`OutlineSectionEditor::reorderHeadingBlock()`. Markdown and Typst expose one guarded
+`applyOutlineSourceEdit()` adapter: ordinary Outline moves use focus=true, preview commands use
+false. A live active writer must exist, capture successfully and match the clicked editor;
+validate the buffer revision/content before registering that source's writer without focusing it.
+Moves use the same Yes/No, default-No confirmation, in a separate native approval phase before
+candidate construction. Apply/history callbacks never show dialogs or pump events. Native
+candidate/scene/history and host receipt allocations precede source mutation; paired Undo/Redo
+replays exactly one current QTextDocument group, never an inverse edit or whole-document reload.
+
+Install the source receipt and controller in-flight state before writing. Native publication
+finishes the atomic interval; another content operation waits for authoritative source settlement.
+Tracked heading cursors and levels validate the published roster, including hidden Typst boundaries.
+Markdown waits for `sourceEditState()==Settled` after the post-publication generation barrier;
+only joined normalization while its receipt is pending is authorized. Typst waits for the current
+post-write compilation epoch/generation's headings publication, not Ready alone or synchronous empty
+invalidation. A completed unsupported/empty projection or compiler error freezes edits but may leave
+exact paired Undo available. Receipt content generation prevents deferred close reconciliation from
+adopting a later independent body edit. Source-originated changes stale other previews; reopening
+is recovery. Reconcile only topics/current native history, never colors, folds, camera or `loadJson()`.
+
+Accepted operations already changed the source before native `documentChanged`. Existing
+`pendingEditChanged` dirty marking and BufferService's 3000 ms capture accept unfinished inline
+text with `commitActiveEdit(true)`, retaining its widget/caret. Reuse source Auto Save / Backup File /
+None policy: no second timer, sidecar or fake save callback. Source disk/backup persistence may need
+the next tick after a draft capture; dirty-set iteration order is not a durability guarantee.
+The map JSON is only a derived cache. Its revision may advance during modal approval; never reload
+that cache into the native projection or clear the source's dirty/failure state because it synced.
+
+Generated-view `isModified()` reports only an unapplied native draft. The source tab owns actual
+unsaved/saving/failure state. Close attempts draft capture first; accepted changes need no scratch
+consent. Rejection retains the draft and offers Discard/Cancel. Cancel also vetoes source retirement;
+Discard calls `discardActiveEdit()` and cancels only unapplied input. Forced close still attempts
+capture and fails without prompting on rejection. Retire callbacks/history and detach the generated
+writer/resource policy before deferred destruction; a retired widget must not become a scratch map.
+Live hidden sibling sources may be captured during close checking, but new admission into a closing
+host stays forbidden. Promotion and session persistence remain forbidden.
+
+Coverage: `outlineMindMapSourceEditing`, `outlineMindMapSourceGuards`,
+`outlineMindMapSourceHistory`, `outlineMindMapSourceSavePolicy`, `outlineMindMapSourceClose`,
+protected/nested lifetime cases, and direct Markdown/Typst adapter tests in the existing widget suites.
 
 Real document-root children receive automatic colors from m3's public branch palette before
 loading the snapshot. Colors are distinct until the palette is exhausted; descendants
 inherit their branch's color and the document root stays neutral. The snapshot retains these
 colors through navigation and theme switches. Ordinary map files and their preferences are unchanged.
 
-A completed plain primary click on a node body/topic navigates to its original source heading.
+A completed plain primary click on a node body/topic navigates to its mapped current source heading.
 The promoted title maps to its original H1; a document-name-only root has no destination.
 Ctrl/Shift selection, keyboard/API selection, folding, dragging and other controls do not navigate.
 Navigation calls `ViewWindow2::activateOutlineHeading(index)`, which moves to the heading without
@@ -368,12 +403,14 @@ Typst headings open or reposition a background source tab without replacing the 
 Ordinary Outline clicks keep their existing focus behavior. The base activation API dispatches
 non-focusing provider handlers; PDF and Typst override it for their focus-aware navigation paths.
 
-The roster stores original navigable-index bits, promoted-title index and an ordered heading
-fingerprint, never another plaintext outline. `Outline::navigationFingerprint()` covers names,
-levels and placeholders, not display/reordering permissions. Validate it before dispatch; changed
-headings require reopening the snapshot. Body-only edits use the current heading positions.
-Recheck source ID/generation/protection across callbacks, and retain no source outline or protected
-operation lease across navigation. Ordinary file mind maps do not navigate other source windows.
+The roster stores stable node-to-current-heading mappings, ordered real IDs, immutable original
+promotion identity, source revision/text generation and a navigation fingerprint, never source text
+or another Outline. Original `hN` IDs are only admission identities; never decode them after edits.
+New native UUID nodes navigate normally after verified publication. The fingerprint covers names,
+levels and placeholders, not permissions; body-only external edits can retain navigation but not
+mutation authorization. Recheck source/preview identity, generations, host and protection across
+callbacks. Hold no source outline or protected lease in history. Ordinary file maps do not navigate
+other source windows.
 Coverage includes real PDF/Typst destinations, protected/nested sources, repeated clicks, keyboard
 focus retention, imported Typst tabs, dirty siblings and stale outlines in `test_viewarea_tab_reuse`.
 

@@ -1,7 +1,6 @@
 #ifndef VIEWAREACONTROLLER_H
 #define VIEWAREACONTROLLER_H
 
-#include <QBitArray>
 #include <QHash>
 #include <QJsonObject>
 #include <QMap>
@@ -13,6 +12,7 @@
 #include <QVariantMap>
 #include <QVector>
 #include <memory>
+#include <optional>
 
 #include <controllers/viewareaview.h>
 #include <core/fileopensettings.h>
@@ -24,6 +24,11 @@
 #include <vxcore/vxcore_types.h>
 
 class QTimer;
+
+namespace m3::qt {
+struct SourceEdit;
+struct SourceEditCommand;
+} // namespace m3::qt
 
 namespace vnotex {
 
@@ -124,6 +129,15 @@ public:
   // False with no error is a non-heading node or unavailable target.
   bool activateOutlineMindMapNode(const Buffer2 &p_buffer, const QString &p_nodeId,
                                   QString *p_error = nullptr);
+  std::optional<m3::qt::SourceEditCommand> applyOutlineMindMapEdit(const Buffer2 &p_preview,
+                                                                   const m3::qt::SourceEdit &p_edit,
+                                                                   QString *p_error = nullptr);
+  bool approveOutlineMindMapEdit(const Buffer2 &p_preview, const m3::qt::SourceEdit &p_edit,
+                                 QString *p_error = nullptr);
+  void reconcileOutlineMindMapSource(ID p_sourceId, quint64 p_generation);
+  void finishOutlineMindMapEdit(const Buffer2 &p_preview);
+  bool isOutlineMindMapEditBusy(const Buffer2 &p_preview) const;
+  bool isOutlineMindMapSourceBusy(ID p_sourceId) const;
   bool closeOutlineMindMapPreviews(ID p_sourceId);
   bool isOutlineMindMapPreview(const Buffer2 &p_buffer) const;
   bool isProtectedOutlineMindMapPreview(const Buffer2 &p_buffer) const;
@@ -395,6 +409,17 @@ private:
   QString ensurePreviewWorkspace(ID p_sourceId, quint64 p_generation);
   bool isPreviewRequestCurrent(const FileOpenSettings &p_settings,
                                const QString &p_workspaceId) const;
+  struct OutlineMindMapBinding {
+    QVector<QString> m_ids; // Real headings in source order; never placeholder IDs.
+    QVector<int> m_levels;
+    QHash<QString, int> m_headingIndices;
+    QHash<QString, QString> m_parents;
+  };
+  struct OutlineMindMapCommand {
+    OutlineMindMapBinding m_before;
+    OutlineMindMapBinding m_after;
+    QSharedPointer<OutlineSourceEditReceipt> m_receipt;
+  };
   struct OutlineMindMapPreview {
     ID m_sourceWindowId = 0;
     quint64 m_sourceGeneration = 0;
@@ -403,14 +428,39 @@ private:
     QString m_workspaceId;
     ID m_windowId = 0;
     QByteArray m_outlineFingerprint;
-    QBitArray m_navigableHeadings;
-    int m_titleHeadingIndex = -1;
+    OutlineMindMapBinding m_binding;
+    int m_sourceRevision = -1;
+    quint64 m_contentGeneration = 0;
+    quint64 m_operation = 0;
+    QSharedPointer<OutlineSourceEditReceipt> m_receipt;
+    OutlineMove m_approvedMove;
+    int m_approvedRevision = -1;
+    bool m_promotedTitle = false;
     bool m_hasSectionNumber = false;
     bool m_protectedSource = false;
     bool m_readOnly = true;
     bool m_admitting = true;
     bool m_closing = false;
+    bool m_approving = false;
+    bool m_inFlight = false;
+    bool m_pending = false;
+    bool m_stale = false;
+    bool m_reconciling = false;
+    bool m_reconcileDeferred = false;
   };
+  static bool mapOutlineMindMapBinding(const Outline &, bool p_promotedTitle,
+                                       OutlineMindMapBinding &);
+  static bool resolveOutlineMindMapPlacement(const OutlineMindMapPreview &,
+                                             const OutlineSourceSnapshot &,
+                                             const m3::qt::SourceEdit &, OutlineSourceEdit &,
+                                             OutlineMindMapBinding &);
+  bool prepareOutlineMindMapEdit(const QString &p_address, const QString &p_bufferId,
+                                 const m3::qt::SourceEdit &, OutlineMindMapPreview &,
+                                 OutlineSourceEdit &, OutlineMindMapBinding &, QString *p_error);
+  bool replayOutlineMindMapEdit(const QString &p_address, const QString &p_bufferId, ID p_windowId,
+                                const QSharedPointer<OutlineMindMapCommand> &, bool p_undo);
+  void reconcileOutlineMindMapPreview(const QString &p_address);
+  void resumeOutlineMindMapReconciliation();
   bool isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview,
                                      bool p_requireVisible = true) const;
   bool isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,

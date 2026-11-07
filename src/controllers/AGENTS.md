@@ -246,8 +246,35 @@ An insertion anchor of -1 means append under the explicit parent, not necessaril
 mapping. Markdown accepts ATX/Setext through level six; Typst accepts AST-proven top-level `=`
 headings at positive depths. The caller must supply complete, current source boundaries; marker
 validation alone does not establish Typst syntax context. All changes form one edit block and
-cursor/selection restoration happens afterward. Native mind maps use their own atomic history
-command rather than serializing/reloading JSON or passing through the text mover.
+cursor/selection restoration happens afterward. Ordinary native mind maps use their own atomic
+history command. Source-linked previews pair that native command with this same text mover through
+the guarded source adapter; never diff serialized map JSON or roll back after publication.
+
+`renameHeading()` and `insertHeading()` share that snapshot validation and return source-heading
+positions in input order (placeholders remain -1; insertion appends its new marker position).
+Reordering computes this vector only when explicitly requested. All fallible range/size and
+UTF-16 validation precedes a single source undo group. Topics are single-line literal display
+text: Markdown uses numeric references for punctuation and edge whitespace; Typst uses a string
+expression. Renames replace title syntax, not section prose; empty Setext titles become ATX.
+Typst body/label/comment ranges must come from the compiler AST, never regex discovery. Insertion
+requires the complete heading roster, validates the requested parent at the insertion boundary,
+and retains preamble and existing section bodies.
+
+Setext parser spans can include the following blank/prose line. Locate the certified underline
+inside that span and bound title/marker replacements to it; preserve the tail and blank separation
+when relocating a Setext section. Raw overlapping snapshots remain unsupported, rather than being
+silently trimmed. ATX list delimiters stay literal so existing source numbering recognizes them;
+Setext titles also escape block punctuation. Typst protected slices concatenate without added
+visible spaces, retaining required original line boundaries around comments.
+
+`ViewAreaController` owns the metadata-only outline-map binding, not documents. Resolve native
+placements with `Outline::planMove()`, prepare before/after ID mappings and history closures before
+source write, and keep in-flight state until native publication. Approval is separate and view-owned;
+release protected leases before a modal and revalidate afterward. Settlement checks the receipt's
+exact text generation and tracked source markers before advancing fingerprint/revision/topics.
+Independent source edits revoke mutation authorization; native history may only replay its exact
+still-current source group. A generated cache revision never authorizes replacing the projection.
+See [source-bound preview contracts](../widgets/AGENTS.md#outline-mind-map-snapshots).
 
 ## NotificationRouter
 

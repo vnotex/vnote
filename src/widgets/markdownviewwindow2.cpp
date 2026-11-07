@@ -243,6 +243,9 @@ void MarkdownViewWindow2::releaseProtectedView() {
     return;
   }
   m_readerLifecycleClosing = true;
+  invalidateOutlineSourceHistory();
+  m_outlinePublishedRevision = -1;
+  emit outlineSourceChanged();
   m_readerResourcesSuspended = true;
   m_inactiveReaderTimer->stop();
   m_inactiveReaderFileOpenSettings.reset();
@@ -301,6 +304,9 @@ void MarkdownViewWindow2::retireReader() {
 
 void MarkdownViewWindow2::releaseBufferResources() {
   m_rebindingBuffer = true;
+  invalidateOutlineSourceHistory();
+  m_outlinePublishedRevision = -1;
+  emit outlineSourceChanged();
   invalidateNativeRender(true);
   m_readerResourcesSuspended = true;
   m_switchingMode = false;
@@ -908,6 +914,9 @@ void MarkdownViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printe
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
+  if (m_applyingOutlineSourceEdit) {
+    return false;
+  }
   cancelEditorImageView();
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
@@ -918,6 +927,8 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
   }
 
   m_readerLifecycleClosing = true;
+  invalidateOutlineSourceHistory();
+  emit outlineSourceChanged();
   m_inactiveReaderTimer->stop();
   m_inactiveReaderFileOpenSettings.reset();
   m_restoreReaderStatePending = false;
@@ -1700,67 +1711,465 @@ void MarkdownViewWindow2::setupOutlineProvider() {
 
   connect(m_outlineProvider.data(), &OutlineProvider::moveRequested, this,
           [this](const OutlineMove &p_move) {
-            if (m_mode != ViewWindowMode::Edit || !m_editor || m_editor->isReadOnly()) {
+            const auto snapshot = outlineSourceSnapshot();
+            if (snapshot.m_revision < 0) {
               return;
             }
-
-            const auto &buffer = getBuffer();
-            if (!buffer.isValid() || buffer.isReadOnly()) {
-              return;
-            }
-
-            const auto &editorHeadings = m_editor->getHeadings();
-            if (p_move.m_sourceHeadingIndex < 0 ||
-                p_move.m_sourceHeadingIndex >= editorHeadings.size() ||
-                p_move.m_beforeHeadingIndex < -1 ||
-                p_move.m_beforeHeadingIndex >= editorHeadings.size()) {
-              return;
-            }
-
-            QVector<OutlineSectionEditor::HeadingBlockInfo> headings;
-            headings.reserve(editorHeadings.size());
-            for (const auto &heading : editorHeadings) {
-              OutlineSectionEditor::HeadingBlockInfo info;
-              info.level = heading.m_level;
-              info.startPos = heading.m_startPos;
-              info.endPos = heading.m_endPos;
-              headings.append(info);
-            }
-
-            auto *textEdit = m_editor->getTextEdit();
-            const QTextCursor cursor = textEdit->textCursor();
-            int selectionStart = -1;
-            int selectionEnd = -1;
-            const auto &selection = textEdit->getSelection();
-            if (selection.isValid() &&
-                (!cursor.hasSelection() || cursor.selectionStart() != selection.start() ||
-                 cursor.selectionEnd() != selection.end())) {
-              selectionStart = selection.start();
-              selectionEnd = selection.end();
-            }
-
-            const auto moveResult = OutlineSectionEditor::reorderHeadingBlock(
-                textEdit->document(), headings, p_move.m_sourceHeadingIndex,
-                p_move.m_beforeHeadingIndex, p_move.m_targetLevel, cursor.position(),
-                cursor.anchor(), selectionStart, selectionEnd);
-            if (!moveResult.moved) {
-              return;
-            }
-
-            QTextCursor restoredCursor(textEdit->document());
-            restoredCursor.setPosition(moveResult.cursorAnchor);
-            restoredCursor.setPosition(moveResult.cursorPosition, QTextCursor::KeepAnchor);
-            textEdit->setTextCursor(restoredCursor);
-            if (moveResult.selectionStart >= 0 &&
-                moveResult.selectionEnd > moveResult.selectionStart) {
-              textEdit->setOverriddenSelection(moveResult.selectionStart, moveResult.selectionEnd);
-            }
-            focusEditor();
+            OutlineSourceEdit edit;
+            edit.m_kind = OutlineSourceEdit::Kind::Move;
+            edit.m_placement = p_move;
+            edit.m_expectedRevision = snapshot.m_revision;
+            edit.m_expectedFingerprint = snapshot.m_outline->navigationFingerprint();
+            applyOutlineSourceEdit(edit, true);
           });
 }
 
 QSharedPointer<OutlineProvider> MarkdownViewWindow2::getOutlineProvider() const {
   return m_outlineProvider;
+}
+
+bool MarkdownViewWindow2::isOutlineSourceEditBusy() const { return m_applyingOutlineSourceEdit; }
+
+bool MarkdownViewWindow2::outlineSourceWriterCurrent() const {
+  const auto buffer = getBuffer();
+  auto *buffers = getServices().get<BufferService>();
+  if (!buffer.isValid() || buffer.isReadOnly() || !buffers || !m_editor ||
+      m_mode != ViewWindowMode::Edit || !isEnabled() || !m_editor->isEnabled() ||
+      m_editor->isReadOnly() || !m_sourceAvailable || !m_propagateEditorToBuffer ||
+      m_switchingMode || m_rebindingBuffer || m_readerLifecycleClosing || m_nativeLocking ||
+      m_removingHeadingSectionNumbers || isNoteConversionFrozen() ||
+      buffers->isContentReplacementActive(buffer.id()) ||
+      (buffer.isEncrypted() && buffers->isProtectedLocking())) {
+    return false;
+  }
+  const auto lease = buffer.isEncrypted() ? buffer.acquireProtectedLease() : nullptr;
+  if (buffer.isEncrypted() && !lease) {
+    return false;
+  }
+  const QPointer<const MarkdownViewWindow2> guard(this);
+  const auto generation = getBufferGeneration();
+  const auto contentGeneration = m_outlineContentGeneration;
+  const auto historyEpoch = m_outlineHistoryEpoch;
+  const auto revision = m_editor->document()->revision();
+  QString text;
+  bool hasWriter = false;
+  if (!buffers->captureActiveWriterContent(buffer.id(), &text, &hasWriter) || !hasWriter ||
+      !guard || generation != getBufferGeneration() || !m_editor ||
+      contentGeneration != m_outlineContentGeneration || historyEpoch != m_outlineHistoryEpoch ||
+      revision != m_editor->document()->revision() || text != m_editor->getText()) {
+    return false;
+  }
+  // Snapshot callbacks are external code: permissions may change while capturing.
+  if (m_mode != ViewWindowMode::Edit || !isEnabled() || !m_editor->isEnabled() ||
+      m_editor->isReadOnly() || buffer.isReadOnly() || !m_sourceAvailable ||
+      !m_propagateEditorToBuffer || m_switchingMode || m_rebindingBuffer ||
+      m_readerLifecycleClosing || m_nativeLocking || isNoteConversionFrozen() ||
+      buffers->isContentReplacementActive(buffer.id()) ||
+      (buffer.isEncrypted() && buffers->isProtectedLocking())) {
+    return false;
+  }
+  if (buffer.getRevision() != m_lastKnownRevision) {
+    VxCoreError error = VXCORE_OK;
+    const auto raw = buffer.peekContentRaw(&error);
+    const auto encoded = buffers->encodeContent(buffer.id(), text);
+    if (error != VXCORE_OK || raw != QByteArrayView(encoded)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+OutlineSourceSnapshot MarkdownViewWindow2::outlineSourceSnapshot() const {
+  OutlineSourceSnapshot snapshot;
+  snapshot.m_outline = m_outlineProvider->getOutline();
+  snapshot.m_contentGeneration = m_outlineContentGeneration;
+  if (!outlineSourceWriterCurrent() || m_applyingOutlineSourceEdit || m_pendingOutlineSourceEdit ||
+      m_outlinePublishedRevision < 0 ||
+      m_outlinePublishedGeneration != m_outlineContentGeneration ||
+      m_editor->sourceEditState() != vte::VMarkdownEditor::SourceEditState::Settled ||
+      !snapshot.m_outline ||
+      snapshot.m_outline->m_headings.size() != m_editor->getHeadings().size()) {
+    return snapshot;
+  }
+  const auto &headings = m_editor->getHeadings();
+  const int length = m_editor->document()->characterCount() - 1;
+  int previousEnd = -1;
+  snapshot.m_headingPositions.reserve(headings.size());
+  for (int i = 0; i < headings.size(); ++i) {
+    const auto &heading = headings[i];
+    const auto &published = snapshot.m_outline->m_headings[i];
+    if (heading.m_level != published.m_level || heading.m_name != published.m_name ||
+        heading.m_isPlaceholder != published.m_isPlaceholder ||
+        (!heading.m_isPlaceholder &&
+         (heading.m_startPos < 0 || heading.m_startPos < previousEnd ||
+          heading.m_endPos <= heading.m_startPos || heading.m_endPos > length))) {
+      snapshot.m_headingPositions.clear();
+      return snapshot;
+    }
+    snapshot.m_headingPositions.append(heading.m_isPlaceholder ? -1 : heading.m_startPos);
+    if (!heading.m_isPlaceholder)
+      previousEnd = heading.m_endPos;
+  }
+  snapshot.m_revision = m_editor->document()->revision();
+  return snapshot;
+}
+
+void MarkdownViewWindow2::publishSourceOutline() {
+  if (m_mode != ViewWindowMode::Edit || !m_editor || !m_sourceAvailable || m_rebindingBuffer) {
+    return;
+  }
+  const auto &headings = m_editor->getHeadings();
+  auto outline = headingsToOutline(headings);
+  outline->m_hasSectionNumber = m_editor->getHeadingsHaveSectionNumber();
+  for (int i = 0; i < headings.size(); ++i) {
+    outline->m_headings[i].m_reorderable = !headings[i].m_isPlaceholder &&
+                                           headings[i].m_startPos >= 0 &&
+                                           headings[i].m_endPos > headings[i].m_startPos;
+    outline->m_headings[i].m_acceptsChildren = outline->m_headings[i].m_reorderable;
+  }
+  const auto &buffer = getBuffer();
+  outline->m_reorderSupported = !m_editor->isReadOnly() && buffer.isValid() && !buffer.isReadOnly();
+  m_outlineProvider->setOutline(outline);
+  reconcileOutlineSourceEdit();
+  emit outlineSourceChanged();
+}
+
+void MarkdownViewWindow2::invalidateOutlineSourceHistory() {
+  ++m_outlineHistoryEpoch;
+  if (m_pendingOutlineSourceEdit) {
+    m_pendingOutlineSourceEdit->m_stale = true;
+    m_pendingOutlineSourceEdit->m_pending = false;
+    m_pendingOutlineSourceEdit.reset();
+  }
+}
+
+void MarkdownViewWindow2::reconcileOutlineSourceEdit() {
+  if (!m_pendingOutlineSourceEdit || m_applyingOutlineSourceEdit || !m_editor ||
+      m_outlinePublishedGeneration != m_outlineContentGeneration ||
+      m_editor->sourceEditState() != vte::VMarkdownEditor::SourceEditState::Settled) {
+    return;
+  }
+  const auto receipt = m_pendingOutlineSourceEdit;
+  const auto &levels =
+      receipt->m_awaitingBefore ? receipt->m_beforeHeadingLevels : receipt->m_afterHeadingLevels;
+  auto &positions = receipt->m_awaitingBefore ? receipt->m_beforeHeadingPositions
+                                              : receipt->m_afterHeadingPositions;
+  int realIndex = 0;
+  bool matches = receipt->m_document == m_editor->document() &&
+                 levels.size() == receipt->m_trackedHeadingStarts.size();
+  for (const auto &heading : m_editor->getHeadings()) {
+    if (heading.m_isPlaceholder) {
+      continue;
+    }
+    if (!matches || realIndex >= levels.size() || heading.m_level != levels[realIndex] ||
+        heading.m_startPos != receipt->m_trackedHeadingStarts[realIndex].position()) {
+      matches = false;
+      break;
+    }
+    ++realIndex;
+  }
+  matches = matches && realIndex == levels.size();
+  if (matches) {
+    receipt->m_contentGeneration = m_outlineContentGeneration;
+    for (int i = 0; i < positions.size(); ++i) {
+      positions[i] = receipt->m_trackedHeadingStarts[i].position();
+    }
+    // Joined numbering/formatting can add Qt undo steps without adding an undo group.
+    if (receipt->m_awaitingBefore) {
+      receipt->m_beforeUndoSteps = m_editor->document()->availableUndoSteps();
+      receipt->m_redoSteps = m_editor->document()->availableRedoSteps();
+    } else {
+      receipt->m_afterUndoSteps = m_editor->document()->availableUndoSteps();
+    }
+  }
+  receipt->m_stale = !matches;
+  receipt->m_pending = false;
+  m_pendingOutlineSourceEdit.reset();
+}
+
+QSharedPointer<OutlineSourceEditReceipt>
+MarkdownViewWindow2::applyOutlineSourceEdit(const OutlineSourceEdit &p_edit, bool p_focus) {
+  const auto snapshot = outlineSourceSnapshot();
+  if (snapshot.m_revision < 0 || snapshot.m_revision != p_edit.m_expectedRevision ||
+      snapshot.m_outline->navigationFingerprint() != p_edit.m_expectedFingerprint) {
+    return {};
+  }
+  const auto buffer = getBuffer();
+  const auto lease = buffer.isEncrypted() ? buffer.acquireProtectedLease() : nullptr;
+  if (buffer.isEncrypted() && !lease) {
+    return {};
+  }
+  const auto &placement = p_edit.m_placement;
+  const auto &editorHeadings = m_editor->getHeadings();
+  const auto isReal = [&editorHeadings](int p_index) {
+    return p_index >= 0 && p_index < editorHeadings.size() &&
+           !editorHeadings[p_index].m_isPlaceholder;
+  };
+  if ((p_edit.m_kind != OutlineSourceEdit::Kind::Insert &&
+       !isReal(placement.m_sourceHeadingIndex)) ||
+      (p_edit.m_kind == OutlineSourceEdit::Kind::Insert && placement.m_sourceHeadingIndex != -1) ||
+      (placement.m_beforeHeadingIndex != -1 && !isReal(placement.m_beforeHeadingIndex)) ||
+      (placement.m_parentHeadingIndex != -1 && !isReal(placement.m_parentHeadingIndex))) {
+    return {};
+  }
+  if (p_edit.m_kind == OutlineSourceEdit::Kind::Rename &&
+      editorHeadings[placement.m_sourceHeadingIndex].m_name == p_edit.m_topic) {
+    return {};
+  }
+  auto *textEdit = m_editor->getTextEdit();
+  auto *document = textEdit->document();
+  if (!document->isUndoRedoEnabled()) {
+    return {};
+  }
+  QVector<OutlineSectionEditor::HeadingBlockInfo> headings;
+  QVector<int> order;
+  headings.reserve(editorHeadings.size());
+  order.reserve(editorHeadings.size() + 1);
+  const auto receipt = QSharedPointer<OutlineSourceEditReceipt>::create();
+  receipt->m_document = document;
+  receipt->m_beforeUndoSteps = document->availableUndoSteps();
+  receipt->m_beforeHeadingPositions.reserve(editorHeadings.size());
+  receipt->m_beforeHeadingLevels.reserve(editorHeadings.size());
+  receipt->m_beforeVisibleHeadings.reserve(editorHeadings.size());
+  for (int i = 0; i < editorHeadings.size(); ++i) {
+    const auto &heading = editorHeadings[i];
+    OutlineSectionEditor::HeadingBlockInfo info;
+    info.level = heading.m_level;
+    info.startPos = heading.m_isPlaceholder ? -1 : heading.m_startPos;
+    info.endPos = heading.m_isPlaceholder ? -1 : heading.m_endPos;
+    headings.append(info);
+    if (!heading.m_isPlaceholder) {
+      order.append(i);
+      receipt->m_beforeHeadingPositions.append(heading.m_startPos);
+      receipt->m_beforeHeadingLevels.append(heading.m_level);
+      receipt->m_beforeVisibleHeadings.append(true);
+    }
+  }
+  int sourceEnd = placement.m_sourceHeadingIndex + 1;
+  int levelDelta = 0;
+  if (p_edit.m_kind == OutlineSourceEdit::Kind::Move) {
+    while (sourceEnd < headings.size() &&
+           headings[sourceEnd].level > headings[placement.m_sourceHeadingIndex].level) {
+      ++sourceEnd;
+    }
+    if (placement.m_targetLevel < 1 || placement.m_targetLevel > 6 ||
+        (placement.m_beforeHeadingIndex >= placement.m_sourceHeadingIndex &&
+         placement.m_beforeHeadingIndex < sourceEnd) ||
+        (placement.m_parentHeadingIndex >= placement.m_sourceHeadingIndex &&
+         placement.m_parentHeadingIndex < sourceEnd)) {
+      return {};
+    }
+    levelDelta = placement.m_targetLevel - headings[placement.m_sourceHeadingIndex].level;
+    const int first = order.indexOf(placement.m_sourceHeadingIndex);
+    int end = first + 1;
+    while (end < order.size() && order[end] < sourceEnd) {
+      ++end;
+    }
+    int destination = placement.m_beforeHeadingIndex < 0
+                          ? order.size()
+                          : order.indexOf(placement.m_beforeHeadingIndex);
+    if (destination < first) {
+      std::rotate(order.begin() + destination, order.begin() + first, order.begin() + end);
+    } else {
+      std::rotate(order.begin() + first, order.begin() + end, order.begin() + destination);
+      destination -= end - first;
+    }
+    int parent = -1;
+    for (int i = destination - 1; i >= 0; --i) {
+      if (headings[order[i]].level < placement.m_targetLevel) {
+        parent = order[i];
+        break;
+      }
+    }
+    if (parent != placement.m_parentHeadingIndex) {
+      return {};
+    }
+  } else if (p_edit.m_kind == OutlineSourceEdit::Kind::Insert) {
+    const int destination = placement.m_beforeHeadingIndex < 0
+                                ? order.size()
+                                : order.indexOf(placement.m_beforeHeadingIndex);
+    order.insert(destination, headings.size());
+  }
+  receipt->m_afterHeadingPositions.resize(order.size());
+  receipt->m_afterHeadingLevels.reserve(order.size());
+  receipt->m_afterVisibleHeadings.fill(true, order.size());
+  receipt->m_trackedHeadingStarts.reserve(order.size());
+  for (const int index : order) {
+    int level = index == headings.size() ? placement.m_targetLevel : headings[index].level;
+    if (p_edit.m_kind == OutlineSourceEdit::Kind::Move && index >= placement.m_sourceHeadingIndex &&
+        index < sourceEnd) {
+      level += levelDelta;
+    }
+    if (level < 1 || level > 6) {
+      return {};
+    }
+    receipt->m_afterHeadingLevels.append(level);
+    receipt->m_trackedHeadingStarts.append(QTextCursor(document));
+  }
+  const auto weakReceipt = receipt.toWeakRef();
+  const QPointer<MarkdownViewWindow2> self(this);
+  const auto generation = getBufferGeneration();
+  const auto epoch = m_outlineHistoryEpoch;
+  const auto bufferId = buffer.id();
+  receipt->m_undo = [self, weakReceipt, bufferId, generation, epoch]() {
+    const auto locked = weakReceipt.toStrongRef();
+    return self && locked &&
+           self->replayOutlineSourceEdit(locked, true, bufferId, generation, epoch);
+  };
+  receipt->m_redo = [self, weakReceipt, bufferId, generation, epoch]() {
+    const auto locked = weakReceipt.toStrongRef();
+    return self && locked &&
+           self->replayOutlineSourceEdit(locked, false, bufferId, generation, epoch);
+  };
+  const QTextCursor cursor = textEdit->textCursor();
+  const auto &selection = textEdit->getSelection();
+  const bool overridden = selection.isValid() &&
+                          (!cursor.hasSelection() || cursor.selectionStart() != selection.start() ||
+                           cursor.selectionEnd() != selection.end());
+  const int selectionStart = overridden ? selection.start() : -1;
+  const int selectionEnd = overridden ? selection.end() : -1;
+  const int scroll = textEdit->verticalScrollBar()->value();
+  OutlineSectionEditor::HeadingEditResult result;
+  QTextCursor restored(document);
+  {
+    QScopedValueRollback<bool> applying(m_applyingOutlineSourceEdit, true);
+    if (!outlineSourceWriterCurrent() || document->revision() != p_edit.m_expectedRevision) {
+      return {};
+    }
+    // Adopt the validated cache revision before changing this live writer. A later
+    // replay must not mistake that already-observed revision for an external edit.
+    m_lastKnownRevision = buffer.getRevision();
+    getServices().get<BufferService>()->registerActiveWriter(
+        bufferId, reinterpret_cast<quintptr>(this), [this]() { return getLatestContent(); });
+    // Install before any document signal; the controller also enters its pending scope first.
+    m_pendingOutlineSourceEdit = receipt;
+    switch (p_edit.m_kind) {
+    case OutlineSourceEdit::Kind::Move: {
+      const auto moved = OutlineSectionEditor::reorderHeadingBlock(
+          document, headings, placement.m_sourceHeadingIndex, placement.m_beforeHeadingIndex,
+          placement.m_targetLevel, cursor.position(), cursor.anchor(), selectionStart, selectionEnd,
+          OutlineSectionEditor::Syntax::Markdown, &result.headingPositions);
+      result.changed = moved.moved;
+      result.cursorPosition = moved.cursorPosition;
+      result.cursorAnchor = moved.cursorAnchor;
+      result.selectionStart = moved.selectionStart;
+      result.selectionEnd = moved.selectionEnd;
+      break;
+    }
+    case OutlineSourceEdit::Kind::Rename:
+      result = OutlineSectionEditor::renameHeading(
+          document, headings, placement.m_sourceHeadingIndex, p_edit.m_topic, cursor.position(),
+          cursor.anchor(), selectionStart, selectionEnd);
+      break;
+    case OutlineSourceEdit::Kind::Insert:
+      result = OutlineSectionEditor::insertHeading(
+          document, headings, placement.m_beforeHeadingIndex, placement.m_parentHeadingIndex,
+          placement.m_targetLevel, p_edit.m_topic, cursor.position(), cursor.anchor(),
+          selectionStart, selectionEnd);
+      break;
+    }
+    if (!result.changed) {
+      m_pendingOutlineSourceEdit.reset();
+      return {};
+    }
+    for (int i = 0; i < order.size(); ++i) {
+      const int position = result.headingPositions[order[i]];
+      receipt->m_afterHeadingPositions[i] = position;
+      receipt->m_trackedHeadingStarts[i].setPosition(position);
+      receipt->m_trackedHeadingStarts[i].setKeepPositionOnInsert(true);
+    }
+    receipt->m_afterUndoSteps = document->availableUndoSteps();
+    restored.setPosition(result.cursorAnchor);
+    restored.setPosition(result.cursorPosition, QTextCursor::KeepAnchor);
+    textEdit->setTextCursor(restored);
+    if (result.selectionStart >= 0 && result.selectionEnd > result.selectionStart) {
+      textEdit->setOverriddenSelection(result.selectionStart, result.selectionEnd);
+    }
+    textEdit->verticalScrollBar()->setValue(scroll);
+  }
+  reconcileOutlineSourceEdit();
+  emit outlineSourceChanged();
+  if (p_focus && self) {
+    focusEditor();
+  }
+  return receipt;
+}
+
+bool MarkdownViewWindow2::replayOutlineSourceEdit(
+    const QSharedPointer<OutlineSourceEditReceipt> &p_receipt, bool p_undo,
+    const QString &p_bufferId, quint64 p_bufferGeneration, quint64 p_historyEpoch) {
+  if (m_applyingOutlineSourceEdit || !m_editor || getBuffer().id() != p_bufferId ||
+      getBufferGeneration() != p_bufferGeneration || m_outlineHistoryEpoch != p_historyEpoch ||
+      p_receipt->m_document != m_editor->document() || p_receipt->m_awaitingBefore == p_undo ||
+      (m_pendingOutlineSourceEdit && m_pendingOutlineSourceEdit != p_receipt) ||
+      !outlineSourceWriterCurrent()) {
+    return false;
+  }
+  const auto state = m_editor->sourceEditState();
+  if (state == vte::VMarkdownEditor::SourceEditState::ApplyingJoined ||
+      state == vte::VMarkdownEditor::SourceEditState::ApplyingSeparate) {
+    return false;
+  }
+  const auto buffer = getBuffer();
+  const auto lease = buffer.isEncrypted() ? buffer.acquireProtectedLease() : nullptr;
+  if (buffer.isEncrypted() && !lease) {
+    return false;
+  }
+  auto *textEdit = m_editor->getTextEdit();
+  auto *document = textEdit->document();
+  if (!document->isUndoRedoEnabled() ||
+      document->availableUndoSteps() !=
+          (p_undo ? p_receipt->m_afterUndoSteps : p_receipt->m_beforeUndoSteps) ||
+      (p_undo ? !document->isUndoAvailable()
+              : !document->isRedoAvailable() ||
+                    document->availableRedoSteps() != p_receipt->m_redoSteps)) {
+    return false;
+  }
+  const auto &positions =
+      p_undo ? p_receipt->m_beforeHeadingPositions : p_receipt->m_afterHeadingPositions;
+  while (p_receipt->m_trackedHeadingStarts.size() < positions.size()) {
+    p_receipt->m_trackedHeadingStarts.append(QTextCursor(document));
+  }
+  p_receipt->m_trackedHeadingStarts.resize(positions.size());
+  QTextCursor cursor = textEdit->textCursor();
+  QTextCursor selection(document);
+  const auto &selected = textEdit->getSelection();
+  const bool overridden = selected.isValid() &&
+                          (!cursor.hasSelection() || cursor.selectionStart() != selected.start() ||
+                           cursor.selectionEnd() != selected.end());
+  if (overridden) {
+    selection.setPosition(selected.start());
+    selection.setPosition(selected.end(), QTextCursor::KeepAnchor);
+  }
+  const int scroll = textEdit->verticalScrollBar()->value();
+  {
+    QScopedValueRollback<bool> applying(m_applyingOutlineSourceEdit, true);
+    m_lastKnownRevision = buffer.getRevision();
+    getServices().get<BufferService>()->registerActiveWriter(
+        p_bufferId, reinterpret_cast<quintptr>(this), [this]() { return getLatestContent(); });
+    p_receipt->m_pending = true;
+    p_receipt->m_stale = false;
+    p_receipt->m_awaitingBefore = p_undo;
+    m_pendingOutlineSourceEdit = p_receipt;
+    if (p_undo) {
+      document->undo();
+      p_receipt->m_redoSteps = document->availableRedoSteps();
+    } else {
+      document->redo();
+    }
+    for (int i = 0; i < positions.size(); ++i) {
+      p_receipt->m_trackedHeadingStarts[i].setPosition(positions[i]);
+      p_receipt->m_trackedHeadingStarts[i].setKeepPositionOnInsert(true);
+    }
+    textEdit->setTextCursor(cursor);
+    if (overridden && selection.hasSelection()) {
+      textEdit->setOverriddenSelection(selection.selectionStart(), selection.selectionEnd());
+    }
+    textEdit->verticalScrollBar()->setValue(scroll);
+  }
+  reconcileOutlineSourceEdit();
+  emit outlineSourceChanged();
+  return true;
 }
 
 template <class T>
@@ -1897,6 +2306,56 @@ void MarkdownViewWindow2::connectEditorSignals() {
           &MarkdownViewWindow2::requestEditorImageView);
   // Focus forwarding.
   connect(m_editor, &vte::VTextEditor::focusIn, this, [this]() { emit focused(this); });
+  m_outlineDocumentCharacters = m_editor->document()->characterCount();
+  m_outlineDocumentReset = false;
+
+  connect(m_editor->document(), &QTextDocument::contentsChange, this,
+          [this](int p_position, int p_removed, int p_added) {
+            auto *document = m_editor->document();
+            const int characters = document->characterCount();
+            const int previousCharacters = m_outlineDocumentCharacters;
+            const bool reset = p_position == 0 && p_added == 0 &&
+                               p_removed > previousCharacters - 1 && characters == 1;
+            // Qt's whole-document formatting notification includes the terminal character;
+            // a source replacement through a cursor does not. Match the normalizer's filter.
+            const bool formatOnly = !reset && !m_outlineDocumentReset && p_position == 0 &&
+                                    p_removed == p_added && p_removed == previousCharacters &&
+                                    p_added == characters;
+            m_outlineDocumentCharacters = characters;
+            if ((p_removed == 0 && p_added == 0) || formatOnly ||
+                (!document->isUndoRedoEnabled() && p_position == 0 && p_removed == 0 &&
+                 p_added == 1 && characters == 1)) {
+              return;
+            }
+            m_outlineDocumentReset = reset && !document->isUndoRedoEnabled();
+            if (reset && previousCharacters == 1) {
+              return;
+            }
+            ++m_outlineContentGeneration;
+            const auto state = m_editor->sourceEditState();
+            using State = vte::VMarkdownEditor::SourceEditState;
+            const bool joined = m_pendingOutlineSourceEdit && state == State::ApplyingJoined;
+            if (state == State::ApplyingSeparate || (!m_applyingOutlineSourceEdit && !joined)) {
+              invalidateOutlineSourceHistory();
+            }
+            emit outlineSourceChanged();
+          });
+  connect(m_editor->document(), &QTextDocument::contentsChanged, this, [this]() {
+    if (m_outlinePublishedGeneration == m_outlineContentGeneration &&
+        m_outlinePublishedRevision >= 0) {
+      // Formatting revisions do not retire a binding to unchanged source text.
+      m_outlinePublishedRevision = m_editor->document()->revision();
+    }
+    if (m_pendingOutlineSourceEdit &&
+        m_editor->sourceEditState() == vte::VMarkdownEditor::SourceEditState::ApplyingJoined) {
+      if (m_pendingOutlineSourceEdit->m_awaitingBefore) {
+        m_pendingOutlineSourceEdit->m_beforeUndoSteps = m_editor->document()->availableUndoSteps();
+      } else {
+        m_pendingOutlineSourceEdit->m_afterUndoSteps = m_editor->document()->availableUndoSteps();
+      }
+    }
+    emit outlineSourceChanged();
+  });
 
   // Content change -> auto-save dirty flag.
   connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this, [this]() {
@@ -1910,24 +2369,18 @@ void MarkdownViewWindow2::connectEditorSignals() {
   });
 
   connect(m_editor, &MarkdownEditor::headingsChanged, this, [this]() {
-    if (m_mode != ViewWindowMode::Edit || !m_sourceAvailable || m_rebindingBuffer) {
+    if (!m_sourceAvailable || m_rebindingBuffer) {
       return;
     }
-
-    const auto &editorHeadings = m_editor->getHeadings();
-    auto outline = headingsToOutline(editorHeadings);
-    outline->m_hasSectionNumber = m_editor->getHeadingsHaveSectionNumber();
-    for (int i = 0; i < editorHeadings.size(); ++i) {
-      outline->m_headings[i].m_reorderable =
-          editorHeadings[i].m_startPos >= 0 &&
-          editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
-      outline->m_headings[i].m_acceptsChildren = outline->m_headings[i].m_reorderable;
-    }
-
-    const auto &buffer = getBuffer();
-    outline->m_reorderSupported =
-        !m_editor->isReadOnly() && buffer.isValid() && !buffer.isReadOnly();
-    m_outlineProvider->setOutline(outline);
+    m_outlinePublishedGeneration = m_outlineContentGeneration;
+    m_outlinePublishedRevision = m_editor->document()->revision();
+    publishSourceOutline();
+  });
+  connect(m_editor, &vte::VMarkdownEditor::sourceEditStateChanged, this, [this]() {
+    // headingsChanged runs inside the normalizer's publication. Only its later
+    // acknowledgement can settle the receipt; idle flags alone are insufficient.
+    reconcileOutlineSourceEdit();
+    emit outlineSourceChanged();
   });
   connect(m_editor, &MarkdownEditor::currentHeadingChanged, this, [this]() {
     if (!isReadMode() && m_sourceAvailable && !m_rebindingBuffer) {
@@ -2185,7 +2638,7 @@ static void syncEditorPositionFromReadMode(MarkdownEditor *p_editor, int p_lineN
 }
 
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
-  if (m_readerLifecycleClosing) {
+  if (m_readerLifecycleClosing || m_applyingOutlineSourceEdit) {
     return;
   }
   const QPointer<MarkdownViewWindow2> guard(this);
@@ -2203,6 +2656,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   if (m_switchingMode) {
     return;
   }
+  invalidateOutlineSourceHistory();
+  emit outlineSourceChanged();
   if (m_protectedView) {
     m_protectedView->splitterSizesOnReady.clear();
   }
@@ -2403,19 +2858,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
 
     // Republish the existing editor snapshot when returning from Read mode;
     // unchanged content does not necessarily emit headingsChanged again.
-    const auto &editorHeadings = m_editor->getHeadings();
-    auto outline = headingsToOutline(editorHeadings);
-    outline->m_hasSectionNumber = m_editor->getHeadingsHaveSectionNumber();
-    for (int i = 0; i < editorHeadings.size(); ++i) {
-      outline->m_headings[i].m_reorderable =
-          editorHeadings[i].m_startPos >= 0 &&
-          editorHeadings[i].m_endPos > editorHeadings[i].m_startPos;
-      outline->m_headings[i].m_acceptsChildren = outline->m_headings[i].m_reorderable;
-    }
-    const auto &buffer = getBuffer();
-    outline->m_reorderSupported =
-        !m_editor->isReadOnly() && buffer.isValid() && !buffer.isReadOnly();
-    m_outlineProvider->setOutline(outline);
+    publishSourceOutline();
   }
 
   updateEditSectionNumberOptions(true);
@@ -2671,6 +3114,10 @@ void MarkdownViewWindow2::onNativeProtectedLockingChanged(bool p_locking) {
     return;
   }
   m_nativeLocking = p_locking;
+  if (p_locking) {
+    invalidateOutlineSourceHistory();
+  }
+  emit outlineSourceChanged();
   invalidateNativeRender();
   updateNativeDocumentRetention();
   if (!p_locking && isEnabled() && !m_readerResourcesSuspended && m_viewer) {

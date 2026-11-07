@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QScopeGuard>
@@ -40,6 +41,7 @@
 #include "buttonpopup.h"
 #include "detachedwindow.h"
 #include "linkpreviewoverlay.h"
+#include "mindmapviewwindow2.h"
 #include "outlineprovider.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
@@ -920,12 +922,12 @@ ViewSplit2 *ViewArea2::splitForWorkspace(const QString &p_workspaceId) const {
 bool ViewArea2::isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const {
   const auto *source = windowForId(p_sourceId);
   const auto *owner = source ? owningSplitForWindow(p_sourceId) : nullptr;
-  // Opening a sibling preview selects it and hides a nested source tab. That
-  // tab remains current in its visible source-bound host, not in a hidden or
-  // retired ordinary workspace.
+  // Opening a sibling preview hides its source tab. A still-live host retains that
+  // source through close consent so a final topic draft can be captured. Admission
+  // separately rejects Checking/Accepted hosts in isPreviewWorkspaceAvailable().
   const bool available =
-      source && (source->isVisible() || (owner && owner->isPreview() &&
-                                         isPreviewWorkspaceAvailable(owner->getWorkspaceId())));
+      source && (source->isVisible() ||
+                 (owner && owner->isPreview() && isPreviewWorkspaceLive(owner->getWorkspaceId())));
   return source && source->getViewWindowId() == p_sourceId && source->isEnabled() && available &&
          source->getBufferGeneration() == p_generation && source->getBuffer().isValid() &&
          !source->getBuffer().getBuffer().isEmpty() &&
@@ -964,6 +966,105 @@ bool ViewArea2::navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, in
   }
   // Leave the preview's current tab and keyboard focus intact, even for nested sources.
   return source->activateOutlineHeading(p_headingIndex);
+}
+
+OutlineSourceSnapshot ViewArea2::outlineSourceSnapshot(ID p_sourceId, quint64 p_generation) const {
+  const QPointer<ViewWindow2> source(windowForId(p_sourceId));
+  auto *buffers = m_services.get<BufferService>();
+  if (!source || !isPreviewSourceCurrent(p_sourceId, p_generation) || !buffers ||
+      source->m_bufferReplacementInProgress || source->m_contentReplacementFrozen ||
+      source->isOutlineSourceEditBusy() ||
+      (source->isContentProtected() && buffers->isProtectedLocking())) {
+    return {};
+  }
+  const QPointer<const ViewArea2> self(this);
+  const QString bufferId = source->getBuffer().id();
+  const auto snapshot = source->outlineSourceSnapshot();
+  if (!self || !source || windowForId(p_sourceId) != source ||
+      source->getBuffer().id() != bufferId || !isPreviewSourceCurrent(p_sourceId, p_generation)) {
+    return {};
+  }
+  return snapshot;
+}
+
+QSharedPointer<OutlineSourceEditReceipt>
+ViewArea2::applyOutlineSourceEdit(ID p_sourceId, quint64 p_generation,
+                                  const OutlineSourceEdit &p_edit, bool p_focus) {
+  const QPointer<ViewWindow2> source(windowForId(p_sourceId));
+  auto *buffers = m_services.get<BufferService>();
+  if (!source || !isPreviewSourceCurrent(p_sourceId, p_generation) || !buffers ||
+      source->m_bufferReplacementInProgress || source->m_contentReplacementFrozen ||
+      source->isOutlineSourceEditBusy() ||
+      (source->isContentProtected() && buffers->isProtectedLocking())) {
+    return {};
+  }
+  auto lease = source->getBuffer().isEncrypted() ? source->getBuffer().acquireProtectedLease()
+                                                 : std::shared_ptr<ProtectedBufferLease>();
+  if (source->getBuffer().isEncrypted() && (!lease || !lease->isCurrent())) {
+    return {};
+  }
+  return source->applyOutlineSourceEdit(p_edit, p_focus);
+}
+
+bool ViewArea2::confirmOutlineSourceMove(ID p_sourceId, quint64 p_generation,
+                                         const OutlineSourceEdit &p_edit) {
+  if (p_edit.m_kind != OutlineSourceEdit::Kind::Move || !p_edit.m_placement.isValid()) {
+    return false;
+  }
+  const QPointer<ViewArea2> self(this);
+  const QPointer<ViewWindow2> source(windowForId(p_sourceId));
+  if (!source) {
+    return false;
+  }
+  const QString bufferId = source->getBuffer().id();
+  const auto currentSnapshot = [&]() {
+    if (!self || !source || self->windowForId(p_sourceId) != source ||
+        source->getBuffer().id() != bufferId) {
+      return OutlineSourceSnapshot();
+    }
+    return self->outlineSourceSnapshot(p_sourceId, p_generation);
+  };
+  // Snapshot capture validates the active writer and releases any protected lease.
+  // No source lease may survive the modal approval phase.
+  const auto before = currentSnapshot();
+  const int heading = p_edit.m_placement.m_sourceHeadingIndex;
+  if (!self || !source || before.m_revision < 0 || !before.m_outline ||
+      before.m_revision != p_edit.m_expectedRevision ||
+      before.m_outline->navigationFingerprint() != p_edit.m_expectedFingerprint || heading < 0 ||
+      heading >= before.m_outline->m_headings.size() ||
+      before.m_outline->m_headings.at(heading).m_isPlaceholder) {
+    return false;
+  }
+  QPointer<QMessageBox> dialog(new QMessageBox(
+      QMessageBox::Question,
+      QCoreApplication::translate("vnotex::OutlineViewer", "Reorder Outline"),
+      QCoreApplication::translate(
+          "vnotex::OutlineViewer",
+          "Move heading \"%1\" and its content block to the selected outline position?")
+          .arg(before.m_outline->m_headings.at(heading).m_name),
+      QMessageBox::Yes | QMessageBox::No, window()));
+  const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+  dialog->setInformativeText(QCoreApplication::translate(
+      "vnotex::OutlineViewer",
+      "Heading levels in the moved block will be adjusted to preserve the outline hierarchy."));
+  dialog->setDefaultButton(QMessageBox::No);
+  if (dialog->exec() != QMessageBox::Yes || !self || !source || !dialog) {
+    return false;
+  }
+  const auto after = currentSnapshot();
+  // A format-only QTextDocument revision may advance while the modal is open.
+  // The text generation and outline identity must remain exact; apply uses this
+  // fresh snapshot's live revision immediately afterward.
+  return self && source && after.m_revision >= 0 && after.m_outline &&
+         after.m_contentGeneration == before.m_contentGeneration &&
+         after.m_outline->navigationFingerprint() == p_edit.m_expectedFingerprint;
+}
+
+bool ViewArea2::synchronizeOutlineMindMapTopics(ID p_previewId,
+                                                const QVector<m3::qt::OutlineEntry> &p_entries) {
+  auto *preview = qobject_cast<MindMapViewWindow2 *>(windowForId(p_previewId));
+  return preview && preview->getViewWindowId() == p_previewId &&
+         preview->isOutlineMindMapPreview() && preview->synchronizeOutlineSourceTopics(p_entries);
 }
 
 ViewSplit2 *ViewArea2::hostedSplitForWorkspace(const QString &p_workspaceId) const {
@@ -1015,11 +1116,15 @@ QString ViewArea2::previewWorkspaceForWindow(ID p_windowId) const {
   return QString();
 }
 
-bool ViewArea2::isPreviewWorkspaceAvailable(const QString &p_workspaceId) const {
+bool ViewArea2::isPreviewWorkspaceLive(const QString &p_workspaceId) const {
   const auto host = m_previewHosts.constFind(p_workspaceId);
   return host != m_previewHosts.constEnd() && host->overlay && host->overlay->isVisible() &&
          host->source && host->source == windowForId(host->sourceId) &&
-         isPreviewSourceCurrent(host->sourceId, host->generation) &&
+         isPreviewSourceCurrent(host->sourceId, host->generation);
+}
+
+bool ViewArea2::isPreviewWorkspaceAvailable(const QString &p_workspaceId) const {
+  return isPreviewWorkspaceLive(p_workspaceId) &&
          !m_controller->isPreviewWorkspaceClosing(p_workspaceId);
 }
 
@@ -1514,20 +1619,81 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
   }
   const QPointer<ViewArea2> self(this);
   const QPointer<ViewWindow2> window(p_window);
+  p_window->m_outlineSourceRetirementBlocked = [self, window] {
+    return self && window &&
+           (self->m_controller->isOutlineMindMapEditBusy(window->getBuffer()) ||
+            self->m_controller->isOutlineMindMapSourceBusy(window->getViewWindowId()));
+  };
   p_window->m_closeOutlineMindMapPreviews = [self, window] {
     return !self || !window ||
-           self->m_controller->closeOutlineMindMapPreviews(window->getViewWindowId());
+           (!self->m_controller->isOutlineMindMapEditBusy(window->getBuffer()) &&
+            self->m_controller->closeOutlineMindMapPreviews(window->getViewWindowId()));
   };
+  const auto reconcileSource = [self, window] {
+    if (!self || !window || self->windowForId(window->getViewWindowId()) != window) {
+      return;
+    }
+    const ID id = window->getViewWindowId();
+    const auto generation = window->getBufferGeneration();
+    self->m_controller->reconcileOutlineMindMapSource(id, generation);
+  };
+  connect(p_window, &ViewWindow2::outlineSourceChanged, this, reconcileSource);
+  if (const auto provider = p_window->getOutlineProvider()) {
+    connect(provider.data(), &OutlineProvider::outlineChanged, this, reconcileSource);
+  }
   if (p_window->m_isOutlineMindMapPreview) {
+    const auto generation = p_window->getBufferGeneration();
+    const QString bufferId = p_window->getBuffer().id();
+    const auto current = [self, window, generation, bufferId] {
+      return self && window && self->windowForId(window->getViewWindowId()) == window &&
+             window->getBufferGeneration() == generation && window->getBuffer().id() == bufferId &&
+             window->isOutlineMindMapPreview();
+    };
+    if (auto *preview = qobject_cast<MindMapViewWindow2 *>(p_window)) {
+      preview->setOutlineSourceEditHandler(
+          [self, window,
+           current](const m3::qt::SourceEdit &p_edit) -> std::optional<m3::qt::SourceEditCommand> {
+            if (!current()) {
+              return std::nullopt;
+            }
+            const Buffer2 snapshot = window->getBuffer();
+            QString error;
+            auto command = self->m_controller->applyOutlineMindMapEdit(snapshot, p_edit, &error);
+            if (!command && current() && window->isVisible() && !error.isEmpty()) {
+              window->showMessage(error);
+            }
+            return command;
+          },
+          [self, window, current](const m3::qt::SourceEdit &p_edit) {
+            if (!current()) {
+              return false;
+            }
+            const Buffer2 snapshot = window->getBuffer();
+            QString error;
+            const bool approved =
+                self->m_controller->approveOutlineMindMapEdit(snapshot, p_edit, &error);
+            if (!approved && current() && window->isVisible() && !error.isEmpty()) {
+              window->showMessage(error);
+            }
+            return approved && current();
+          });
+      connect(preview, &MindMapViewWindow2::outlineSourceEditPublished, this,
+              [self, window, current] {
+                if (current()) {
+                  const Buffer2 snapshot = window->getBuffer();
+                  self->m_controller->finishOutlineMindMapEdit(snapshot);
+                }
+              });
+    }
     connect(p_window, &ViewWindow2::outlineMindMapNodeRequested, this,
-            [self, window](const QString &p_nodeId) {
-              if (!self || !window) {
+            [self, window, current](const QString &p_nodeId) {
+              if (!current()) {
                 return;
               }
               const Buffer2 snapshot = window->getBuffer();
               QString error;
               if (!self->m_controller->activateOutlineMindMapNode(snapshot, p_nodeId, &error) &&
-                  self && window && window->isVisible() && !error.isEmpty()) {
+                  current() && window->isVisible() && !error.isEmpty()) {
                 window->showMessage(error);
               }
             });
@@ -1723,7 +1889,7 @@ void ViewArea2::applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_s
 
 bool ViewArea2::setNoteConversionFrozen(const QVector<ID> &p_windowIds, bool p_frozen) {
   for (const ID id : p_windowIds) {
-    if (!windowForId(id)) {
+    if (!windowForId(id) || (p_frozen && windowForId(id)->isOutlineSourceRetirementBlocked())) {
       return false;
     }
   }
@@ -1829,6 +1995,19 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
 
   if (!win->aboutToClose(p_force)) {
     return false;
+  }
+  if (auto *preview = qobject_cast<MindMapViewWindow2 *>(win);
+      preview && preview->isOutlineMindMapPreview()) {
+    const QPointer<ViewArea2> self(this);
+    const QPointer<ViewWindow2> closing(win);
+    // Detach the writer/resource policy as well as native callbacks before deferred deletion.
+    closing->releaseBufferResources();
+    if (!self || !closing) {
+      return true;
+    }
+    if (windowForId(p_windowId) != closing) {
+      return false;
+    }
   }
 
   if (const auto *owner = owningSplitForWindow(p_windowId); owner && owner->isPreview()) {

@@ -3,10 +3,15 @@
 
 #include <QByteArray>
 #include <QObject>
+#include <QPointer>
 #include <QSharedPointer>
+#include <QTextCursor>
 #include <QVector>
 
+#include <functional>
 #include <limits.h>
+
+class QTextDocument;
 
 namespace vnotex {
 enum class OutlineDropPosition { OnItem, AboveItem, BelowItem, OnViewport };
@@ -69,6 +74,52 @@ struct Outline {
 
   // Markdown's syntax limit. Other producers explicitly opt into deeper trees.
   int m_maxLevel = 6;
+};
+
+// A command against one exact published source snapshot. Insert has no source index.
+struct OutlineSourceEdit {
+  enum class Kind { Move, Rename, Insert };
+  Kind m_kind = Kind::Move;
+  OutlineMove m_placement;
+  QString m_topic;
+  int m_expectedRevision = -1;
+  QByteArray m_expectedFingerprint;
+};
+
+struct OutlineSourceSnapshot {
+  QSharedPointer<Outline> m_outline;
+  int m_revision = -1;
+  // Genuine text changes only; formatting may change m_revision without changing this.
+  quint64 m_contentGeneration = 0;
+  QVector<int> m_headingPositions; // Published heading order; placeholders are -1.
+};
+
+// History owns receipts, not source text or an Outline. The source view temporarily
+// retains the pending receipt before writing, so synchronous invalidation is observable.
+struct OutlineSourceEditReceipt {
+  QPointer<QTextDocument> m_document;
+  int m_beforeUndoSteps = -1;
+  int m_afterUndoSteps = -1;
+  int m_redoSteps = -1;
+  // Complete real source roster in source order, including Typst hidden boundaries.
+  QVector<int> m_beforeHeadingPositions;
+  QVector<int> m_afterHeadingPositions;
+  QVector<int> m_beforeHeadingLevels;
+  QVector<int> m_afterHeadingLevels;
+  QVector<bool> m_beforeVisibleHeadings;
+  QVector<bool> m_afterVisibleHeadings;
+  // Preallocated before mutation; positioned after the source write, then tracked
+  // through authorized joined normalization until authoritative publication settles.
+  QVector<QTextCursor> m_trackedHeadingStarts;
+  quint64 m_compilationEpoch = 0;
+  quint64 m_compilationGeneration = 0;
+  // The exact genuine-text generation acknowledged by successful settlement.
+  quint64 m_contentGeneration = 0;
+  bool m_awaitingBefore = false;
+  bool m_pending = true;
+  bool m_stale = false;
+  std::function<bool()> m_undo;
+  std::function<bool()> m_redo;
 };
 
 // Used to hold toc-related data of one ViewWindow.

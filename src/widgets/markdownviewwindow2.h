@@ -86,6 +86,11 @@ public:
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
 
+  OutlineSourceSnapshot outlineSourceSnapshot() const override;
+  QSharedPointer<OutlineSourceEditReceipt> applyOutlineSourceEdit(const OutlineSourceEdit &p_edit,
+                                                                  bool p_focus) override;
+  bool isOutlineSourceEditBusy() const override;
+
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
@@ -219,6 +224,14 @@ private:
   void setupPreviewHelper();
 
   void setupOutlineProvider();
+
+  bool outlineSourceWriterCurrent() const;
+  void publishSourceOutline();
+  void reconcileOutlineSourceEdit();
+  void invalidateOutlineSourceHistory();
+  bool replayOutlineSourceEdit(const QSharedPointer<OutlineSourceEditReceipt> &p_receipt,
+                               bool p_undo, const QString &p_bufferId, quint64 p_bufferGeneration,
+                               quint64 p_historyEpoch);
 
   void connectEditorSignals();
 
@@ -391,6 +404,15 @@ private:
 
   // Outline provider: bridges heading changes from editor/viewer to OutlinePopup.
   QSharedPointer<OutlineProvider> m_outlineProvider;
+
+  quint64 m_outlineContentGeneration = 0;
+  quint64 m_outlinePublishedGeneration = 0;
+  quint64 m_outlineHistoryEpoch = 0;
+  int m_outlinePublishedRevision = -1;
+  int m_outlineDocumentCharacters = 1;
+  bool m_outlineDocumentReset = false;
+  bool m_applyingOutlineSourceEdit = false;
+  QSharedPointer<OutlineSourceEditReceipt> m_pendingOutlineSourceEdit;
 
   // Whether external code-block highlight styles have been fetched from the theme.
   // Reset on theme change so styles are re-initialized from the new theme.

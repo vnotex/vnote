@@ -20,6 +20,7 @@
 
 #include "editors/statusbar.h"
 #include "navigationmode.h"
+#include "outlineprovider.h"
 #include "viewwindowtoolbarhelper2.h"
 #include "wordcountpanel.h"
 
@@ -150,6 +151,19 @@ public:
   // Returns false for an unsupported outline or unavailable heading.
   virtual bool activateOutlineHeading(int p_index);
 
+  // Default unsupported. Kept inline for consumers using a minimal base-view stub.
+  virtual OutlineSourceSnapshot outlineSourceSnapshot() const { return {}; }
+  virtual QSharedPointer<OutlineSourceEditReceipt> applyOutlineSourceEdit(const OutlineSourceEdit &,
+                                                                          bool) {
+    return {};
+  }
+  virtual bool isOutlineSourceEditBusy() const { return false; }
+  // Dependent map approval blocks retirement, not its authorized source apply.
+  bool isOutlineSourceRetirementBlocked() const {
+    return isOutlineSourceEditBusy() ||
+           (m_outlineSourceRetirementBlocked && m_outlineSourceRetirementBlocked());
+  }
+
   // Whether this window supports the Comments dock. File types opt in explicitly.
   virtual bool isCommentsSupported() const { return false; }
 
@@ -240,7 +254,7 @@ public:
   bool tryGetLatestContent(QString *p_content, QString *p_error = nullptr) const;
 
   // Whether this window has unsaved modifications.
-  bool isModified() const;
+  virtual bool isModified() const;
 
   // ============ Encoding ============
 
@@ -387,6 +401,9 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  // Memory-backed views offer only Discard/Cancel, never a nonexistent save destination.
+  int questionSaveOrDiscard(const QString &p_text, const QString &p_information);
+
   // Revoke document-bound operations before replacement confirmation can pump events.
   virtual void prepareBufferReplacement() {}
   virtual void releaseBufferResources() {}
@@ -475,6 +492,9 @@ protected:
   bool isViewFullScreen() const;
 
 signals:
+  // Re-query the live source snapshot/receipt after text, publication or provenance changes.
+  void outlineSourceChanged();
+
   // Exit intent from Escape, native close, tab hiding or native fullscreen loss.
   void viewFullScreenExitRequested();
 
@@ -748,6 +768,7 @@ private:
   // Installed only while this source owns a preview; normal close remains cancellable.
   std::function<bool()> m_closeLinkPreview;
   std::function<bool()> m_closeOutlineMindMapPreviews;
+  std::function<bool()> m_outlineSourceRetirementBlocked;
   bool m_isOutlineMindMapPreview = false;
   bool m_isProtectedOutlineMindMapPreview = false;
   bool m_outlineMindMapHasSectionNumber = false;
