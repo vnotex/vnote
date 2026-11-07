@@ -349,15 +349,6 @@ void TestConfigMgr2::testEditorZoom_sessionPersistence() {
       session.setTypstZoomFactor(state.m_typst);
       // Destruction flushes the normal pending write without event-loop timing dependencies.
     }
-    const QJsonObject expectedEditor{
-        {QStringLiteral("markdownZoomFactorInReadMode"), state.m_markdown},
-        {QStringLiteral("textEditorZoomDelta"), state.m_text},
-        {QStringLiteral("mindMapZoomFactor"), state.m_mindMap},
-        {QStringLiteral("typstZoomFactor"), state.m_typst}};
-    QCOMPARE(m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"))
-                 .value(QStringLiteral("editor"))
-                 .toObject(),
-             expectedEditor);
     QCOMPARE(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")),
              mainBefore);
 

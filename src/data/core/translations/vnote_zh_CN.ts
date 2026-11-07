@@ -5720,6 +5720,26 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
+        <source>Conceal Markdown markers</source>
+        <translation>隐藏 Markdown 标记</translation>
+    </message>
+    <message>
+        <source>I prefer a beautiful look closer to what it is rendered</source>
+        <translation>我更喜欢接近渲染效果的美观外观</translation>
+    </message>
+    <message>
+        <source>Show Markdown markers</source>
+        <translation>显示 Markdown 标记</translation>
+    </message>
+    <message>
+        <source>I prefer a strong control of what I have written and enjoy the muscles of Markdown</source>
+        <translation>我更喜欢完全掌控自己写下的内容，享受 Markdown 的力量</translation>
+    </message>
+    <message>
+        <source>You could always change Markdown editing experience using the toolbar menu at the top right corner.</source>
+        <translation>您随时都可以使用右上角的工具栏菜单更改 Markdown 编辑体验。</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/markdownviewwindow2.cpp" line="+169"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>无法将 HTML 转换为 Markdown</translation>

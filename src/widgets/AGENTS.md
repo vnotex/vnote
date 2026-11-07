@@ -1285,14 +1285,23 @@ popup outlines, without mutating producer names.
 ### Markdown concealment
 
 Markdown's top-right **Menu** exposes two Edit-only checkable preferences immediately below
-**In-Place Preview**. The controls remain menu-only; **Settings > Markdown Editor** provides
-searchable, read-only hints explaining them and the preview toggles:
+**In-Place Preview**. After onboarding, the controls remain menu-only;
+**Settings > Markdown Editor** provides searchable, read-only hints explaining them and the preview toggles:
 
 - **Conceal long link destinations** retains `editor.markdown_editor.concealment`, default `true`.
 - **Conceal Markdown Markers** stores `editor.markdown_editor.concealMarkdownMarkers`, default
   `true`. A saved `false` remains off. It hides emphasis, strong, strikethrough, mark, inline-code,
   link, ATX-heading and inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax`
   rules.
+
+The first displayed Markdown view (Read or Edit) offers a one-time, two-column radio choice
+between concealing and showing markers. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment`
+stores `editor.hasConfirmedMarkdownEditorConcealment` in `session.json`, default `false`.
+The controller marks it `true` before the nonblocking application-modal dialog is shown, so
+restored tabs cannot duplicate the prompt. Hidden/background tabs and minimized hosts defer it.
+The current marker setting is preselected; OK applies the choice through the same controller
+as the toolbar. Escape/window-close retains that setting but still consumes the prompt.
+The hint points to the top-right toolbar menu for later changes; long-link concealment is untouched.
 
 Both preferences are global and persist independently through `ConfigMgr2`; moving the original
 control must preserve saved opt-outs. Menu actions call `MarkdownEditorController`, which emits

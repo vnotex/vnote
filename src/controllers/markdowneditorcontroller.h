@@ -61,6 +61,9 @@ public:
   // Returns true if any config changed since last check.
   bool checkAndUpdateConfigRevision();
 
+  // Claim the one-time prompt before showing it, including across restored views.
+  bool beginConcealmentConfirmation();
+
   void setConcealmentEnabled(bool p_enabled);
   void setConcealMarkdownMarkersEnabled(bool p_enabled);
 

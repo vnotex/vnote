@@ -132,6 +132,8 @@ protected:
 
   void paintEvent(QPaintEvent *p_event) override;
 
+  void showEvent(QShowEvent *p_event) override;
+
   void addAdditionalMenuActions(QMenu *p_menu) Q_DECL_OVERRIDE;
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
@@ -164,6 +166,8 @@ protected:
   void applyReadableWidth() Q_DECL_OVERRIDE;
 
 private:
+  void confirmMarkdownEditorConcealment();
+
   void setupUI();
 
   void setupToolBar();

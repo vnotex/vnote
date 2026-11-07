@@ -233,6 +233,8 @@ QJsonObject SessionConfig::saveCore() const {
 
 void SessionConfig::loadEditor(const QJsonObject &p_session) {
   const auto editorObj = p_session.value(QStringLiteral("editor")).toObject();
+  m_hasConfirmedMarkdownEditorConcealment =
+      editorObj.value(QStringLiteral("hasConfirmedMarkdownEditorConcealment")).toBool(false);
   m_markdownZoomFactorInReadMode =
       editorObj.value(QStringLiteral("markdownZoomFactorInReadMode")).toDouble(1.0);
   m_textEditorZoomDelta = editorObj.value(QStringLiteral("textEditorZoomDelta")).toInt(0);
@@ -242,11 +244,21 @@ void SessionConfig::loadEditor(const QJsonObject &p_session) {
 
 QJsonObject SessionConfig::saveEditor() const {
   QJsonObject editorObj;
+  editorObj[QStringLiteral("hasConfirmedMarkdownEditorConcealment")] =
+      m_hasConfirmedMarkdownEditorConcealment;
   editorObj[QStringLiteral("markdownZoomFactorInReadMode")] = m_markdownZoomFactorInReadMode;
   editorObj[QStringLiteral("textEditorZoomDelta")] = m_textEditorZoomDelta;
   editorObj[QStringLiteral("mindMapZoomFactor")] = m_mindMapZoomFactor;
   editorObj[QStringLiteral("typstZoomFactor")] = m_typstZoomFactor;
   return editorObj;
+}
+
+bool SessionConfig::getHasConfirmedMarkdownEditorConcealment() const {
+  return m_hasConfirmedMarkdownEditorConcealment;
+}
+
+void SessionConfig::setHasConfirmedMarkdownEditorConcealment(bool p_confirmed) {
+  updateConfig(m_hasConfirmedMarkdownEditorConcealment, p_confirmed, this);
 }
 
 qreal SessionConfig::getMarkdownZoomFactorInReadMode() const {

@@ -144,6 +144,9 @@ public:
   bool getStartOnSystemStartup() const;
   void setStartOnSystemStartup(bool p_enabled);
 
+  bool getHasConfirmedMarkdownEditorConcealment() const;
+  void setHasConfirmedMarkdownEditorConcealment(bool p_confirmed);
+
   qreal getMarkdownZoomFactorInReadMode() const;
   void setMarkdownZoomFactorInReadMode(qreal p_factor);
 
@@ -260,6 +263,8 @@ private:
 
   // Whether to launch VNote on system startup (effected on Windows only).
   bool m_startOnSystemStartup = false;
+
+  bool m_hasConfirmedMarkdownEditorConcealment = false;
 
   qreal m_markdownZoomFactorInReadMode = 1.0;
 

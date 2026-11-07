@@ -5720,6 +5720,26 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
+        <source>Conceal Markdown markers</source>
+        <translation>Markdown 기호 숨기기</translation>
+    </message>
+    <message>
+        <source>I prefer a beautiful look closer to what it is rendered</source>
+        <translation>렌더링 결과에 가까운 아름다운 모습을 선호합니다</translation>
+    </message>
+    <message>
+        <source>Show Markdown markers</source>
+        <translation>Markdown 기호 표시하기</translation>
+    </message>
+    <message>
+        <source>I prefer a strong control of what I have written and enjoy the muscles of Markdown</source>
+        <translation>작성한 내용을 세밀하게 제어하고 Markdown의 강력함을 즐기고 싶습니다</translation>
+    </message>
+    <message>
+        <source>You could always change Markdown editing experience using the toolbar menu at the top right corner.</source>
+        <translation>오른쪽 위의 도구 모음 메뉴에서 언제든지 Markdown 편집 환경을 변경할 수 있습니다.</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/markdownviewwindow2.cpp" line="+169"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>HTML을 Markdown으로 변환할 수 없습니다</translation>

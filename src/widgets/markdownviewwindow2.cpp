@@ -7,20 +7,25 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QEvent>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QLayout>
 #include <QMenu>
 #include <QPainter>
 #include <QPointer>
 #include <QPrinter>
+#include <QRadioButton>
 #include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSplitter>
+#include <QStackedWidget>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -29,6 +34,7 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QUuid>
+#include <QVBoxLayout>
 #include <QWebEngineLoadingInfo>
 #include <QWebEngineProfile>
 #include <QWindow>
@@ -184,6 +190,89 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 
   snapshotInitialImages();
   QTimer::singleShot(0, this, [this]() { updateInactiveReaderTimer(); });
+}
+
+void MarkdownViewWindow2::showEvent(QShowEvent *p_event) {
+  ViewWindow2::showEvent(p_event);
+  if (!getServices()
+           .get<ConfigMgr2>()
+           ->getSessionConfig()
+           .getHasConfirmedMarkdownEditorConcealment()) {
+    QTimer::singleShot(0, this, &MarkdownViewWindow2::confirmMarkdownEditorConcealment);
+  }
+}
+
+void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
+  if (m_readerLifecycleClosing || !isVisible() || !window()->isVisible() ||
+      window()->isMinimized()) {
+    return;
+  }
+  // Tab insertion briefly shows background pages before the host hides them.
+  if (auto *stack = qobject_cast<QStackedWidget *>(parentWidget());
+      stack && stack->currentWidget() != this) {
+    return;
+  }
+  if (!m_editorController->beginConcealmentConfirmation()) {
+    return;
+  }
+
+  auto *dialog = new QDialog(window());
+  auto *dialogLayout = new QVBoxLayout(dialog);
+  dialog->setObjectName(QStringLiteral("markdownConcealmentDialog"));
+  dialog->setWindowTitle(tr("Conceal Markdown markers"));
+  dialog->setWindowModality(Qt::ApplicationModal);
+  auto *widget = new QWidget(dialog);
+  widget->setProperty(PropertyDefs::c_dialogCentralWidget, true);
+  dialogLayout->addWidget(widget);
+  auto *layout = new QVBoxLayout(widget);
+  auto *choices = new QHBoxLayout();
+  layout->addLayout(choices);
+
+  const auto addChoice = [widget, choices](const QString &p_text, const QString &p_description,
+                                           const QString &p_name) {
+    auto *column = new QVBoxLayout();
+    auto *radio = new QRadioButton(p_text, widget);
+    radio->setObjectName(p_name);
+    column->addWidget(radio);
+    auto *description = new QLabel(p_description, widget);
+    description->setWordWrap(true);
+    description->setMinimumWidth(240);
+    description->setMaximumWidth(320);
+    column->addWidget(description);
+    column->addStretch();
+    choices->addLayout(column, 1);
+    return radio;
+  };
+  auto *conceal = addChoice(tr("Conceal Markdown markers"),
+                            tr("I prefer a beautiful look closer to what it is rendered"),
+                            QStringLiteral("concealMarkdownMarkersRadio"));
+  auto *show = addChoice(
+      tr("Show Markdown markers"),
+      tr("I prefer a strong control of what I have written and enjoy the muscles of Markdown"),
+      QStringLiteral("showMarkdownMarkersRadio"));
+  const bool enabled = getServices()
+                           .get<ConfigMgr2>()
+                           ->getEditorConfig()
+                           .getMarkdownEditorConfig()
+                           .getConcealMarkdownMarkersEnabled();
+  conceal->setChecked(enabled);
+  show->setChecked(!enabled);
+
+  auto *hint = new QLabel(
+      tr("You could always change Markdown editing experience using the toolbar menu at the "
+         "top right corner."),
+      widget);
+  hint->setWordWrap(true);
+  layout->addWidget(hint);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok, dialog);
+  dialogLayout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+  connect(dialog, &QDialog::accepted, m_editorController,
+          [controller = m_editorController, conceal]() {
+            controller->setConcealMarkdownMarkersEnabled(conceal->isChecked());
+          });
+  connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
+  dialog->show();
 }
 
 // ============ Destructor ============

@@ -117,6 +117,15 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
 MarkdownEditorController::MarkdownEditorController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
 
+bool MarkdownEditorController::beginConcealmentConfirmation() {
+  auto &session = m_services.get<ConfigMgr2>()->getSessionConfig();
+  if (session.getHasConfirmedMarkdownEditorConcealment()) {
+    return false;
+  }
+  session.setHasConfirmedMarkdownEditorConcealment(true);
+  return true;
+}
+
 void MarkdownEditorController::setConcealmentEnabled(bool p_enabled) {
   auto &config = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
   if (config.getConcealmentEnabled() == p_enabled) {
