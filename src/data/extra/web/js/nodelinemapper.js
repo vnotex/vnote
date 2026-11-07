@@ -270,6 +270,8 @@ class NodeLineMapper {
 
         this.smoothAnchorScroll = false;
 
+        this.deferredScrollTimer = null;
+
         window.addEventListener(
             'scroll',
             (p_event) => {
@@ -398,8 +400,11 @@ class NodeLineMapper {
             return;
         }
 
+        // A newer position or explicit anchor supersedes pending restoration.
+        window.clearTimeout(this.deferredScrollTimer);
+        this.deferredScrollTimer = null;
         if (p_deferred) {
-            window.setTimeout(() => {
+            this.deferredScrollTimer = window.setTimeout(() => {
                 this.scrollToY(p_pos, p_smooth, false);
             }, 300);
         } else {
@@ -411,9 +416,11 @@ class NodeLineMapper {
     }
 
     scrollToNode(p_node, p_smooth, p_deferred) {
+        window.clearTimeout(this.deferredScrollTimer);
+        this.deferredScrollTimer = null;
         this.headingFolding.expandHiddenAncestors(p_node);
         if (p_deferred) {
-            window.setTimeout(() => {
+            this.deferredScrollTimer = window.setTimeout(() => {
                 this.scrollToNode(p_node, p_smooth, false);
             }, 300);
         } else {

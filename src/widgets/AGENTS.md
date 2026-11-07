@@ -378,6 +378,15 @@ writer/resource policy before deferred destruction; a retired widget must not be
 Live hidden sibling sources may be captured during close checking, but new admission into a closing
 host stays forbidden. Promotion and session persistence remain forbidden.
 
+At `ViewArea2` destruction, disconnect registered windows and their outline providers from the
+area before its registry members die. `QWidget` deletes child editors later, while a `QPointer`
+to the area is still live; protected-editor teardown publishes outline changes. Those callbacks
+must not query the destroyed registry. Retire only the area receiver, preserving protected cleanup.
+`restoreUnlockedProtectedEditors` covers direct area teardown and restored content/identity.
+Register every view through `registerViewWindow()`: direct hidden-owner deletion removes only the
+entry still pointing to that QObject. Destruction of an old conversion view must not erase the new
+view at the same ID. The area destructor disconnects this cleanup too before the registry dies.
+
 Coverage: `outlineMindMapSourceEditing`, `outlineMindMapSourceGuards`,
 `outlineMindMapSourceHistory`, `outlineMindMapSourceSavePolicy`, `outlineMindMapSourceClose`,
 protected/nested lifetime cases, and direct Markdown/Typst adapter tests in the existing widget suites.
@@ -402,6 +411,13 @@ text-layer focus; Typst reveals the source heading (Read enters Edit) without fo
 Typst headings open or reposition a background source tab without replacing the original source.
 Ordinary Outline clicks keep their existing focus behavior. The base activation API dispatches
 non-focusing provider handlers; PDF and Typst override it for their focus-aware navigation paths.
+
+Markdown reader scroll requests supersede earlier deferred line restoration. `NodeLineMapper`
+owns one pending scroll timer shared by its Y-position and source-node paths; an explicit heading
+anchor cancels it rather than letting the old 300 ms callback scroll away again. Keep the existing
+defer duration and smooth-scroll/folding behavior. Coverage:
+`test_viewarea_tab_reuse::markdownReaderNavigationSupersedesRestoration` exercises both paths
+and checks heading visibility after the old callback deadline, not just immediately after navigation.
 
 The roster stores stable node-to-current-heading mappings, ordered real IDs, immutable original
 promotion identity, source revision/text generation and a navigation fingerprint, never source text

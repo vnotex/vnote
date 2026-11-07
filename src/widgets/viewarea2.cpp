@@ -120,6 +120,14 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
 }
 
 ViewArea2::~ViewArea2() {
+  // QWidget deletes child windows after our registries are destroyed, while
+  // QPointer<ViewArea2> is still live. Protected teardown publishes outline changes.
+  for (auto *window : std::as_const(m_windows)) {
+    disconnect(window, nullptr, this, nullptr);
+    if (const auto provider = window->getOutlineProvider()) {
+      disconnect(provider.data(), nullptr, this, nullptr);
+    }
+  }
   clearNavigation();
   // Normal close/quit already passed cancellable gates. This is resource teardown only.
   for (const auto &host : m_previewHosts) {
@@ -1374,6 +1382,18 @@ bool ViewArea2::eventFilter(QObject *p_object, QEvent *p_event) {
   return QWidget::eventFilter(p_object, p_event);
 }
 
+void ViewArea2::registerViewWindow(ID p_windowId, ViewWindow2 *p_window) {
+  m_windows[p_windowId] = p_window;
+  p_window->setViewWindowId(p_windowId);
+  connect(p_window, &QObject::destroyed, this, [this, p_windowId](QObject *p_object) {
+    // Hidden owners may delete directly; an old view must not erase its replacement.
+    const auto entry = m_windows.constFind(p_windowId);
+    if (entry != m_windows.cend() && entry.value() == p_object) {
+      m_windows.erase(entry);
+    }
+  });
+}
+
 ViewWindow2 *ViewArea2::windowForId(ID p_windowId) const {
   return m_windows.value(p_windowId, nullptr);
 }
@@ -1769,8 +1789,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     }
     wireOutlineMindMapSignals(win);
     id = m_nextWindowId++;
-    m_windows[id] = win;
-    win->setViewWindowId(id);
+    registerViewWindow(id, win);
     split->addViewWindow(win);
     // addViewWindow explicitly shows even a non-current tab. Preserve the
     // previous selection and keep the background editor hidden.
@@ -1864,8 +1883,7 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
 
   auto *win = new WidgetViewWindow2(m_services, p_buffer, p_content, split);
   ID id = m_nextWindowId++;
-  m_windows[id] = win;
-  win->setViewWindowId(id);
+  registerViewWindow(id, win);
   split->addViewWindow(win);
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
@@ -1944,8 +1962,7 @@ bool ViewArea2::recreateNoteViews(
   // All replacement owners exist before any old document is released. Do not
   // call aboutToClose(): it saves dirty plaintext and runs legacy-asset cleanup.
   for (const auto &item : replacements) {
-    item.newWindow->setViewWindowId(item.id);
-    m_windows[item.id] = item.newWindow;
+    registerViewWindow(item.id, item.newWindow);
     if (item.split) {
       const QSignalBlocker blocker(item.split);
       const int index = item.split->indexOf(item.oldWindow);

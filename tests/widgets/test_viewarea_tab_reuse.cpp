@@ -1150,6 +1150,8 @@ private slots:
   void outlineMindMapAdmissionFailure();
   void outlineMindMapNavigation_data();
   void outlineMindMapNavigation();
+  void markdownReaderNavigationSupersedesRestoration_data();
+  void markdownReaderNavigationSupersedesRestoration();
   void outlineMindMapNavigationRoots();
   void outlineMindMapNavigationSnapshot_data();
   void outlineMindMapNavigationSnapshot();
@@ -3138,6 +3140,70 @@ void TestViewAreaTabReuse::outlineMindMapNavigation() {
   QCOMPARE(f->current(), generated.data());
 }
 
+void TestViewAreaTabReuse::markdownReaderNavigationSupersedesRestoration_data() {
+  QTest::addColumn<int>("restoredLine");
+  QTest::newRow("document-top") << 0;
+  QTest::newRow("source-line-node") << 2;
+}
+
+void TestViewAreaTabReuse::markdownReaderNavigationSupersedesRestoration() {
+  QFETCH(int, restoredLine);
+  QVERIFY(f->create(QStringLiteral("reader-scroll.md"), navigationMarkdown().toUtf8()));
+  QVERIFY(f->open(QStringLiteral("reader-scroll.md")).isValid());
+  auto *source = f->current();
+  source->setMode(ViewWindowMode::Read);
+  auto *reader = source->findChild<MarkdownViewer *>();
+  QVERIFY(reader && waitForRender(reader, QStringLiteral("Beta")));
+
+  // Reproduce the ordering used by startPendingDocument(): line restoration is
+  // queued before explicit anchor navigation, in the same JavaScript turn.
+  const auto initial = evaluate(reader->page(), QStringLiteral(R"JS(
+    (() => {
+      const mapper = window.vxcore.nodeLineMapper;
+      const target = document.querySelectorAll('h1,h2,h3')[2];
+      mapper.fetchAllNodesWithLineNumber();
+      const restored = mapper.binarySearchNodeForLineNumber(mapper.nodesWithSourceLine, %1);
+      if (!target || !target.id || (%1 > 0 && (!restored || restored === target))) return {};
+      const geometry = () => {
+        const rect = target.getBoundingClientRect();
+        return {top: rect.top, bottom: rect.bottom, height: innerHeight, scroll: scrollY};
+      };
+      window.vxcore.scrollToLine(%1);
+      window.vxcore.scrollToAnchor(target.id);
+      const probe = window.readerScrollProbe = {done: false, initial: geometry(),
+                                                restoredText: restored?.textContent};
+      // Observe after the production 300 ms restoration deadline. A successful
+      // immediate scroll alone would miss the later overwrite.
+      window.setTimeout(() => { probe.after = geometry(); probe.done = true; }, 400);
+      return probe;
+    })()
+  )JS")
+                                                    .arg(restoredLine))
+                           .toMap();
+  QVERIFY(!initial.isEmpty());
+  if (restoredLine > 0) {
+    // Prove this row uses a different, real source-line node, not the Y=0 fallback.
+    QCOMPARE(initial.value(QStringLiteral("restoredText")).toString(),
+             QStringLiteral("Before target paragraph."));
+  }
+  const auto visible = [](const QVariantMap &p_geometry) {
+    return p_geometry.value(QStringLiteral("scroll")).toDouble() > 100 &&
+           p_geometry.value(QStringLiteral("top")).toDouble() >= -1 &&
+           p_geometry.value(QStringLiteral("bottom")).toDouble() <
+               p_geometry.value(QStringLiteral("height")).toDouble();
+  };
+  QVERIFY(visible(initial.value(QStringLiteral("initial")).toMap()));
+  QVERIFY(QTest::qWaitFor([&] {
+    return evaluate(reader->page(), QStringLiteral("window.readerScrollProbe.done")).toBool();
+  }));
+  const auto after =
+      evaluate(reader->page(), QStringLiteral("window.readerScrollProbe.after")).toMap();
+  QVERIFY2(visible(after),
+           QJsonDocument::fromVariant(after).toJson(QJsonDocument::Compact).constData());
+  QCOMPARE(source->getMode(), ViewWindowMode::Read);
+  QCOMPARE(f->current(), source);
+}
+
 void TestViewAreaTabReuse::outlineMindMapNavigationRoots() {
   const auto bytes = QByteArray("Preamble.\n\n# Title\n\n## Child\n\nBody.\n");
   QVERIFY(f->create(QStringLiteral("promoted.md"), bytes));
@@ -4863,6 +4929,7 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
       QVERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
       QVERIFY(source && source->isNoteConversionFrozen());
       QCOMPARE(f->controller()->applyNoteConversion(conversion), VXCORE_OK);
+      QVERIFY(source.isNull());
       QVERIFY(!f->buffers->getBufferHandle(buffer.id()).isValid());
       QVERIFY(readBytes(f->absolute(conversion->m_targetPath)).contains(sentinel));
       bool rebound = false;
@@ -4871,6 +4938,10 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
           rebound = true;
           QVERIFY(!window->isContentProtected());
           QVERIFY(window->getLatestContent().contains(QString::fromUtf8(sentinel)));
+          QCOMPARE(window->getViewWindowId(), sourceId);
+          QCOMPARE(f->area->findWindowIdsByNode(window->getNodeId(), false), QVector<ID>{sourceId});
+          QVERIFY(f->area->isPreviewSourceCurrent(
+              sourceId, window->getLinkOpenSettings().m_previewSourceGeneration));
         }
       }
       QVERIFY(rebound);
@@ -8570,6 +8641,7 @@ void TestViewAreaTabReuse::previewHiddenCrossNotebookCloseCancellation() {
   QVERIFY(f->area->previewWorkspacesForSourceNotebook(f->notebook).isEmpty());
   QVERIFY(f->notebooks->closeNotebook(f->notebook));
   QTRY_VERIFY(source.isNull());
+  QVERIFY(f->area->findWindowIdsByNode(f->node(QStringLiteral("a.txt")), false).isEmpty());
 }
 
 void TestViewAreaTabReuse::previewHomeOnlyMainRetainsHome() {

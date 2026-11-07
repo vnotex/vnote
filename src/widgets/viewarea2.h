@@ -209,6 +209,7 @@ private:
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
   ViewSplit2 *hostedSplitForWorkspace(const QString &p_workspaceId) const;
   ViewSplit2 *owningSplitForWindow(ID p_windowId) const;
+  void registerViewWindow(ID p_windowId, ViewWindow2 *p_window);
   ViewWindow2 *windowForId(ID p_windowId) const;
 
   // Resolve the ViewSplit2 hosted by the DetachedWindow for p_workspaceId, or
