@@ -1186,6 +1186,8 @@ private slots:
   void explorerGestures();
   void restoreOrderedWorkspacesAndLockedNote();
   void reopenSplitAndBatches();
+  void detachedWindowFirstShow_data();
+  void detachedWindowFirstShow();
   void explicitDetachedWorkspace();
   void explicitMainWorkspace();
   void unavailableTargetWorkspace_data();
@@ -10590,6 +10592,87 @@ void TestViewAreaTabReuse::reopenSplitAndBatches() {
   }
   detachedNotes.sort();
   QCOMPARE(detachedNotes, QStringList({QStringLiteral("b.md"), QStringLiteral("c.md")}));
+}
+
+void TestViewAreaTabReuse::detachedWindowFirstShow_data() {
+  QTest::addColumn<QString>("operation");
+  QTest::newRow("move-existing-view") << QStringLiteral("move");
+  QTest::newRow("direct-open") << QStringLiteral("open");
+  QTest::newRow("background-open") << QStringLiteral("background");
+  QTest::newRow("failed-creation-then-open") << QStringLiteral("failure");
+}
+
+void TestViewAreaTabReuse::detachedWindowFirstShow() {
+  QFETCH(QString, operation);
+  QVERIFY(f->create(QStringLiteral("main.txt"), "Main view stays here\n"));
+  QVERIFY(f->create(QStringLiteral("detached.txt"), "Detached content ready at first show\n"));
+  const auto mainBuffer = f->open(QStringLiteral("main.txt"));
+  QVERIFY(mainBuffer.isValid());
+  const auto mainWorkspace = f->workspace();
+
+  class FirstShowObserver : public QObject {
+  public:
+    int shows = 0;
+    QPointer<DetachedWindow> host;
+    QPointer<ViewWindow2> view;
+    QString bufferId;
+    QString content;
+
+    bool eventFilter(QObject *p_object, QEvent *p_event) override {
+      if (p_event->type() == QEvent::Show) {
+        if (auto *detached = qobject_cast<DetachedWindow *>(p_object); detached && ++shows == 1) {
+          host = detached;
+          view = detached->getViewSplit()->getCurrentViewWindow();
+          if (view) {
+            bufferId = view->getBuffer().id();
+            content = view->getLatestContent();
+          }
+        }
+      }
+      return false;
+    }
+  } observer;
+  qApp->installEventFilter(&observer);
+  const auto removeObserver = qScopeGuard([&] { qApp->removeEventFilter(&observer); });
+
+  Buffer2 buffer;
+  QPointer<ViewWindow2> original;
+  if (operation == QLatin1String("move")) {
+    buffer = f->open(QStringLiteral("detached.txt"), true);
+    QVERIFY(buffer.isValid());
+    original = f->current();
+    QVERIFY(
+        f->controller()->detachViewWindow(mainWorkspace, original->getViewWindowId(), buffer.id()));
+  } else {
+    FileOpenSettings settings;
+    settings.m_mode = ViewWindowMode::Edit;
+    settings.m_detachedView = true;
+    settings.m_focus = operation != QLatin1String("background");
+    if (operation == QLatin1String("failure")) {
+      QSignalSpy failed(f->area.get(), &ViewArea2::viewWindowCreationFailed);
+      f->factory->registerCreator(QStringLiteral("Text"),
+                                  [](ServiceLocator &, const Buffer2 &, QWidget *,
+                                     ViewWindowMode) -> ViewWindow2 * { return nullptr; });
+      f->buffers->openBuffer(f->node(QStringLiteral("detached.txt")), settings);
+      QCOMPARE(failed.count(), 1);
+      QCOMPARE(observer.shows, 0);
+      f->factory->registerBuiltInCreators();
+    }
+    buffer = f->buffers->openBuffer(f->node(QStringLiteral("detached.txt")), settings);
+    QVERIFY(buffer.isValid());
+  }
+
+  QTRY_COMPARE(observer.shows, 1);
+  QVERIFY(observer.host && observer.view);
+  QCOMPARE(observer.bufferId, buffer.id());
+  QCOMPARE(observer.content, QStringLiteral("Detached content ready at first show\n"));
+  QCOMPARE(observer.host->getViewSplit()->getCurrentViewWindow(), observer.view.data());
+  QVERIFY(QTest::qWaitForWindowExposed(observer.host));
+  QVERIFY(observer.view->isVisible());
+  if (original)
+    QCOMPARE(observer.view, original);
+  QCOMPARE(f->workspace(), mainWorkspace);
+  QCOMPARE(f->current()->getBuffer().id(), mainBuffer.id());
 }
 
 void TestViewAreaTabReuse::explicitDetachedWorkspace() {

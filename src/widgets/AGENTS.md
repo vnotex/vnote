@@ -625,6 +625,15 @@ Keep menus parented to the native editor for logical focus, and defer retired-co
 until owned menus/modals and callbacks have unwound. Native GUI coverage lives in
 `test_typstviewwindow_insertion` (`resource*`) and `test_typsteditor`.
 
+#### Detached-window presentation
+
+`ViewArea2::hostWorkspaceInDetachedWindow()` creates a hidden host. Show it only after
+`moveViewWindowToDetached()` has attached and selected the existing view, or after
+`openBuffer()` has admitted its first live view. Showing the empty host can paint a
+blank native frame before the themed content. Keep failed creation hidden, preserve
+background selection, and leave focused activation on the existing paths. The first-show
+content contract is covered by `test_viewarea_tab_reuse::detachedWindowFirstShow`.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

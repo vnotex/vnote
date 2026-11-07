@@ -128,7 +128,8 @@ public:
 
   // Detach: host a workspace in a separate top-level DetachedWindow (kept OUT of
   // the main splitter tree, so it is excluded from layout serialization and
-  // main-tree navigation). Used by the "Detach" action.
+  // main-tree navigation). The host stays hidden until a successful view transfer
+  // or buffer open supplies its content and shows it.
   virtual void hostWorkspaceInDetachedWindow(const QString &p_workspaceId) = 0;
 
   // Transfer a view window from a main split into the detached window hosting

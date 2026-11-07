@@ -1811,6 +1811,10 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   if (!win || findWindowIdByBufferId(p_workspaceId, p_buffer.id()) != id) {
     return;
   }
+  // A new detached host stays hidden until its first view has been admitted.
+  if (auto *host = qobject_cast<DetachedWindow *>(win->window()); host && !host->isVisible()) {
+    host->show();
+  }
   // Select a focused open after registration and its after-open hook, as for
   // ordinary tab creation. The first tab was reconciled after membership add.
   if (p_settings.m_focus) {
@@ -2376,8 +2380,6 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
   connect(split, &ViewSplit2::currentViewWindowChanged, dw, [dw](ViewWindow2 *w) {
     dw->setWindowTitle(w ? w->getTitle() : qApp->applicationDisplayName());
   });
-
-  dw->show();
 }
 
 bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWorkspaceId,
@@ -2407,6 +2409,8 @@ bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWork
   srcSplit->takeViewWindow(win);
   dstSplit->addViewWindow(win);
   dstSplit->setCurrentViewWindow(win);
+  // Do not expose an empty native window before the transferred view is attached.
+  dstSplit->window()->show();
 
   // The source split may now be empty (e.g. detaching its only tab); refresh so
   // the Home dashboard is opened if the main area became empty.
