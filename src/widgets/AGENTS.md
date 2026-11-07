@@ -1294,8 +1294,9 @@ Markdown's top-right **Menu** exposes two Edit-only checkable preferences immedi
   link, ATX-heading and inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax`
   rules.
 
-The first displayed Markdown view (Read or Edit) offers a one-time, two-column radio choice
-between concealing and showing markers. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment`
+The first displayed Markdown view (Read or Edit) opens **Choose Markdown Editing Experience**,
+a one-time radio choice between concealing and showing markers, with a themed vertical separator
+between the columns. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment`
 stores `editor.hasConfirmedMarkdownEditorConcealment` in `session.json`, default `false`.
 The controller marks it `true` before the nonblocking application-modal dialog is shown, so
 restored tabs cannot duplicate the prompt. Hidden/background tabs and minimized hosts defer it.

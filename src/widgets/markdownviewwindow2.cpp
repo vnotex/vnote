@@ -11,6 +11,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QFileInfo>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QKeyEvent>
@@ -219,7 +220,7 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
   auto *dialog = new QDialog(window());
   auto *dialogLayout = new QVBoxLayout(dialog);
   dialog->setObjectName(QStringLiteral("markdownConcealmentDialog"));
-  dialog->setWindowTitle(tr("Conceal Markdown markers"));
+  dialog->setWindowTitle(tr("Choose Markdown Editing Experience"));
   dialog->setWindowModality(Qt::ApplicationModal);
   auto *widget = new QWidget(dialog);
   widget->setProperty(PropertyDefs::c_dialogCentralWidget, true);
@@ -246,6 +247,10 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
   auto *conceal = addChoice(tr("Conceal Markdown markers"),
                             tr("I prefer a beautiful look closer to what it is rendered"),
                             QStringLiteral("concealMarkdownMarkersRadio"));
+  auto *separator = new QFrame(widget);
+  separator->setFrameShape(QFrame::VLine);
+  separator->setFrameShadow(QFrame::Sunken);
+  choices->addWidget(separator);
   auto *show = addChoice(
       tr("Show Markdown markers"),
       tr("I prefer a strong control of what I have written and enjoy the muscles of Markdown"),

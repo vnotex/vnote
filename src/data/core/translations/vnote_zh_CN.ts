@@ -5720,6 +5720,10 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
+        <source>Choose Markdown Editing Experience</source>
+        <translation>选择 Markdown 编辑体验</translation>
+    </message>
+    <message>
         <source>Conceal Markdown markers</source>
         <translation>隐藏 Markdown 标记</translation>
     </message>
