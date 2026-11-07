@@ -24,6 +24,7 @@ A feature release with scoped HTTP automation, richer Markdown paste and smoothe
     * Refine mind-map field menus, shortcut editors and node-anchored popups, improve node icons, and place the nonempty note indicator before the hyperlink indicator
     * Open files classified as Others with the system application instead of the plaintext editor, retain inferred text/image viewers, and skip unsupported restored tabs without launching external applications
 * **Interface and reliability**
+    * Show a theme-aware three-dot menu icon on narrow view-window toolbar overflow buttons instead of a clipped gray square
     * Enlarge Sort Folders and Sort Notes to 800 × 600 by default and select the triggering folder or note when present
     * Reserve persistent editor status rows below the content and prevent Windows status/link-preview overlays from promoting entire tab containers to native windows
     * Stack notification action buttons vertically, unify Settings card surfaces and action alignment, restore complete theme button borders, and clarify editor toolbar option hints

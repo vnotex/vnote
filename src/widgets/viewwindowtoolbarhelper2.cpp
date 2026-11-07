@@ -506,4 +506,8 @@ static void refreshActionIcons(const QList<QAction *> &p_actions, ServiceLocator
 
 void ViewWindowToolBarHelper2::refreshToolBarIcons(QToolBar *p_tb, ServiceLocator &p_services) {
   refreshActionIcons(p_tb->actions(), p_services);
+  if (auto *extension = p_tb->findChild<QToolButton *>(QStringLiteral("qt_toolbar_ext_button"),
+                                                       Qt::FindDirectChildrenOnly)) {
+    extension->setIcon(generateIcon(p_services, QStringLiteral("menu.svg")));
+  }
 }
