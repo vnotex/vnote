@@ -370,6 +370,8 @@ public:
 
 signals:
   void protectedLockFailed(const QString &p_error);
+  // Native topic acceptance waits for this accepted command's source publication.
+  void outlineMindMapEditPendingChanged(ID p_windowId, bool p_pending);
   // ============ Notification Signals (external consumers) ============
 
   // Emitted when a quick note should be created (schemes are configured).

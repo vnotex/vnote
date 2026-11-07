@@ -99,6 +99,10 @@ bool MindMapViewWindow2::aboutToClose(bool p_force) {
   const QPointer<MindMapViewWindow2> guard(this);
   const auto generation = m_generation;
   const auto current = [&] { return guard && generation == guard->m_generation; };
+  // A close-consent dialog can settle the source in its nested event loop. Never
+  // accept an earlier Enter while the user is deciding whether to discard that draft.
+  if (m_editor)
+    m_editor->cancelPendingTopicAcceptance();
   // Keep the widget/caret/local undo intact if capture is rejected or close is cancelled.
   const bool committed =
       !m_editor || !m_editor->hasPendingEdit() || m_editor->commitActiveEdit(true);
@@ -109,6 +113,16 @@ bool MindMapViewWindow2::aboutToClose(bool p_force) {
     if (p_force) {
       return false;
     }
+    // Fullscreen restoration and the modal loop can both trigger draft captures.
+    // Hold acceptance until the decision, even if source publication finishes.
+    m_outlineSourceEditConsent = true;
+    m_editor->setSourceEditPending(true);
+    const auto releaseConsent = qScopeGuard([guard, generation] {
+      if (guard && guard->m_generation == generation) {
+        guard->m_outlineSourceEditConsent = false;
+        guard->m_editor->setSourceEditPending(guard->m_outlineSourceEditPending);
+      }
+    });
     setViewFullScreen(false);
     if (!current()) {
       return false;
@@ -143,6 +157,13 @@ bool MindMapViewWindow2::synchronizeOutlineSourceTopics(
   return isOutlineMindMapPreview() && !m_outlineSourceEditRetired && m_contentLoaded &&
          m_propagateEditorToBuffer && m_editor && !m_editor->isSourceEditBusy() &&
          m_editor->synchronizeSourceTopics(p_entries);
+}
+
+void MindMapViewWindow2::setOutlineSourceEditPending(bool p_pending) {
+  if (isOutlineMindMapPreview() && !m_outlineSourceEditRetired && m_editor) {
+    m_outlineSourceEditPending = p_pending;
+    m_editor->setSourceEditPending(p_pending || m_outlineSourceEditConsent);
+  }
 }
 
 void MindMapViewWindow2::retireOutlineSourceEditHandler() {

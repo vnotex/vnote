@@ -361,6 +361,15 @@ exact paired Undo available. Receipt content generation prevents deferred close 
 adopting a later independent body edit. Source-originated changes stale other previews; reopening
 is recovery. Reconcile only topics/current native history, never colors, folds, camera or `loadJson()`.
 
+An explicit inline topic acceptance during that settlement retains its input and completes once
+publication finishes, rather than rejecting a freshly added heading's title. The controller's
+pending signal gates native acceptance until the new binding is published or definitively stale;
+the queued acceptance still runs the ordinary source guards. Direct source commands and changed
+draft captures remain rejected while pending. Escape, retirement and handler replacement cancel
+the deferred intent. Before close consent, cancel that intent and hold all draft acceptance through
+the modal decision (including focus-triggered captures); Cancel retains the draft and Discard leaves
+only the already-created empty heading. Coverage: `outlineMindMapNewHeading`.
+
 Accepted operations already changed the source before native `documentChanged`. Existing
 `pendingEditChanged` dirty marking and BufferService's 3000 ms capture accept unfinished inline
 text with `commitActiveEdit(true)`, retaining its widget/caret. Reuse source Auto Save / Backup File /

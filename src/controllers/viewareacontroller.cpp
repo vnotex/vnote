@@ -1468,6 +1468,8 @@ ViewAreaController::applyOutlineMindMapEdit(const Buffer2 &p_preview,
     return std::nullopt;
   }
   current->m_receipt = command->m_receipt;
+  current = m_outlineMindMapPreviews.end();
+  emit outlineMindMapEditPendingChanged(before.m_windowId, true);
   // Native publication owns the end of inFlight, not return from this source callback.
   return std::optional<m3::qt::SourceEditCommand>(std::move(nativeCommand));
 }
@@ -1525,6 +1527,8 @@ bool ViewAreaController::replayOutlineMindMapEdit(
     current->m_inFlight = false;
     return false;
   }
+  current = m_outlineMindMapPreviews.end();
+  emit outlineMindMapEditPendingChanged(p_windowId, true);
   return true;
 }
 
@@ -1600,19 +1604,24 @@ void ViewAreaController::reconcileOutlineMindMapPreview(const QString &p_address
   const QPointer<ViewAreaController> guard(this);
   m_outlineMindMapPreviews[p_address].m_reconciling = true;
   m_outlineMindMapPreviews[p_address].m_reconcileDeferred = false;
-  const auto finish =
-      qScopeGuard([guard, p_address, bufferId = before.m_bufferId, operation = before.m_operation] {
-        if (!guard)
-          return;
-        auto current = guard->m_outlineMindMapPreviews.find(p_address);
-        if (current == guard->m_outlineMindMapPreviews.end() || current->m_bufferId != bufferId ||
-            current->m_operation != operation)
-          return;
-        current->m_reconciling = false;
-        const bool deferred = current->m_reconcileDeferred;
-        if (deferred)
-          guard->reconcileOutlineMindMapPreview(p_address);
-      });
+  const auto finish = qScopeGuard([guard, p_address, bufferId = before.m_bufferId,
+                                   operation = before.m_operation, wasPending = before.m_pending] {
+    if (!guard)
+      return;
+    auto current = guard->m_outlineMindMapPreviews.find(p_address);
+    if (current == guard->m_outlineMindMapPreviews.end() || current->m_bufferId != bufferId ||
+        current->m_operation != operation)
+      return;
+    current->m_reconciling = false;
+    const bool settled = wasPending && !current->m_pending;
+    const ID windowId = current->m_windowId;
+    const bool deferred = current->m_reconcileDeferred;
+    current = guard->m_outlineMindMapPreviews.end();
+    if (settled)
+      emit guard->outlineMindMapEditPendingChanged(windowId, false);
+    if (guard && deferred)
+      guard->reconcileOutlineMindMapPreview(p_address);
+  });
   if (!isOutlineMindMapSourceCurrent(before) || !guard || !m_view ||
       m_view->findWindowIdByBufferId(before.m_workspaceId, before.m_bufferId) != before.m_windowId)
     return;

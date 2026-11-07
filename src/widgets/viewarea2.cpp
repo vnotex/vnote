@@ -1670,6 +1670,11 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
              window->isOutlineMindMapPreview();
     };
     if (auto *preview = qobject_cast<MindMapViewWindow2 *>(p_window)) {
+      connect(m_controller, &ViewAreaController::outlineMindMapEditPendingChanged, preview,
+              [preview, current](ID p_id, bool p_pending) {
+                if (current() && preview->getViewWindowId() == p_id)
+                  preview->setOutlineSourceEditPending(p_pending);
+              });
       preview->setOutlineSourceEditHandler(
           [self, window,
            current](const m3::qt::SourceEdit &p_edit) -> std::optional<m3::qt::SourceEditCommand> {

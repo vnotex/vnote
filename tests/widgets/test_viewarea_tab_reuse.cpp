@@ -1122,6 +1122,8 @@ private slots:
   void markdownOutlineSourceEditing();
   void markdownOutlineSourceGuards();
   void markdownOutlineSourceNormalization();
+  void outlineMindMapNewHeading_data();
+  void outlineMindMapNewHeading();
   void outlineMindMapSourceEditing();
   void outlineMindMapSourceSavePolicy_data();
   void outlineMindMapSourceSavePolicy();
@@ -1506,6 +1508,155 @@ void TestViewAreaTabReuse::markdownOutlineSourceNormalization() {
   QTRY_VERIFY_WITH_TIMEOUT(!receipt->m_pending, 30000);
   QVERIFY(!receipt->m_stale);
   QCOMPARE(source->getLatestContent(), normalized);
+}
+
+void TestViewAreaTabReuse::outlineMindMapNewHeading_data() {
+  QTest::addColumn<bool>("numbering");
+  QTest::addColumn<bool>("child");
+  QTest::addColumn<bool>("settled");
+  QTest::addColumn<int>("cancel");
+  QTest::newRow("default-immediate-child") << false << true << false << 0;
+  QTest::newRow("default-immediate-sibling") << false << false << false << 0;
+  QTest::newRow("numbered-immediate-sibling") << true << false << false << 0;
+  QTest::newRow("numbered-settled-sibling") << true << false << true << 0;
+  QTest::newRow("escape-before-settlement") << true << false << false << 1;
+  QTest::newRow("cancel-close-during-settlement") << true << false << false << 2;
+  QTest::newRow("discard-close-during-settlement") << true << false << false << 3;
+  QTest::newRow("source-change-before-settlement") << false << false << false << 4;
+  QTest::newRow("discard-fullscreen-close-during-settlement") << true << false << false << 5;
+}
+
+void TestViewAreaTabReuse::outlineMindMapNewHeading() {
+  QFETCH(bool, numbering);
+  QFETCH(bool, child);
+  QFETCH(bool, settled);
+  QFETCH(int, cancel);
+  auto *timer = f->buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  const auto interval = timer->interval();
+  timer->setInterval(60 * 60 * 1000);
+  const auto restoreTimer = qScopeGuard([&] { timer->setInterval(interval); });
+  auto &markdown = f->config->getEditorConfig().getMarkdownEditorConfig();
+  markdown.setAutoSectionNumberInEditModeEnabled(numbering);
+  QVERIFY(f->create(QStringLiteral("new-heading.md"),
+                    "# Book\n\n## Alpha\n\nBody\n\n## Beta\n\nBody\n\n## Another good\n"));
+  QVERIFY(f->open(QStringLiteral("new-heading.md")).isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(source->outlineSourceSnapshot().m_revision >= 0, 30000);
+  QCOMPARE(source->outlineSourceSnapshot().m_outline->m_hasSectionNumber, numbering);
+  const auto baseline = source->getLatestContent();
+  QVERIFY(clickOutlineMindMap(source));
+  auto *generated = f->current();
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && waitForSourceMap(source, map));
+  QPointer<QAction> presentation;
+  if (cancel == 5) {
+    for (auto *action : generated->findChildren<QAction *>()) {
+      if (action->property("iconName").toString() == QLatin1String("presentation_editor.svg")) {
+        presentation = action;
+        break;
+      }
+    }
+    QVERIFY(presentation);
+    presentation->trigger();
+    QVERIFY(presentation->isChecked());
+  }
+  const auto restoreFullScreen = qScopeGuard([&] {
+    if (presentation && presentation->isChecked())
+      presentation->trigger();
+  });
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas && activateNativeHost(canvas->viewport()));
+  QVERIFY(map->selectNode(QStringLiteral("h1")));
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus());
+  const auto discardDraft = qScopeGuard([&] { map->discardActiveEdit(); });
+  QSignalSpy errors(map, &m3::qt::MindMapEditor::errorOccurred);
+  QTest::keyClick(canvas->viewport(), child ? Qt::Key_Tab : Qt::Key_Return);
+  const auto id = map->selectedNodeId();
+  QPointer<QPlainTextEdit> draft(
+      canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor")));
+  QVERIFY(draft && draft->isVisible() && draft->toPlainText().isEmpty());
+  QVERIFY(id != QStringLiteral("h1"));
+  const auto emptyHeading = source->getLatestContent();
+  QVERIFY(emptyHeading.contains(child ? QStringLiteral("### \n") : QStringLiteral("## \n")));
+  if (settled)
+    QVERIFY(waitForSourceMap(source, map));
+  const auto state = editor->sourceEditState();
+  const auto revision = source->outlineSourceSnapshot().m_revision;
+  QTest::keyClicks(draft, "very good");
+  QTest::keyClick(draft, Qt::Key_Return);
+  if (!settled)
+    QVERIFY(revision < 0 || state != vte::VMarkdownEditor::SourceEditState::Settled);
+  if (cancel == 1) {
+    QTest::keyClick(draft, Qt::Key_Escape);
+  } else if (cancel == 2 || cancel == 3 || cancel == 5) {
+    const bool discard = cancel != 2;
+    DialogAnswer answer(discard ? QMessageBox::Discard : QMessageBox::Cancel, [&] {
+      QVERIFY(waitForSourceMap(source, map));
+      QCoreApplication::sendPostedEvents();
+      QVERIFY(!source->getLatestContent().contains(QStringLiteral("very good")));
+      QVERIFY(draft && draft->isVisible() && map->hasPendingEdit());
+    });
+    QCOMPARE(generated->aboutToClose(false), discard);
+    QVERIFY(answer.accepted());
+    if (!discard) {
+      QVERIFY(map->hasPendingEdit());
+      QVERIFY(!source->getLatestContent().contains(QStringLiteral("very good")));
+      QVERIFY(draft && draft->toPlainText() == QLatin1String("very good"));
+      QVERIFY(activateNativeHost(draft));
+      draft->setFocus();
+      QTest::keyClick(draft, Qt::Key_Return);
+    }
+  }
+  if (cancel == 4) {
+    appendDraft(editor->getTextEdit(), QStringLiteral("Independent source edit"));
+    const auto changedSource = source->getLatestContent();
+    QTRY_COMPARE_WITH_TIMEOUT(errors.size(), 1, 30000);
+    QCOMPARE(source->getLatestContent(), changedSource);
+    QVERIFY(!changedSource.contains(QStringLiteral("very good")));
+    QVERIFY(draft && draft->toPlainText() == QLatin1String("very good"));
+    QVERIFY(map->hasPendingEdit());
+    return;
+  }
+  QTRY_VERIFY_WITH_TIMEOUT(!map->hasPendingEdit(), 30000);
+  QVERIFY(waitForSourceMap(source, map));
+  QVERIFY(errors.isEmpty());
+  if (cancel == 1 || cancel == 3 || cancel == 5) {
+    QCOMPARE(source->getLatestContent(), emptyHeading);
+    QVERIFY(map->undo());
+    QVERIFY(waitForSourceMap(source, map));
+    QCOMPARE(source->getLatestContent(), baseline);
+    return;
+  }
+  QString expected = baseline;
+  if (numbering)
+    expected.replace(QStringLiteral("## 3. Another good"), QStringLiteral("## 4. Another good"));
+  const auto beta = numbering ? QStringLiteral("## 2. Beta") : QStringLiteral("## Beta");
+  const auto heading = child       ? QStringLiteral("### very good\n\n")
+                       : numbering ? QStringLiteral("## 2. very good\n\n")
+                                   : QStringLiteral("## very good\n\n");
+  expected.replace(beta, heading + (numbering ? QStringLiteral("## 3. Beta") : beta));
+  QCOMPARE(source->getLatestContent(), expected);
+  QVERIFY(mapNode(map, id)
+              .value(QStringLiteral("topic"))
+              .toString()
+              .endsWith(QLatin1String("very good")));
+  QVERIFY(!draft || !draft->isVisible());
+  const auto committed = source->getLatestContent();
+  QVERIFY(map->undo());
+  QVERIFY(waitForSourceMap(source, map));
+  QVERIFY(!source->getLatestContent().contains(QStringLiteral("very good")));
+  QVERIFY(map->undo());
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(source->getLatestContent(), baseline);
+  QVERIFY(map->redo());
+  QVERIFY(waitForSourceMap(source, map));
+  QVERIFY(map->redo());
+  QVERIFY(waitForSourceMap(source, map));
+  QCOMPARE(source->getLatestContent(), committed);
 }
 
 void TestViewAreaTabReuse::outlineMindMapSourceEditing() {

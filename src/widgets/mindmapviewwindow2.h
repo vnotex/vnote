@@ -43,6 +43,7 @@ public:
                                    m3::qt::SourceEditApproval p_approve);
   bool synchronizeOutlineSourceTopics(const QVector<m3::qt::OutlineEntry> &p_entries);
   void retireOutlineSourceEditHandler();
+  void setOutlineSourceEditPending(bool p_pending);
 
 signals:
   // The native model/history and presentation have already published the source edit.
@@ -123,6 +124,8 @@ private:
   bool m_propagateEditorToBuffer = true;
   bool m_contentLoaded = false;
   bool m_outlineSourceEditRetired = false;
+  bool m_outlineSourceEditPending = false;
+  bool m_outlineSourceEditConsent = false;
   bool m_printing = false;
 };
 
