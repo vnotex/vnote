@@ -11,6 +11,27 @@ add_qt_test(test_notebooktasktrust
     vxcore
 )
 
+add_qt_test(test_simplemarkdowneditor
+  SOURCES
+    test_simplemarkdowneditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/simplemarkdowneditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  LINKS
+    core_configs
+    Qt6::Widgets
+    VTextEdit
+)
+target_include_directories(test_simplemarkdowneditor PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
+
 add_qt_test(test_plaintextedit
   SOURCES
     test_plaintextedit.cpp

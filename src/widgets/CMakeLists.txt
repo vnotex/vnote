@@ -84,6 +84,7 @@ target_sources(vnote PRIVATE
     editors/previewdispatchplanner.cpp editors/previewdispatchplanner.h
     editors/previewhelper.cpp editors/previewhelper.h
     editors/previewscaleutils.cpp editors/previewscaleutils.h
+    editors/simplemarkdowneditor.cpp editors/simplemarkdowneditor.h
     editors/statusbar.cpp editors/statusbar.h
     editors/editorstatusbarbinder.cpp editors/editorstatusbarbinder.h
     editors/statuswidget.cpp editors/statuswidget.h

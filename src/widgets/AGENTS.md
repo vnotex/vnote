@@ -123,6 +123,36 @@ Boundary, selection, undo, wrapping, and parent-shortcut coverage: `test_plainte
 `MindMapEditor::createNoteEditor()` returns `PlainTextEdit` for m3's node-properties Note
 field, in both embedded and separated panels. Inline topic editors remain unchanged.
 `test_mindmapeditor::noteEditorShortcuts` covers deferred initialization, policy and persistence.
+
+### Embedded Markdown source
+
+Use `SimpleMarkdownEditor` (`editors/simplemarkdowneditor.{h,cpp}`) to display or edit
+in-memory Markdown without a `Buffer2`, notebook, controller or `ViewWindow2`:
+
+```cpp
+auto *editor = new SimpleMarkdownEditor(services, this);
+editor->setPlainText(markdown);
+editor->setReadOnly(true); // Omit for editable content.
+layout->addWidget(editor);
+```
+
+Only `ThemeService` must be registered; the locator and service must outlive the widget.
+The widget derives from `vte::VMarkdownEditor`, not `QTextEdit`. `setPlainText()` and
+inherited `setText()` both load literal Markdown source, never auto-detected HTML.
+`toPlainText()` returns that source and `textChanged()` forwards the underlying editor's
+notification (which can also report formatting changes). `getTextEdit()` exposes the
+underlying `vte::VTextEdit` for cursor, selection and other advanced text operations.
+
+It uses the active theme's resolved Markdown editor styles and native code-highlight
+theme, updating on theme switch/refresh without reloading source or discarding undo.
+Destination shortening and syntax concealment are enabled independently of document-editor
+preferences; concealment does not strip source markers. Normal input, no line numbers/folding,
+and disabled in-place previews keep embedding independent of resource paths, WebEngine and
+preview helpers. This is a source editor, not the HTML reading view.
+
+`test_simplemarkdowneditor` covers concealed source preservation and live theme changes
+with selection, read-only state, dirty state and undo/redo history intact.
+
 ### MainWindow
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area
