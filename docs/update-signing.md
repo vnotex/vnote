@@ -32,12 +32,23 @@ produced and audited with a stock tool rather than something invented here.
 ## External updater contract
 
 - Snapshot the configured GitHub/Gitee source at action activation (Gitee is the
-  normalization default) and fetch that source's **exact offered tag**, not its
-  latest release. Require a numeric three-component stable version newer than the
-  running version and the Qt 6 x64 `win64` package. Select exact, unique ZIP,
-  manifest and signature names; missing mirrored assets fail closed without a
-  source fallback. Validate every HTTPS redirect against that source's disjoint
-  host allowlist, retaining normal system certificate/proxy behavior.
+  normalization default). Require the **exact offered version**, a numeric
+  three-component stable version newer than the running version, and the Qt 6
+  x64 `win64` package; never resolve the latest release during installation.
+- GitHub uses public assets under
+  `https://github.com/vnotex/vnote/releases/download/v<version>/`, with exact names
+  `VNote-<version>-win64.zip`, `VNote-<version>-win64.manifest.json` and
+  `VNote-<version>-win64.manifest.json.minisig`. The updater makes no release-metadata
+  API request, creates no synthetic release record and needs no API token or retry.
+  GitHub's mutable draft/prerelease flags are not queried or treated as an
+  authentication control: the verified manifest must bind the offered version and
+  `channel: stable`. Ordinary update checks remain unchanged.
+- Gitee retains exact-tag API discovery, matching tag and non-prerelease checks,
+  rejection of a draft flag if present and not false, and selection of exact,
+  unique ZIP, manifest and signature asset names.
+- Missing selected-source assets fail closed without a source or metadata-API
+  fallback. Validate every HTTPS redirect against that source's disjoint host
+  allowlist, retaining normal system certificate/proxy behavior.
 - Run only the copied bundled verifier, never one downloaded at update time or
   resolved from PATH. Preparation pins the archive, executable and upstream
   license by SHA-256 and performs no network fetch during configure or normal

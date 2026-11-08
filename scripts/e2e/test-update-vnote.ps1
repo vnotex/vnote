@@ -116,8 +116,9 @@ if ($ChildMode -ne 'Run') {
         foreach ($sourceName in @('github', 'gitee')) {
             $script:VNoteOrigins[$sourceName] = @{
                 ApiBaseUrl = "$($config.BaseUrl)/$sourceName/tags/"
+                ReleaseBaseUrl = "$($config.BaseUrl)/$sourceName/download/"
                 Scheme = 'http'; Port = [int]$config.Port
-                Hosts = @('127.0.0.1'); HostSuffixes = @(); Accept = 'application/json'
+                Hosts = @('127.0.0.1'); HostSuffixes = @(); Accept = $script:VNoteOrigins[$sourceName].Accept
             }
         }
         $script:VNoteTrustedKeys = @($config.PublicKey)
@@ -353,18 +354,25 @@ function Publish-FixtureArtifacts {
     return [pscustomobject]$result
 }
 
+function Publish-FixtureGitHubAssets {
+    param($Artifacts)
+    foreach ($kind in @('Zip', 'Manifest', 'Signature')) {
+        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
+        $path = '/github/download/v9.1.0/VNote-9.1.0-win64' + $suffix
+        Add-FixtureRoute $path $Artifacts.$kind
+    }
+}
+
 function New-FixtureRelease {
-    param([string]$Source, $Urls = $script:PackageUrls)
     $assets = New-Object 'Collections.Generic.List[object]'
     # Deliberately put misleading source/delta archives before the full ZIP.
     $assets.Add(@{ name = 'source-code.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
     $assets.Add(@{ name = 'VNote-9.1.0-win64.delta.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
     foreach ($kind in @('Signature', 'Zip', 'Manifest')) {
         $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
-        $assets.Add(@{ name = "VNote-9.1.0-win64$suffix"; browser_download_url = $Urls.$kind })
+        $assets.Add(@{ name = "VNote-9.1.0-win64$suffix"; browser_download_url = $script:PackageUrls.$kind })
     }
     $release = @{ tag_name = 'v9.1.0'; prerelease = $false; assets = $assets.ToArray() }
-    if ($Source -eq 'github') { $release.draft = $false }
     return (ConvertFrom-Json -InputObject ($release | ConvertTo-Json -Depth 10))
 }
 
@@ -400,8 +408,7 @@ function Expand-FixturePackage {
 function Receive-FixturePackage {
     param([string]$Source)
     $stage = New-FixtureAttempt
-    $release = Get-VNoteRelease -Source $Source -Version '9.1.0'
-    $assets = Select-VNoteReleaseAssets -Release $release -Version '9.1.0'
+    $assets = Get-VNoteReleaseAssets -Source $Source -Version '9.1.0'
     $manifestPath = Join-Path $stage 'release.manifest.json'
     $signaturePath = $manifestPath + '.minisig'
     Receive-VNoteFile -Url $assets.Manifest -Destination $manifestPath -Source $Source -MaxBytes 16777216
@@ -670,11 +677,14 @@ try {
     foreach ($sourceName in @('github', 'gitee')) {
         $script:VNoteOrigins[$sourceName] = @{
             ApiBaseUrl = "$script:BaseUrl/$sourceName/tags/"; Scheme = 'http'; Port = $port
-            Hosts = @('127.0.0.1'); HostSuffixes = @(); Accept = 'application/json'
+            ReleaseBaseUrl = "$script:BaseUrl/$sourceName/download/"
+            Hosts = @('127.0.0.1'); HostSuffixes = @(); Accept = $script:VNoteOrigins[$sourceName].Accept
         }
     }
     $script:PackageUrls = Publish-FixtureArtifacts $script:Package 'win64'
-    foreach ($sourceName in @('github', 'gitee')) { Publish-FixtureRelease $sourceName (New-FixtureRelease $sourceName) }
+    Publish-FixtureRelease gitee (New-FixtureRelease)
+    Add-FixtureRoute '/github/tags/v9.1.0' -Status 403
+    Publish-FixtureGitHubAssets $script:Package
 
     foreach ($sourceName in @('github', 'gitee')) {
         $prepared = Receive-FixturePackage $sourceName
@@ -683,7 +693,7 @@ try {
         Assert-VNoteInstallReady -InstallDir $install -Manifest $prepared.Manifest -PackageDir $prepared.Directory -PreparingDownload
         $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
         Assert-FixtureOverlay $install $backup $before $prepared.Manifest
-        Pass-Fixture "$sourceName-shaped shuffled API / win64 signed overlay and complete backup"
+        Pass-Fixture "$sourceName win64 signed overlay and complete backup (GitHub API returns 403)"
     }
 
     # A shared *real* authenticated peer proves every preparation rejection below
@@ -694,7 +704,7 @@ try {
     $script:NegativeSnapshot = Get-FixtureSnapshot $script:NegativeInstall
     $script:VNotePreparationGuard = { Assert-VNoteParentPreparing -Session $script:NegativeSession }
     foreach ($fault in @('missing', 'duplicate', 'wrong-name', 'wrong-tag', 'wrong-variant', 'empty-url', 'draft', 'prerelease')) {
-        $release = New-FixtureRelease github
+        $release = New-FixtureRelease
         switch ($fault) {
             missing { $release.assets = @($release.assets | Where-Object { $_.name -cne 'VNote-9.1.0-win64.manifest.json.minisig' }) }
             duplicate { $release.assets += @($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.zip' }) }
@@ -702,13 +712,27 @@ try {
             wrong-tag { $release.tag_name = 'v9.2.0' }
             wrong-variant { foreach ($asset in $release.assets) { $asset.name = $asset.name.Replace('-win64', '-win64-windows7') } }
             empty-url { ($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.zip' }).browser_download_url = '' }
-            draft { $release.draft = $true }
+            draft { $release | Add-Member -NotePropertyName draft -NotePropertyValue $true }
             prerelease { $release.prerelease = $true }
         }
-        Publish-FixtureRelease github $release
-        Expect-FixturePreparationFailure "API $fault refuses before READY" { Receive-FixturePackage github }
+        Publish-FixtureRelease gitee $release
+        Expect-FixturePreparationFailure "Gitee API $fault refuses before READY" { Receive-FixturePackage gitee }
     }
-    Publish-FixtureRelease github (New-FixtureRelease github)
+    Publish-FixtureRelease gitee (New-FixtureRelease)
+    foreach ($suffix in @('.manifest.json', '.manifest.json.minisig', '.zip')) {
+        Add-FixtureRoute ("/github/download/v9.1.0/VNote-9.1.0-win64" + $suffix) -Status 404
+        Expect-FixturePreparationFailure "GitHub missing $suffix refuses without mirror fallback" { Receive-FixturePackage github }
+        Publish-FixtureGitHubAssets $script:Package
+    }
+    foreach ($field in @('version', 'channel')) {
+        $wrongIdentity = Copy-FixtureArtifacts ("signed wrong " + $field)
+        $manifest = Read-FixtureJson $wrongIdentity.Manifest
+        $manifest.$field = if ($field -eq 'version') { '9.2.0' } else { 'nightly' }
+        Sign-FixtureManifest $wrongIdentity $manifest
+        Publish-FixtureGitHubAssets $wrongIdentity
+        Expect-FixturePreparationFailure "GitHub signed wrong $field refuses before READY" { Receive-FixturePackage github }
+    }
+    Publish-FixtureGitHubAssets $script:Package
     $tampered = Copy-FixtureArtifacts 'one byte manifest tamper'
     $bytes = [IO.File]::ReadAllBytes($tampered.Manifest)
     $bytes[0] = $bytes[0] -bxor 1
@@ -1022,8 +1046,7 @@ public static class VNoteMappedImageFixture {
     Copy-FixtureTree $lifecycleInstall $stoppedExpected
     Write-FixtureText (Join-Path $stoppedExpected 'config/local/saved-on-close.bin') 'saved after ACCEPTED'
     $stoppedSnapshot = Get-FixtureSnapshot $stoppedExpected
-    $badUrls = Publish-FixtureArtifacts $tampered 'tampered-lifecycle'
-    Publish-FixtureRelease github (New-FixtureRelease github $badUrls)
+    Publish-FixtureGitHubAssets $tampered
     $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
     $attempt = @{
         Updater = $helperScript; BaseUrl = $script:BaseUrl; Port = $port; PublicKey = $script:PublicKey
@@ -1039,7 +1062,7 @@ public static class VNoteMappedImageFixture {
     # A rejected helper releases its mutex before the visible failure prompt.
     $releasedMutex = Enter-VNoteUpdateMutex -InstallDir $lifecycleInstall
     $releasedMutex.ReleaseMutex(); $releasedMutex.Dispose()
-    Publish-FixtureRelease github (New-FixtureRelease github)
+    Publish-FixtureGitHubAssets $script:Package
     $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
     $attempt.ParentProcessId = $parent.Child.Process.Id
     $attempt.PipeName = $parent.Pipe
@@ -1098,6 +1121,8 @@ public static class VNoteMappedImageFixture {
         }
         Pass-Fixture "relaunch $mode reports partial success and retains complete backup"
     }
+    Assert-Fixture (-not ([IO.File]::ReadAllText($httpLog).Contains('/github/tags/'))) 'GitHub updater queried the rate-limited metadata API'
+    Pass-Fixture 'GitHub preparation and full lifecycle never request release metadata'
     $success = $true
     Write-Host ("PASS {0} updater regressions in {1:N1}s" -f $script:Passed, $script:Clock.Elapsed.TotalSeconds)
 }

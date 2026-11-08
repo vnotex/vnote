@@ -16,12 +16,12 @@ $ErrorActionPreference = 'Stop'
 
 $script:VNoteOrigins = @{
     github = @{
-        ApiBaseUrl = 'https://api.github.com/repos/vnotex/vnote/releases/tags/'
+        ReleaseBaseUrl = 'https://github.com/vnotex/vnote/releases/download/'
         Scheme = 'https'
         Port = 443
         Hosts = @('api.github.com', 'github.com', 'codeload.github.com')
         HostSuffixes = @('.githubusercontent.com')
-        Accept = 'application/vnd.github+json, */*'
+        Accept = '*/*'
     }
     gitee = @{
         ApiBaseUrl = 'https://gitee.com/api/v5/repos/vnotex/vnote/releases/tags/'
@@ -361,8 +361,7 @@ function Receive-VNoteFile {
 function Assert-VNoteRelease {
     param(
         [Parameter(Mandatory = $true)]$Release,
-        [Parameter(Mandatory = $true)]$Version,
-        [string]$Source = ''
+        [Parameter(Mandatory = $true)]$Version
     )
 
     Assert-VNoteVersion -Version $Version
@@ -377,60 +376,21 @@ function Assert-VNoteRelease {
     foreach ($property in $Release.PSObject.Properties) {
         if ($property.Name -ceq 'draft') { $draftProperty = $property; break }
     }
-    # Gitee does not expose a draft field; GitHub must explicitly report false.
-    if ($null -eq $draftProperty) {
-        if ($Source -eq 'github') { throw "The GitHub release is missing its 'draft' flag." }
-    }
-    elseif ($draftProperty.Value -isnot [bool] -or $draftProperty.Value) {
+    # Gitee does not expose a draft field; reject it if present and not false.
+    if ($null -ne $draftProperty -and ($draftProperty.Value -isnot [bool] -or $draftProperty.Value)) {
         throw 'Draft or malformed releases cannot be installed automatically.'
     }
     $assets = Get-VNoteProperty -Object $Release -Name 'assets'
     if ($assets -isnot [array] -or $assets.Count -eq 0) { throw 'The release has no asset array.' }
 }
 
-function Get-VNoteRelease {
+function Get-VNoteReleaseAssets {
     param(
         [Parameter(Mandatory = $true)][ValidateSet('github', 'gitee')][string]$Source,
         [Parameter(Mandatory = $true)]$Version
     )
 
     Assert-VNoteVersion -Version $Version
-    if ([string]::IsNullOrWhiteSpace($script:VNoteStageRoot)) { throw 'The private attempt directory has not been initialized.' }
-    $apiUrl = $script:VNoteOrigins[$Source].ApiBaseUrl + 'v' + $Version
-    $apiPath = Join-Path $script:VNoteStageRoot ('release-' + [Guid]::NewGuid().ToString('N') + '.json')
-    $downloaded = $false
-    try {
-        Receive-VNoteFile -Url $apiUrl -Destination $apiPath -Source $Source -MaxBytes (16 * 1024 * 1024)
-        $downloaded = $true
-        $release = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($apiPath, [Text.Encoding]::UTF8)) -ErrorAction Stop
-        Assert-VNoteRelease -Release $release -Version $Version -Source $Source
-        # Validate source policy for the only records asset selection may consume.
-        $names = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
-        $baseName = "VNote-$Version-win64"
-        $null = $names.Add("$baseName.zip")
-        $null = $names.Add("$baseName.manifest.json")
-        $null = $names.Add("$baseName.manifest.json.minisig")
-        foreach ($asset in $release.assets) {
-            $name = Get-VNoteProperty -Object $asset -Name 'name'
-            if ($name -isnot [string]) { throw 'A release asset name is not a string.' }
-            if ($names.Contains($name)) {
-                $null = Assert-VNoteUrl -Url (Get-VNoteProperty -Object $asset -Name 'browser_download_url') -Source $Source
-            }
-        }
-        return $release
-    }
-    finally {
-        if ($downloaded) { [IO.File]::Delete($apiPath) }
-    }
-}
-
-function Select-VNoteReleaseAssets {
-    param(
-        [Parameter(Mandatory = $true)]$Release,
-        [Parameter(Mandatory = $true)]$Version
-    )
-
-    Assert-VNoteRelease -Release $Release -Version $Version
     $baseName = "VNote-$Version-win64"
     $required = @{
         Zip = "$baseName.zip"
@@ -438,33 +398,46 @@ function Select-VNoteReleaseAssets {
         Signature = "$baseName.manifest.json.minisig"
     }
     $selected = @{}
+    if ($Source -eq 'github') {
+        # Public versioned assets avoid the unauthenticated REST API quota.
+        # The verified manifest, not mutable release flags, enforces stable identity.
+        $baseUrl = $script:VNoteOrigins[$Source].ReleaseBaseUrl + 'v' + $Version + '/'
+        foreach ($kind in $required.Keys) {
+            $selected[$kind] = $baseUrl + $required[$kind]
+        }
+    }
+    else {
+        if ([string]::IsNullOrWhiteSpace($script:VNoteStageRoot)) { throw 'The private attempt directory has not been initialized.' }
+        $apiUrl = $script:VNoteOrigins[$Source].ApiBaseUrl + 'v' + $Version
+        $apiPath = Join-Path $script:VNoteStageRoot ('release-' + [Guid]::NewGuid().ToString('N') + '.json')
+        $downloaded = $false
+        try {
+            Receive-VNoteFile -Url $apiUrl -Destination $apiPath -Source $Source -MaxBytes (16 * 1024 * 1024)
+            $downloaded = $true
+            $release = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($apiPath, [Text.Encoding]::UTF8)) -ErrorAction Stop
+            Assert-VNoteRelease -Release $release -Version $Version
+            foreach ($kind in $required.Keys) {
+                $match = $null
+                foreach ($asset in $release.assets) {
+                    $name = Get-VNoteProperty -Object $asset -Name 'name'
+                    if ($name -isnot [string]) { throw 'A release asset name is not a string.' }
+                    if ($name -ceq $required[$kind]) {
+                        if ($null -ne $match) { throw "The release has duplicate '$($required[$kind])' assets." }
+                        $match = $asset
+                    }
+                }
+                if ($null -eq $match) {
+                    throw "The configured source is missing '$($required[$kind])'. Use Check Release to update manually."
+                }
+                $selected[$kind] = Get-VNoteProperty -Object $match -Name 'browser_download_url'
+            }
+        }
+        finally {
+            if ($downloaded) { [IO.File]::Delete($apiPath) }
+        }
+    }
     foreach ($kind in $required.Keys) {
-        $match = $null
-        foreach ($asset in $Release.assets) {
-            $name = Get-VNoteProperty -Object $asset -Name 'name'
-            if ($name -isnot [string]) { throw 'A release asset name is not a string.' }
-            if ($name -ceq $required[$kind]) {
-                if ($null -ne $match) { throw "The release has duplicate '$($required[$kind])' assets." }
-                $match = $asset
-            }
-        }
-        if ($null -eq $match) {
-            throw "The configured source is missing '$($required[$kind])'. Use Check Release to update manually."
-        }
-        $url = Get-VNoteProperty -Object $match -Name 'browser_download_url'
-        $null = Get-VNoteUri -Url $url
-        # Get-VNoteRelease and Receive-VNoteFile additionally enforce the selected source.
-        $permitted = $false
-        foreach ($candidateSource in @('github', 'gitee')) {
-            try {
-                $null = Assert-VNoteUrl -Url $url -Source $candidateSource
-                $permitted = $true
-                break
-            }
-            catch { }
-        }
-        if (-not $permitted) { throw "The '$($required[$kind])' asset has an untrusted download URL." }
-        $selected[$kind] = $url
+        $null = Assert-VNoteUrl -Url $selected[$kind] -Source $Source
     }
     return [PSCustomObject]@{
         Zip = $selected.Zip
@@ -1407,8 +1380,7 @@ function Invoke-VNoteUpdate {
         [VNoteUpdate.Native]::CreateDirectoryExclusive($candidate)
         $stage = $candidate
         $script:VNoteStageRoot = $stage
-        $release = Get-VNoteRelease -Source $Source -Version $Version
-        $assets = Select-VNoteReleaseAssets -Release $release -Version $Version
+        $assets = Get-VNoteReleaseAssets -Source $Source -Version $Version
         $manifestPath = [IO.Path]::Combine($stage, 'release.manifest.json')
         $signaturePath = $manifestPath + '.minisig'
         Receive-VNoteFile -Url $assets.Manifest -Destination $manifestPath -Source $Source -MaxBytes 16777216
