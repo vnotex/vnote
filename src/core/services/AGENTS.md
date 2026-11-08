@@ -421,25 +421,24 @@ former. Regression coverage is in `test_buffer` and `test_buffer_save_queue`.
 
 ## UpdateService
 
-Mechanism half of the update check: the release API, the source-scoped host allowlist,
-manual redirect walking, the response cap and cancellation. The full contract (source
-selection, ordinary checks' read-only-install invariant, and the separate explicit Windows
+Mechanism half of the update check: website HEAD discovery, exact-origin redirect
+validation and cancellation. The full contract (source selection, ordinary checks'
+read-only-install invariant, and the separate explicit Windows
 external-updater boundary) lives in [Update Check](#update-check) below; only the
 service-specific rules are repeated here.
 
 ### It is a CHECK, and only a check
 
-`UpdateService` fetches ONE JSON document and reports what it says. It has no install
-directory, no download directory, no staging directory, no lease, no notion of "applying"
-anything, and it writes nothing to disk. `UpdateInfo` carries exactly `updateAvailable`,
-`currentVersion`, `latestVersion`, `releaseNotes` and `releaseUrl`.
+`UpdateService` sends HEAD to the selected website's latest-release URL and identifies the
+version from a validated tag redirect. It never requests that tag URL, a response body,
+an API endpoint or an asset. There is no API fallback, token requirement or HTML scraping.
+It has no install/download/staging directory, lease or installation operation, and writes
+nothing to disk. `UpdateInfo` keeps `updateAvailable`, `currentVersion`, `latestVersion`,
+`releaseNotes` and `releaseUrl`; notes stay empty and are viewed on the release page.
 
-The release's `assets[]` array is **ignored entirely**: no asset name is matched, no
-`browser_download_url` is read, and no asset is ever requested. Do not add an install-dir
-or download-dir parameter back, and do not reintroduce asset selection — the absence of both
-is what fixes issue #2728 and what keeps this service free of a whole class of
-file-ownership races. `testAssetsAreIgnoredEntirely` and `testTheCheckWritesNothingToDisk`
-are the gates.
+Do not add install/download-directory parameters or asset selection. This keeps read-only
+installations usable (issue #2728) and avoids file-ownership races.
+`testHeadDoesNotFetchTagOrBody` and `testTheCheckWritesNothingToDisk` guard that boundary.
 
 ### No ConfigMgr2 dependency
 
@@ -469,21 +468,27 @@ selects GitHub; empty, absent and unrecognized values are Gitee. This mirrors
 
 | | GitHub | Gitee |
 |---|---|---|
-| `apiLatestUrl()` | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
+| HEAD discovery | `https://github.com/vnotex/vnote/releases/latest` | `https://gitee.com/vnotex/vnote/releases/latest` |
 | `releasesPageUrl()` | `https://github.com/vnotex/vnote/releases` | `https://gitee.com/vnotex/vnote/releases` |
-| `releasePageUrl(tag, htmlUrl)` | the API's `html_url`, but ONLY when it is a valid URL on an allowlisted host — it is handed straight to `QDesktopServices` and `UpdateDialog` has no empty-URL branch, so an absent/off-forge/plain-http value would render a dead (or hostile) button. Otherwise a `<releasesPageUrl>/tag/v<tag>` URL is synthesized | always synthesized `<releasesPageUrl>/tag/v<tag>` — Gitee's release JSON has no `html_url`. Verified against the live `https://gitee.com/vnotex/vnote/releases/tag/v4.3.0`; the `tag/` segment is NOT present in the asset download path, so do not "simplify" the two to share a base |
-| `Accept` | `application/vnd.github+json, */*` | `application/json, */*` (Gitee rejects the vendor type) |
+| Result `releaseUrl` | `<releasesPageUrl>/tag/v<version>` | `<releasesPageUrl>#release-v<version>` |
+| Exact production host | `github.com` | `gitee.com` |
 
-`m_apiLatestOverride` (the test seam) covers the API entry point, which is the only URL the
-service ever requests.
+Both latest endpoints were verified to return a tag redirect for v4.14.1. Gitee's tag URL
+then redirects to a source archive: stop at the tag Location, and use the public release
+list's `release-v<version>` anchor for the human-facing button instead. Never pass Gitee's
+raw tag Location to `QDesktopServices`. The synthesized button fragment is not a request URL.
+
+`m_latestReleaseOverride` and `testSetExtraAllowedHost` nominate only the local fixture's
+exact origin, including scheme and port; an override does not also allow production hosts.
 
 ### Outcomes, and who owns a result
 
-A release whose `tag_name` is missing or empty is a `failed()` — the check genuinely could
-not be performed. Everything else is a `checkFinished()`, including "you are up to date":
-`updateAvailable` is simply `latest > current` under `QVersionNumber`, and `latestVersion` /
-`releaseUrl` are populated either way so a manual check can say "up to date" and still link
-the page.
+A missing, invalid or non-stable tag redirect, unexpected status (including 200, 403 or
+429), network error or cancellation emits `failed()`, never an "up to date" result.
+A validated numeric three-component tag emits `checkFinished()` with `latestVersion`
+without the `v` prefix and a canonical source-specific `releaseUrl`.
+`updateAvailable` is `latest > current` under `QVersionNumber`; equal and older versions
+are successful checks with no update offer.
 
 **`checkForUpdates()` returns `bool`: whether the request was ACCEPTED.** A call made while
 another check is in flight is dropped and returns `false`, emitting nothing. This return
@@ -501,7 +506,7 @@ where the result and its mode are known to belong together.
 ### Threading
 
 `checkForUpdates()` returns immediately and does its work on a `QtConcurrent` worker,
-because `fetchToMemory()` blocks on a nested event loop.
+because `findLatestRelease()` blocks on a nested event loop.
 
 - **`QNetworkAccessManager` is created on the WORKER'S STACK**, never as a member. QNAM is
   not thread-safe and belongs to the thread that created it, so every network helper takes
@@ -521,23 +526,19 @@ because `fetchToMemory()` blocks on a nested event loop.
   `this`. `m_workers` is guarded by `m_workerMutex`, snapshotted under the lock and waited on
   OUTSIDE it.
 
-### Redirects, the response cap and the host allowlist
+### Redirect and request boundary
 
-Redirects are followed MANUALLY (`QNetworkRequest::ManualRedirectPolicy` set on EVERY
-request, overriding Qt 6's default redirect following) so each hop can be checked. At most
-`c_maxRedirects` hops, and there is no HTTPS -> HTTP downgrade path.
+Every request is HEAD with `ManualRedirectPolicy`. Accept only 301, 302, 303, 307 and 308,
+with at most `c_maxRedirects` hops. Production URLs require the selected exact website
+host, HTTPS on port 443 (including an omitted default port), and no userinfo, query or
+fragment. API hosts, asset CDNs, subdomain suffixes and cross-source redirects are rejected.
+Only `/vnotex/vnote/releases/latest` and its trailing-slash form may be requested.
 
-`allowedHosts(Source)` is **source-scoped and disjoint**, so a client on one forge can never
-follow a redirect onto the other's hosts:
-
-- GitHub: exact `api.github.com`, `github.com`, `codeload.github.com`, plus any host under
-  `.githubusercontent.com`.
-- Gitee: exact `gitee.com`, plus any host under `.gitee.com`.
-
-`fetchToMemory()` enforces `c_maxApiResponseBytes` by accumulating on `readyRead` and
-`abort()`ing the reply the moment the cap is crossed — NOT by buffering the whole body and
-rejecting afterwards, which a server declaring a huge `Content-Length` could turn into an
-unbounded allocation or a full-timeout stall.
+A redirect to `/vnotex/vnote/releases/tag/v<version>` completes discovery without another
+request. Parse the entire numeric version with exactly three components; reject suffixes,
+overflow, other repositories, archive/download/login paths and malformed URLs. There is
+no response-body buffering or API-size cap: HEAD must complete from headers alone even
+when `Content-Length` describes a large GET body.
 
 Cancellation is POLLED every 250 ms inside the blocking request, because
 `QNetworkReply::abort()` must run on the reply's own thread; without the poll, closing VNote
@@ -546,23 +547,22 @@ for the whole 60 s timeout.
 
 `testSetEndpointOverride` / `testSetExtraAllowedHost` exist for the local server harness in
 `tests/core/test_updateservice.cpp`; the plain-HTTP exemption they enable applies ONLY to the
-explicitly nominated host, and it is independent of the source.
+explicitly nominated origin, and it is independent of the source.
 
 ### Test coverage
 
 `tests/core/test_updateservice.cpp` drives the REAL `QNetworkAccessManager` against a local
-`QTcpServer`. Two properties look incidental and are not, so please do not "simplify" them
-away:
+`QTcpServer`. Preserve these behavioral boundaries:
 
-- `testOversizedApiResponseAbortsTheReply` serves a response declaring an 8 GB
-  `Content-Length` and never closes the socket. It passes only if the cap ABORTS mid-stream;
-  a buffer-then-reject implementation would hang until the 60 s request timeout.
+- `testHeadDoesNotFetchTagOrBody` serves HEAD headers declaring an 8 GB GET body and leaves
+  the socket open. Both sources must complete without waiting for a body or requesting the
+  tag URL, which the fixture redirects to an archive as Gitee does.
 - `testTheCheckWritesNothingToDisk` redirects the process working directory into a scratch
-  tree, snapshots both it and the user's real Downloads folder around a check whose release
-  object DOES carry `assets[]`, and asserts both trees are unchanged and that no asset /
-  manifest / signature path was ever requested. That is the feature's central invariant
-  expressed as a test; the CWD redirect is what catches a regression writing to a relative
-  path.
+  tree and snapshots it and the user's Downloads folder. Both must remain unchanged, with
+  no asset, manifest or signature request; the CWD catches relative-path writes.
+- Real-socket regressions cover both sources, accepted redirect statuses, malformed or
+  cross-origin targets, failed HTTP statuses without fallback, relative canonicalization,
+  redirect bounds, cancellation and ownership of in-flight checks.
 
 ### NotificationService fields consumed by UpdateController
 
@@ -687,8 +687,8 @@ This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-fil
 
 Ordinary startup and manual checks fetch release metadata and offer the **release page**.
 They do not install anything. Only explicit activation of the Windows notification's
-`Update Now` action may launch the deployed external script; the manual-check dialog stays
-unchanged. The exception adds no installation behavior to `UpdateService` or `UpdateInfo`.
+`Update Now` action may launch the deployed external script; the manual-check dialog remains
+check-only. The exception adds no installation behavior to `UpdateService` or `UpdateInfo`.
 
 > **An ordinary check never modifies the install directory or downloads release artifacts.**
 > It creates no lease, staging tree or journal, and extracts or executes nothing. Its only
@@ -709,9 +709,9 @@ for authentication/replacement requirements and
 
 | Layer | Unit | Responsibility |
 |---|---|---|
-| Service | [`UpdateService`](updateservice.h) | release API, per-source endpoints/headers, manual redirect walking, source-scoped host allowlist, response cap, cancellation, worker lifetime |
+| Service | [`UpdateService`](updateservice.h) | website HEAD discovery, validated tag redirects, exact source origins, cancellation, worker lifetime |
 | Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness; explicit Windows helper launch and authenticated shutdown session |
-| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, notes, Open Release Page / Skip This Version / Later |
+| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, Open Release Page / Skip This Version / Later; notes are viewed on the release page |
 | View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with Check Release first and Windows-only Update Now |
 | External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification, safe replacement/backup and same-token relaunch after accepted shutdown |
 
@@ -721,9 +721,9 @@ injected and every config-dependent decision lives in `UpdateController`, which 
 configured source down via `setSource()`.
 
 `UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
-`releaseNotes` and `releaseUrl`. During an ordinary check, the release's `assets[]` array is
-**ignored entirely** — no asset is selected and no asset URL is ever requested
-(`testAssetsAreIgnoredEntirely` pins this).
+`releaseNotes` and `releaseUrl`. Ordinary checks leave notes empty and read no body or
+`assets[]` array. No asset is selected and neither a tag page nor an asset URL is requested
+(`testHeadDoesNotFetchTagOrBody` guards this).
 
 `checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
 check is dropped and returns `false`). `UpdateController` sets its manual-vs-startup mode
@@ -742,17 +742,11 @@ case-insensitive `"github"`, and `"gitee"` for empty, absent or unrecognized val
 it already had** (in practice GitHub); only fresh installs and hand-cleared configs get the
 new default. No migration is performed.
 
-| | GitHub | Gitee |
-|---|---|---|
-| latest-release API | `https://api.github.com/repos/vnotex/vnote/releases/latest` | `https://gitee.com/api/v5/repos/vnotex/vnote/releases/latest` |
-| `Accept` header | `application/vnd.github+json, */*` | `application/json, */*` |
-| release page | the API's `html_url`, validated against the allowlist first (it is handed to `QDesktopServices`); an absent, malformed or off-forge value falls back to a synthesized `<releases>/tag/v<tag>` | synthesized `https://gitee.com/vnotex/vnote/releases/tag/v<tag>` (Gitee's JSON has no `html_url`; the pattern is verified against the live v4.3.0 page, and note the `tag/` segment the asset download path does **not** have) |
-| host allowlist | exact `api.github.com`, `github.com`, `codeload.github.com` + suffix `.githubusercontent.com` | exact `gitee.com` + suffix `.gitee.com` |
-
-The allowlists are **disjoint and source-scoped**: a client on one source must never follow
-a redirect to the other's hosts. Redirects are followed MANUALLY
-(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, overriding Qt 6's default
-redirect following), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
+Both sources use their website's latest-release HEAD redirect, not REST APIs. See
+[Per-source endpoints](#per-source-endpoints) for the endpoint and human-facing URL
+contracts and [Redirect and request boundary](#redirect-and-request-boundary) for validation.
+Website throttling remains possible, but REST API quotas are not used by ordinary checks.
+The external Windows updater is separate: its Gitee asset discovery still uses the API.
 
 ### Update check threading
 
@@ -773,9 +767,8 @@ because it blocks on a nested event loop.
   stored `QFuture` could be replaced while the previous worker was still unwinding.
 - Cancellation is POLLED every 250 ms inside a blocking request so service teardown is never
   blocked for the full request timeout.
-- The API response cap **aborts** the reply mid-stream rather than buffering the whole body
-  and rejecting afterwards; `testOversizedApiResponseAbortsTheReply` proves this by declaring
-  an 8 GB `Content-Length` and never closing the socket.
+- HEAD discovery consumes no body and stops before requesting the validated tag URL;
+  `testHeadDoesNotFetchTagOrBody` covers a large declared GET body and an archive redirect.
 
 ### Forbidden patterns
 

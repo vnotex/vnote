@@ -42,7 +42,8 @@ produced and audited with a stock tool rather than something invented here.
   API request, creates no synthetic release record and needs no API token or retry.
   GitHub's mutable draft/prerelease flags are not queried or treated as an
   authentication control: the verified manifest must bind the offered version and
-  `channel: stable`. Ordinary update checks remain unchanged.
+  `channel: stable`. Ordinary update checks for both sources use website HEAD discovery,
+  not these asset downloads; see [UpdateService](../src/core/services/AGENTS.md#updateservice).
 - Gitee retains exact-tag API discovery, matching tag and non-prerelease checks,
   rejection of a draft flag if present and not false, and selection of exact,
   unique ZIP, manifest and signature asset names.

@@ -25,7 +25,7 @@ struct UpdateInfo {
   QString currentVersion;
   QString latestVersion;
 
-  // Release notes body and the human-facing release page, from the release API.
+  // Optional release notes and the human-facing release page. HEAD checks leave notes empty.
   QString releaseNotes;
   QString releaseUrl;
 };
@@ -59,9 +59,6 @@ public:
   static const QStringList &allowedHosts(Source p_source);
   static constexpr int c_maxRedirects = 5;
 
-  // Cap on an API response body, enforced WHILE the body arrives.
-  static constexpr qint64 c_maxApiResponseBytes = 16LL * 1024 * 1024;
-
   explicit UpdateService(const QString &p_currentVersion, QObject *p_parent = nullptr);
   ~UpdateService() override;
 
@@ -81,8 +78,8 @@ public:
   // Test seams (unconditional, per ADR-6)
   // ---------------------------------------------------------------------
 
-  // Redirects the release API at a local server. Empty restores production.
-  void testSetEndpointOverride(const QUrl &p_apiLatestUrl);
+  // Redirects latest-release discovery at a local server. Empty restores production.
+  void testSetEndpointOverride(const QUrl &p_latestReleaseUrl);
 
   // Allows the override host through the allowlist. Only ever set alongside
   // testSetEndpointOverride.
@@ -117,25 +114,11 @@ private:
   // is deliberately no QNetworkAccessManager member.
   bool isHostAllowed(const QUrl &p_url) const;
 
-  // Synchronous GET with redirect following, host allowlist, and a hard byte
-  // cap that ABORTS the reply the moment it is crossed. Runs on a WORKER thread
-  // only (it spins a nested event loop).
-  bool fetchToMemory(QNetworkAccessManager &p_nam, const QUrl &p_url, QByteArray *p_out,
-                     QString *p_error, qint64 p_maxBytes = c_maxApiResponseBytes);
+  // HEAD-only discovery on a worker. Stop at a validated stable tag redirect;
+  // never request the tag page, an asset, or a response body.
+  bool findLatestRelease(QNetworkAccessManager &p_nam, UpdateInfo *p_info, QString *p_error);
 
-  // Entry point of the release metadata API for the current source.
-  QUrl apiLatestUrl() const;
-
-  // Human-facing release page for p_tag.
-  //
-  // GitHub supplies html_url in the API response, but it is used only when it
-  // is a valid URL on an allowlisted host (it is handed to QDesktopServices);
-  // otherwise it falls back to a synthesized tag URL. Gitee supplies no
-  // html_url at all, so the page is always synthesized as
-  // https://gitee.com/vnotex/vnote/releases/tag/v<tag> (verified against the
-  // live v4.3.0 page -- the `tag/` segment is NOT present in the asset download
-  // path).
-  QString releasePageUrl(const QString &p_tag, const QString &p_htmlUrlFromApi) const;
+  QUrl latestReleaseUrl() const;
 
   void reportFailure(const QString &p_message);
 
@@ -165,7 +148,7 @@ private:
   QMutex m_workerMutex;
   QVector<QFuture<void>> m_workers;
 
-  QUrl m_apiLatestOverride;
+  QUrl m_latestReleaseOverride;
   QString m_extraAllowedHost;
 };
 
