@@ -694,7 +694,7 @@ void UpdateController::showDialog(const UpdateInfo &p_info) {
     delete m_dialog.data();
   }
 
-  auto *dialog = new UpdateDialog(p_info, m_parentWidget);
+  auto *dialog = new UpdateDialog(m_services, p_info, m_parentWidget);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   m_dialog = dialog;
 

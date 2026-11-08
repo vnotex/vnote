@@ -4,18 +4,19 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QTextBrowser>
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include <widgets/editors/simplemarkdowneditor.h>
+
 using namespace vnotex;
 
-UpdateDialog::UpdateDialog(const UpdateInfo &p_info, QWidget *p_parent)
+UpdateDialog::UpdateDialog(ServiceLocator &p_services, const UpdateInfo &p_info, QWidget *p_parent)
     : QDialog(p_parent), m_info(p_info) {
-  setupUi();
+  setupUi(p_services);
 }
 
-void UpdateDialog::setupUi() {
+void UpdateDialog::setupUi(ServiceLocator &p_services) {
   setWindowTitle(tr("Check for Updates"));
   setModal(true);
 
@@ -33,10 +34,13 @@ void UpdateDialog::setupUi() {
   m_summary->setOpenExternalLinks(true);
   layout->addWidget(m_summary);
 
-  m_notes = new QTextBrowser(this);
-  m_notes->setOpenExternalLinks(true);
-  m_notes->setMinimumHeight(180);
-  layout->addWidget(m_notes, 1);
+  if (m_info.updateAvailable && !m_info.releaseNotes.isEmpty()) {
+    auto *notes = new SimpleMarkdownEditor(p_services, this);
+    notes->setReadOnly(true);
+    notes->setPlainText(m_info.releaseNotes);
+    notes->setMinimumHeight(180);
+    layout->addWidget(notes, 1);
+  }
 
   m_status = new QLabel(this);
   m_status->setWordWrap(true);
@@ -58,7 +62,6 @@ void UpdateDialog::setupUi() {
   if (!m_info.updateAvailable) {
     m_headline->setText(tr("VNote is up to date."));
     m_summary->setText(tr("You are running version %1.").arg(m_info.currentVersion));
-    m_notes->setVisible(false);
     m_releasePageButton->setVisible(false);
     m_skipButton->setVisible(false);
     m_laterButton->setText(tr("Close"));
@@ -75,14 +78,6 @@ void UpdateDialog::setupUi() {
     QDesktopServices::openUrl(QUrl(m_info.releaseUrl));
     accept();
   });
-
-  if (m_info.releaseNotes.isEmpty()) {
-    m_notes->setVisible(false);
-  } else {
-    // Release bodies are Markdown; render them as plain text rather than
-    // half-interpreting them as HTML.
-    m_notes->setPlainText(m_info.releaseNotes);
-  }
 
   resize(560, 460);
 }

@@ -8,9 +8,10 @@
 
 class QLabel;
 class QPushButton;
-class QTextBrowser;
 
 namespace vnotex {
+
+class ServiceLocator;
 
 // Presents the outcome of an update check.
 //
@@ -22,7 +23,7 @@ class UpdateDialog : public QDialog {
   Q_OBJECT
 
 public:
-  UpdateDialog(const UpdateInfo &p_info, QWidget *p_parent = nullptr);
+  UpdateDialog(ServiceLocator &p_services, const UpdateInfo &p_info, QWidget *p_parent = nullptr);
 
   void setFailed(const QString &p_message);
 
@@ -31,13 +32,12 @@ signals:
   void skipRequested(const QString &p_version);
 
 private:
-  void setupUi();
+  void setupUi(ServiceLocator &p_services);
 
   const UpdateInfo m_info;
 
   QLabel *m_headline = nullptr;
   QLabel *m_summary = nullptr;
-  QTextBrowser *m_notes = nullptr;
   QLabel *m_status = nullptr;
 
   QPushButton *m_releasePageButton = nullptr;

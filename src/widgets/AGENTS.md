@@ -150,6 +150,11 @@ preferences; concealment does not strip source markers. Normal input, no line nu
 and disabled in-place previews keep embedding independent of resource paths, WebEngine and
 preview helpers. This is a source editor, not the HTML reading view.
 
+`UpdateDialog` uses a read-only instance for nonempty `UpdateInfo::releaseNotes` when
+an update is available. It receives the locator from `UpdateController`; empty notes
+and up-to-date results allocate no editor. This only changes presentation: ordinary
+HEAD-only update checks still leave release notes empty, and the dialog fetches nothing.
+
 `test_simplemarkdowneditor` covers concealed source preservation and live theme changes
 with selection, read-only state, dirty state and undo/redo history intact.
 
