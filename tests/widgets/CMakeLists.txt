@@ -713,27 +713,6 @@ set_tests_properties(test_open_notebook_dialog2_cancel PROPERTIES
   TIMEOUT 180
 )
 
-# T28: ViewWindow2 modal warning on read-only save attempts, with cooldown.
-# This isolated warning fixture uses stub injection —
-# viewwindow2.cpp is not compiled inline. The test enables the
-# testSetReadOnlyWarningSuppressModal seam so QMessageBox::exec() does not
-# block the event loop while still ticking the cooldown counter.
-# NOT GUILESS — QMessageBox + QFrame require QApplication.
-add_qt_test(test_view_window2_readonly_save_warning
-  SOURCES
-    test_view_window2_readonly_save_warning.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindow2.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
-  LINKS
-    core_services
-    vxcore
-    VTextEdit
-    Qt6::Widgets
-)
-target_include_directories(test_view_window2_readonly_save_warning PRIVATE
-  ${CMAKE_SOURCE_DIR}/src/gui
-)
-
 # T26 (open-notebook-remote-readonly): Lock-icon badge for read-only
 # notebooks in NotebookSelector2. Compiles the selector source + its
 # transitive widget dependencies (combobox, navigationmode) inline because
@@ -1710,7 +1689,10 @@ endforeach()
 get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
 find_package(Qt6 REQUIRED COMPONENTS Pdf)
 # Reload and read-only actions must execute ViewWindow2, not test-local copies.
-foreach(_view_window_test test_viewsplit2_reload_menu test_view_window2_readonly_toolbar)
+foreach(_view_window_test
+    test_viewsplit2_reload_menu
+    test_view_window2_readonly_toolbar
+    test_view_window2_readonly_save_warning)
   add_qt_test(${_view_window_test}
     SOURCES ${_view_window_test}.cpp ${_markdown_window_test_sources}
     LINKS ${_markdown_window_links} Qt6::Pdf
