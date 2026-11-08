@@ -25,7 +25,11 @@ VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6.9及以上�
 * **思维导图**（`.mmm`、`.emind`）：使用原生思维导图编辑器创建和编辑导图
 * **PDF**（`.pdf`）：使用内置阅读器阅读PDF文档
 
-![主界面](pics/main.webp)
+<img src="pics/vnote-md.png" alt="VNote Markdown 编辑器" width="800">
+
+<img src="pics/vnote-mindmap.png" alt="VNote 思维导图编辑器" width="800">
+
+<img src="pics/vnote-pdf.png" alt="VNote PDF 阅读器" width="800">
 
 ## 下载
 基于`master`分支的[持续构建版本发布](https://github.com/vnotex/vnote/releases/tag/continuous-build)。

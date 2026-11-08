@@ -25,7 +25,11 @@ VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6.9+**. Q
 * **Mind maps** (`.mmm`, `.emind`): create and edit mind maps with the native mind-map editor
 * **PDF** (`.pdf`): read PDF documents with the built-in viewer
 
-![Main](pics/main.webp)
+<img src="pics/vnote-md.png" alt="VNote Markdown editor" width="800">
+
+<img src="pics/vnote-mindmap.png" alt="VNote mind-map editor" width="800">
+
+<img src="pics/vnote-pdf.png" alt="VNote PDF viewer" width="800">
 
 ## Downloads
 Continuous builds on `master` branch could be found at the [Continuous Build](https://github.com/vnotex/vnote/releases/tag/continuous-build) release.
