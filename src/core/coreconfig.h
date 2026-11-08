@@ -151,20 +151,6 @@ public:
   const QString &getSkippedUpdateVersion() const;
   void setSkippedUpdateVersion(const QString &p_version);
 
-  // Epoch milliseconds (UTC) of the last update check that was *started*.
-  // 0 means "never checked". Stored as a decimal string because IConfig::readInt
-  // is 32-bit and cannot hold an epoch-millisecond value.
-  qint64 getLastUpdateCheckTime() const;
-  void setLastUpdateCheckTime(qint64 p_msSinceEpoch);
-
-  // True when a new update check should be started now, i.e. the last recorded
-  // check is older than p_intervalMs, never happened, or is dated in the future
-  // (clock moved backwards / corrupted value -> treat as stale).
-  bool isUpdateCheckDue(qint64 p_nowMsSinceEpoch, qint64 p_intervalMs) const;
-
-  // Default throttle between two automatic (startup) update checks.
-  static constexpr qint64 c_updateCheckIntervalMs = 24LL * 60 * 60 * 1000;
-
   int getHistoryMaxCount() const;
 
   int getSearchMaxResults() const;
@@ -201,11 +187,6 @@ private:
 
   static ViewWindowMode stringToViewWindowMode(const QString &p_mode);
   static QString viewWindowModeToString(ViewWindowMode p_mode);
-
-  // Backward-compatible parse of the lastUpdateCheckTime JSON value: accepts a
-  // decimal string (current format) and a bare JSON number (tolerated so a
-  // hand-edited or legacy config is not silently dropped). Anything else -> 0.
-  static qint64 parseLastUpdateCheckTime(const QJsonValue &p_value);
 
   static QString normalizeAppName(const QString &p_name);
 
@@ -251,9 +232,6 @@ private:
 
   // Version the user explicitly skipped in the update dialog.
   QString m_skippedUpdateVersion;
-
-  // Epoch ms (UTC) of the last started update check. 0 == never.
-  qint64 m_lastUpdateCheckTime = 0;
 
   bool m_recycleBinAutoCleanupEnabled = false;
 

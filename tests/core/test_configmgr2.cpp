@@ -123,6 +123,9 @@ private slots:
   void testToolTips_dailyRotationSurvivesReload();
   void testToolTips_localeFallbackAndInvalidCatalog();
   void testToolTips_progressMigratesToSession();
+  void testUpdateTimestamp_usesOnlySession_data();
+  void testUpdateTimestamp_usesOnlySession();
+  void testUpdateTimestamp_unreadableSessionIsPreserved();
 
 private:
   // Build an on-disk stand-in for the bundled vnote_extra.rcc tree.
@@ -2994,6 +2997,142 @@ void TestConfigMgr2::testToolTips_progressMigratesToSession() {
   QVERIFY(producer.showTipIfDue(today));
   QCOMPARE(notifications.messages().size(), 1);
   QCOMPARE(notifications.messages().last().m_text, QStringLiteral("Tip A"));
+}
+
+void TestConfigMgr2::testUpdateTimestamp_usesOnlySession_data() {
+  QTest::addColumn<QJsonValue>("session");
+  QTest::addColumn<qint64>("expected");
+  QTest::addColumn<bool>("due");
+  const qint64 now = Q_INT64_C(1785337074532);
+  QTest::newRow("absent") << QJsonValue(QJsonValue::Undefined) << qint64(0) << true;
+  QTest::newRow("recent") << QJsonValue(QString::number(now - 1)) << now - 1 << false;
+  const qint64 expired = now - SessionConfig::c_updateCheckIntervalMs;
+  QTest::newRow("expired") << QJsonValue(QString::number(expired)) << expired << true;
+  QTest::newRow("reset") << QJsonValue("0") << qint64(0) << true;
+  QTest::newRow("null") << QJsonValue(QJsonValue::Null) << qint64(0) << true;
+}
+
+void TestConfigMgr2::testUpdateTimestamp_usesOnlySession() {
+  QFETCH(QJsonValue, session);
+  QFETCH(qint64, expected);
+  QFETCH(bool, due);
+  QTest::qWait(700);
+  const auto healthy = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto healthySession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", healthy);
+    m_configService->updateConfigByName(DataLocation::Local, "session", healthySession);
+  });
+  const auto key = QStringLiteral("lastUpdateCheckTime");
+  const qint64 now = Q_INT64_C(1785337074532);
+  // An old app timestamp must neither suppress a check nor trigger a config rewrite.
+  QVERIFY(!m_configService->updateConfigByName(
+      DataLocation::App, "vnotex",
+      QJsonObject{{"metadata", QJsonObject{{"version", ConfigMgr2::getApplicationVersion()}}},
+                  {"core", QJsonObject{{key, QString::number(now)}}}}));
+  QJsonObject sessionCore;
+  sessionCore.insert(key, session);
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, "session",
+                                               QJsonObject{{"core", sessionCore}}));
+  QFile mainFile(m_configMgr->getAppDataPath() + QStringLiteral("/vnotex.json"));
+  QVERIFY(mainFile.open(QIODevice::ReadOnly));
+  const auto mainBytes = mainFile.readAll();
+  mainFile.close();
+  QFile sessionFile(m_configMgr->getUserConfigPath() + QStringLiteral("/session.json"));
+  QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+  const auto sessionBytes = sessionFile.readAll();
+  sessionFile.close();
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    const auto &state = mgr.getSessionConfig();
+    QCOMPARE(state.getLastUpdateCheckTime(), expected);
+    QCOMPARE(state.isUpdateCheckDue(now, SessionConfig::c_updateCheckIntervalMs), due);
+  }
+  QVERIFY(mainFile.open(QIODevice::ReadOnly));
+  QCOMPARE(mainFile.readAll(), mainBytes);
+  mainFile.close();
+  QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+  QCOMPARE(sessionFile.readAll(), sessionBytes);
+  sessionFile.close();
+  const qint64 next = now + 1000;
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    mgr.getSessionConfig().setLastUpdateCheckTime(next);
+  }
+  QVERIFY(mainFile.open(QIODevice::ReadOnly));
+  QCOMPARE(mainFile.readAll(), mainBytes);
+  mainFile.close();
+  QCOMPARE(m_configService->getConfigByName(DataLocation::Local, "session")
+               .value("core")
+               .toObject()
+               .value(key),
+           QJsonValue(QString::number(next)));
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.init();
+    const auto &state = mgr.getSessionConfig();
+    QCOMPARE(state.getLastUpdateCheckTime(), next);
+    QVERIFY(!state.isUpdateCheckDue(next + SessionConfig::c_updateCheckIntervalMs - 1,
+                                    SessionConfig::c_updateCheckIntervalMs));
+    QVERIFY(state.isUpdateCheckDue(next + SessionConfig::c_updateCheckIntervalMs,
+                                   SessionConfig::c_updateCheckIntervalMs));
+  }
+  // Clearing session state must not fall back to the untouched app timestamp.
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, "session", QJsonObject()));
+  ConfigMgr2 reset(m_configService);
+  reset.init();
+  QCOMPARE(reset.getSessionConfig().getLastUpdateCheckTime(), qint64(0));
+}
+
+void TestConfigMgr2::testUpdateTimestamp_unreadableSessionIsPreserved() {
+  QTest::qWait(700);
+  const auto healthy = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto healthySession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", healthy);
+    m_configService->updateConfigByName(DataLocation::Local, "session", healthySession);
+  });
+  const qint64 stamp = Q_INT64_C(1785337074532);
+  QVERIFY(!m_configService->updateConfigByName(
+      DataLocation::App, "vnotex",
+      QJsonObject{{"core", QJsonObject{{"lastUpdateCheckTime", QString::number(stamp)}}}}));
+  QFile mainFile(m_configMgr->getAppDataPath() + QStringLiteral("/vnotex.json"));
+  QVERIFY(mainFile.open(QIODevice::ReadOnly));
+  const auto mainBytes = mainFile.readAll();
+  mainFile.close();
+  QFile sessionFile(m_configMgr->getUserConfigPath() + QStringLiteral("/session.json"));
+  for (const QByteArray malformed : {QByteArray("{broken"), QByteArray("[]")}) {
+    QVERIFY(sessionFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(sessionFile.write(malformed), qint64(malformed.size()));
+    sessionFile.close();
+    {
+      ConfigMgr2 mgr(m_configService);
+      mgr.init();
+      QVERIFY(!mgr.isSessionConfigLoaded());
+      mgr.getSessionConfig().setLastUpdateCheckTime(stamp + 1);
+      // Cover both the debounced writer and the destructor's pending-write flush.
+      QTest::qWait(700);
+      mgr.getSessionConfig().setLastUpdateCheckTime(stamp + 2);
+    }
+    QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+    QCOMPARE(sessionFile.readAll(), malformed);
+    sessionFile.close();
+    QVERIFY(mainFile.open(QIODevice::ReadOnly));
+    QCOMPARE(mainFile.readAll(), mainBytes);
+    mainFile.close();
+  }
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, "session", QJsonObject()));
+  {
+    ConfigMgr2 repaired(m_configService);
+    repaired.init();
+    QCOMPARE(repaired.getSessionConfig().getLastUpdateCheckTime(), qint64(0));
+    repaired.getSessionConfig().setLastUpdateCheckTime(stamp + 3);
+  }
+  ConfigMgr2 reloaded(m_configService);
+  reloaded.init();
+  QCOMPARE(reloaded.getSessionConfig().getLastUpdateCheckTime(), stamp + 3);
 }
 
 } // namespace tests

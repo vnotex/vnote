@@ -213,6 +213,9 @@ private:
   // holds pure C++ defaults, so its values must not be treated as a deliberate user intent.
   bool m_sessionConfigLoaded = false;
 
+  // Suppress session writes when its existing document could not be read at startup.
+  bool m_sessionConfigReadFailed = false;
+
   // Folders whose extra-data install failed during the last ensureExtraData().
   QVector<ExtraDataFailure> m_extraDataFailures;
 

@@ -212,6 +212,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   m_currentNotebook = readString(coreObj, QStringLiteral("currentNotebook"));
   m_lastToolTipDate = readString(coreObj, QStringLiteral("lastToolTipDate"));
   m_nextToolTipIndex = qMax(0, readInt(coreObj, QStringLiteral("nextToolTipIndex")));
+  m_lastUpdateCheckTime = parseTimestamp(coreObj.value(QStringLiteral("lastUpdateCheckTime")));
 }
 
 QJsonObject SessionConfig::saveCore() const {
@@ -228,6 +229,7 @@ QJsonObject SessionConfig::saveCore() const {
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
   coreObj[QStringLiteral("lastToolTipDate")] = m_lastToolTipDate;
   coreObj[QStringLiteral("nextToolTipIndex")] = m_nextToolTipIndex;
+  coreObj[QStringLiteral("lastUpdateCheckTime")] = QString::number(m_lastUpdateCheckTime);
   return coreObj;
 }
 
@@ -738,6 +740,27 @@ const QVector<SessionConfig::QuickNoteScheme> &SessionConfig::getQuickNoteScheme
 
 void SessionConfig::setQuickNoteSchemes(const QVector<QuickNoteScheme> &p_schemes) {
   updateConfig(m_quickNoteSchemes, p_schemes, this);
+}
+
+qint64 SessionConfig::getLastUpdateCheckTime() const { return m_lastUpdateCheckTime; }
+
+void SessionConfig::setLastUpdateCheckTime(qint64 p_msSinceEpoch) {
+  updateConfig(m_lastUpdateCheckTime, p_msSinceEpoch, this);
+}
+
+bool SessionConfig::isUpdateCheckDue(qint64 p_nowMsSinceEpoch, qint64 p_intervalMs) const {
+  if (m_lastUpdateCheckTime <= 0) {
+    // Never checked.
+    return true;
+  }
+
+  if (m_lastUpdateCheckTime > p_nowMsSinceEpoch) {
+    // Future-dated (clock moved backwards, or a corrupted value): treat as stale
+    // so the throttle can never wedge a user out of update checks forever.
+    return true;
+  }
+
+  return (p_nowMsSinceEpoch - m_lastUpdateCheckTime) >= p_intervalMs;
 }
 
 const QStringList &SessionConfig::getSearchHistory() const { return m_searchHistory; }

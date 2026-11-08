@@ -209,6 +209,7 @@ void ConfigMgr2::init() {
     bool readOk = true;
     auto sessionConfigJson =
         m_configService->getConfigByName(DataLocation::Local, kSessionFileBaseName, &readOk);
+    m_sessionConfigReadFailed = !readOk;
     bool migratedTipProgress = false;
     if (readOk && !legacyTipProgress.isEmpty()) {
       // Import only absent fields; an explicit session reset must beat stale main-config state.
@@ -445,6 +446,12 @@ void ConfigMgr2::doWriteMainConfig() {
 
 void ConfigMgr2::doWriteSessionConfig() {
   if (m_pendingSessionConfig.isEmpty()) {
+    return;
+  }
+
+  if (m_sessionConfigReadFailed) {
+    qWarning() << "Refusing to write session config: it could not be read at startup";
+    m_pendingSessionConfig = QJsonObject();
     return;
   }
 

@@ -105,6 +105,24 @@ protected:
     return p_obj.value(p_key).toInt();
   }
 
+  // Positive epoch milliseconds: decimal string or legacy JSON number; invalid values are zero.
+  static qint64 parseTimestamp(const QJsonValue &p_value) {
+    if (p_value.isString()) {
+      bool ok = false;
+      const qint64 val = p_value.toString().toLongLong(&ok);
+      return (ok && val > 0) ? val : 0;
+    }
+
+    if (p_value.isDouble()) {
+      // Backward/forward compatibility with a bare JSON number. Values beyond
+      // 2^53 are not representable exactly, but epoch ms stays far below that.
+      const double val = p_value.toDouble();
+      return val > 0 ? static_cast<qint64>(val) : 0;
+    }
+
+    return 0;
+  }
+
   static qreal readReal(const QJsonObject &p_obj, const QString &p_key) {
     return p_obj.value(p_key).toDouble();
   }

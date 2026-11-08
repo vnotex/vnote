@@ -26,6 +26,7 @@
 #include <core/coreconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/notificationservice.h>
+#include <core/sessionconfig.h>
 #include <widgets/dialogs/updatedialog.h>
 #include <widgets/messageboxhelper.h>
 
@@ -135,7 +136,8 @@ void UpdateController::runStartupTasks() {
   }
 
   const qint64 now = QDateTime::currentMSecsSinceEpoch();
-  if (!coreConfig.isUpdateCheckDue(now, CoreConfig::c_updateCheckIntervalMs)) {
+  if (!configMgr->getSessionConfig().isUpdateCheckDue(now,
+                                                      SessionConfig::c_updateCheckIntervalMs)) {
     return;
   }
 
@@ -197,7 +199,7 @@ bool UpdateController::startCheck(bool p_manual) {
   // must not cause a check on every single launch. Manual checks bypass the
   // throttle entirely but still record the timestamp.
   if (auto *configMgr = m_services.get<ConfigMgr2>()) {
-    configMgr->getCoreConfig().setLastUpdateCheckTime(QDateTime::currentMSecsSinceEpoch());
+    configMgr->getSessionConfig().setLastUpdateCheckTime(QDateTime::currentMSecsSinceEpoch());
   }
 
   return true;

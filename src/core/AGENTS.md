@@ -165,6 +165,21 @@ objects and order, and preserves an empty alias list. Individual deletions in ol
 cannot be distinguished from aliases that those releases never supplied. Same-version launches
 do not migrate; no application version bump is part of this fix.
 
+### Update-check state
+
+`SessionConfig` owns `core.lastUpdateCheckTime` in local `session.json`, persisted as a decimal
+string of UTC epoch milliseconds. `CoreConfig` retains the `checkForUpdatesOnStart`,
+`updateSource`, and `skippedUpdateVersion` preferences in `vnotex.json`. `UpdateController`
+uses the session timestamp for its 24-hour startup throttle and records accepted check starts,
+including manual checks; manual checks bypass the throttle. Future timestamps are treated as stale.
+
+The timestamp is read only from `session.json`: there is no app-config import or fallback.
+A missing session value means never checked, even if `vnotex.json` still contains an old timestamp.
+No configuration migration is needed. An unreadable session suppresses all session writes for
+that manager's lifetime, including debounced and shutdown writes. Missing/empty sessions remain
+writable. The unrelated tooltip-progress migration is unchanged.
+Coverage: `test_sessionconfig_startup` and the update-timestamp cases in `test_configmgr2`.
+
 ### HTTP API configuration
 
 `HttpApiConfig` is a typed `SessionConfig` child; access it through
