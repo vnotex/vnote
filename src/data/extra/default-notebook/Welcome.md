@@ -1,15 +1,14 @@
 # Welcome to VNote
-A pleasant note-taking platform.
+A pleasant note-taking platform, supporting Markdown, Mind Map, Typst, plain text, and PDF.
 
 For more information, please visit [**VNote's Home Page**](https://docs.vnote.fun).
 
-## VNote 4
-VNote 4 is a brand-new refactor of VNote 3, with a polished interface and more powerful features, including:
+## Notebooks Management
+![Notebook Management](vx_assets/7b85a8c6-9fc6-4dff-ae46-a4607c17bf33/1e5e.jpg)
 
-* A git based notebook sync backend
-* Opening notebooks from remote URL
-* Raw Notebook to browse any documents on disk freely
+There are two kinds of notebooks:
 
-Just click buttons here to create notebooks, open notebooks, or convert and import VNote 3 notebooks. Enjoy!
+* **Bundled Notebook**: a dedicated folder managed by VNote, with rich features supported, like tags and attachments
+* **Raw Notebook**: browsing a folder with previously existing files, with limited features supported, but being free from VNote's metadata files
 
-![Notebook Actions](vx_assets/7b85a8c6-9fc6-4dff-ae46-a4607c17bf33/6f2b.png)
+Use "Open Notebook" to open previously created notebooks.
