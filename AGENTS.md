@@ -433,6 +433,26 @@ justify clearing intentional user staging. Never use blanket reset/restore or st
 
 ---
 
+## Configuration Ownership
+
+Before adding an option or state field, agents MUST choose its owner by meaning and scope:
+
+| Kind of value | Owner | Examples |
+|---------------|-------|----------|
+| Portable user preferences | `MainConfig` in `vnotex.json` (`DataLocation::App`), using the relevant child config | Theme, editor behavior, update-check enablement and release source |
+| Machine/profile-local settings and persisted runtime state | `SessionConfig` in `session.json` (`DataLocation::Local`) | Local HTTP listener settings, window layout, recent history, tooltip progress, `lastUpdateCheckTime` |
+| Transient runtime state | The owning controller/service in memory, not either config file | In-flight flags, pending requests, temporary handles |
+
+`SessionConfig` **persists across launches**; it does not mean process-lifetime-only storage.
+Agents MUST NOT put timestamps, counters, or other runtime bookkeeping in `MainConfig` merely
+because they must survive a restart. Keep each field in one owning config and use its typed
+`ConfigMgr2` accessor; do not duplicate it across app and session config. Credentials and tokens
+belong in the existing keychain/private credential store, never ordinary app/session JSON.
+See [configuration ownership and access](src/core/AGENTS.md#configmgr2-vs-configcoreservice-critical--read-before-using-config)
+and the migration requirements below when changing an existing field's owner.
+
+---
+
 ## Configuration Migrations
 
 Every configuration default, schema, or bundled-entry change MUST assess existing saved
