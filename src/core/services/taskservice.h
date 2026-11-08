@@ -21,8 +21,8 @@ class ITaskContext;
 
 // Service layer replacement for the legacy TaskMgr. Plain QObject (tasks are
 // not vxcore-backed). Dependencies are injected via the constructor; no
-// singleton lookups. The ITaskContext may be nullptr until UI wiring lands,
-// in which case all context-derived variables resolve to empty.
+// singleton lookups. The ITaskContext may be nullptr; context-derived variables
+// then resolve to empty, and notebook-scoped tasks cannot run.
 class TaskService : public QObject, private Noncopyable {
   Q_OBJECT
 public:
@@ -44,11 +44,11 @@ public:
   // Immediately reload both scopes from disk and emit tasksUpdated().
   void reload();
 
-  // Runs the given task, keeping the owning root task alive for the duration of
-  // its process even if reload()/reloadNotebookTasks() replaces the loaded task
-  // lists in the meantime. Prevents a reload or notebook switch from destroying
-  // a Task (and its QProcess) mid-execution.
-  void runTask(Task *p_task);
+  // Runs only registered tasks, after verifying notebook provenance and trust.
+  // Keeps the owning root alive through consent and each process's completion,
+  // even if reload()/reloadNotebookTasks() replaces the task lists meanwhile.
+  // Returns nullptr on rejection, cancellation, or when no process starts.
+  QProcess *runTask(Task *p_task);
 
   // Invalidate notebook-scoped tasks after the current notebook changes.
   // Emits tasksUpdated(); the next request reloads from the current notebook.
@@ -113,6 +113,9 @@ private:
 
   bool m_notebookTasksLoaded = false;
   QVector<QSharedPointer<Task>> m_notebookTasks;
+  // Provenance of this cache, not the current notebook at execution time.
+  QString m_notebookTasksNotebookId;
+  QString m_notebookTasksFolder;
 
   // Root tasks kept alive while one of their (sub)tasks is executing, keyed by
   // the specific QProcess of each run, so a concurrent reload does not destroy

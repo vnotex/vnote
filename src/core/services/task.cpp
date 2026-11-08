@@ -450,8 +450,6 @@ QProcess *Task::setupProcess() {
   return process;
 }
 
-void Task::run() { runStarted(); }
-
 QProcess *Task::runStarted() {
   QProcess *process;
   try {

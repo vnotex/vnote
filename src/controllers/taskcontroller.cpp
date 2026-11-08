@@ -35,8 +35,6 @@ void TaskController::runTask(Task *p_task) {
   }
   if (m_taskService) {
     m_taskService->runTask(p_task);
-  } else {
-    p_task->run();
   }
 }
 

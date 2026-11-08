@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
@@ -16,6 +17,7 @@
 
 #include <controllers/newnotebookcontroller.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
@@ -79,6 +81,7 @@ private slots:
   void testValidateRootFolderDefaultParamBundled();
 
   // Creation tests.
+  void testCreateBundledNotebook();
   void testCreateRawNotebook();
   void testPasswordCreationAndRawRejection_data();
   void testPasswordCreationAndRawRejection();
@@ -88,6 +91,7 @@ private slots:
   void testBootstrapPersistenceBoundary();
 
 private:
+  void verifyNotebookRecordRemoved(const QString &p_notebookId);
   VxCoreContextHandle m_context = nullptr;
   NotebookCoreService *m_service = nullptr;
   ServiceLocator m_services;
@@ -131,6 +135,24 @@ void TestNewNotebookController::cleanup() {
     if (!id.isEmpty()) {
       m_service->closeNotebook(id);
     }
+  }
+}
+
+void TestNewNotebookController::verifyNotebookRecordRemoved(const QString &p_notebookId) {
+  QVERIFY(m_service->getNotebookConfig(p_notebookId).isEmpty());
+  QVERIFY(!m_service->isNotebookTrusted(p_notebookId));
+  ConfigCoreService configService(m_context);
+  QFile session(QDir(configService.getDataPath(DataLocation::Local))
+                    .filePath(QStringLiteral("vxsession.json")));
+  QVERIFY(session.open(QIODevice::ReadOnly));
+  QJsonParseError error;
+  const auto document = QJsonDocument::fromJson(session.readAll(), &error);
+  QCOMPARE(error.error, QJsonParseError::NoError);
+  QVERIFY(document.isObject());
+  const auto records = document.object().value(QStringLiteral("notebooks"));
+  QVERIFY(records.isArray());
+  for (const auto &record : records.toArray()) {
+    QVERIFY(record.toObject().value(QStringLiteral("id")).toString() != p_notebookId);
   }
 }
 
@@ -251,6 +273,18 @@ void TestNewNotebookController::testValidateRootFolderDefaultParamBundled() {
 
 // --- Creation tests ---
 
+void TestNewNotebookController::testCreateBundledNotebook() {
+  NewNotebookInput input;
+  input.name = QStringLiteral("BundledTest");
+  input.rootFolderPath = m_tempDir.filePath(QStringLiteral("create_bundled"));
+  input.type = NotebookType::Bundled;
+  NewNotebookController controller(m_services);
+  const auto result = controller.createNotebook(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QVERIFY(!result.notebookId.isEmpty());
+  QVERIFY(m_service->isNotebookTrusted(result.notebookId));
+}
+
 void TestNewNotebookController::testCreateRawNotebook() {
   // Create a non-empty directory and create a raw notebook in it.
   QString dir = m_tempDir.createDir("create_raw");
@@ -266,6 +300,7 @@ void TestNewNotebookController::testCreateRawNotebook() {
 
   QVERIFY2(result.success, qPrintable(result.errorMessage));
   QVERIFY(!result.notebookId.isEmpty());
+  QVERIFY(m_service->isNotebookTrusted(result.notebookId));
 }
 
 // --- T9: syncMethod handling ---
@@ -351,6 +386,7 @@ void TestNewNotebookController::testPasswordCreationAndRawRejection() {
   NewNotebookController controller(m_services);
   const auto result = controller.createNotebook(input);
   QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QVERIFY(m_service->isNotebookTrusted(result.notebookId));
   const auto config = m_service->getNotebookConfig(result.notebookId);
   QCOMPARE(config.value(QStringLiteral("syncBackend")).toString(), backend);
   QVERIFY(config.value(QStringLiteral("syncEnabled")).toBool());
@@ -394,6 +430,7 @@ void TestNewNotebookController::testBootstrapEnableFailureRemovesOnlyOwnedRoot()
                          QStringLiteral("test-only-secret")}};
   const auto created = controller.createNotebook(input);
   QVERIFY2(created.success, qPrintable(created.errorMessage));
+  QVERIFY(m_service->isNotebookTrusted(created.notebookId));
   const auto foreign = m_tempDir.createFile(backend + QStringLiteral("-foreign.txt"), "keep");
   QSignalSpy failed(&controller, &NewNotebookController::bootstrapFailed);
   QSignalSpy succeeded(&controller, &NewNotebookController::bootstrapSucceeded);
@@ -403,7 +440,7 @@ void TestNewNotebookController::testBootstrapEnableFailureRemovesOnlyOwnedRoot()
   QVERIFY(!QFileInfo::exists(input.rootFolderPath));
   QVERIFY(QFileInfo::exists(foreign));
   QVERIFY(credentials.deletions > 0);
-  QVERIFY(m_service->getNotebookConfig(created.notebookId).isEmpty());
+  verifyNotebookRecordRemoved(created.notebookId);
 }
 
 void TestNewNotebookController::testBootstrapPersistenceBoundary_data() {
@@ -434,6 +471,7 @@ void TestNewNotebookController::testBootstrapPersistenceBoundary() {
                         {QStringLiteral("git"), QString(), QStringLiteral("test-only-secret")}};
   const auto created = controller.createNotebook(input);
   QVERIFY2(created.success, qPrintable(created.errorMessage));
+  QVERIFY(m_service->isNotebookTrusted(created.notebookId));
   // Existing local repository: Initialize is local, while the first fetch must
   // fail against an absent file:// remote. No network or timing injection.
   const auto gitDir = input.rootFolderPath + QStringLiteral("/vx_notebook/vx_sync");
@@ -476,6 +514,7 @@ void TestNewNotebookController::testBootstrapPersistenceBoundary() {
     QCOMPARE(syncStarted.count(), 0);
     QVERIFY(!QFileInfo::exists(input.rootFolderPath));
     QVERIFY(!sync.isSyncRegistered(created.notebookId));
+    verifyNotebookRecordRemoved(created.notebookId);
   } else {
     QTRY_COMPARE(succeeded.count(), 1);
     QTRY_COMPARE_WITH_TIMEOUT(syncFailed.count(), 1, 15000);
@@ -488,6 +527,7 @@ void TestNewNotebookController::testBootstrapPersistenceBoundary() {
                 .toBool());
     QVERIFY(sync.isSyncRegistered(created.notebookId));
     QCOMPARE(m_service->getLastSyncUtc(created.notebookId), qint64(0));
+    QVERIFY(m_service->isNotebookTrusted(created.notebookId));
   }
 }
 

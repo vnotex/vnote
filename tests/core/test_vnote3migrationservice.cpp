@@ -641,6 +641,11 @@ void TestVNote3MigrationService::testConvertHappyPath() {
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("notes/hello.md")));
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("notes/sub/deep.md")));
   QVERIFY(pathExistsInNotebook(destPath, QStringLiteral("readme.md")));
+
+  const QString notebookId = m_notebookService->openNotebook(destPath);
+  QVERIFY2(!notebookId.isEmpty(), "Failed to open converted notebook");
+  QVERIFY(!m_notebookService->isNotebookTrusted(notebookId));
+  QVERIFY(m_notebookService->closeNotebook(notebookId));
 }
 
 void TestVNote3MigrationService::testConvertExcludesVxNotebook() {

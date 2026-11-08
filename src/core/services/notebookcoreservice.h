@@ -314,6 +314,10 @@ public:
   // as read-only.
   bool isNotebookReadOnly(const QString &p_notebookId) const;
 
+  // Trust is local opened-notebook state. Both operations return false on any error.
+  bool isNotebookTrusted(const QString &p_notebookId) const;
+  bool setNotebookTrusted(const QString &p_notebookId, bool p_trusted);
+
   // Cross-notebook transfer operations. prepare may invoke the synchronous
   // progress callback; commit/finalize are callback-free and consume their
   // prepared handle/result JSON entirely inside this wrapper. commit performs

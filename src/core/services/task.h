@@ -100,14 +100,6 @@ public:
   static QSharedPointer<Task> fromFile(const QString &p_file, const QString &p_locale,
                                        TaskService *p_taskService);
 
-  void run();
-
-  // Runs the task and returns the started QProcess (so the caller can keep a
-  // strong reference alive until finished(process) fires for that same run).
-  // Returns nullptr if the task produced no process (empty command / cancelled
-  // input).
-  QProcess *runStarted();
-
   const TaskDTO &getDTO() const;
 
   const QString &getVersion() const;
@@ -166,8 +158,14 @@ signals:
   void finished(QProcess *p_process);
 
 private:
+  friend class TaskService;
+
   Task(const QString &p_locale, const QString &p_file, TaskService *p_taskService,
        QObject *p_parent = nullptr);
+
+  // Only TaskService may launch, after applying the notebook trust gate.
+  // Returns nullptr for an empty command or cancelled input.
+  QProcess *runStarted();
 
   // Must call start() or delete the returned QProcess.
   QProcess *setupProcess();

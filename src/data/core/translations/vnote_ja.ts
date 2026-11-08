@@ -6956,6 +6956,10 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
+    </message>
+    <message>
         <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
         <source>Please specify a name for the notebook.</source>
         <translation>ノートブックの名前を指定してください。</translation>
@@ -13387,6 +13391,53 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>ページに合わせる</translation>
+    </message>
+</context>
+<context>
+    <name>MainWindowTaskContext</name>
+    <message>
+        <source>Trust Notebook</source>
+        <translation>ノートブックを信頼</translation>
+    </message>
+    <message>
+        <source>Do you trust the notebook "%1"?</source>
+        <translation>ノートブック「%1」を信頼しますか？</translation>
+    </message>
+    <message>
+        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
+
+Location: %1
+
+Trust is remembered until you close this notebook.</source>
+        <translation>ノートブックのタスクはコンピューター上でコマンドを実行できます。信頼できる提供元のノートブックのみを信頼してください。
+
+場所: %1
+
+このノートブックを閉じるまで信頼設定が保持されます。</translation>
+    </message>
+    <message>
+        <source>Trust and Run</source>
+        <translation>信頼して実行</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskService</name>
+    <message>
+        <source>Task (%1) was not run because notebook trust could not be saved.
+</source>
+        <translation>ノートブックの信頼設定を保存できなかったため、タスク（%1）は実行されませんでした。
+</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
     </message>
 </context>
 </TS>

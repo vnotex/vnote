@@ -168,6 +168,10 @@ NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &
     return result;
   }
 
+  if (!notebookService->setNotebookTrusted(notebookId, true)) {
+    qWarning() << tr("Notebook was created, but its trust setting could not be saved");
+  }
+
   qCDebug(syncCategory) << "NewNotebookController::createNotebook: created notebookId:"
                         << notebookId << "success:" << !notebookId.isEmpty();
 

@@ -47,6 +47,8 @@ public:
   QString promptString(const QString &p_title, const QString &p_label, const QString &p_default,
                        bool p_password, bool &p_cancelled) const override;
 
+  bool confirmNotebookTrust(const QString &p_name, const QString &p_rootFolder) const override;
+
 private:
   static QString call(const StringProvider &p_provider);
 

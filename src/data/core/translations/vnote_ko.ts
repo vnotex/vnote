@@ -6940,6 +6940,10 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>노트북이 생성되었지만 신뢰 설정을 저장할 수 없습니다</translation>
+    </message>
+    <message>
         <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
         <source>Please specify a name for the notebook.</source>
         <translation>노트북 이름을 지정해 주세요.</translation>
@@ -13329,6 +13333,53 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>페이지에 맞추기</translation>
+    </message>
+</context>
+<context>
+    <name>MainWindowTaskContext</name>
+    <message>
+        <source>Trust Notebook</source>
+        <translation>노트북 신뢰</translation>
+    </message>
+    <message>
+        <source>Do you trust the notebook "%1"?</source>
+        <translation>노트북 "%1"을(를) 신뢰하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
+
+Location: %1
+
+Trust is remembered until you close this notebook.</source>
+        <translation>노트북 작업은 컴퓨터에서 명령을 실행할 수 있습니다. 신뢰할 수 있는 출처의 노트북만 신뢰하세요.
+
+위치: %1
+
+이 노트북을 닫을 때까지 신뢰 설정이 유지됩니다.</translation>
+    </message>
+    <message>
+        <source>Trust and Run</source>
+        <translation>신뢰하고 실행</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskService</name>
+    <message>
+        <source>Task (%1) was not run because notebook trust could not be saved.
+</source>
+        <translation>노트북 신뢰 설정을 저장할 수 없어 작업(%1)을(를) 실행하지 않았습니다.
+</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>노트북이 생성되었지만 신뢰 설정을 저장할 수 없습니다</translation>
     </message>
 </context>
 </TS>

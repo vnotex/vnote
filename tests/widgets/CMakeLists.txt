@@ -1,5 +1,16 @@
 find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Core5Compat)
 
+add_qt_test(test_notebooktasktrust
+  SOURCES
+    test_notebooktasktrust.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/mainwindowtaskcontext.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/taskcontroller.cpp
+  LINKS
+    core_services
+    core_configs
+    vxcore
+)
+
 add_qt_test(test_plaintextedit
   SOURCES
     test_plaintextedit.cpp

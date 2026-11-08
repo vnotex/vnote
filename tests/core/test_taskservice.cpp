@@ -1,15 +1,21 @@
 #include <QtTest>
 
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPointer>
 #include <QProcess>
 #include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTextStream>
+#include <QThread>
+#include <QUuid>
+
+#include <functional>
 
 #include <core/configmgr2.h>
 #include <core/services/configcoreservice.h>
@@ -43,6 +49,15 @@ public:
     }
     return m_promptResult.isNull() ? p_default : m_promptResult;
   }
+  bool confirmNotebookTrust(const QString &p_name, const QString &p_rootFolder) const override {
+    ++m_confirmationCount;
+    m_confirmationName = p_name;
+    m_confirmationRoot = p_rootFolder;
+    if (m_confirmationCallback) {
+      m_confirmationCallback();
+    }
+    return m_confirmTrust;
+  }
 
   QString m_notebookId;
   QString m_bufferPath;
@@ -52,6 +67,11 @@ public:
   QString m_promptResult;
   bool m_promptCancel = false;
   mutable int m_promptCount = 0;
+  bool m_confirmTrust = false;
+  mutable int m_confirmationCount = 0;
+  mutable QString m_confirmationName;
+  mutable QString m_confirmationRoot;
+  std::function<void()> m_confirmationCallback;
 };
 
 class TestTaskService : public QObject {
@@ -82,10 +102,21 @@ private slots:
   void testShellPreflight();
   void testVariableValuesNotReexpanded();
   void testProcessArguments();
+  void testNotebookTrustDeclinesBeforeEvaluation();
+  void testNotebookTrustAcceptsAndPersists();
+  void testAppTaskNeedsNoNotebookConsent();
+  void testNotebookTrustStaleOrigin_data();
+  void testNotebookTrustStaleOrigin();
+  void testUnknownTaskDoesNotRun();
+  void testNotebookTrustSaveFailure();
+  void testRunningNotebookRootSurvivesReload();
 
 private:
   // Writes a task JSON file with @p_body into @p_dir and returns its path.
   QString writeTask(const QString &p_dir, const QString &p_name, const QString &p_body);
+  QSharedPointer<Task> registerAppTask(TaskService &p_service, const QJsonObject &p_task,
+                                       QString &p_path);
+  QJsonObject notebookRecord(const QString &p_id) const;
 
   VxCoreContextHandle m_context = nullptr;
   ConfigCoreService *m_configService = nullptr;
@@ -108,6 +139,57 @@ QString TestTaskService::writeTask(const QString &p_dir, const QString &p_name,
   out << p_body;
   file.close();
   return path;
+}
+
+static QSharedPointer<Task> taskByFile(const QVector<QSharedPointer<Task>> &p_tasks,
+                                       const QString &p_path) {
+  for (const auto &task : p_tasks) {
+    if (QDir::cleanPath(task->getFile()) == QDir::cleanPath(p_path)) {
+      return task;
+    }
+  }
+  return {};
+}
+
+QSharedPointer<Task> TestTaskService::registerAppTask(TaskService &p_service,
+                                                      const QJsonObject &p_task, QString &p_path) {
+  p_path = writeTask(p_service.getAppTaskFolder(),
+                     QStringLiteral("ut_%1.json").arg(QUuid::createUuid().toString(QUuid::Id128)),
+                     QString::fromUtf8(QJsonDocument(p_task).toJson()));
+  if (p_path.isEmpty()) {
+    return {};
+  }
+  p_service.reload();
+  return taskByFile(p_service.getAppTasks(), p_path);
+}
+
+QJsonObject TestTaskService::notebookRecord(const QString &p_id) const {
+  QFile session(QDir(m_configService->getDataPath(DataLocation::Local))
+                    .filePath(QStringLiteral("vxsession.json")));
+  if (!session.open(QIODevice::ReadOnly)) {
+    return {};
+  }
+  QJsonParseError error;
+  const auto document = QJsonDocument::fromJson(session.readAll(), &error);
+  if (error.error != QJsonParseError::NoError || !document.isObject()) {
+    return {};
+  }
+  for (const auto &value : document.object().value(QStringLiteral("notebooks")).toArray()) {
+    const auto record = value.toObject();
+    if (record.value(QStringLiteral("id")).toString() == p_id) {
+      return record;
+    }
+  }
+  return {};
+}
+
+static QJsonObject markerTask(const QString &p_cwd, const QString &p_marker) {
+  return {{"version", "0.1.3"},
+          {"label", "Trust marker"},
+          {"type", "process"},
+          {"command", QCoreApplication::applicationFilePath()},
+          {"args", QJsonArray{"--task-marker", p_marker}},
+          {"options", QJsonObject{{"cwd", p_cwd}}}};
 }
 
 void TestTaskService::initTestCase() {
@@ -649,11 +731,11 @@ void TestTaskService::testShellArguments() {
       {"args", QJsonArray{"${bufferName}", "prefix=${selectedText}:suffix", "", "${input:msg}"}},
       {"inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}}},
       {"options", options}};
-  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
-                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
-                             QStringLiteral("en_US"), &service);
+  QString taskFile;
+  auto task = registerAppTask(service, obj, taskFile);
+  auto cleanupTask = qScopeGuard([&]() { QFile::remove(taskFile); });
   QVERIFY(task);
-  auto *process = task->runStarted();
+  auto *process = service.runTask(task.data());
   QVERIFY(process);
   QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
   QCOMPARE(process->exitStatus(), QProcess::NormalExit);
@@ -716,12 +798,12 @@ void TestTaskService::testShellPreflight() {
     options.insert("cwd", "${input:location}");
   }
   obj.insert("options", options);
-  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
-                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
-                             QStringLiteral("en_US"), &service);
+  QString taskFile;
+  auto task = registerAppTask(service, obj, taskFile);
+  auto cleanupTask = qScopeGuard([&]() { QFile::remove(taskFile); });
   QVERIFY(task);
   QSignalSpy output(task.data(), &Task::outputRequested);
-  QVERIFY(!task->runStarted());
+  QVERIFY(!service.runTask(task.data()));
   QCOMPARE(output.count(), 1);
   QCOMPARE(context.m_promptCount, 0);
   QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
@@ -776,11 +858,11 @@ void TestTaskService::testProcessArguments() {
                         {"command", "${exeFile}"},
                         {"args", QJsonArray{"--task-argv", "${selectedText}", ""}},
                         {"options", QJsonObject{{"cwd", tmp.path()}}}};
-  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
-                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
-                             QStringLiteral("en_US"), &service);
+  QString taskFile;
+  auto task = registerAppTask(service, obj, taskFile);
+  auto cleanupTask = qScopeGuard([&]() { QFile::remove(taskFile); });
   QVERIFY(task);
-  auto *process = task->runStarted();
+  auto *process = service.runTask(task.data());
   QVERIFY(process);
   QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
   QCOMPARE(process->exitCode(), 0);
@@ -788,6 +870,490 @@ void TestTaskService::testProcessArguments() {
   QVERIFY(argvFile.open(QIODevice::ReadOnly));
   QCOMPARE(argvFile.readAll(), context.m_selectedText.toUtf8() + QByteArray(2, '\0'));
   QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
+}
+
+void TestTaskService::testNotebookTrustDeclinesBeforeEvaluation() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto root = tmp.filePath(QStringLiteral("notebook"));
+  const auto id = m_notebookService->createNotebook(
+      root, QStringLiteral("{\"name\":\"Untrusted notebook\"}"), NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  auto cleanup = qScopeGuard([&]() { m_notebookService->closeNotebook(id); });
+  MockTaskContext context;
+  context.m_notebookId = id;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  int shellEvaluations = 0;
+  const_cast<TaskVariableMgr &>(service.getVariableMgr())
+      .overrideVariable(QStringLiteral("shell"), [&](Task *, const QString &value) {
+        ++shellEvaluations;
+        return value == QStringLiteral("command") ? QCoreApplication::applicationFilePath()
+               : value == QStringLiteral("cwd")   ? root
+                                                  : QStringLiteral("evaluated");
+      });
+  auto obj = markerTask(root, QStringLiteral("denied.marker"));
+  obj.insert("command", "${shell:command}");
+  obj.insert("args",
+             QJsonArray{"--task-marker", "denied.marker", "${shell:argument}", "${input:msg}"});
+  obj.insert("inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}});
+  obj.insert("options", QJsonObject{{"cwd", "${shell:cwd}"}});
+  // Authored metadata cannot turn a notebook-owned task into an app task or grant trust.
+  obj.insert("_scope", "app");
+  obj.insert("trusted", true);
+  const auto path = writeTask(service.getNotebookTaskFolder(), QStringLiteral("denied.json"),
+                              QString::fromUtf8(QJsonDocument(obj).toJson()));
+  QVERIFY(!path.isEmpty());
+  auto task = taskByFile(service.getNotebookTasks(), path);
+  QVERIFY(task);
+  QSignalSpy output(&service, &TaskService::taskOutputRequested);
+  QVERIFY(!service.runTask(task.data()));
+  QCOMPARE(context.m_confirmationCount, 1);
+  QCOMPARE(context.m_confirmationName, QStringLiteral("Untrusted notebook"));
+  QCOMPARE(QDir::cleanPath(context.m_confirmationRoot), QDir::cleanPath(root));
+  QCOMPARE(context.m_promptCount, 0);
+  QCOMPARE(shellEvaluations, 0);
+  QCOMPARE(output.count(), 0);
+  QVERIFY(!QFile::exists(QDir(root).filePath(QStringLiteral("denied.marker"))));
+  QVERIFY(!m_notebookService->isNotebookTrusted(id));
+  QCOMPARE(notebookRecord(id).value(QStringLiteral("trusted")), QJsonValue(false));
+}
+
+void TestTaskService::testNotebookTrustAcceptsAndPersists() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto root = tmp.filePath(QStringLiteral("notebook"));
+  const auto id = m_notebookService->createNotebook(
+      root, QStringLiteral("{\"name\":\"Approved notebook\"}"), NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  auto cleanup = qScopeGuard([&]() { m_notebookService->closeNotebook(id); });
+  MockTaskContext context;
+  context.m_notebookId = id;
+  context.m_confirmTrust = true;
+  context.m_promptResult = QStringLiteral("typed input");
+  bool trustedDuringConfirmation = true;
+  context.m_confirmationCallback = [&]() {
+    trustedDuringConfirmation = m_notebookService->isNotebookTrusted(id);
+  };
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  int shellEvaluations = 0;
+  bool trustedDuringEvaluation = true;
+  const_cast<TaskVariableMgr &>(service.getVariableMgr())
+      .overrideVariable(QStringLiteral("shell"), [&](Task *, const QString &value) {
+        ++shellEvaluations;
+        trustedDuringEvaluation = trustedDuringEvaluation &&
+                                  m_notebookService->isNotebookTrusted(id) &&
+                                  notebookRecord(id).value(QStringLiteral("trusted")).toBool();
+        return value == QStringLiteral("cwd") ? root : QStringLiteral("evaluated");
+      });
+  auto first = markerTask(root, QStringLiteral("first.marker"));
+  first.insert("args",
+               QJsonArray{"--task-marker", "first.marker", "${shell:argument}", "${input:msg}"});
+  first.insert("inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}});
+  first.insert("options", QJsonObject{{"cwd", "${shell:cwd}"}});
+  const auto firstPath = writeTask(service.getNotebookTaskFolder(), QStringLiteral("first.json"),
+                                   QString::fromUtf8(QJsonDocument(first).toJson()));
+  QVERIFY(!firstPath.isEmpty());
+  auto second = markerTask(root, QStringLiteral("second.marker"));
+  second.insert("tasks",
+                QJsonArray{QJsonObject{
+                    {"label", "Group"},
+                    {"tasks", QJsonArray{QJsonObject{
+                                  {"label", "Nested task"},
+                                  {"args", QJsonArray{"--task-marker", "nested.marker"}}}}}}});
+  const auto secondPath = writeTask(service.getNotebookTaskFolder(), QStringLiteral("second.json"),
+                                    QString::fromUtf8(QJsonDocument(second).toJson()));
+  QVERIFY(!secondPath.isEmpty());
+  auto firstTask = taskByFile(service.getNotebookTasks(), firstPath);
+  auto secondTask = taskByFile(service.getNotebookTasks(), secondPath);
+  QVERIFY(firstTask);
+  QVERIFY(secondTask);
+  QVERIFY(!m_notebookService->isNotebookTrusted(id));
+  auto *process = service.runTask(firstTask.data());
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitStatus(), QProcess::NormalExit);
+  QCOMPARE(process->exitCode(), 0);
+  QVERIFY(!trustedDuringConfirmation);
+  QVERIFY(trustedDuringEvaluation);
+  QCOMPARE(shellEvaluations, 2);
+  QCOMPARE(context.m_promptCount, 1);
+  QCOMPARE(context.m_confirmationCount, 1);
+  QVERIFY(m_notebookService->isNotebookTrusted(id));
+  QCOMPARE(notebookRecord(id).value(QStringLiteral("trusted")), QJsonValue(true));
+
+  // Once approved, even a declining adapter is not asked for other tasks or descendants.
+  context.m_confirmTrust = false;
+  process = service.runTask(secondTask.data());
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitStatus(), QProcess::NormalExit);
+  QCOMPARE(process->exitCode(), 0);
+  QCOMPARE(secondTask->getChildren().size(), 1);
+  auto *group = secondTask->getChildren().first();
+  QCOMPARE(group->getChildren().size(), 1);
+  process = service.runTask(group->getChildren().first());
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitStatus(), QProcess::NormalExit);
+  QCOMPARE(process->exitCode(), 0);
+  QCOMPARE(context.m_confirmationCount, 1);
+  QCOMPARE(context.m_promptCount, 1);
+  QCOMPARE(shellEvaluations, 2);
+  for (const auto &name : {"first.marker", "second.marker", "nested.marker"}) {
+    QFile marker(QDir(root).filePath(QLatin1String(name)));
+    QVERIFY(marker.open(QIODevice::ReadOnly));
+    QCOMPARE(marker.readAll(), QByteArray("run\n"));
+  }
+}
+
+void TestTaskService::testAppTaskNeedsNoNotebookConsent() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto id = m_notebookService->createNotebook(tmp.filePath(QStringLiteral("notebook")),
+                                                    QStringLiteral("{\"name\":\"Untrusted\"}"),
+                                                    NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  auto cleanup = qScopeGuard([&]() { m_notebookService->closeNotebook(id); });
+  MockTaskContext context;
+  context.m_notebookId = id;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  auto obj = markerTask(tmp.path(), QStringLiteral("app.marker"));
+  obj.insert("_scope", "notebook");
+  QString taskFile;
+  auto task = registerAppTask(service, obj, taskFile);
+  auto cleanupTask = qScopeGuard([&]() { QFile::remove(taskFile); });
+  QVERIFY(task);
+  auto *process = service.runTask(task.data());
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitCode(), 0);
+  QCOMPARE(context.m_confirmationCount, 0);
+  QVERIFY(!m_notebookService->isNotebookTrusted(id));
+  QCOMPARE(notebookRecord(id).value(QStringLiteral("trusted")), QJsonValue(false));
+  QFile marker(tmp.filePath(QStringLiteral("app.marker")));
+  QVERIFY(marker.open(QIODevice::ReadOnly));
+  QCOMPARE(marker.readAll(), QByteArray("run\n"));
+  marker.close();
+
+  // Global tasks also remain runnable when no notebook/editor context is installed.
+  service.setTaskContext(nullptr);
+  process = service.runTask(task.data());
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitCode(), 0);
+  QVERIFY(marker.open(QIODevice::ReadOnly));
+  QCOMPARE(marker.readAll(), QByteArray("run\nrun\n"));
+  QCOMPARE(context.m_confirmationCount, 0);
+}
+
+void TestTaskService::testNotebookTrustStaleOrigin_data() {
+  QTest::addColumn<QString>("operation");
+  QTest::addColumn<bool>("duringConfirmation");
+  QTest::addColumn<bool>("initiallyTrusted");
+  for (const auto &operation :
+       {"reload-notebook", "reload-all", "switch", "close", "replace", "remove-context"}) {
+    const auto name = QString::fromLatin1(operation);
+    QTest::newRow(qPrintable(name + QStringLiteral("-before-untrusted"))) << name << false << false;
+    QTest::newRow(qPrintable(name + QStringLiteral("-before-trusted"))) << name << false << true;
+    QTest::newRow(qPrintable(name + QStringLiteral("-during-confirmation")))
+        << name << true << false;
+  }
+}
+
+void TestTaskService::testNotebookTrustStaleOrigin() {
+  QFETCH(QString, operation);
+  QFETCH(bool, duringConfirmation);
+  QFETCH(bool, initiallyTrusted);
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto root = tmp.filePath(QStringLiteral("first"));
+  const auto firstId = m_notebookService->createNotebook(
+      root, QStringLiteral("{\"name\":\"First\"}"), NotebookType::Bundled);
+  QVERIFY(!firstId.isEmpty());
+  auto cleanupFirst = qScopeGuard([&]() { m_notebookService->closeNotebook(firstId); });
+  const auto secondId = m_notebookService->createNotebook(tmp.filePath(QStringLiteral("second")),
+                                                          QStringLiteral("{\"name\":\"Second\"}"),
+                                                          NotebookType::Bundled);
+  QVERIFY(!secondId.isEmpty());
+  auto cleanupSecond = qScopeGuard([&]() { m_notebookService->closeNotebook(secondId); });
+  if (initiallyTrusted) {
+    QVERIFY(m_notebookService->setNotebookTrusted(firstId, true));
+  }
+  MockTaskContext context;
+  context.m_notebookId = firstId;
+  context.m_confirmTrust = true;
+  MockTaskContext replacement;
+  replacement.m_notebookId = firstId;
+  replacement.m_confirmTrust = true;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  int shellEvaluations = 0;
+  const_cast<TaskVariableMgr &>(service.getVariableMgr())
+      .overrideVariable(QStringLiteral("shell"), [&](Task *, const QString &) {
+        ++shellEvaluations;
+        return QStringLiteral("evaluated");
+      });
+  auto obj = markerTask(root, QStringLiteral("stale.marker"));
+  obj.insert("args", QJsonArray{"--task-marker", "stale.marker", "${shell:count}", "${input:msg}"});
+  obj.insert("inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}});
+  const auto path = writeTask(service.getNotebookTaskFolder(), QStringLiteral("stale.json"),
+                              QString::fromUtf8(QJsonDocument(obj).toJson()));
+  QVERIFY(!path.isEmpty());
+  auto task = taskByFile(service.getNotebookTasks(), path);
+  QVERIFY(task);
+  const auto weakRoot = task.toWeakRef();
+  auto *taskPointer = task.data();
+  bool actionSucceeded = true;
+  bool aliveAfterInvalidation = false;
+  const auto invalidate = [&]() {
+    if (operation == QStringLiteral("reload-notebook")) {
+      service.reloadNotebookTasks();
+      service.getNotebookTasks();
+    } else if (operation == QStringLiteral("reload-all")) {
+      service.reload();
+    } else if (operation == QStringLiteral("switch")) {
+      // Do not reload: selected identity itself must invalidate cached provenance.
+      context.m_notebookId = secondId;
+    } else if (operation == QStringLiteral("close")) {
+      actionSucceeded = m_notebookService->closeNotebook(firstId);
+    } else if (operation == QStringLiteral("replace")) {
+      service.setTaskContext(&replacement);
+    } else {
+      service.setTaskContext(nullptr);
+    }
+    aliveAfterInvalidation = !weakRoot.isNull();
+  };
+  if (duringConfirmation) {
+    context.m_confirmationCallback = invalidate;
+    // Only the service can keep the original root alive across its modal callback.
+    task.clear();
+  } else {
+    invalidate();
+  }
+  QSignalSpy output(&service, &TaskService::taskOutputRequested);
+  QVERIFY(!service.runTask(taskPointer));
+  QVERIFY(actionSucceeded);
+  QVERIFY(aliveAfterInvalidation);
+  QCOMPARE(context.m_confirmationCount, duringConfirmation ? 1 : 0);
+  QCOMPARE(replacement.m_confirmationCount, 0);
+  QCOMPARE(context.m_promptCount, 0);
+  QCOMPARE(replacement.m_promptCount, 0);
+  QCOMPARE(shellEvaluations, 0);
+  QCOMPARE(output.count(), 0);
+  QVERIFY(!QFile::exists(QDir(root).filePath(QStringLiteral("stale.marker"))));
+  QVERIFY(!m_notebookService->isNotebookTrusted(secondId));
+  QCOMPARE(notebookRecord(secondId).value(QStringLiteral("trusted")), QJsonValue(false));
+  if (operation == QStringLiteral("close")) {
+    QVERIFY(m_notebookService->getNotebookConfig(firstId).isEmpty());
+    QVERIFY(notebookRecord(firstId).isEmpty());
+  } else {
+    QCOMPARE(m_notebookService->isNotebookTrusted(firstId), initiallyTrusted);
+    QCOMPARE(notebookRecord(firstId).value(QStringLiteral("trusted")),
+             QJsonValue(initiallyTrusted));
+  }
+}
+
+void TestTaskService::testUnknownTaskDoesNotRun() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  MockTaskContext context;
+  context.m_confirmTrust = true;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  int shellEvaluations = 0;
+  const_cast<TaskVariableMgr &>(service.getVariableMgr())
+      .overrideVariable(QStringLiteral("shell"), [&](Task *, const QString &) {
+        ++shellEvaluations;
+        return QStringLiteral("evaluated");
+      });
+  auto obj = markerTask(tmp.path(), QStringLiteral("unknown.marker"));
+  obj.insert("args",
+             QJsonArray{"--task-marker", "unknown.marker", "${shell:count}", "${input:msg}"});
+  obj.insert("inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}});
+  const auto file = writeTask(tmp.path(), QStringLiteral("unknown.json"),
+                              QString::fromUtf8(QJsonDocument(obj).toJson()));
+  QVERIFY(!file.isEmpty());
+  auto unknown = Task::fromFile(file, QStringLiteral("en_US"), &service);
+  QVERIFY(unknown);
+  QSignalSpy output(&service, &TaskService::taskOutputRequested);
+  QVERIFY(!service.runTask(nullptr));
+  QVERIFY(!service.runTask(unknown.data()));
+
+  QString registeredFile;
+  auto registered = registerAppTask(service, obj, registeredFile);
+  auto cleanupTask = qScopeGuard([&]() { QFile::remove(registeredFile); });
+  QVERIFY(registered);
+  TaskService otherService(m_configMgr, m_notebookService, m_snippetService, &context);
+  otherService.init();
+  // Loading the same file in another service does not register this Task pointer there.
+  QVERIFY(taskByFile(otherService.getAppTasks(), registeredFile));
+  QVERIFY(!otherService.runTask(registered.data()));
+  TaskService noContextService(m_configMgr, m_notebookService, m_snippetService, nullptr);
+  noContextService.init();
+  QVERIFY(!noContextService.runTask(unknown.data()));
+  TaskService noNotebookService(m_configMgr, nullptr, m_snippetService, &context);
+  noNotebookService.init();
+  QVERIFY(!noNotebookService.runTask(unknown.data()));
+  QCOMPARE(context.m_confirmationCount, 0);
+  QCOMPARE(context.m_promptCount, 0);
+  QCOMPARE(shellEvaluations, 0);
+  QCOMPARE(output.count(), 0);
+  QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("unknown.marker"))));
+}
+
+void TestTaskService::testNotebookTrustSaveFailure() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto root = tmp.filePath(QStringLiteral("first"));
+  const auto firstId = m_notebookService->createNotebook(
+      root, QStringLiteral("{\"name\":\"First\"}"), NotebookType::Bundled);
+  QVERIFY(!firstId.isEmpty());
+  auto cleanupFirst = qScopeGuard([&]() { m_notebookService->closeNotebook(firstId); });
+  const auto secondId = m_notebookService->createNotebook(tmp.filePath(QStringLiteral("second")),
+                                                          QStringLiteral("{\"name\":\"Second\"}"),
+                                                          NotebookType::Bundled);
+  QVERIFY(!secondId.isEmpty());
+  auto cleanupSecond = qScopeGuard([&]() { m_notebookService->closeNotebook(secondId); });
+  MockTaskContext context;
+  context.m_notebookId = firstId;
+  context.m_confirmTrust = true;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  int shellEvaluations = 0;
+  const_cast<TaskVariableMgr &>(service.getVariableMgr())
+      .overrideVariable(QStringLiteral("shell"), [&](Task *, const QString &) {
+        ++shellEvaluations;
+        return QStringLiteral("evaluated");
+      });
+  auto obj = markerTask(root, QStringLiteral("save-failure.marker"));
+  obj.insert("args",
+             QJsonArray{"--task-marker", "save-failure.marker", "${shell:count}", "${input:msg}"});
+  obj.insert("inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}});
+  const auto path = writeTask(service.getNotebookTaskFolder(), QStringLiteral("save-failure.json"),
+                              QString::fromUtf8(QJsonDocument(obj).toJson()));
+  QVERIFY(!path.isEmpty());
+  auto task = taskByFile(service.getNotebookTasks(), path);
+  QVERIFY(task);
+  const auto sessionPath = QDir(m_configService->getDataPath(DataLocation::Local))
+                               .filePath(QStringLiteral("vxsession.json"));
+  const auto backupPath =
+      sessionPath + QLatin1Char('.') + QUuid::createUuid().toString(QUuid::Id128);
+  QFile session(sessionPath);
+  QVERIFY(session.open(QIODevice::ReadOnly));
+  const auto before = session.readAll();
+  session.close();
+  QVERIFY(QFile::rename(sessionPath, backupPath));
+  auto restoreSession = qScopeGuard([&]() {
+    QDir().rmdir(sessionPath);
+    QFile::rename(backupPath, sessionPath);
+  });
+  QVERIFY(QDir().mkdir(sessionPath));
+  QSignalSpy output(&service, &TaskService::taskOutputRequested);
+  QVERIFY(!service.runTask(task.data()));
+  QCOMPARE(context.m_confirmationCount, 1);
+  QCOMPARE(context.m_promptCount, 0);
+  QCOMPARE(shellEvaluations, 0);
+  QCOMPARE(output.count(), 1);
+  QVERIFY(output.first().first().toString().contains(task->getLabel()));
+  QVERIFY(!m_notebookService->isNotebookTrusted(firstId));
+  QVERIFY(!m_notebookService->isNotebookTrusted(secondId));
+  QVERIFY(!QFile::exists(QDir(root).filePath(QStringLiteral("save-failure.marker"))));
+
+  QVERIFY(QDir().rmdir(sessionPath));
+  QVERIFY(QFile::rename(backupPath, sessionPath));
+  restoreSession.dismiss();
+  QVERIFY(session.open(QIODevice::ReadOnly));
+  QCOMPARE(session.readAll(), before);
+  session.close();
+  // A later successful session write must not publish the rejected grant from memory.
+  QVERIFY(m_notebookService->setNotebookTrusted(secondId, true));
+  QCOMPARE(notebookRecord(firstId).value(QStringLiteral("trusted")), QJsonValue(false));
+  QCOMPARE(notebookRecord(secondId).value(QStringLiteral("trusted")), QJsonValue(true));
+  context.m_confirmTrust = false;
+  QVERIFY(!service.runTask(task.data()));
+  QCOMPARE(context.m_confirmationCount, 2);
+  QCOMPARE(context.m_promptCount, 0);
+  QCOMPARE(shellEvaluations, 0);
+  QCOMPARE(output.count(), 1);
+  QVERIFY(!m_notebookService->isNotebookTrusted(firstId));
+}
+
+void TestTaskService::testRunningNotebookRootSurvivesReload() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto rootFolder = tmp.filePath(QStringLiteral("notebook"));
+  const auto id = m_notebookService->createNotebook(
+      rootFolder, QStringLiteral("{\"name\":\"Running\"}"), NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  auto cleanup = qScopeGuard([&]() { m_notebookService->closeNotebook(id); });
+  MockTaskContext context;
+  context.m_notebookId = id;
+  context.m_confirmTrust = true;
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  auto obj = markerTask(rootFolder, QStringLiteral("running.marker"));
+  obj.insert("tasks",
+             QJsonArray{QJsonObject{{"label", "Running child"},
+                                    {"args", QJsonArray{"--task-marker", "running.marker",
+                                                        "--wait-for", "${selectedText}"}}}});
+  const auto path = writeTask(service.getNotebookTaskFolder(), QStringLiteral("running.json"),
+                              QString::fromUtf8(QJsonDocument(obj).toJson()));
+  QVERIFY(!path.isEmpty());
+  auto root = taskByFile(service.getNotebookTasks(), path);
+  QVERIFY(root);
+  QCOMPARE(root->getChildren().size(), 1);
+  auto *child = root->getChildren().first();
+  const auto weakRoot = root.toWeakRef();
+  QPointer<QProcess> firstProcess;
+  QPointer<QProcess> secondProcess;
+  auto stopProcesses = qScopeGuard([&]() {
+    for (const auto &process : {firstProcess, secondProcess}) {
+      if (process && process->state() != QProcess::NotRunning) {
+        process->kill();
+        process->waitForFinished(20000);
+      }
+    }
+  });
+  context.m_selectedText = QStringLiteral("release-first");
+  firstProcess = service.runTask(child);
+  QVERIFY(firstProcess);
+  QSignalSpy firstFinished(firstProcess.data(),
+                           QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished));
+  QVERIFY2(firstProcess->waitForStarted(20000), qPrintable(firstProcess->errorString()));
+  context.m_selectedText = QStringLiteral("release-second");
+  secondProcess = service.runTask(child);
+  QVERIFY(secondProcess);
+  QSignalSpy secondFinished(secondProcess.data(),
+                            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished));
+  QVERIFY2(secondProcess->waitForStarted(20000), qPrintable(secondProcess->errorString()));
+  QCOMPARE(context.m_confirmationCount, 1);
+  root.clear();
+  service.reloadNotebookTasks();
+  QVERIFY(!weakRoot.isNull());
+  QVERIFY(firstProcess);
+  QVERIFY(secondProcess);
+  QVERIFY(!QFile::exists(QDir(rootFolder).filePath(QStringLiteral("running.marker"))));
+  QVERIFY(!writeTask(rootFolder, QStringLiteral("release-first"), QStringLiteral("go")).isEmpty());
+  QTRY_COMPARE_WITH_TIMEOUT(firstFinished.count(), 1, 20000);
+  QCOMPARE(firstFinished.first().at(0).toInt(), 0);
+  QCOMPARE(firstFinished.first().at(1).value<QProcess::ExitStatus>(), QProcess::NormalExit);
+  QVERIFY(!weakRoot.isNull());
+  QVERIFY(secondProcess);
+  QCOMPARE(secondProcess->state(), QProcess::Running);
+  QFile marker(QDir(rootFolder).filePath(QStringLiteral("running.marker")));
+  QVERIFY(marker.open(QIODevice::ReadOnly));
+  QCOMPARE(marker.readAll(), QByteArray("run\n"));
+  marker.close();
+  QVERIFY(!writeTask(rootFolder, QStringLiteral("release-second"), QStringLiteral("go")).isEmpty());
+  QTRY_COMPARE_WITH_TIMEOUT(secondFinished.count(), 1, 20000);
+  QCOMPARE(secondFinished.first().at(0).toInt(), 0);
+  QCOMPARE(secondFinished.first().at(1).value<QProcess::ExitStatus>(), QProcess::NormalExit);
+  QTRY_VERIFY_WITH_TIMEOUT(weakRoot.isNull(), 20000);
+  QVERIFY(marker.open(QIODevice::ReadOnly));
+  QCOMPARE(marker.readAll(), QByteArray("run\nrun\n"));
 }
 
 } // namespace tests
@@ -815,6 +1381,29 @@ int main(int argc, char **argv) {
       bytes += '\0';
     }
     return output.write(bytes) == bytes.size() ? 0 : 1;
+  }
+  if (app.arguments().value(1) == QStringLiteral("--task-marker")) {
+    const auto arguments = app.arguments();
+    const auto waitIndex = arguments.indexOf(QStringLiteral("--wait-for"));
+    if (waitIndex >= 0) {
+      const auto release = arguments.value(waitIndex + 1);
+      if (release.isEmpty()) {
+        return 2;
+      }
+      QElapsedTimer deadline;
+      deadline.start();
+      while (!QFile::exists(release)) {
+        if (deadline.elapsed() >= 15000) {
+          return 2;
+        }
+        QThread::msleep(10);
+      }
+    }
+    QFile marker(arguments.value(2));
+    if (!marker.open(QIODevice::WriteOnly | QIODevice::Append)) {
+      return 1;
+    }
+    return marker.write("run\n", 4) == 4 ? 0 : 1;
   }
   tests::TestTaskService test;
   return QTest::qExec(&test, argc, argv);

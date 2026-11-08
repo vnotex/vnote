@@ -4,11 +4,9 @@
 #include <QString>
 
 namespace vnotex {
-// UI-free contract that supplies the live editor/notebook context needed to
-// resolve task variables. Implemented later by a UI object (e.g. in the
-// MainWindow2 view layer) and injected into TaskService. Until then a null
-// pointer is passed and every consumer null-guards: no current context means
-// empty strings, and ${input:...} cancels the task.
+// UI-free contract for live editor/notebook context, task-variable prompts,
+// and explicit notebook trust confirmation. A missing context resolves
+// variables to empty strings, cancels input, and prevents notebook task launch.
 class ITaskContext {
 public:
   virtual ~ITaskContext() = default;
@@ -28,6 +26,10 @@ public:
 
   // Selected text in the current view, or "" if none.
   virtual QString selectedText() const = 0;
+
+  // Ask for explicit consent to trust a notebook. This only presents the
+  // confirmation; TaskService validates and persists approval before launch.
+  virtual bool confirmNotebookTrust(const QString &p_name, const QString &p_rootFolder) const = 0;
 
   // Prompt the user for a string. Returns the resolved input; sets
   // p_cancelled=true if the user cancels.

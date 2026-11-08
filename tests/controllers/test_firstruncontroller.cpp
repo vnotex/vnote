@@ -120,6 +120,7 @@ void TestFirstRunController::test_create_targetAbsent() {
   QCOMPARE(notebooks.size(), 1);
 
   QJsonObject nb = notebooks.at(0).toObject();
+  QVERIFY(m_service->isNotebookTrusted(nb.value(QLatin1String(vxcore::kJsonKeyId)).toString()));
   QCOMPARE(nb.value(QLatin1String(vxcore::kJsonKeyName)).toString(), QStringLiteral("My Notebook"));
   QCOMPARE(nb.value(QLatin1String(vxcore::kJsonKeyDescription)).toString(),
            QStringLiteral("My default notebook in VNote"));
@@ -214,6 +215,7 @@ void TestFirstRunController::test_targetEmptyDir_create() {
   QVERIFY(controller.createDefaultNotebook());
   QCOMPARE(m_service->listNotebooks().size(), 1);
   QCOMPARE(spy.count(), 1);
+  QVERIFY(m_service->isNotebookTrusted(spy.first().first().toString()));
 }
 
 // S6: target is a regular file -> skip; file preserved.
@@ -242,6 +244,7 @@ void TestFirstRunController::test_existingDestination_reopen() {
 
   QVERIFY(controller.createDefaultNotebook());
   const QString notebookId = spy.first().first().toString();
+  QVERIFY(m_service->isNotebookTrusted(notebookId));
   QVERIFY(m_service->closeNotebook(notebookId));
   QCOMPARE(m_service->listNotebooks().size(), 0);
 
@@ -263,6 +266,7 @@ void TestFirstRunController::test_existingDestination_reopen() {
   QCOMPARE(m_service->listNotebooks().size(), 1);
   QCOMPARE(spy.count(), 2);
   QCOMPARE(spy.last().first().toString(), notebookId);
+  QVERIFY(!m_service->isNotebookTrusted(notebookId));
   QVERIFY(!controller.shouldCreateDefaultNotebook(true));
   QCOMPARE(welcome.permissions(), readOnlyPermissions);
   QVERIFY(welcome.open(QIODevice::ReadOnly));
@@ -368,6 +372,9 @@ void TestFirstRunController::test_quickAccessInitialization() {
     QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
     QCOMPARE(controller.createDefaultNotebook(), !collision);
     QCOMPARE(spy.count(), collision ? 0 : 1);
+    if (!collision) {
+      QCOMPARE(m_service->isNotebookTrusted(spy.first().first().toString()), !reuseDestination);
+    }
     if (collision) {
       const QString root = ConfigMgr2::getDefaultNotebookPath(parent);
       QFile sentinel(root + QStringLiteral("/keep"));

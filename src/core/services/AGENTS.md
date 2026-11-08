@@ -53,6 +53,30 @@ installation; loading is not deferred until the dock becomes visible.
 Coverage: `tests/core/test_taskservice.cpp` (late installation, cached empty results,
 explicit reload, and notebook/context changes).
 
+## Notebook task trust
+
+`TaskService::runTask()` is the only task-launch entry point. Notebook tasks carry their
+load-time notebook ID and task-folder provenance; unknown tasks or stale/closed/switched
+origins cannot run. Keep the owning root alive through confirmation and execution. Recheck
+context, cache membership and folder identity after the modal loop, before saving approval.
+Neither task JSON scope nor the execution-time current notebook alone can authorize a task.
+
+Untrusted notebook tasks request `ITaskContext::confirmNotebookTrust()` before command,
+cwd, argument, input or authored shell-variable evaluation. The widget adapter shows a
+plain-text warning with Cancel as default and Escape action; it never writes trust.
+Approval must persist through `NotebookCoreService` before launch; save failure blocks the
+process and reports to task output. App-task definitions do not require notebook consent.
+
+Approval lives only in local `vxsession.json` opened-notebook records: ordinary restarts
+retain it; successful explicit notebook close forgets it. Only explicit New Notebook and a
+fresh first-run bundled copy start trusted. Generic create/open, existing first-run roots,
+remote clones and VNote3 imports never grant approval. A creation-time trust-save failure
+retains the successfully created notebook as untrusted and logs a warning.
+
+Coverage: `test_taskservice` exercises pre-evaluation denial, reentrant invalidation,
+persistence failures and process lifetime; `test_notebooktasktrust` drives the production
+modal and real child processes through both service and controller routes.
+
 ## Task command/data boundary
 
 Shell tasks keep `command` and `options.shell` **static**. `Task::setupProcess()` rejects
@@ -90,7 +114,7 @@ shell quotes around an args value. For example, migrate `"command": "echo ${buff
   descriptions/defaults are separately authored templates. Custom tasks relying on recursive
   expansion must put those variables directly in the task template instead.
 
-This is not a sandbox or notebook trust mechanism. Run only trusted task definitions.
+The argument boundary is not a sandbox; notebook consent is enforced separately above.
 Explicit shell execution, `eval`, `Invoke-Expression`, and passing data as an interpreter's
 script are still execution chosen by the task author. Do not turn literal args back into code.
 Regression coverage: `tests/core/test_taskservice.cpp` executes real shells and a native

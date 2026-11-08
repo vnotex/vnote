@@ -90,6 +90,8 @@ bool FirstRunController::createDefaultNotebook() {
     return false;
   }
 
+  bool createdLocally = false;
+
   // Only materialize a new notebook into an absent or empty destination.
   // Existing content is opened below without copying or changing permissions.
   if (!fi.exists() || QDir(root).isEmpty()) {
@@ -124,6 +126,7 @@ bool FirstRunController::createDefaultNotebook() {
       qWarning() << "FirstRunController: failed to copy bundled notebook:" << copyErr.what();
       return false;
     }
+    createdLocally = true;
 
     // Files copied from the rcc are read-only; make them writable on disk.
     clearReadOnlyRecursively(root);
@@ -141,6 +144,10 @@ bool FirstRunController::createDefaultNotebook() {
   if (notebookId.isEmpty()) {
     qWarning() << "FirstRunController: failed to open default notebook at" << root;
     return false;
+  }
+
+  if (createdLocally && !nb->setNotebookTrusted(notebookId, true)) {
+    qWarning() << tr("Notebook was created, but its trust setting could not be saved");
   }
 
   initializeQuickAccess(notebookId);

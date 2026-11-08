@@ -6956,6 +6956,10 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>笔记本已创建，但无法保存其信任设置</translation>
+    </message>
+    <message>
         <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
         <source>Please specify a name for the notebook.</source>
         <translation>请为笔记本指定名称。</translation>
@@ -13387,6 +13391,53 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>适应页面</translation>
+    </message>
+</context>
+<context>
+    <name>MainWindowTaskContext</name>
+    <message>
+        <source>Trust Notebook</source>
+        <translation>信任笔记本</translation>
+    </message>
+    <message>
+        <source>Do you trust the notebook "%1"?</source>
+        <translation>您信任笔记本“%1”吗？</translation>
+    </message>
+    <message>
+        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
+
+Location: %1
+
+Trust is remembered until you close this notebook.</source>
+        <translation>笔记本任务可以在您的计算机上执行命令。请仅信任来自可信来源的笔记本。
+
+位置：%1
+
+信任状态将保留到您关闭此笔记本为止。</translation>
+    </message>
+    <message>
+        <source>Trust and Run</source>
+        <translation>信任并运行</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskService</name>
+    <message>
+        <source>Task (%1) was not run because notebook trust could not be saved.
+</source>
+        <translation>任务（%1）未运行，因为无法保存笔记本信任设置。
+</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>笔记本已创建，但无法保存其信任设置</translation>
     </message>
 </context>
 </TS>

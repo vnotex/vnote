@@ -1,7 +1,10 @@
 #include "mainwindowtaskcontext.h"
 
+#include <QAbstractButton>
+#include <QCoreApplication>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QWidget>
 
 using namespace vnotex;
@@ -40,4 +43,28 @@ QString MainWindowTaskContext::promptString(const QString &p_title, const QStrin
       QInputDialog::getText(m_promptParent, p_title, p_label, mode, p_default, &ok);
   p_cancelled = !ok;
   return ok ? result : QString();
+}
+
+bool MainWindowTaskContext::confirmNotebookTrust(const QString &p_name,
+                                                 const QString &p_rootFolder) const {
+  QMessageBox dialog(
+      QMessageBox::Warning, QCoreApplication::translate("MainWindowTaskContext", "Trust Notebook"),
+      QCoreApplication::translate("MainWindowTaskContext", "Do you trust the notebook \"%1\"?")
+          .arg(p_name),
+      QMessageBox::Yes | QMessageBox::No, m_promptParent);
+  dialog.setTextFormat(Qt::PlainText);
+  dialog.setInformativeText(
+      QCoreApplication::translate(
+          "MainWindowTaskContext",
+          "Notebook tasks can execute commands on your computer. Only trust notebooks from "
+          "sources you trust.\n\nLocation: %1\n\nTrust is remembered until you close this "
+          "notebook.")
+          .arg(p_rootFolder));
+  dialog.button(QMessageBox::Yes)
+      ->setText(QCoreApplication::translate("MainWindowTaskContext", "Trust and Run"));
+  dialog.button(QMessageBox::No)
+      ->setText(QCoreApplication::translate("MainWindowTaskContext", "Cancel"));
+  dialog.setDefaultButton(QMessageBox::No);
+  dialog.setEscapeButton(QMessageBox::No);
+  return dialog.exec() == QMessageBox::Yes;
 }

@@ -406,6 +406,7 @@ void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
 
   // Partial sync info (S2) persisted to notebook config: enabled + git + url, no PAT.
   auto *nbSvc = m_services.get<NotebookCoreService>();
+  QVERIFY(!nbSvc->isNotebookTrusted(result.notebookId));
   const QJsonObject cfg = nbSvc->getNotebookConfig(result.notebookId);
   QCOMPARE(cfg.value(QStringLiteral("syncEnabled")).toBool(), true);
   QCOMPARE(cfg.value(QStringLiteral("syncBackend")).toString(), QStringLiteral("git"));

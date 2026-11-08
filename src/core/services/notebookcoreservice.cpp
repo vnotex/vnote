@@ -711,6 +711,34 @@ bool NotebookCoreService::isNotebookReadOnly(const QString &p_notebookId) const 
   return readOnly;
 }
 
+bool NotebookCoreService::isNotebookTrusted(const QString &p_notebookId) const {
+  if (!checkContext() || p_notebookId.isEmpty()) {
+    return false;
+  }
+  bool trusted = false;
+  VxCoreError err =
+      vxcore_notebook_is_trusted(m_context, p_notebookId.toUtf8().constData(), &trusted);
+  if (err != VXCORE_OK) {
+    qDebug() << "isNotebookTrusted query failed for" << p_notebookId
+             << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return trusted;
+}
+
+bool NotebookCoreService::setNotebookTrusted(const QString &p_notebookId, bool p_trusted) {
+  if (!checkContext() || p_notebookId.isEmpty()) {
+    return false;
+  }
+  VxCoreError err =
+      vxcore_notebook_set_trusted(m_context, p_notebookId.toUtf8().constData(), p_trusted);
+  if (err != VXCORE_OK) {
+    qWarning() << "setNotebookTrusted failed:" << QString::fromUtf8(vxcore_error_message(err));
+    return false;
+  }
+  return true;
+}
+
 PreparedNodeTransfer NotebookCoreService::prepareEncryptedBundleTransfer(
     const QString &p_bundleRoot, const QString &p_folderName, const QString &p_destinationId,
     const QString &p_destinationFolder, const QByteArray &p_password) {
