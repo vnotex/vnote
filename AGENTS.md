@@ -433,6 +433,16 @@ justify clearing intentional user staging. Never use blanket reset/restore or st
 
 ---
 
+## Configuration Migrations
+
+Every configuration default, schema, or bundled-entry change MUST assess existing saved
+configurations, not just fresh profiles. If saved values mask a required change, add a
+version-gated migration in `MainConfig::doVersionSpecificOverride()`; otherwise record why
+no migration is needed. Preserve custom values and explicit opt-outs, and verify upgrade,
+persistence, and restart behavior. See [the configuration migration contract](src/core/AGENTS.md#configuration-migration-contract).
+
+---
+
 ## Shared JSON Keys (SSOT)
 
 Cross-boundary JSON keys (vxcore↔Qt) live in `<vxcore/notebook_json_keys.h>`.

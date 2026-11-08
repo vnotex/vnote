@@ -6,6 +6,8 @@
 #include <QKeySequence>
 #include <QVersionNumber>
 
+#include <algorithm>
+
 #include "coreconfig.h"
 #include "editorconfig.h"
 #include "iconfigmgr.h"
@@ -170,6 +172,29 @@ void MainConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
   if (QVersionNumber::fromString(p_previousVersion) < c_pdfJsV6Version) {
     auto &pdfConfig = getEditorConfig().getPdfViewerConfig();
     pdfConfig.m_viewerResource = PdfViewerConfig::defaultViewerResource();
+  }
+
+  // Profiles through 4.14.0 keep their saved alias array instead of new defaults.
+  // Include 4.14.0 when its next version change reaches this hook. Preserve custom
+  // definitions and a blanket opt-out; individual deletions cannot be distinguished
+  // from aliases that an older release never supplied.
+  static const QVersionNumber c_unitedEntryAliasesVersion(4, 14, 1);
+  if (QVersionNumber::fromString(p_previousVersion) < c_unitedEntryAliasesVersion) {
+    auto &coreConfig = getCoreConfig();
+    auto aliases = coreConfig.getUnitedEntryAlias();
+    if (!aliases.isEmpty()) {
+      for (const auto &alias : CoreConfig::defaultUnitedEntryAliases()) {
+        const auto name = alias.toObject().value(QStringLiteral("name")).toString();
+        const bool exists = std::any_of(
+            aliases.constBegin(), aliases.constEnd(), [&name](const QJsonValue &p_alias) {
+              return p_alias.toObject().value(QStringLiteral("name")).toString() == name;
+            });
+        if (!exists) {
+          aliases.append(alias);
+        }
+      }
+      coreConfig.setUnitedEntryAlias(aliases);
+    }
   }
 }
 

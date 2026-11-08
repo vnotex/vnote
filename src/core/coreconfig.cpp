@@ -494,37 +494,44 @@ void CoreConfig::initDefaults() {
   m_shortcuts[Shortcut::Properties] = QStringLiteral("F2");
   m_shortcuts[Shortcut::Global_WakeUp] = QStringLiteral("Ctrl+Alt+U");
 
-  auto makeAlias = [](const QString &p_name, const QString &p_desc, const QString &p_value) {
-    QJsonObject obj;
-    obj[QStringLiteral("name")] = p_name;
-    obj[QStringLiteral("description")] = p_desc;
-    obj[QStringLiteral("value")] = p_value;
-    return obj;
-  };
-  QJsonArray aliases;
-  aliases.append(makeAlias(QStringLiteral("n"),
-                           QStringLiteral("Search for files by name in current notebook"),
-                           QStringLiteral("find --scope notebook --object name")));
-  aliases.append(makeAlias(QStringLiteral("N"),
-                           QStringLiteral("Search for files by name in all notebooks"),
-                           QStringLiteral("find --scope all_notebook --object name")));
-  aliases.append(makeAlias(QStringLiteral("g"),
-                           QStringLiteral("Search for files by content in current notebook"),
-                           QStringLiteral("find --scope notebook --object content")));
-  aliases.append(makeAlias(QStringLiteral("G"),
-                           QStringLiteral("Search for files by content in all notebooks"),
-                           QStringLiteral("find --scope all_notebook --object content")));
-  aliases.append(makeAlias(QStringLiteral("b"),
-                           QStringLiteral("Search for files by content in open buffers"),
-                           QStringLiteral("find --scope buffer --object content")));
-  aliases.append(makeAlias(QStringLiteral("f"),
-                           QStringLiteral("Search for files by name in current folder"),
-                           QStringLiteral("find --scope folder --object name")));
-  aliases.append(makeAlias(QStringLiteral("t"),
-                           QStringLiteral("Search for files by tag in current notebook"),
-                           QStringLiteral("find --scope notebook --object tag")));
-  aliases.append(makeAlias(QStringLiteral("T"),
-                           QStringLiteral("Search for files by tag in all notebooks"),
-                           QStringLiteral("find --scope all_notebook --object tag")));
-  m_unitedEntryAlias = aliases;
+  m_unitedEntryAlias = defaultUnitedEntryAliases();
+}
+
+const QJsonArray &CoreConfig::defaultUnitedEntryAliases() {
+  static const QJsonArray c_aliases = []() {
+    auto makeAlias = [](const QString &p_name, const QString &p_desc, const QString &p_value) {
+      QJsonObject obj;
+      obj[QStringLiteral("name")] = p_name;
+      obj[QStringLiteral("description")] = p_desc;
+      obj[QStringLiteral("value")] = p_value;
+      return obj;
+    };
+    QJsonArray aliases;
+    aliases.append(makeAlias(QStringLiteral("n"),
+                             QStringLiteral("Search for files by name in current notebook"),
+                             QStringLiteral("find --scope notebook --object name")));
+    aliases.append(makeAlias(QStringLiteral("N"),
+                             QStringLiteral("Search for files by name in all notebooks"),
+                             QStringLiteral("find --scope all_notebook --object name")));
+    aliases.append(makeAlias(QStringLiteral("g"),
+                             QStringLiteral("Search for files by content in current notebook"),
+                             QStringLiteral("find --scope notebook --object content")));
+    aliases.append(makeAlias(QStringLiteral("G"),
+                             QStringLiteral("Search for files by content in all notebooks"),
+                             QStringLiteral("find --scope all_notebook --object content")));
+    aliases.append(makeAlias(QStringLiteral("b"),
+                             QStringLiteral("Search for files by content in open buffers"),
+                             QStringLiteral("find --scope buffer --object content")));
+    aliases.append(makeAlias(QStringLiteral("f"),
+                             QStringLiteral("Search for files by name in current folder"),
+                             QStringLiteral("find --scope folder --object name")));
+    aliases.append(makeAlias(QStringLiteral("t"),
+                             QStringLiteral("Search for files by tag in current notebook"),
+                             QStringLiteral("find --scope notebook --object tag")));
+    aliases.append(makeAlias(QStringLiteral("T"),
+                             QStringLiteral("Search for files by tag in all notebooks"),
+                             QStringLiteral("find --scope all_notebook --object tag")));
+    return aliases;
+  }();
+  return c_aliases;
 }

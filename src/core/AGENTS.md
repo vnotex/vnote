@@ -144,6 +144,27 @@ After session restoration and queued file opens, `MainWindow2` opens the notes t
 and detached-file routing. The release-version skill requires replacing both documents from
 the target root changelog section in the same commit as the version bump.
 
+### Configuration migration contract
+
+Changing C++ defaults alone does not update a saved value: arrays and scalars replace the
+whole default, and user-owned objects can deliberately suppress bundled entries. For every
+configuration change, assess missing keys, old persisted values, custom overrides, and empty
+or disabled opt-outs. Record the migration decision in the change description.
+
+Use `MainConfig::doVersionSpecificOverride(previousVersion)` when an existing main-config
+value must change. Gate each migration at the first release carrying the fix, including users
+who already upgraded to releases with stale values; reuse default definitions where appropriate.
+`ConfigMgr2` invokes the hook only on a version-string change, before stamping and saving the
+new version. Verify the old-file load, migration, persisted result, and restart, plus custom
+values, opt-outs, and the version boundary. A downgrade that stamps an older version can cause
+a later re-upgrade to repeat a migration; do not claim a permanent migration marker exists.
+
+The United Entry migration uses the `4.14.1` boundary to include profiles stamped `4.14.0` on
+their next version change. It appends missing defaults by case-sensitive name, retains existing
+objects and order, and preserves an empty alias list. Individual deletions in older profiles
+cannot be distinguished from aliases that those releases never supplied. Same-version launches
+do not migrate; no application version bump is part of this fix.
+
 ### HTTP API configuration
 
 `HttpApiConfig` is a typed `SessionConfig` child; access it through

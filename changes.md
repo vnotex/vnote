@@ -1,4 +1,9 @@
 # Changes
+
+## Unreleased
+* On version upgrade, add missing default United Entry aliases to saved nonempty lists, preserving custom definitions and explicit empty-list opt-outs; profiles already on 4.14.0 receive this on their next version change
+* **Notebook task trust**: Require local notebook trust before running notebook tasks or evaluating their variables; remember approval across restarts, forget it on explicit close, and trust only newly created local notebooks automatically
+
 ## v4.14.1
 A refinement release with source-linked outline editing, steadier Markdown previews and smoother navigation on top of VNote 4.14.0:
 
@@ -25,7 +30,6 @@ A refinement release with source-linked outline editing, steadier Markdown previ
 ## v4.14.0
 A feature release with scoped HTTP automation, richer Markdown paste and smoother navigation on top of VNote 4.13.0:
 
-* **Notebook task trust**: Require local notebook trust before running notebook tasks or evaluating their variables; remember approval across restarts, forget it on explicit close, and trust only newly created local notebooks automatically
 * **HTTP automation and security**
     * Add an opt-in, loopback-only HTTP API for local agents and administrator-managed HTTPS reverse proxies, with notebook-scoped tokens and separate read, live-read, write and trash permissions
     * List notes, read saved or live content, search, and conditionally create, edit, append, rename or trash notes without overwriting dirty editors or exposing protected notes

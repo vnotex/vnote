@@ -72,6 +72,11 @@ private slots:
   void testTableMigration_addsTableAndKeepsOtherChoices();
   void testTableMigration_leavesABlanketOptOutAlone();
   void testTableMigration_doesNotRunOnTheSameOrANewerVersion();
+  void testUnitedEntryMigration_preservesCustomAliasesAndIsIdempotent();
+  void testUnitedEntryMigration_preservesEmptyOptOut();
+  void testUnitedEntryMigration_respectsVersionBoundary_data();
+  void testUnitedEntryMigration_respectsVersionBoundary();
+  void testUnitedEntryMigration_persistsAndDoesNotRepeatOnRestart();
   void testPdfJsMigration_persistedListWinsOverTheCppDefault();
   void testPdfJsMigration_resetsTheV3ScriptListInMemoryAndOnSave();
   void testPdfJsMigration_doesNotRunOnTheSameOrANewerVersion();
@@ -811,6 +816,145 @@ void TestConfigMgr2::testTableMigration_doesNotRunOnTheSameOrANewerVersion() {
 
   config.doVersionSpecificOverride(QStringLiteral("4.5.0"));
   QCOMPARE(mdConfig.getInplacePreviewSources(), Sources(Source::ImageLink));
+}
+
+void TestConfigMgr2::testUnitedEntryMigration_preservesCustomAliasesAndIsIdempotent() {
+  MainConfig config(m_configMgr);
+  auto &core = config.getCoreConfig();
+  const QJsonObject customLower{{QStringLiteral("name"), QStringLiteral("n")},
+                                {QStringLiteral("description"), QStringLiteral("My search")},
+                                {QStringLiteral("value"), QStringLiteral("find --scope folder")}};
+  const QJsonObject customUpper{{QStringLiteral("name"), QStringLiteral("N")},
+                                {QStringLiteral("description"), QStringLiteral("My history")},
+                                {QStringLiteral("value"), QStringLiteral("history")}};
+  const QJsonObject customOther{{QStringLiteral("name"), QStringLiteral("mine")},
+                                {QStringLiteral("value"), QStringLiteral("windows")}};
+  core.setUnitedEntryAlias(QJsonArray{customLower, customUpper, customOther});
+
+  // Already-upgraded 4.14.0 profiles still need the fix on their next version change.
+  config.doVersionSpecificOverride(QStringLiteral("4.14.0"));
+  const auto migrated = core.getUnitedEntryAlias();
+  QCOMPARE(migrated.at(0).toObject(), customLower);
+  QCOMPARE(migrated.at(1).toObject(), customUpper);
+  QCOMPARE(migrated.at(2).toObject(), customOther);
+  QMap<QString, QString> commands;
+  for (const auto &alias : migrated) {
+    const auto object = alias.toObject();
+    const auto name = object.value(QStringLiteral("name")).toString();
+    QVERIFY2(!commands.contains(name), qPrintable(name));
+    commands.insert(name, object.value(QStringLiteral("value")).toString());
+  }
+  const QMap<QString, QString> expected{
+      {QStringLiteral("n"), QStringLiteral("find --scope folder")},
+      {QStringLiteral("N"), QStringLiteral("history")},
+      {QStringLiteral("mine"), QStringLiteral("windows")},
+      {QStringLiteral("g"), QStringLiteral("find --scope notebook --object content")},
+      {QStringLiteral("G"), QStringLiteral("find --scope all_notebook --object content")},
+      {QStringLiteral("b"), QStringLiteral("find --scope buffer --object content")},
+      {QStringLiteral("f"), QStringLiteral("find --scope folder --object name")},
+      {QStringLiteral("t"), QStringLiteral("find --scope notebook --object tag")},
+      {QStringLiteral("T"), QStringLiteral("find --scope all_notebook --object tag")}};
+  QCOMPARE(commands, expected);
+
+  config.doVersionSpecificOverride(QStringLiteral("4.14.0"));
+  QCOMPARE(core.getUnitedEntryAlias(), migrated);
+  MainConfig reloaded(m_configMgr);
+  reloaded.fromJson(config.toJson());
+  QCOMPARE(reloaded.getCoreConfig().getUnitedEntryAlias(), migrated);
+}
+
+void TestConfigMgr2::testUnitedEntryMigration_preservesEmptyOptOut() {
+  MainConfig config(m_configMgr);
+  config.getCoreConfig().setUnitedEntryAlias(QJsonArray());
+  config.doVersionSpecificOverride(QStringLiteral("4.14.0"));
+  QVERIFY(config.getCoreConfig().getUnitedEntryAlias().isEmpty());
+  MainConfig reloaded(m_configMgr);
+  reloaded.fromJson(config.toJson());
+  QVERIFY(reloaded.getCoreConfig().getUnitedEntryAlias().isEmpty());
+}
+
+void TestConfigMgr2::testUnitedEntryMigration_respectsVersionBoundary_data() {
+  QTest::addColumn<QString>("previousVersion");
+  QTest::newRow("migration-version") << QStringLiteral("4.14.1");
+  QTest::newRow("newer-version") << QStringLiteral("4.15.0");
+}
+
+void TestConfigMgr2::testUnitedEntryMigration_respectsVersionBoundary() {
+  QFETCH(QString, previousVersion);
+  MainConfig config(m_configMgr);
+  const QJsonArray aliases{QJsonObject{{QStringLiteral("name"), QStringLiteral("mine")},
+                                       {QStringLiteral("value"), QStringLiteral("history")}}};
+  config.getCoreConfig().setUnitedEntryAlias(aliases);
+  config.doVersionSpecificOverride(previousVersion);
+  QCOMPARE(config.getCoreConfig().getUnitedEntryAlias(), aliases);
+}
+
+void TestConfigMgr2::testUnitedEntryMigration_persistsAndDoesNotRepeatOnRestart() {
+  const auto original = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QJsonArray oldAliases{
+      QJsonObject{{QStringLiteral("name"), QStringLiteral("n")},
+                  {QStringLiteral("value"), QStringLiteral("find --scope notebook --object name")}},
+      QJsonObject{
+          {QStringLiteral("name"), QStringLiteral("g")},
+          {QStringLiteral("value"), QStringLiteral("find --scope notebook --object content")}},
+      QJsonObject{
+          {QStringLiteral("name"), QStringLiteral("b")},
+          {QStringLiteral("value"), QStringLiteral("find --scope buffer --object content")}}};
+  const QJsonObject onDisk{
+      {QStringLiteral("metadata"),
+       QJsonObject{{QStringLiteral("version"), QStringLiteral("4.13.0")}}},
+      {QStringLiteral("core"), QJsonObject{{QStringLiteral("unitedEntry"),
+                                            QJsonObject{{QStringLiteral("alias"), oldAliases}}}}}};
+  QVERIFY(
+      !m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), onDisk));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto fixture = buildExtraDataFixture(tmp);
+  QJsonArray migrated;
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QCOMPARE(mgr.getCoreConfig().getUnitedEntryAlias(), oldAliases);
+    QVERIFY(mgr.isVersionChanged());
+    mgr.initAfterQtAppStarted();
+    migrated = mgr.getCoreConfig().getUnitedEntryAlias();
+    QMap<QString, QString> added;
+    for (int i = oldAliases.size(); i < migrated.size(); ++i) {
+      const auto alias = migrated.at(i).toObject();
+      const auto name = alias.value(QStringLiteral("name")).toString();
+      QVERIFY(!added.contains(name));
+      added.insert(name, alias.value(QStringLiteral("value")).toString());
+    }
+    const QMap<QString, QString> expectedAdded{
+        {QStringLiteral("N"), QStringLiteral("find --scope all_notebook --object name")},
+        {QStringLiteral("G"), QStringLiteral("find --scope all_notebook --object content")},
+        {QStringLiteral("f"), QStringLiteral("find --scope folder --object name")},
+        {QStringLiteral("t"), QStringLiteral("find --scope notebook --object tag")},
+        {QStringLiteral("T"), QStringLiteral("find --scope all_notebook --object tag")}};
+    QCOMPARE(added, expectedAdded);
+  } // ConfigMgr2 flushes its pending write on destruction.
+  {
+    ConfigMgr2 reloaded(m_configService);
+    reloaded.setExtraDataSourceRootOverrideForTesting(fixture);
+    reloaded.init();
+    QCOMPARE(reloaded.getCoreConfig().getUnitedEntryAlias(), migrated);
+    QCOMPARE(reloaded.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
+    QVERIFY(!reloaded.isVersionChanged());
+    // Deliberately remove the newly supplied aliases after upgrading.
+    reloaded.getCoreConfig().setUnitedEntryAlias(oldAliases);
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.setExtraDataSourceRootOverrideForTesting(fixture);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    restarted.initAfterQtAppStarted();
+    QCOMPARE(restarted.getCoreConfig().getUnitedEntryAlias(), oldAliases);
+  }
 }
 
 void TestConfigMgr2::testAlignTableSource_jsonRoundTripAndAbsentKeyDefault() {

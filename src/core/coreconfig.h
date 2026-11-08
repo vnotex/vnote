@@ -197,6 +197,8 @@ private:
 
   QJsonObject saveUnitedEntry() const;
 
+  static const QJsonArray &defaultUnitedEntryAliases();
+
   static ViewWindowMode stringToViewWindowMode(const QString &p_mode);
   static QString viewWindowModeToString(ViewWindowMode p_mode);
 
