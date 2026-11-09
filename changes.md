@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Match the detached window's Stay on Top pin color to the active Open Windows button, including after theme changes
 * Show text beside the Home and United Entry toolbar icons, matching Export
 * **Markdown concealment**: Replace the two editor toggles with a Concealment submenu containing None, Passive and Aggressive radio choices; default to Aggressive without migrating the old settings, map the editing-experience choices to Aggressive/Passive, and use Aggressive in embedded Markdown editors
 * Update vtextedit to upstream `10a9a1d` for longer compact URL destinations and insertion carets that stay inside concealed closing markers while typing

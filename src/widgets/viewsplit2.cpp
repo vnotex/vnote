@@ -94,7 +94,7 @@ void ViewSplit2::refreshIcons() {
   }
   if (m_stayOnTopButton) {
     // Keep the same action so its checked state survives a theme switch.
-    m_stayOnTopButton->defaultAction()->setIcon(m_stayOnTopIcon);
+    m_stayOnTopButton->defaultAction()->setIcon(m_active ? m_stayOnTopActiveIcon : m_stayOnTopIcon);
   }
   for (int i = 0; i < count(); ++i) {
     auto *win = getViewWindow(i);
@@ -179,11 +179,13 @@ void ViewSplit2::initIcons() {
   m_menuIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), fg);
   m_menuActiveIcon = IconUtils::fetchIcon(themeService->getIconFile(menuIconName), activeFg);
 
-  // Detached splits only (see setupCornerWidget()). Uses the same action-button
-  // foreground as the sibling corner buttons; the checked feedback comes from the
-  // theme's checkable tool button rules.
-  m_stayOnTopIcon =
-      IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("stay_on_top.svg")), fg);
+  // Match the sibling corner buttons' active state; checked feedback still comes
+  // from the theme's checkable tool button rules.
+  if (m_detached) {
+    const auto iconFile = themeService->getIconFile(QStringLiteral("stay_on_top.svg"));
+    m_stayOnTopIcon = IconUtils::fetchIcon(iconFile, fg);
+    m_stayOnTopActiveIcon = IconUtils::fetchIcon(iconFile, activeFg);
+  }
 
   // Read-only buffers display this pen-off badge on their tab (see effectiveTabIcon()).
   // Reuse the tab-area icon foreground (fg) so it matches sibling tab icons and
@@ -585,6 +587,9 @@ void ViewSplit2::setActive(bool p_active) {
   }
   if (m_menuButton) {
     m_menuButton->defaultAction()->setIcon(p_active ? m_menuActiveIcon : m_menuIcon);
+  }
+  if (m_stayOnTopButton) {
+    m_stayOnTopButton->defaultAction()->setIcon(p_active ? m_stayOnTopActiveIcon : m_stayOnTopIcon);
   }
 }
 

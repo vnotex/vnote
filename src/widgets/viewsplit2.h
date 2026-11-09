@@ -261,6 +261,7 @@ private:
   QIcon m_menuIcon;
   QIcon m_menuActiveIcon;
   QIcon m_stayOnTopIcon;
+  QIcon m_stayOnTopActiveIcon;
 
   // Pen-off badge shown on the left of the tab title when the tab's buffer
   // belongs to a read-only notebook (see effectiveTabIcon()).

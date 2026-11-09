@@ -26,6 +26,8 @@ DetachedWindow::DetachedWindow(ServiceLocator &p_services, const QString &p_work
   splitter->setChildrenCollapsible(false);
 
   m_viewSplit = new ViewSplit2(m_services, m_workspaceId, nullptr, /*p_detached=*/true);
+  // The only split in this top-level window is always its selected pane.
+  m_viewSplit->setActive(true);
   connect(m_viewSplit, &ViewSplit2::stayOnTopToggled, this, &DetachedWindow::setStayOnTop);
   splitter->addWidget(m_viewSplit);
 
