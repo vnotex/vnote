@@ -47,7 +47,7 @@
         <translation>標準エラー出力にログを出力します。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Suppress non-critical console logs.</source>
         <translation>重大でないコンソールログを抑制します。</translation>
     </message>
@@ -62,7 +62,7 @@
         <translation>ファイルを独立した分割ビューで開きます。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+18"/>
         <source>WebEngine remote debugging port.</source>
         <translation>WebEngine のリモートデバッグ用ポート。</translation>
     </message>
@@ -72,12 +72,12 @@
         <translation>ポート番号</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>WebEngine without sandbox.</source>
         <translation>WebEngine のサンドボックスを無効にします。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>WebEngine with GPU disabled.</source>
         <translation>WebEngine の GPU を無効にします。</translation>
     </message>
@@ -87,14 +87,17 @@
         <translation>単一インスタンスのロックと IPC をスキップします（テスト専用）。別の設定とノートブックを使用してください。</translation>
     </message>
     <message>
+        <location line="-33"/>
         <source>Open files in Read mode in VNote.</source>
         <translation>VNote の閲覧モードでファイルを開きます。</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>Open files in Edit mode in VNote.</source>
         <translation>VNote の編集モードでファイルを開きます。</translation>
     </message>
     <message>
+        <location line="+49"/>
         <source>The --read-mode and --edit-mode options cannot be used together.</source>
         <translation>--read-mode と --edit-mode オプションは同時に使用できません。</translation>
     </message>
@@ -220,9 +223,45 @@
     </message>
 </context>
 <context>
+    <name>MainWindowTaskContext</name>
+    <message>
+        <location filename="../../../widgets/mainwindowtaskcontext.cpp" line="+51"/>
+        <source>Trust Notebook</source>
+        <translation>ノートブックを信頼</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Do you trust the notebook &quot;%1&quot;?</source>
+        <translation>ノートブック「%1」を信頼しますか？</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
+
+Location: %1
+
+Trust is remembered until you close this notebook.</source>
+        <translation>ノートブックのタスクはコンピューター上でコマンドを実行できます。信頼できる提供元のノートブックのみを信頼してください。
+
+場所: %1
+
+このノートブックを閉じるまで信頼設定が保持されます。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Trust and Run</source>
+        <translation>信頼して実行</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+</context>
+<context>
     <name>MessageBoxHelper</name>
     <message>
-        <location line="-51"/>
+        <location filename="../../../widgets/messageboxhelper.cpp" line="-51"/>
         <source>Never Ask</source>
         <translation>今後確認しない</translation>
     </message>
@@ -297,7 +336,7 @@
         <translation>クロスコピー</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+208"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+212"/>
         <source>Setting up sync</source>
         <translation>同期を設定中</translation>
     </message>
@@ -471,16 +510,18 @@
         <translation>インプレースプレビュー</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
         <source>Concealment</source>
         <translation>非表示化</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
         <source>Allow Auto Section Number</source>
         <translation>セクション番号の自動付与を許可</translation>
     </message>
     <message>
-        <location line="-129"/>
+        <location line="-117"/>
         <source>Outline</source>
         <translation>アウトライン</translation>
     </message>
@@ -495,7 +536,7 @@
         <translation>添付ファイル</translation>
     </message>
     <message>
-        <location line="+108"/>
+        <location line="+96"/>
         <source>Image Host</source>
         <translation>画像ホスト</translation>
     </message>
@@ -957,7 +998,7 @@
         <translation>コピー先にバンドルフォルダーを作成できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="-101"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="-89"/>
         <source>Menu</source>
         <translation>メニュー</translation>
     </message>
@@ -1398,7 +1439,7 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+3119"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+3120"/>
         <source>The note is no longer open.</source>
         <translation>このノートはすでに閉じられています。</translation>
     </message>
@@ -2797,7 +2838,7 @@
 <context>
     <name>vnotex::FileAssociationPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+32"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+49"/>
         <source>Built-In File Types</source>
         <translation>組み込みファイルタイプ</translation>
     </message>
@@ -2807,7 +2848,7 @@
         <translation>外部プログラム</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+107"/>
         <source>Failed to save file type associations.</source>
         <translation>ファイルタイプの関連付けの保存に失敗しました。</translation>
     </message>
@@ -2882,14 +2923,17 @@
         <translation>システム既定のアプリケーションで開くファイル拡張子</translation>
     </message>
     <message>
+        <location line="-321"/>
         <source>System Context Menu</source>
         <translation>システムのコンテキストメニュー</translation>
     </message>
     <message>
+        <location line="+10"/>
         <source>Add to Context Menu</source>
         <translation>コンテキストメニューに追加</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Remove from Context Menu</source>
         <translation>コンテキストメニューから削除</translation>
     </message>
@@ -3059,6 +3103,14 @@
         <location line="+1"/>
         <source>file_pattern</source>
         <translation>file_pattern</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <location filename="../../../controllers/firstruncontroller.cpp" line="+150"/>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
     </message>
 </context>
 <context>
@@ -4641,13 +4693,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+667"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+479"/>
+        <location line="+669"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+480"/>
         <source>Lock All</source>
         <translation>すべてロック</translation>
     </message>
     <message>
-        <location line="-562"/>
+        <location line="-564"/>
         <source>Loading theme...</source>
         <translation>テーマを読み込み中...</translation>
     </message>
@@ -4662,7 +4714,7 @@
         <translation>3 回試行しても同期競合を解決できませんでした。手動で解決するか、サポートにお問い合わせください。</translation>
     </message>
     <message>
-        <location line="+321"/>
+        <location line="+323"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>終了する代わりに、%1をシステムトレイに最小化しますか?</translation>
     </message>
@@ -4715,7 +4767,7 @@
         <translation>終了</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-530"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-531"/>
         <source>File</source>
         <translation>ファイル</translation>
     </message>
@@ -4765,7 +4817,7 @@
         <translation>クイックアクセス</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+72"/>
         <source>Home</source>
         <translation>ホーム</translation>
     </message>
@@ -5240,7 +5292,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+246"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+247"/>
         <source>Protect Markdown from XSS</source>
         <translation>Markdown を XSS から保護</translation>
     </message>
@@ -5270,7 +5322,7 @@
         <translation>タブが非表示になってから指定した分数が経過するとウェブビューのメモリを解放します。タブに戻ると、未保存のテキストや元に戻す履歴を失わずに現在の Markdown を再読み込みします</translation>
     </message>
     <message>
-        <location line="-350"/>
+        <location line="-347"/>
         <source>Editor Toolbar Options</source>
         <translation>エディタのツールバーオプション</translation>
     </message>
@@ -5290,11 +5342,12 @@
         <translation>ソースエディタ内に画像、コードブロック、数式、表のプレビューを表示します（プレビューする対象は下の「編集」セクションで選択できます）</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
         <translation>なし：ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。積極的：対応するマーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示（リンク構文はカーソルが入ると表示）</translation>
     </message>
     <message>
-        <location line="+176"/>
+        <location line="+177"/>
         <source>Markdown Editor</source>
         <translation>Markdownエディタ</translation>
     </message>
@@ -5720,31 +5773,37 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+914"/>
         <source>None</source>
         <translation>なし</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Passive</source>
         <translation>控えめ</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Aggressive</source>
         <translation>積極的</translation>
     </message>
     <message>
+        <location line="-5"/>
         <source>Show all Markdown source</source>
         <translation>Markdown ソースをすべて表示</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Shorten long link, image and reference URLs while showing Markdown syntax</source>
         <translation>Markdown 構文を表示したまま、長いリンク・画像・参照の URL を短縮表示</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
         <translation>対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンク構文はカーソルが入ると表示</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+223"/>
+        <location line="-697"/>
         <source>Choose Markdown Editing Experience</source>
         <translation>Markdown の編集体験を選択</translation>
     </message>
@@ -5779,14 +5838,14 @@
         <translation>HTML を Markdown に変換できません</translation>
     </message>
     <message>
-        <location line="+484"/>
+        <location line="+486"/>
         <source>Presentation Mode</source>
         <translation>プレゼンテーションモード</translation>
     </message>
     <message>
         <location line="+98"/>
         <location line="+37"/>
-        <location line="+641"/>
+        <location line="+663"/>
         <source>Unable to start presentation</source>
         <translation>プレゼンテーションを開始できません</translation>
     </message>
@@ -5874,12 +5933,12 @@
         <translation>現在、セクション番号を復元できませんでした。セクション番号の自動付与はオフのままです。このノートを現在のノートにして編集可能な状態にし、「セクション番号の自動付与を許可」をオンにしてからオフにして再試行してください。</translation>
     </message>
     <message>
-        <location line="-3345"/>
+        <location line="-3369"/>
         <source>Unable to render Markdown</source>
         <translation>Markdown を描画できません</translation>
     </message>
     <message>
-        <location line="+3802"/>
+        <location line="+3826"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
@@ -6980,11 +7039,12 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-41"/>
         <source>Notebook was created, but its trust setting could not be saved</source>
         <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
+        <location line="-131"/>
         <source>Please specify a name for the notebook.</source>
         <translation>ノートブックの名前を指定してください。</translation>
     </message>
@@ -7034,7 +7094,7 @@
         <translation>(%1) でのノートブックの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+65"/>
         <source>Sync services not available; cannot bootstrap notebook.</source>
         <translation>同期サービスが利用できないため、ノートブックをブートストラップできません。</translation>
     </message>
@@ -7459,7 +7519,7 @@
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+730"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+758"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
     </message>
@@ -11353,7 +11413,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskController</name>
     <message>
-        <location filename="../../../controllers/taskcontroller.cpp" line="+59"/>
+        <location filename="../../../controllers/taskcontroller.cpp" line="+57"/>
         <location line="+14"/>
         <source>Task folder is not available.</source>
         <translation>タスクフォルダが利用できません。</translation>
@@ -11435,6 +11495,16 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>「%1」のタスクファイルを削除しますか？
 
 これはファイルと、それに含まれるすべてのサブタスクを削除します: %2</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskService</name>
+    <message>
+        <location filename="../../../core/services/taskservice.cpp" line="+122"/>
+        <source>Task (%1) was not run because notebook trust could not be saved.
+</source>
+        <translation>ノートブックの信頼設定を保存できなかったため、タスク（%1）は実行されませんでした。
+</translation>
     </message>
 </context>
 <context>
@@ -12189,7 +12259,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UnitedEntry</name>
     <message>
-        <location filename="../../../unitedentry/unitedentry.cpp" line="+77"/>
+        <location filename="../../../unitedentry/unitedentry.cpp" line="+78"/>
         <location line="+76"/>
         <source>United Entry</source>
         <translation>ユナイテッドエントリー</translation>
@@ -12259,7 +12329,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+232"/>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+234"/>
         <source>Update Available</source>
         <translation>更新があります</translation>
     </message>
@@ -12407,12 +12477,12 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+19"/>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+20"/>
         <source>Check for Updates</source>
         <translation>更新を確認</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+31"/>
         <source>Open Release Page</source>
         <translation>リリースページを開く</translation>
     </message>
@@ -12437,7 +12507,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>現在のバージョンは %1 です。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Close</source>
         <translation>閉じる</translation>
     </message>
@@ -12452,7 +12522,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>現在のバージョンは %1 です。リリースページを開いて新しいバージョンをダウンロードし、ご自身でインストールしてください。</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+14"/>
         <source>Could not check for updates: %1</source>
         <translation>更新を確認できませんでした: %1</translation>
     </message>
@@ -12460,13 +12530,14 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+206"/>
+        <location filename="../../../core/services/updateservice.cpp" line="+174"/>
+        <location line="+44"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>予期しないホストへの接続を拒否しました: %1</translation>
     </message>
     <message>
-        <location line="-4"/>
-        <location line="+35"/>
+        <location line="-48"/>
+        <location line="+20"/>
         <source>Cancelled.</source>
         <translation>キャンセルされました。</translation>
     </message>
@@ -12476,19 +12547,15 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>%1 へのリクエストがタイムアウトしました。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+25"/>
+        <location line="+18"/>
+        <location line="+32"/>
         <source>Too many redirects.</source>
         <translation>リダイレクトが多すぎます。</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+36"/>
-        <source>The response from %1 is unexpectedly large.</source>
-        <translation>%1 からの応答が大きすぎます。</translation>
-    </message>
-    <message>
-        <location line="+105"/>
+        <location line="-66"/>
+        <location line="+30"/>
+        <location line="+18"/>
         <source>The latest release could not be identified.</source>
         <translation>最新リリースを特定できませんでした。</translation>
     </message>
@@ -12823,7 +12890,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>マインドマップ: %1</translation>
     </message>
     <message>
-        <location line="+636"/>
+        <location line="+645"/>
         <source>Preview</source>
         <translation>プレビュー</translation>
     </message>
@@ -12831,16 +12898,17 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+211"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+245"/>
         <source>Stay on Top</source>
         <translation>常に手前に表示</translation>
     </message>
     <message>
+        <location line="+28"/>
         <source>Attach to Main Window</source>
         <translation>メインウィンドウに戻す</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+19"/>
         <source>Open Windows</source>
         <translation>開いているウィンドウ</translation>
     </message>
@@ -12850,7 +12918,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>メニュー</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+56"/>
         <source>No Window To Show</source>
         <translation>表示するウィンドウがありません</translation>
     </message>
@@ -12920,7 +12988,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>スプリットとワークスペースを削除</translation>
     </message>
     <message>
-        <location line="+363"/>
+        <location line="+387"/>
         <source>Reload content from its source, discarding unsaved changes</source>
         <translation>未保存の変更を破棄して、ソースから内容を再読み込みします</translation>
     </message>
@@ -13103,13 +13171,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+558"/>
+        <location line="+557"/>
         <source>Failed to save note (%1).</source>
         <translation>ノート(%1)を保存できませんでした。</translation>
     </message>
     <message>
-        <location line="-554"/>
-        <location line="+526"/>
+        <location line="-553"/>
+        <location line="+525"/>
         <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>エディタの内容を読み取れません</translation>
@@ -13222,7 +13290,7 @@ Continue?</source>
         <translation>ノートのパス(%1)</translation>
     </message>
     <message>
-        <location line="-1739"/>
+        <location line="-1738"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>別のノートを開けません: コメントを保存できませんでした</translation>
     </message>
@@ -13243,7 +13311,7 @@ Continue?</source>
         <translation>未保存の変更があるノート (%1) を閉じますか？</translation>
     </message>
     <message>
-        <location line="+929"/>
+        <location line="+928"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>このファイルは読み取り専用です（%1）。変更を保存できません。</translation>
     </message>
@@ -13342,6 +13410,69 @@ Continue?</source>
     </message>
 </context>
 <context>
+    <name>vnotex::WindowsContextMenuController</name>
+    <message>
+        <location filename="../../../controllers/windowscontextmenucontroller.cpp" line="+26"/>
+        <source>Failed to start Windows PowerShell: %1</source>
+        <translation>Windows PowerShell を起動できませんでした: %1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Added the VNote actions to the system context menu.</source>
+        <translation>システムのコンテキストメニューに VNote の操作を追加しました。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Removed the VNote actions from the system context menu.</source>
+        <translation>システムのコンテキストメニューから VNote の操作を削除しました。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The context menu helper stopped unexpectedly.</source>
+        <translation>コンテキストメニューヘルパーが予期せず停止しました。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed to update the system context menu (exit code %1).</source>
+        <translation>システムのコンテキストメニューを更新できませんでした（終了コード %1）。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Adding the VNote context menu actions...</source>
+        <translation>VNote のコンテキストメニュー操作を追加しています...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Removing the VNote context menu actions...</source>
+        <translation>VNote のコンテキストメニュー操作を削除しています...</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>The installed context menu helper is missing: %1</source>
+        <translation>インストール済みのコンテキストメニューヘルパーが見つかりません: %1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>Windows システムディレクトリが見つかりませんでした。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>%1 で Windows PowerShell を利用できません。</translation>
+    </message>
+    <message>
+        <location line="-48"/>
+        <source>The built-in file types are unavailable.</source>
+        <translation>組み込みファイルタイプを利用できません。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>A built-in file suffix is invalid for the Windows context menu: %1</source>
+        <translation>Windows のコンテキストメニューに使用できない組み込みファイル拡張子です: %1</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::WindowsUnitedEntry</name>
     <message>
         <location filename="../../../unitedentry/windowsunitedentry.cpp" line="+23"/>
@@ -13419,104 +13550,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>ページに合わせる</translation>
-    </message>
-</context>
-<context>
-    <name>MainWindowTaskContext</name>
-    <message>
-        <source>Trust Notebook</source>
-        <translation>ノートブックを信頼</translation>
-    </message>
-    <message>
-        <source>Do you trust the notebook "%1"?</source>
-        <translation>ノートブック「%1」を信頼しますか？</translation>
-    </message>
-    <message>
-        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
-
-Location: %1
-
-Trust is remembered until you close this notebook.</source>
-        <translation>ノートブックのタスクはコンピューター上でコマンドを実行できます。信頼できる提供元のノートブックのみを信頼してください。
-
-場所: %1
-
-このノートブックを閉じるまで信頼設定が保持されます。</translation>
-    </message>
-    <message>
-        <source>Trust and Run</source>
-        <translation>信頼して実行</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>キャンセル</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TaskService</name>
-    <message>
-        <source>Task (%1) was not run because notebook trust could not be saved.
-</source>
-        <translation>ノートブックの信頼設定を保存できなかったため、タスク（%1）は実行されませんでした。
-</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FirstRunController</name>
-    <message>
-        <source>Notebook was created, but its trust setting could not be saved</source>
-        <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::WindowsContextMenuController</name>
-    <message>
-        <source>Failed to start Windows PowerShell: %1</source>
-        <translation>Windows PowerShell を起動できませんでした: %1</translation>
-    </message>
-    <message>
-        <source>Added the VNote actions to the system context menu.</source>
-        <translation>システムのコンテキストメニューに VNote の操作を追加しました。</translation>
-    </message>
-    <message>
-        <source>Removed the VNote actions from the system context menu.</source>
-        <translation>システムのコンテキストメニューから VNote の操作を削除しました。</translation>
-    </message>
-    <message>
-        <source>The context menu helper stopped unexpectedly.</source>
-        <translation>コンテキストメニューヘルパーが予期せず停止しました。</translation>
-    </message>
-    <message>
-        <source>Failed to update the system context menu (exit code %1).</source>
-        <translation>システムのコンテキストメニューを更新できませんでした（終了コード %1）。</translation>
-    </message>
-    <message>
-        <source>Adding the VNote context menu actions...</source>
-        <translation>VNote のコンテキストメニュー操作を追加しています...</translation>
-    </message>
-    <message>
-        <source>Removing the VNote context menu actions...</source>
-        <translation>VNote のコンテキストメニュー操作を削除しています...</translation>
-    </message>
-    <message>
-        <source>The installed context menu helper is missing: %1</source>
-        <translation>インストール済みのコンテキストメニューヘルパーが見つかりません: %1</translation>
-    </message>
-    <message>
-        <source>Could not locate the Windows system directory.</source>
-        <translation>Windows システムディレクトリが見つかりませんでした。</translation>
-    </message>
-    <message>
-        <source>Windows PowerShell is unavailable at %1.</source>
-        <translation>%1 で Windows PowerShell を利用できません。</translation>
-    </message>
-    <message>
-        <source>The built-in file types are unavailable.</source>
-        <translation>組み込みファイルタイプを利用できません。</translation>
-    </message>
-    <message>
-        <source>A built-in file suffix is invalid for the Windows context menu: %1</source>
-        <translation>Windows のコンテキストメニューに使用できない組み込みファイル拡張子です: %1</translation>
     </message>
 </context>
 </TS>

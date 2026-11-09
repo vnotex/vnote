@@ -47,7 +47,7 @@
         <translation>将日志输出到标准错误。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Suppress non-critical console logs.</source>
         <translation>隐藏非关键控制台日志。</translation>
     </message>
@@ -62,7 +62,7 @@
         <translation>在独立的分屏中打开文件。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+18"/>
         <source>WebEngine remote debugging port.</source>
         <translation>WebEngine 远程调试端口。</translation>
     </message>
@@ -72,12 +72,12 @@
         <translation>端口号</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>WebEngine without sandbox.</source>
         <translation>禁用 WebEngine 沙箱。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>WebEngine with GPU disabled.</source>
         <translation>禁用 WebEngine GPU 加速。</translation>
     </message>
@@ -87,14 +87,17 @@
         <translation>跳过单实例锁和进程间通信（仅用于测试）。请使用独立的配置和笔记本。</translation>
     </message>
     <message>
+        <location line="-33"/>
         <source>Open files in Read mode in VNote.</source>
         <translation>在 VNote 中以阅读模式打开文件。</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>Open files in Edit mode in VNote.</source>
         <translation>在 VNote 中以编辑模式打开文件。</translation>
     </message>
     <message>
+        <location line="+49"/>
         <source>The --read-mode and --edit-mode options cannot be used together.</source>
         <translation>--read-mode 和 --edit-mode 选项不能同时使用。</translation>
     </message>
@@ -220,9 +223,45 @@
     </message>
 </context>
 <context>
+    <name>MainWindowTaskContext</name>
+    <message>
+        <location filename="../../../widgets/mainwindowtaskcontext.cpp" line="+51"/>
+        <source>Trust Notebook</source>
+        <translation>信任笔记本</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Do you trust the notebook &quot;%1&quot;?</source>
+        <translation>您信任笔记本“%1”吗？</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
+
+Location: %1
+
+Trust is remembered until you close this notebook.</source>
+        <translation>笔记本任务可以在您的计算机上执行命令。请仅信任来自可信来源的笔记本。
+
+位置：%1
+
+信任状态将保留到您关闭此笔记本为止。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Trust and Run</source>
+        <translation>信任并运行</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+</context>
+<context>
     <name>MessageBoxHelper</name>
     <message>
-        <location line="-51"/>
+        <location filename="../../../widgets/messageboxhelper.cpp" line="-51"/>
         <source>Never Ask</source>
         <translation>不再询问</translation>
     </message>
@@ -297,7 +336,7 @@
         <translation>交叉复制</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+208"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+212"/>
         <source>Setting up sync</source>
         <translation>正在配置同步</translation>
     </message>
@@ -471,16 +510,18 @@
         <translation>原地预览</translation>
     </message>
     <message>
+        <location line="+5"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
         <source>Concealment</source>
         <translation>隐藏</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
         <source>Allow Auto Section Number</source>
         <translation>允许自动章节编号</translation>
     </message>
     <message>
-        <location line="-129"/>
+        <location line="-117"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
@@ -495,7 +536,7 @@
         <translation>附件</translation>
     </message>
     <message>
-        <location line="+108"/>
+        <location line="+96"/>
         <source>Image Host</source>
         <translation>图床</translation>
     </message>
@@ -957,7 +998,7 @@
         <translation>无法在目标位置创建包文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="-101"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="-89"/>
         <source>Menu</source>
         <translation>菜单</translation>
     </message>
@@ -1398,7 +1439,7 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+3119"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+3120"/>
         <source>The note is no longer open.</source>
         <translation>该笔记已不再打开。</translation>
     </message>
@@ -2797,7 +2838,7 @@
 <context>
     <name>vnotex::FileAssociationPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+32"/>
+        <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+49"/>
         <source>Built-In File Types</source>
         <translation>内置文件类型</translation>
     </message>
@@ -2807,7 +2848,7 @@
         <translation>外部程序</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+107"/>
         <source>Failed to save file type associations.</source>
         <translation>无法保存文件类型关联。</translation>
     </message>
@@ -2882,14 +2923,17 @@
         <translation>使用系统默认程序打开的文件后缀</translation>
     </message>
     <message>
+        <location line="-321"/>
         <source>System Context Menu</source>
         <translation>系统右键菜单</translation>
     </message>
     <message>
+        <location line="+10"/>
         <source>Add to Context Menu</source>
         <translation>添加到右键菜单</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Remove from Context Menu</source>
         <translation>从右键菜单移除</translation>
     </message>
@@ -3059,6 +3103,14 @@
         <location line="+1"/>
         <source>file_pattern</source>
         <translation>文件模式</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FirstRunController</name>
+    <message>
+        <location filename="../../../controllers/firstruncontroller.cpp" line="+150"/>
+        <source>Notebook was created, but its trust setting could not be saved</source>
+        <translation>笔记本已创建，但无法保存其信任设置</translation>
     </message>
 </context>
 <context>
@@ -4641,13 +4693,13 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+667"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+479"/>
+        <location line="+669"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+480"/>
         <source>Lock All</source>
         <translation>全部锁定</translation>
     </message>
     <message>
-        <location line="-562"/>
+        <location line="-564"/>
         <source>Loading theme...</source>
         <translation>正在加载主题...</translation>
     </message>
@@ -4662,7 +4714,7 @@
         <translation>经 3 次尝试后仍无法解决同步冲突。请手动解决或联系支持。</translation>
     </message>
     <message>
-        <location line="+321"/>
+        <location line="+323"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
     </message>
@@ -4715,7 +4767,7 @@
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-530"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-531"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
@@ -4765,7 +4817,7 @@
         <translation>快速访问</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+72"/>
         <source>Home</source>
         <translation>主页</translation>
     </message>
@@ -5240,7 +5292,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+246"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+247"/>
         <source>Protect Markdown from XSS</source>
         <translation>防止 Markdown 中的 XSS 攻击</translation>
     </message>
@@ -5270,7 +5322,7 @@
         <translation>标签页隐藏指定分钟数后释放网页视图内存；返回时重新加载当前 Markdown，不会丢失未保存的文本或撤销历史</translation>
     </message>
     <message>
-        <location line="-350"/>
+        <location line="-347"/>
         <source>Editor Toolbar Options</source>
         <translation>编辑器工具栏选项</translation>
     </message>
@@ -5290,11 +5342,12 @@
         <translation>在源码编辑器内显示图片、代码块、数学公式和表格的预览（在下方的编辑部分选择要预览的内容类型）</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
         <translation>无：显示全部源码；温和：缩短较长的链接、图片和引用网址，同时显示语法；强烈：隐藏支持的标记和链接语法，并缩短较长的图片和引用网址（光标移入时显示链接语法）</translation>
     </message>
     <message>
-        <location line="+182"/>
+        <location line="+183"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
@@ -5720,31 +5773,37 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+914"/>
         <source>None</source>
         <translation>无</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Passive</source>
         <translation>温和</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Aggressive</source>
         <translation>强烈</translation>
     </message>
     <message>
+        <location line="-5"/>
         <source>Show all Markdown source</source>
         <translation>显示全部 Markdown 源码</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Shorten long link, image and reference URLs while showing Markdown syntax</source>
         <translation>缩短较长的链接、图片和引用网址，同时显示 Markdown 语法</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
         <translation>隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入时显示链接语法</translation>
     </message>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+223"/>
+        <location line="-697"/>
         <source>Choose Markdown Editing Experience</source>
         <translation>选择 Markdown 编辑体验</translation>
     </message>
@@ -5779,14 +5838,14 @@
         <translation>无法将 HTML 转换为 Markdown</translation>
     </message>
     <message>
-        <location line="+484"/>
+        <location line="+486"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
     <message>
         <location line="+98"/>
         <location line="+37"/>
-        <location line="+641"/>
+        <location line="+663"/>
         <source>Unable to start presentation</source>
         <translation>无法启动演示</translation>
     </message>
@@ -5874,12 +5933,12 @@
         <translation>当前无法恢复章节编号。自动章节编号仍处于关闭状态。请将此笔记设为当前笔记并使其可编辑，然后开启再关闭“允许自动章节编号”以重试。</translation>
     </message>
     <message>
-        <location line="-3345"/>
+        <location line="-3369"/>
         <source>Unable to render Markdown</source>
         <translation>无法渲染 Markdown</translation>
     </message>
     <message>
-        <location line="+3802"/>
+        <location line="+3826"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
@@ -6980,11 +7039,12 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-41"/>
         <source>Notebook was created, but its trust setting could not be saved</source>
         <translation>笔记本已创建，但无法保存其信任设置</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
+        <location line="-131"/>
         <source>Please specify a name for the notebook.</source>
         <translation>请为笔记本指定名称。</translation>
     </message>
@@ -7034,7 +7094,7 @@
         <translation>无法在 (%1) 中创建笔记本。</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+65"/>
         <source>Sync services not available; cannot bootstrap notebook.</source>
         <translation>同步服务不可用；无法初始化笔记本同步。</translation>
     </message>
@@ -7459,7 +7519,7 @@
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+730"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+758"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
@@ -11353,7 +11413,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskController</name>
     <message>
-        <location filename="../../../controllers/taskcontroller.cpp" line="+59"/>
+        <location filename="../../../controllers/taskcontroller.cpp" line="+57"/>
         <location line="+14"/>
         <source>Task folder is not available.</source>
         <translation>任务文件夹不可用。</translation>
@@ -11435,6 +11495,16 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>确定要删除 “%1” 的任务文件吗？
 
 这将移除该文件及其包含的所有子任务：%2</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TaskService</name>
+    <message>
+        <location filename="../../../core/services/taskservice.cpp" line="+122"/>
+        <source>Task (%1) was not run because notebook trust could not be saved.
+</source>
+        <translation>任务（%1）未运行，因为无法保存笔记本信任设置。
+</translation>
     </message>
 </context>
 <context>
@@ -12189,7 +12259,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UnitedEntry</name>
     <message>
-        <location filename="../../../unitedentry/unitedentry.cpp" line="+77"/>
+        <location filename="../../../unitedentry/unitedentry.cpp" line="+78"/>
         <location line="+76"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
@@ -12259,7 +12329,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+232"/>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+234"/>
         <source>Update Available</source>
         <translation>有可用更新</translation>
     </message>
@@ -12407,12 +12477,12 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+19"/>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+20"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+31"/>
         <source>Open Release Page</source>
         <translation>打开发布页面</translation>
     </message>
@@ -12437,7 +12507,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>您当前的版本为 %1。</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+3"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
@@ -12452,7 +12522,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>您当前的版本为 %1。请打开发布页面下载新版本并自行安装。</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="+14"/>
         <source>Could not check for updates: %1</source>
         <translation>无法检查更新：%1</translation>
     </message>
@@ -12460,13 +12530,14 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+206"/>
+        <location filename="../../../core/services/updateservice.cpp" line="+174"/>
+        <location line="+44"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>拒绝连接到非预期的主机：%1</translation>
     </message>
     <message>
-        <location line="-4"/>
-        <location line="+35"/>
+        <location line="-48"/>
+        <location line="+20"/>
         <source>Cancelled.</source>
         <translation>已取消。</translation>
     </message>
@@ -12476,19 +12547,15 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>对 %1 的请求超时。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+25"/>
+        <location line="+18"/>
+        <location line="+32"/>
         <source>Too many redirects.</source>
         <translation>重定向次数过多。</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+36"/>
-        <source>The response from %1 is unexpectedly large.</source>
-        <translation>%1 返回的响应过大。</translation>
-    </message>
-    <message>
-        <location line="+105"/>
+        <location line="-66"/>
+        <location line="+30"/>
+        <location line="+18"/>
         <source>The latest release could not be identified.</source>
         <translation>无法识别最新版本。</translation>
     </message>
@@ -12823,7 +12890,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>思维导图：%1</translation>
     </message>
     <message>
-        <location line="+636"/>
+        <location line="+645"/>
         <source>Preview</source>
         <translation>预览</translation>
     </message>
@@ -12831,16 +12898,17 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+211"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+245"/>
         <source>Stay on Top</source>
         <translation>置顶</translation>
     </message>
     <message>
+        <location line="+28"/>
         <source>Attach to Main Window</source>
         <translation>附加到主窗口</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+19"/>
         <source>Open Windows</source>
         <translation>已打开窗口</translation>
     </message>
@@ -12850,7 +12918,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>菜单</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+56"/>
         <source>No Window To Show</source>
         <translation>没有可显示的窗口</translation>
     </message>
@@ -12920,7 +12988,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location line="+363"/>
+        <location line="+387"/>
         <source>Reload content from its source, discarding unsaved changes</source>
         <translation>从源重新加载内容，放弃未保存的更改</translation>
     </message>
@@ -13103,13 +13171,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+558"/>
+        <location line="+557"/>
         <source>Failed to save note (%1).</source>
         <translation>无法保存笔记(%1)。</translation>
     </message>
     <message>
-        <location line="-554"/>
-        <location line="+526"/>
+        <location line="-553"/>
+        <location line="+525"/>
         <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>无法读取编辑器内容</translation>
@@ -13222,7 +13290,7 @@ Continue?</source>
         <translation>笔记路径(%1)。</translation>
     </message>
     <message>
-        <location line="-1739"/>
+        <location line="-1738"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>无法打开其他笔记：批注未能保存</translation>
     </message>
@@ -13243,7 +13311,7 @@ Continue?</source>
         <translation>笔记（%1）有未保存的更改，是否关闭？</translation>
     </message>
     <message>
-        <location line="+929"/>
+        <location line="+928"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>此文件为只读（%1），无法保存更改。</translation>
     </message>
@@ -13342,6 +13410,69 @@ Continue?</source>
     </message>
 </context>
 <context>
+    <name>vnotex::WindowsContextMenuController</name>
+    <message>
+        <location filename="../../../controllers/windowscontextmenucontroller.cpp" line="+26"/>
+        <source>Failed to start Windows PowerShell: %1</source>
+        <translation>无法启动 Windows PowerShell：%1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Added the VNote actions to the system context menu.</source>
+        <translation>已将 VNote 操作添加到系统右键菜单。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Removed the VNote actions from the system context menu.</source>
+        <translation>已从系统右键菜单移除 VNote 操作。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The context menu helper stopped unexpectedly.</source>
+        <translation>右键菜单辅助程序意外停止。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Failed to update the system context menu (exit code %1).</source>
+        <translation>无法更新系统右键菜单（退出代码 %1）。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Adding the VNote context menu actions...</source>
+        <translation>正在添加 VNote 右键菜单操作...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Removing the VNote context menu actions...</source>
+        <translation>正在移除 VNote 右键菜单操作...</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>The installed context menu helper is missing: %1</source>
+        <translation>缺少已安装的右键菜单辅助脚本：%1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>无法找到 Windows 系统目录。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>Windows PowerShell 在 %1 不可用。</translation>
+    </message>
+    <message>
+        <location line="-48"/>
+        <source>The built-in file types are unavailable.</source>
+        <translation>内置文件类型不可用。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>A built-in file suffix is invalid for the Windows context menu: %1</source>
+        <translation>内置文件后缀无法用于 Windows 右键菜单：%1</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::WindowsUnitedEntry</name>
     <message>
         <location filename="../../../unitedentry/windowsunitedentry.cpp" line="+23"/>
@@ -13419,104 +13550,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>适应页面</translation>
-    </message>
-</context>
-<context>
-    <name>MainWindowTaskContext</name>
-    <message>
-        <source>Trust Notebook</source>
-        <translation>信任笔记本</translation>
-    </message>
-    <message>
-        <source>Do you trust the notebook "%1"?</source>
-        <translation>您信任笔记本“%1”吗？</translation>
-    </message>
-    <message>
-        <source>Notebook tasks can execute commands on your computer. Only trust notebooks from sources you trust.
-
-Location: %1
-
-Trust is remembered until you close this notebook.</source>
-        <translation>笔记本任务可以在您的计算机上执行命令。请仅信任来自可信来源的笔记本。
-
-位置：%1
-
-信任状态将保留到您关闭此笔记本为止。</translation>
-    </message>
-    <message>
-        <source>Trust and Run</source>
-        <translation>信任并运行</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TaskService</name>
-    <message>
-        <source>Task (%1) was not run because notebook trust could not be saved.
-</source>
-        <translation>任务（%1）未运行，因为无法保存笔记本信任设置。
-</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FirstRunController</name>
-    <message>
-        <source>Notebook was created, but its trust setting could not be saved</source>
-        <translation>笔记本已创建，但无法保存其信任设置</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::WindowsContextMenuController</name>
-    <message>
-        <source>Failed to start Windows PowerShell: %1</source>
-        <translation>无法启动 Windows PowerShell：%1</translation>
-    </message>
-    <message>
-        <source>Added the VNote actions to the system context menu.</source>
-        <translation>已将 VNote 操作添加到系统右键菜单。</translation>
-    </message>
-    <message>
-        <source>Removed the VNote actions from the system context menu.</source>
-        <translation>已从系统右键菜单移除 VNote 操作。</translation>
-    </message>
-    <message>
-        <source>The context menu helper stopped unexpectedly.</source>
-        <translation>右键菜单辅助程序意外停止。</translation>
-    </message>
-    <message>
-        <source>Failed to update the system context menu (exit code %1).</source>
-        <translation>无法更新系统右键菜单（退出代码 %1）。</translation>
-    </message>
-    <message>
-        <source>Adding the VNote context menu actions...</source>
-        <translation>正在添加 VNote 右键菜单操作...</translation>
-    </message>
-    <message>
-        <source>Removing the VNote context menu actions...</source>
-        <translation>正在移除 VNote 右键菜单操作...</translation>
-    </message>
-    <message>
-        <source>The installed context menu helper is missing: %1</source>
-        <translation>缺少已安装的右键菜单辅助脚本：%1</translation>
-    </message>
-    <message>
-        <source>Could not locate the Windows system directory.</source>
-        <translation>无法找到 Windows 系统目录。</translation>
-    </message>
-    <message>
-        <source>Windows PowerShell is unavailable at %1.</source>
-        <translation>Windows PowerShell 在 %1 不可用。</translation>
-    </message>
-    <message>
-        <source>The built-in file types are unavailable.</source>
-        <translation>内置文件类型不可用。</translation>
-    </message>
-    <message>
-        <source>A built-in file suffix is invalid for the Windows context menu: %1</source>
-        <translation>内置文件后缀无法用于 Windows 右键菜单：%1</translation>
     </message>
 </context>
 </TS>
