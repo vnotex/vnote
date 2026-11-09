@@ -122,7 +122,7 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
    Regression gates: `testAbsentKeyKeepsTheCppDefaultForEveryField`, `testAnExplicitlyEmptiedUserOwnedMapIsNotResurrected`, `testAnUnreadableConfigIsNeverOverwritten` in `tests/core/test_configmgr2.cpp`.
 2. **Debounced persistence** — Changes to config objects auto-save via 500ms debounced timers.
 3. **Path resolution** — `getFileFromConfigFolder()` resolves relative paths against the app data directory.
-4. **Version upgrade** — `upgradeMainConfigOnVersionChange()` runs the config migration (`doVersionSpecificOverride` then stamping `c_version`) when the persisted version differs.
+4. **Version upgrade** — `upgradeMainConfigOnVersionChange()` runs main and readable-session migrations (`doVersionSpecificOverride` then stamping `c_version`) when the persisted main-config version differs.
 5. **Bundled extra data** — `ensureExtraData(bool p_force)` installs `themes/`, `tasks/`, `syntax-highlighting/`, `web/`, `dicts/`, `templates/` and `docs/` from `vnote_extra.rcc`. It runs on every **primary-instance** launch, after `SingleInstanceGuard::tryRun()` succeeds (or the explicit testing bypass below), not just on a version change; a rejected secondary must never mutate resources used by the running primary. Installation is gated per folder by a stamp file (`FileUtils2::c_versionStampFileName`, `.vnote-extra-version`) that `FileUtils2::installVersionedDir` writes **only after that folder copied completely**. A partial copy therefore leaves the folder unstamped and is retried on the next launch instead of being remembered as done. Deliberately decoupled from the config version stamp above: coupling them would re-run `doVersionSpecificOverride` on every launch and pin the config version to the old value forever whenever a copy is permanently broken. Per-folder failures are aggregated in `extraDataCopyFailures()` and PULLED once by `NotificationRouter` at `MainWindowAfterStart` (ConfigMgr2 has no `ServiceLocator`, and the copy runs in `main()` long before the router exists). `web/css/user.css` is on a preserve list because Settings treats an existing regular file there as user-owned; an incompatible node is a copy failure and prevents the completion stamp. `templates/` has NO preserve list: the bundled `templates/title.md` (`# %no%` plus a trailing `@@` cursor mark, so a new note opens with a level-1 heading matching its base name and the caret on the blank line below) is overwritten on every version bump, so a user who wants a variant must save it under a different name; user-created templates are untouched because only bundled paths are written.
 
 Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `main()` initializes
@@ -164,6 +164,18 @@ their next version change. It appends missing defaults by case-sensitive name, r
 objects and order, and preserves an empty alias list. Individual deletions in older profiles
 cannot be distinguished from aliases that those releases never supplied. Same-version launches
 do not migrate; no application version bump is part of this fix.
+
+`SessionConfig::doVersionSpecificOverride(previousVersion)` seeds the shared Quick Note default
+when the loaded scheme list is empty and the previous version is below `4.14.2`. Missing legacy
+keys also load as empty; nonempty custom lists are unchanged. Legacy empty lists cannot be
+distinguished from deliberate deletions and are seeded once; empty opt-outs stamped `4.14.2` or
+newer remain empty. Persistence uses the normal session setter; notebooks live separately in
+`vxsession.json`. There is no version bump: profiles stamped `4.14.1` wait for their next version
+change. Same-version restarts preserve deletions, but forced `VX_DEBUG_REFRESH` builds can
+re-seed while the application stamp remains below the boundary, as can downgrade/re-upgrade.
+An unreadable session skips migration without delaying the main-config stamp: retry is possible
+only on a later version change still starting below the boundary, not after stamping `4.14.2`+.
+Coverage: the quick-note migration cases in `tests/core/test_configmgr2.cpp`.
 
 ### Update-check state
 

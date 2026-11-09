@@ -123,6 +123,9 @@ public:
 
   QJsonObject toJson() const Q_DECL_OVERRIDE;
 
+  // Called on a version change after loading; persists any migrated session values.
+  void doVersionSpecificOverride(const QString &p_previousVersion);
+
   SessionConfig::MainWindowStateGeometry getMainWindowStateGeometry() const;
   void setMainWindowStateGeometry(const SessionConfig::MainWindowStateGeometry &p_state);
 
@@ -251,8 +254,6 @@ private:
   void loadQuickAccessItems(const QJsonObject &p_session);
 
   QJsonArray saveQuickAccessItems() const;
-
-  void doVersionSpecificOverride();
 
   void loadExportOption(const QJsonObject &p_session);
 

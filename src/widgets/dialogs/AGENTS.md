@@ -220,7 +220,10 @@ scheme; they do not override its destination. Quick notes still open in Edit mod
 
 Fresh `SessionConfig` instances start with **Quick Note in Current Notebook**, using the
 notebook-relative folder `Quick Notes` and filename `quick_note_%da%.md`, with no template.
-This is a constructor default only: loading saved schemes replaces it, without migration.
+On a version change from below `4.14.2`, an empty saved list receives this default once;
+nonempty custom schemes and empty lists stamped `4.14.2` or newer remain unchanged.
+Same-version launches do not migrate. See the
+[configuration migration contract](../../core/AGENTS.md#configuration-migration-contract).
 
 Manually added schemes use `ConfigMgr2::getDefaultNotebookPath()`, shared with `FirstRunController`:
 `vnote_notebook` under Qt's writable Documents location, without an explicit home-folder fallback.

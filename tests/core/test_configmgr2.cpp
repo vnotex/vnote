@@ -51,6 +51,9 @@ private slots:
   void testUpdateMainConfig();
   void testUpdateSessionConfig();
   void testQuickNoteDetachedSettingPersistsWithoutOtherChanges();
+  void testQuickNoteMigration_data();
+  void testQuickNoteMigration();
+  void testQuickNoteMigration_preservesUnreadableSession();
   void testEditorZoom_sessionPersistence_data();
   void testEditorZoom_sessionPersistence();
   void testDebouncing();
@@ -284,6 +287,114 @@ void TestConfigMgr2::testQuickNoteDetachedSettingPersistsWithoutOtherChanges() {
   ConfigMgr2 reloadedAgain(m_configService);
   reloadedAgain.init();
   QVERIFY(!reloadedAgain.getSessionConfig().getQuickNoteSchemes().first().m_detachedView);
+}
+
+void TestConfigMgr2::testQuickNoteMigration_data() {
+  QTest::addColumn<QString>("previousVersion");
+  QTest::addColumn<QJsonObject>("savedSession");
+  QTest::addColumn<bool>("invokeHookDirectly");
+  QTest::addColumn<bool>("expectDefault");
+  const QJsonObject empty{{QStringLiteral("quickNoteSchemes"), QJsonArray()}};
+  const QJsonObject missing{{QStringLiteral("core"), QJsonObject()}};
+  const QJsonObject custom{
+      {QStringLiteral("quickNoteSchemes"),
+       QJsonArray{QJsonObject{{QStringLiteral("name"), QStringLiteral("My capture")},
+                              {QStringLiteral("folderPath"), QStringLiteral("")},
+                              {QStringLiteral("noteName"), QStringLiteral("capture.md")},
+                              {QStringLiteral("template"), QStringLiteral("custom.md")},
+                              {QStringLiteral("detachedView"), true}}}}};
+  QTest::newRow("legacy-empty") << QStringLiteral("4.12.0") << empty << false << true;
+  QTest::newRow("legacy-missing") << QStringLiteral("4.12.0") << missing << false << true;
+  QTest::newRow("legacy-custom") << QStringLiteral("4.12.0") << custom << false << false;
+  // The current binary is still 4.14.1: test the next upgrade's gate directly.
+  QTest::newRow("previous-release-hook") << QStringLiteral("4.14.1") << empty << true << true;
+  QTest::newRow("migration-boundary") << QStringLiteral("4.14.2") << empty << false << false;
+  QTest::newRow("newer-version") << QStringLiteral("4.15.0") << empty << false << false;
+  QTest::newRow("same-version") << ConfigMgr2::getApplicationVersion() << empty << false << false;
+}
+
+void TestConfigMgr2::testQuickNoteMigration() {
+  QFETCH(QString, previousVersion);
+  QFETCH(QJsonObject, savedSession);
+  QFETCH(bool, invokeHookDirectly);
+  QFETCH(bool, expectDefault);
+  const auto originalMain = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto originalSession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", originalMain);
+    m_configService->updateConfigByName(DataLocation::Local, "session", originalSession);
+  });
+  const QJsonObject main{
+      {QStringLiteral("metadata"), QJsonObject{{QStringLiteral("version"), previousVersion}}}};
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::App, "vnotex", main));
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, "session", savedSession));
+  const auto key = QStringLiteral("quickNoteSchemes");
+  const auto expected = expectDefault ? SessionConfig(nullptr).toJson().value(key).toArray()
+                                      : savedSession.value(key).toArray();
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto fixture = buildExtraDataFixture(tmp);
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QCOMPARE(mgr.getSessionConfig().toJson().value(key).toArray(),
+             savedSession.value(key).toArray());
+    if (invokeHookDirectly) {
+      mgr.getSessionConfig().doVersionSpecificOverride(previousVersion);
+    }
+    mgr.initAfterQtAppStarted();
+    QCOMPARE(mgr.getSessionConfig().toJson().value(key).toArray(), expected);
+  }
+  QCOMPARE(m_configService->getConfigByName(DataLocation::Local, "session").value(key).toArray(),
+           expected);
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.setExtraDataSourceRootOverrideForTesting(fixture);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    restarted.initAfterQtAppStarted();
+    QCOMPARE(restarted.getSessionConfig().toJson().value(key).toArray(), expected);
+    if (expectDefault) {
+      // A deliberate deletion after migration survives an ordinary restart.
+      restarted.getSessionConfig().setQuickNoteSchemes({});
+    }
+  }
+  if (expectDefault) {
+    ConfigMgr2 optedOut(m_configService);
+    optedOut.setExtraDataSourceRootOverrideForTesting(fixture);
+    optedOut.init();
+    optedOut.initAfterQtAppStarted();
+    QVERIFY(optedOut.getSessionConfig().getQuickNoteSchemes().isEmpty());
+  }
+}
+
+void TestConfigMgr2::testQuickNoteMigration_preservesUnreadableSession() {
+  const auto originalMain = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto originalSession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", originalMain);
+    m_configService->updateConfigByName(DataLocation::Local, "session", originalSession);
+  });
+  const QJsonObject main{{QStringLiteral("metadata"),
+                          QJsonObject{{QStringLiteral("version"), QStringLiteral("4.12.0")}}}};
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::App, "vnotex", main));
+  QFile sessionFile(m_configService->getDataPath(DataLocation::Local) + "/session.json");
+  const QByteArray corrupt("{\"quickNoteSchemes\": [");
+  QVERIFY(sessionFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  QCOMPARE(sessionFile.write(corrupt), corrupt.size());
+  sessionFile.close();
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(buildExtraDataFixture(tmp));
+    mgr.init();
+    mgr.initAfterQtAppStarted();
+    QCOMPARE(mgr.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
+  }
+  QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+  QCOMPARE(sessionFile.readAll(), corrupt);
 }
 
 void TestConfigMgr2::testEditorZoom_sessionPersistence_data() {

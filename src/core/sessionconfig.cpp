@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QVersionNumber>
 
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
@@ -12,6 +13,16 @@
 #include "mainconfig.h"
 
 using namespace vnotex;
+
+namespace {
+QVector<SessionConfig::QuickNoteScheme> defaultQuickNoteSchemes() {
+  return {{QStringLiteral("Quick Note in Current Notebook"),
+           QStringLiteral("Quick Notes"),
+           QStringLiteral("quick_note_%da%.md"),
+           {},
+           false}};
+}
+} // namespace
 
 bool SessionConfig::QuickNoteScheme::operator==(const QuickNoteScheme &p_other) const {
   return m_name == p_other.m_name && m_folderPath == p_other.m_folderPath &&
@@ -115,11 +126,7 @@ bool SessionConfig::ExternalProgram::isSystemProgram() const {
 
 SessionConfig::SessionConfig(IConfigMgr *p_mgr)
     : IConfig(p_mgr, nullptr), m_httpApiConfig(p_mgr, this),
-      m_quickNoteSchemes{{QStringLiteral("Quick Note in Current Notebook"),
-                          QStringLiteral("Quick Notes"),
-                          QStringLiteral("quick_note_%da%.md"),
-                          {},
-                          false}} {}
+      m_quickNoteSchemes(defaultQuickNoteSchemes()) {}
 
 SessionConfig::~SessionConfig() {}
 
@@ -455,9 +462,14 @@ void SessionConfig::setStartOnSystemStartup(bool p_enabled) {
   updateConfig(m_startOnSystemStartup, p_enabled, this);
 }
 
-void SessionConfig::doVersionSpecificOverride() {
-  // In a new version, we may want to change one value by force.
-  // SHOULD set the in memory variable only, or will override the notebook list.
+void SessionConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
+  // Saved empty lists mask the constructor default through 4.14.1. Seed them once
+  // on a version change; keep custom schemes and later explicit empty opt-outs.
+  static const QVersionNumber c_quickNoteSchemesVersion(4, 14, 2);
+  if (m_quickNoteSchemes.isEmpty() &&
+      QVersionNumber::fromString(p_previousVersion) < c_quickNoteSchemesVersion) {
+    setQuickNoteSchemes(defaultQuickNoteSchemes());
+  }
 }
 
 const ExportOption &SessionConfig::getExportOption() const { return m_exportOption; }

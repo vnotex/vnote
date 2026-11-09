@@ -477,6 +477,9 @@ void ConfigMgr2::upgradeMainConfigOnVersionChange() {
   // Apply version-gated forced overrides using the still-persisted previous
   // version, BEFORE stamping the new version below.
   m_mainConfig->doVersionSpecificOverride(m_mainConfig->getVersion());
+  if (!m_sessionConfigReadFailed) {
+    m_sessionConfig->doVersionSpecificOverride(m_mainConfig->getVersion());
+  }
 
   m_mainConfig->setVersion(c_version.toString());
   m_mainConfig->update();
