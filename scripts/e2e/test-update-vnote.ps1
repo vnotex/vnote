@@ -323,6 +323,7 @@ function New-FixtureInstall {
     else {
         Copy-FixtureTree $script:Package.Tree $directory
         [IO.File]::Delete((Join-Path $directory 'manifest.json'))
+        [IO.File]::Delete((Join-Path $directory 'newfeature/brand_new.dll'))
     }
     [IO.File]::Copy($script:ExeA, (Join-Path $directory 'vnote.exe'), $true)
     Write-FixtureText (Join-Path $directory 'Qt6Core.dll') 'generation A core'
@@ -345,8 +346,9 @@ function Add-FixtureRoute {
 function Publish-FixtureArtifacts {
     param($Artifacts, [string]$Prefix)
     $result = @{}
-    foreach ($kind in @('Zip', 'Manifest', 'Signature')) {
-        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
+    foreach ($kind in @('Zip', 'Manifest', 'Signature', 'Delta')) {
+        if ($kind -eq 'Delta' -and $null -eq $Artifacts.PSObject.Properties['Delta']) { continue }
+        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } Delta { '.delta.zip' } }
         $path = '/' + $Prefix + '/package' + $suffix
         Add-FixtureRoute $path $Artifacts.$kind
         $result[$kind] = $script:BaseUrl + $path
@@ -356,21 +358,29 @@ function Publish-FixtureArtifacts {
 
 function Publish-FixtureGitHubAssets {
     param($Artifacts)
-    foreach ($kind in @('Zip', 'Manifest', 'Signature')) {
-        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
+    foreach ($kind in @('Zip', 'Manifest', 'Signature', 'Delta')) {
+        if ($kind -eq 'Delta' -and $null -eq $Artifacts.PSObject.Properties['Delta']) { continue }
+        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } Delta { '.delta.zip' } }
         $path = '/github/download/v9.1.0/VNote-9.1.0-win64' + $suffix
         Add-FixtureRoute $path $Artifacts.$kind
     }
 }
 
 function New-FixtureRelease {
+    param($Urls = $script:PackageUrls, [switch]$Delta, [switch]$WithoutFull)
     $assets = New-Object 'Collections.Generic.List[object]'
-    # Deliberately put misleading source/delta archives before the full ZIP.
+    # Ineligible delta decoys must never be inspected by lazy archive selection.
     $assets.Add(@{ name = 'source-code.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
-    $assets.Add(@{ name = 'VNote-9.1.0-win64.delta.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
-    foreach ($kind in @('Signature', 'Zip', 'Manifest')) {
-        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
-        $assets.Add(@{ name = "VNote-9.1.0-win64$suffix"; browser_download_url = $script:PackageUrls.$kind })
+    if (-not $Delta) {
+        $assets.Add(@{ name = 'VNote-9.1.0-win64.delta.zip'; browser_download_url = 'https://off-origin.invalid/decoy.zip' })
+        $assets.Add(@{ name = 'VNote-9.1.0-win64.delta.zip'; browser_download_url = '' })
+    }
+    $kinds = @('Signature', 'Manifest')
+    if (-not $WithoutFull) { $kinds += 'Zip' }
+    if ($Delta) { $kinds += 'Delta' }
+    foreach ($kind in $kinds) {
+        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } Delta { '.delta.zip' } }
+        $assets.Add(@{ name = "VNote-9.1.0-win64$suffix"; browser_download_url = $Urls.$kind })
     }
     $release = @{ tag_name = 'v9.1.0'; prerelease = $false; assets = $assets.ToArray() }
     return (ConvertFrom-Json -InputObject ($release | ConvertTo-Json -Depth 10))
@@ -406,7 +416,7 @@ function Expand-FixturePackage {
 }
 
 function Receive-FixturePackage {
-    param([string]$Source)
+    param([string]$Source, [string]$InstallDir = $script:VNoteInstallRoot, [string]$CurrentVersion = '9.0.0')
     $stage = New-FixtureAttempt
     $assets = Get-VNoteReleaseAssets -Source $Source -Version '9.1.0'
     $manifestPath = Join-Path $stage 'release.manifest.json'
@@ -414,21 +424,18 @@ function Receive-FixturePackage {
     Receive-VNoteFile -Url $assets.Manifest -Destination $manifestPath -Source $Source -MaxBytes 16777216
     Receive-VNoteFile -Url $assets.Signature -Destination $signaturePath -Source $Source -MaxBytes 65536
     $manifest = Read-FixtureManifest ([pscustomobject]@{ Manifest = $manifestPath; Signature = $signaturePath })
-    Assert-Fixture ($manifest.fullPackage.asset -ceq $assets.ZipName) 'Selected a different full ZIP than the signed asset'
-    $zipPath = Join-Path $stage $assets.ZipName
-    Receive-VNoteFile -Url $assets.Zip -Destination $zipPath -Source $Source -MaxBytes $manifest.fullPackage.size
-    $destination = Join-Path $stage 'extracted'
-    [IO.Directory]::CreateDirectory($destination) | Out-Null
-    $package = Expand-VerifiedVNotePackage -ArchivePath $zipPath -Destination $destination -Manifest $manifest
+    $script:VNoteInstallRoot = $InstallDir
+    $package = Receive-VNotePackage -Source $Source -Assets $assets -Manifest $manifest `
+        -CurrentVersion $CurrentVersion -InstallDir $InstallDir
     return [pscustomobject]@{ Manifest = $manifest; Directory = $package }
 }
 
 function Copy-FixtureArtifacts {
-    param([string]$Name)
+    param([string]$Name, $Original = $script:Package)
     $directory = New-FixtureDirectory $Name
-    $original = $script:Package
     $result = @{}
-    foreach ($kind in @('Zip', 'Manifest', 'Signature')) {
+    foreach ($kind in @('Zip', 'Manifest', 'Signature', 'Delta')) {
+        if ($kind -eq 'Delta' -and $null -eq $Original.PSObject.Properties['Delta']) { continue }
         $path = Join-Path $directory ([IO.Path]::GetFileName($original.$kind))
         [IO.File]::Copy($original.$kind, $path)
         $result[$kind] = $path
@@ -451,16 +458,19 @@ function Sign-FixtureManifest {
 }
 
 function Sign-FixtureArchive {
-    param($Artifacts)
+    param($Artifacts, [switch]$Delta)
     $manifest = Read-FixtureJson $Artifacts.Manifest
-    $manifest.fullPackage.size = [int64](Get-Item -LiteralPath $Artifacts.Zip).Length
-    $manifest.fullPackage.sha256 = (Get-FileHash -LiteralPath $Artifacts.Zip -Algorithm SHA256).Hash.ToLowerInvariant()
+    $archive = if ($Delta) { $Artifacts.Delta } else { $Artifacts.Zip }
+    $reference = if ($Delta) { $manifest.delta } else { $manifest.fullPackage }
+    $reference.size = [int64](Get-Item -LiteralPath $archive).Length
+    $reference.sha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
     Sign-FixtureManifest $Artifacts $manifest
 }
 
 function Add-FixtureZipEntry {
-    param($Artifacts, [string]$Name, [string]$Content = 'hostile payload', [int]$Attributes = 0)
-    $zip = [IO.Compression.ZipFile]::Open($Artifacts.Zip, [IO.Compression.ZipArchiveMode]::Update)
+    param($Artifacts, [string]$Name, [string]$Content = 'hostile payload', [int]$Attributes = 0, [switch]$Delta)
+    $archive = if ($Delta) { $Artifacts.Delta } else { $Artifacts.Zip }
+    $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Update)
     try {
         $entry = $zip.CreateEntry($Name)
         $entry.ExternalAttributes = $Attributes
@@ -472,7 +482,7 @@ function Add-FixtureZipEntry {
         finally { $stream.Dispose() }
     }
     finally { $zip.Dispose() }
-    Sign-FixtureArchive $Artifacts
+    Sign-FixtureArchive $Artifacts -Delta:$Delta
 }
 
 function Start-FixtureParent {
@@ -511,6 +521,40 @@ function Expect-FixturePreparationFailure {
     Assert-FixtureSnapshot $script:NegativeInstall $script:NegativeSnapshot $Name
     Assert-FixtureSnapshot $script:Outside $script:OutsideSnapshot "$Name outside destination"
     Pass-Fixture $Name
+}
+
+function Get-FixtureRequestOffset {
+    if (-not [IO.File]::Exists($script:HttpLog)) { return 0 }
+    return ([IO.File]::ReadAllText($script:HttpLog).Length)
+}
+
+function Assert-FixtureArchiveRequests {
+    param([int]$Offset, [int]$Delta, [int]$Full)
+    $requests = @(([IO.File]::ReadAllText($script:HttpLog).Substring($Offset) -split "`n") | Where-Object { $_ -ne '' })
+    $deltaRequests = @($requests | Where-Object { $_.EndsWith('.delta.zip') })
+    $fullRequests = @($requests | Where-Object { $_.EndsWith('.zip') -and -not $_.EndsWith('.delta.zip') })
+    Assert-Fixture ($deltaRequests.Count -eq $Delta -and $fullRequests.Count -eq $Full) `
+        "Expected delta/full GET counts $Delta/$Full, saw $($deltaRequests.Count)/$($fullRequests.Count): $($requests -join ', ')"
+}
+
+function Expect-FixtureDeltaFailure {
+    param([string]$Name, $Artifacts, [int]$DeltaRequests = 1, [string]$Source = 'github')
+    if ($Source -eq 'github') { Publish-FixtureGitHubAssets $Artifacts }
+    $offset = Get-FixtureRequestOffset
+    Expect-FixturePreparationFailure $Name { Receive-FixturePackage $Source -InstallDir $script:NegativeInstall }
+    Assert-FixtureArchiveRequests $offset $DeltaRequests 0
+}
+
+function Assert-FixturePrepared {
+    param($Prepared)
+    foreach ($file in $Prepared.Manifest.files) {
+        $path = Join-Path $Prepared.Directory $file.path
+        Assert-Fixture ((Get-Item -LiteralPath $path).Length -eq $file.size) "Prepared size mismatch: $($file.path)"
+        Assert-Fixture ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ieq $file.sha256) "Prepared hash mismatch: $($file.path)"
+    }
+    $embedded = Read-FixtureJson (Join-Path $Prepared.Directory 'manifest.json')
+    Assert-Fixture ($embedded.version -ceq '9.1.0' -and @($embedded.files).Count -eq @($Prepared.Manifest.files).Count) 'Reconstructed embedded manifest lacks target identity/files'
+    Assert-Fixture ($null -eq $embedded.PSObject.Properties['delta'] -and $null -eq $embedded.PSObject.Properties['fullPackage']) 'Embedded manifest includes release archive references'
 }
 
 function Assert-FixtureOverlay {
@@ -603,6 +647,12 @@ public static class Fixture__GENERATION__ {
                 File.AppendAllText(log,"HELLO\n");
                 Send(pipe,"O"); Send(pipe,"K\n");
                 if (behavior=="eof-preparing") return 0;
+                if (behavior=="cancel-copy") {
+                    while (!File.Exists(args[5]+".cancel")) Thread.Sleep(5);
+                    Send(pipe,"CANCELLED\n");
+                    File.AppendAllText(log,"CANCELLED\n");
+                    Thread.Sleep(120000); return 0;
+                }
                 string ready;
                 try { ready=ReadFrame(pipe); }
                 catch (IOException) {
@@ -659,6 +709,11 @@ try {
     $tree = Join-Path $packageParent $name
     & (Join-Path $PSScriptRoot 'make-update-fixture.ps1') -Root $tree -Generation B
     [IO.File]::Copy($exeB, (Join-Path $tree 'vnote.exe'), $true)
+    # A reusable incompressible payload makes a genuine smaller delta and leaves
+    # several copy chunks for the real peer's cancellation-during-copy case.
+    $reusable = New-Object byte[] 262144
+    (New-Object Random(1907)).NextBytes($reusable)
+    [IO.File]::WriteAllBytes((Join-Path $tree 'resources/reusable.bin'), $reusable)
     & (Join-Path $PSScriptRoot '../gen-update-package.ps1') -ExtractedDir $tree -Version '9.1.0' `
         -Commit ('a' * 40) -Channel stable -OutputDir $packageParent `
         -MinisignSecretKey $script:SecretKey -SkipDelta
@@ -666,9 +721,33 @@ try {
     $script:Package = [pscustomobject]@{
         Tree = $tree; Zip = (Join-Path $packageParent ($name + '.zip')); Manifest = $manifest; Signature = $manifest + '.minisig'
     }
+    # Generate the predecessor from the target layout, not stock A's intentional
+    # plugins file/directory collision. Include changed and newly added payloads.
+    $baseParent = New-FixtureDirectory 'predecessor package'
+    $baseTree = Join-Path $baseParent 'VNote-9.0.0-win64'
+    Copy-FixtureTree $tree $baseTree
+    [IO.File]::Copy($script:ExeA, (Join-Path $baseTree 'vnote.exe'), $true)
+    Write-FixtureText (Join-Path $baseTree 'Qt6Core.dll') 'generation A core'
+    [IO.File]::Delete((Join-Path $baseTree 'newfeature/brand_new.dll'))
+    & (Join-Path $PSScriptRoot '../gen-update-package.ps1') -ExtractedDir $baseTree -Version '9.0.0' `
+        -Commit ('b' * 40) -Channel stable -OutputDir $baseParent `
+        -MinisignSecretKey $script:SecretKey -SkipDelta
+    $deltaParent = New-FixtureDirectory 'delta package'
+    $deltaTree = Join-Path $deltaParent $name
+    Copy-FixtureTree $tree $deltaTree
+    & (Join-Path $PSScriptRoot '../gen-update-package.ps1') -ExtractedDir $deltaTree -Version '9.1.0' `
+        -Commit ('a' * 40) -Channel stable -OutputDir $deltaParent `
+        -MinisignSecretKey $script:SecretKey -BaseManifestPath (Join-Path $baseParent 'VNote-9.0.0-win64.manifest.json')
+    $deltaManifestPath = Join-Path $deltaParent ($name + '.manifest.json')
+    $script:DeltaPackage = [pscustomobject]@{
+        Zip = (Join-Path $deltaParent ($name + '.zip')); Delta = (Join-Path $deltaParent ($name + '.delta.zip'))
+        Manifest = $deltaManifestPath; Signature = $deltaManifestPath + '.minisig'
+    }
     $script:VNoteInstallRoot = $script:Package.Tree
+    $deltaManifest = Read-FixtureManifest $script:DeltaPackage
+    Assert-Fixture ($deltaManifest.delta.baseVersion -ceq '9.0.0' -and $deltaManifest.delta.size -lt $deltaManifest.fullPackage.size) 'Generator did not produce an eligible smaller signed delta'
     $httpReady = Join-Path $script:Root 'http ready.json'
-    $httpLog = Join-Path $script:Root 'http requests.txt'
+    $script:HttpLog = Join-Path $script:Root 'http requests.txt'
     Write-FixtureJson $script:RoutesPath @{}
     $server = Start-FixtureMode Http @{ Routes = $script:RoutesPath; Ready = $httpReady; Log = $httpLog } 'http'
     $null = Wait-FixtureFile $httpReady $server
@@ -682,14 +761,17 @@ try {
         }
     }
     $script:PackageUrls = Publish-FixtureArtifacts $script:Package 'win64'
+    $script:DeltaUrls = Publish-FixtureArtifacts $script:DeltaPackage 'delta-win64'
     Publish-FixtureRelease gitee (New-FixtureRelease)
     Add-FixtureRoute '/github/tags/v9.1.0' -Status 403
     Publish-FixtureGitHubAssets $script:Package
 
     foreach ($sourceName in @('github', 'gitee')) {
-        $prepared = Receive-FixturePackage $sourceName
         $install = New-FixtureInstall
         $before = Get-FixtureSnapshot $install
+        $offset = Get-FixtureRequestOffset
+        $prepared = Receive-FixturePackage $sourceName -InstallDir $install
+        Assert-FixtureArchiveRequests $offset 0 1
         Assert-VNoteInstallReady -InstallDir $install -Manifest $prepared.Manifest -PackageDir $prepared.Directory -PreparingDownload
         $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
         Assert-FixtureOverlay $install $backup $before $prepared.Manifest
@@ -702,6 +784,7 @@ try {
     $script:NegativeParent = Start-FixtureParent $script:NegativeInstall
     $script:NegativeSession = Connect-FixtureParent $script:NegativeInstall $script:NegativeParent
     $script:NegativeSnapshot = Get-FixtureSnapshot $script:NegativeInstall
+    $script:VNoteInstallRoot = $script:NegativeInstall
     $script:VNotePreparationGuard = { Assert-VNoteParentPreparing -Session $script:NegativeSession }
     foreach ($fault in @('missing', 'duplicate', 'wrong-name', 'wrong-tag', 'wrong-variant', 'empty-url', 'draft', 'prerelease')) {
         $release = New-FixtureRelease
@@ -865,10 +948,242 @@ try {
     finally { [IO.Directory]::Delete($junction) }
     Assert-FixtureSnapshot $script:NegativeInstall $script:NegativeSnapshot 'Reparse refusal'
     Pass-Fixture 'install-root/subtree junctions never followed'
+
+    # Keep one authenticated original alive across preparation-only rows. HTTP
+    # evidence distinguishes genuine delta use/fallback from a successful full ZIP.
+    Publish-FixtureGitHubAssets $script:DeltaPackage
+    Publish-FixtureRelease gitee (New-FixtureRelease -Urls $script:DeltaUrls -Delta -WithoutFull)
+    foreach ($sourceName in @('github', 'gitee')) {
+        $offset = Get-FixtureRequestOffset
+        $prepared = Receive-FixturePackage $sourceName -InstallDir $script:NegativeInstall
+        Assert-FixtureArchiveRequests $offset 1 0
+        Assert-FixturePrepared $prepared
+        Assert-NoFixtureReady $script:NegativeParent
+        Assert-FixtureSnapshot $script:NegativeInstall $script:NegativeSnapshot 'Delta preparation while original runs'
+        $install = New-FixtureInstall
+        $before = Get-FixtureSnapshot $install
+        $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
+        Assert-FixtureOverlay $install $backup $before $prepared.Manifest
+        Pass-Fixture "$sourceName generated delta reconstructs target, preserves portable/unowned files and backup (Gitee has no full asset)"
+    }
+    foreach ($selection in @('no-delta', 'base-mismatch', 'not-smaller', 'missing-asset', 'wrong-name', '404')) {
+        $artifacts = Copy-FixtureArtifacts ("delta selection " + $selection) -Original $script:DeltaPackage
+        $manifest = Read-FixtureJson $artifacts.Manifest
+        switch ($selection) {
+            no-delta { $manifest.PSObject.Properties.Remove('delta') }
+            base-mismatch { $manifest.delta.baseVersion = '8.9.0' }
+            not-smaller { $manifest.delta.size = $manifest.fullPackage.size }
+        }
+        Sign-FixtureManifest $artifacts $manifest
+        $urls = Publish-FixtureArtifacts $artifacts ('selection-' + $selection)
+        $release = New-FixtureRelease -Urls $urls -Delta
+        if ($selection -in @('no-delta', 'base-mismatch', 'not-smaller')) {
+            $release = New-FixtureRelease -Urls $urls # Duplicate/off-origin decoys must be ignored.
+        }
+        elseif ($selection -eq 'missing-asset') {
+            $release.assets = @($release.assets | Where-Object { $_.name -cne 'VNote-9.1.0-win64.delta.zip' })
+        }
+        elseif ($selection -eq 'wrong-name') {
+            ($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.delta.zip' }).name = 'VNote-9.2.0-win64.delta.zip'
+        }
+        else { Add-FixtureRoute '/selection-404/package.delta.zip' -Status 404 }
+        Publish-FixtureRelease gitee $release
+        $offset = Get-FixtureRequestOffset
+        $prepared = Receive-FixturePackage gitee -InstallDir $script:NegativeInstall
+        $expectedDelta = if ($selection -eq '404') { 1 } else { 0 }
+        Assert-FixtureArchiveRequests $offset $expectedDelta 1
+        Assert-FixturePrepared $prepared
+        Assert-NoFixtureReady $script:NegativeParent
+        Assert-FixtureSnapshot $script:NegativeInstall $script:NegativeSnapshot $selection
+        Pass-Fixture "delta $selection selects same-source signed full"
+    }
+    foreach ($fault in @('missing', 'missing-directory', 'size', 'hash')) {
+        $install = New-FixtureInstall
+        $reusedPath = Join-Path $install 'resources/reusable.bin'
+        switch ($fault) {
+            missing { [IO.File]::Delete($reusedPath) }
+            missing-directory { [IO.Directory]::Delete((Join-Path $install 'platforms'), $true) }
+            size { Write-FixtureText $reusedPath 'short local payload' }
+            hash {
+                $bytes = [IO.File]::ReadAllBytes($reusedPath)
+                $bytes[0] = $bytes[0] -bxor 1
+                [IO.File]::WriteAllBytes($reusedPath, $bytes)
+            }
+        }
+        $before = Get-FixtureSnapshot $install
+        $offset = Get-FixtureRequestOffset
+        $prepared = Receive-FixturePackage github -InstallDir $install
+        Assert-FixtureArchiveRequests $offset 1 1
+        Assert-FixturePrepared $prepared
+        Assert-FixtureSnapshot $install $before 'Reusable-file fallback preparation'
+        Assert-NoFixtureReady $script:NegativeParent
+        $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
+        Assert-FixtureOverlay $install $backup $before $prepared.Manifest
+        Pass-Fixture "local reusable $fault falls back to full and completes without changing original/backup"
+    }
+    foreach ($status in @(404, 403, 500)) {
+        Publish-FixtureGitHubAssets $script:DeltaPackage
+        Add-FixtureRoute '/github/download/v9.1.0/VNote-9.1.0-win64.delta.zip' -Status $status
+        $offset = Get-FixtureRequestOffset
+        if ($status -eq 404) {
+            $prepared = Receive-FixturePackage github -InstallDir $script:NegativeInstall
+            Assert-FixturePrepared $prepared
+            Assert-FixtureArchiveRequests $offset 1 1
+            Assert-NoFixtureReady $script:NegativeParent
+            Assert-FixtureSnapshot $script:NegativeInstall $script:NegativeSnapshot 'Delta exact 404'
+            Pass-Fixture 'GitHub exact delta 404 selects full'
+        }
+        else {
+            Expect-FixturePreparationFailure "delta HTTP $status is fatal" { Receive-FixturePackage github -InstallDir $script:NegativeInstall }
+            Assert-FixtureArchiveRequests $offset 1 0
+        }
+    }
+    foreach ($fault in @('duplicate', 'off-origin', 'empty-url')) {
+        $release = New-FixtureRelease -Urls $script:DeltaUrls -Delta
+        $selected = $release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.delta.zip' }
+        switch ($fault) {
+            duplicate { $release.assets += $selected }
+            off-origin { $selected.browser_download_url = 'https://off-origin.invalid/package.delta.zip' }
+            empty-url { $selected.browser_download_url = '' }
+        }
+        Publish-FixtureRelease gitee $release
+        Expect-FixtureDeltaFailure "selected delta $fault is fatal" $script:DeltaPackage -DeltaRequests 0 -Source gitee
+    }
+    foreach ($fault in @('null', 'asset', 'base-equal', 'base-newer', 'base-invalid', 'zero-size', 'fractional-size', 'oversize', 'hash')) {
+        $artifacts = Copy-FixtureArtifacts ("invalid delta metadata " + $fault) -Original $script:DeltaPackage
+        $manifest = Read-FixtureJson $artifacts.Manifest
+        switch ($fault) {
+            null { $manifest.delta = $null }
+            asset { $manifest.delta.asset = 'other.delta.zip' }
+            base-equal { $manifest.delta.baseVersion = '9.1.0' }
+            base-newer { $manifest.delta.baseVersion = '9.2.0' }
+            base-invalid { $manifest.delta.baseVersion = '9.0.0-beta' }
+            zero-size { $manifest.delta.size = 0 }
+            fractional-size { $manifest.delta.size = 1.5 }
+            oversize { $manifest.delta.size = [int64]4294967297 }
+            hash { $manifest.delta.sha256 = 'not-a-sha256' }
+        }
+        Sign-FixtureManifest $artifacts $manifest
+        Expect-FixtureDeltaFailure "signed invalid delta metadata: $fault" $artifacts -DeltaRequests 0
+    }
+    foreach ($fault in @('archive-hash', 'archive-size', 'payload-hash')) {
+        $artifacts = Copy-FixtureArtifacts ("delta " + $fault) -Original $script:DeltaPackage
+        if ($fault -eq 'archive-hash') {
+            $bytes = [IO.File]::ReadAllBytes($artifacts.Delta)
+            $bytes[20] = $bytes[20] -bxor 1
+            [IO.File]::WriteAllBytes($artifacts.Delta, $bytes)
+        }
+        elseif ($fault -eq 'archive-size') {
+            $stream = [IO.File]::OpenWrite($artifacts.Delta)
+            try { $stream.SetLength($stream.Length - 1) } finally { $stream.Dispose() }
+        }
+        else {
+            $zip = [IO.Compression.ZipFile]::Open($artifacts.Delta, [IO.Compression.ZipArchiveMode]::Update)
+            try {
+                $stream = $zip.GetEntry('Qt6Core.dll').Open()
+                try { $first = $stream.ReadByte(); $stream.Position = 0; $stream.WriteByte([byte]($first -bxor 1)) }
+                finally { $stream.Dispose() }
+            }
+            finally { $zip.Dispose() }
+            Sign-FixtureArchive $artifacts -Delta
+        }
+        Expect-FixtureDeltaFailure "signed delta $fault is fatal" $artifacts
+    }
+    $deltaHostileEntries = @($hostileEntries) + @(
+        @{ Name = 'embedded manifest'; Path = 'manifest.json'; Attributes = 0 },
+        @{ Name = 'full-package wrapper'; Path = 'VNote-9.1.0-win64/Qt6Core.dll'; Attributes = 0; KeepWrapper = $true }
+    )
+    foreach ($hostile in $deltaHostileEntries) {
+        $artifacts = Copy-FixtureArtifacts ('hostile delta ' + $hostile.Name) -Original $script:DeltaPackage
+        $entryPath = $hostile.Path
+        if (-not $hostile.ContainsKey('KeepWrapper')) { $entryPath = $entryPath.Replace('VNote-9.1.0-win64/', '') }
+        Add-FixtureZipEntry $artifacts $entryPath -Attributes $hostile.Attributes -Delta
+        Expect-FixtureDeltaFailure ("signed hostile delta: " + $hostile.Name) $artifacts
+        Assert-Fixture (-not [IO.File]::Exists((Join-Path $script:Root 'escape.bin'))) 'Delta traversal escaped private staging'
+    }
+    Publish-FixtureGitHubAssets $script:DeltaPackage
+    $offset = Get-FixtureRequestOffset
+    Expect-FixturePreparationFailure 'reusable-file sharing violation is fatal, not full fallback' {
+        $lock = [IO.File]::Open((Join-Path $script:NegativeInstall 'resources/reusable.bin'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+        try { Receive-FixturePackage github -InstallDir $script:NegativeInstall }
+        finally { $lock.Dispose() }
+    }
+    Assert-FixtureArchiveRequests $offset 1 0
+    $reparseInstall = New-FixtureInstall
+    $reparseBefore = Get-FixtureSnapshot $reparseInstall
+    $platforms = Join-Path $reparseInstall 'platforms'
+    $heldPlatforms = Join-Path (New-FixtureDirectory 'held platforms') 'platforms'
+    $offset = Get-FixtureRequestOffset
+    Expect-FixturePreparationFailure 'reusable-file ancestor reparse is fatal, not full fallback' {
+        [IO.Directory]::Move($platforms, $heldPlatforms)
+        try {
+            New-Item -ItemType Junction -Path $platforms -Target $script:Outside | Out-Null
+            $script:Junctions.Add($platforms)
+            Receive-FixturePackage github -InstallDir $reparseInstall
+        }
+        finally {
+            if ([IO.Directory]::Exists($platforms)) { [IO.Directory]::Delete($platforms) }
+            [void]$script:Junctions.Remove($platforms)
+            [IO.Directory]::Move($heldPlatforms, $platforms)
+        }
+    }
+    # Preflight may reject the junction before downloading the delta.
+    $requests = [IO.File]::ReadAllText($script:HttpLog).Substring($offset)
+    Assert-Fixture (-not $requests.Contains('/VNote-9.1.0-win64.zip')) 'Reparse hazard fetched a full archive'
+    Assert-FixtureSnapshot $reparseInstall $reparseBefore 'Reusable reparse installation'
+    Publish-FixtureGitHubAssets $script:Package
+    Publish-FixtureRelease gitee (New-FixtureRelease)
+    $script:VNoteInstallRoot = $script:NegativeInstall
     $script:VNotePreparationGuard = $null
     Close-VNoteParentSession -Session $script:NegativeSession
     $script:NegativeSession = $null
     Stop-FixtureChild $script:NegativeParent.Child
+
+    $cancelInstall = New-FixtureInstall
+    $cancelBefore = Get-FixtureSnapshot $cancelInstall
+    $script:CopyCancelParent = Start-FixtureParent $cancelInstall 'cancel-copy'
+    $script:CopyCancelSession = $null
+    $script:CopyCancelObserved = $false
+    $script:CopyCancelVisits = 0
+    $savedCopyCloseTimeout = $script:VNoteCloseTimeoutMilliseconds
+    $script:VNoteCloseTimeoutMilliseconds = 1000
+    Publish-FixtureGitHubAssets $script:DeltaPackage
+    try {
+        $script:CopyCancelSession = Connect-FixtureParent $cancelInstall $script:CopyCancelParent
+        $script:VNotePreparationGuard = {
+            if (-not $script:CopyCancelObserved) {
+                # NTFS directory enumeration can report size zero until the exclusive
+                # writer closes. Signal on the second guard visit with the staged file
+                # present, after copying has begun, rather than polling cached lengths.
+                $copy = Join-Path $script:VNoteStageRoot 'package-delta/resources/reusable.bin'
+                if ([IO.File]::Exists($copy)) { ++$script:CopyCancelVisits }
+                if ($script:CopyCancelVisits -ge 2) {
+                    $script:CopyCancelObserved = $true
+                    Write-FixtureText ($script:CopyCancelParent.HelperFile + '.cancel') 'cancel during reusable copy'
+                    Assert-Fixture ($script:CopyCancelSession.PendingRead.Wait(5000)) 'Real parent did not deliver preparation cancellation'
+                }
+            }
+            Assert-VNoteParentPreparing -Session $script:CopyCancelSession
+        }
+        $offset = Get-FixtureRequestOffset
+        $null = Expect-FixtureFailure {
+            $null = Receive-FixturePackage github -InstallDir $cancelInstall
+            Request-VNoteShutdown -Session $script:CopyCancelSession
+        } 'real cancellation while copying reusable payload'
+        Assert-Fixture $script:CopyCancelObserved 'Cancellation never reached a partially copied reusable file'
+        Assert-FixtureArchiveRequests $offset 1 0
+        Assert-NoFixtureReady $script:CopyCancelParent
+        Assert-FixtureSnapshot $cancelInstall $cancelBefore 'Cancellation during local reuse'
+        Assert-FixtureSnapshot $script:Outside $script:OutsideSnapshot 'Cancellation outside installation'
+        Pass-Fixture 'real parent cancellation during reusable copy is fatal before READY, without full fallback'
+    }
+    finally {
+        $script:VNoteCloseTimeoutMilliseconds = $savedCopyCloseTimeout
+        $script:VNotePreparationGuard = $null
+        Close-VNoteParentSession -Session $script:CopyCancelSession
+        Stop-FixtureChild $script:CopyCancelParent.Child
+        Publish-FixtureGitHubAssets $script:Package
+    }
 
     $lockedInstall = New-FixtureInstall
     $lockedBefore = Get-FixtureSnapshot $lockedInstall
@@ -1062,39 +1377,55 @@ public static class VNoteMappedImageFixture {
     # A rejected helper releases its mutex before the visible failure prompt.
     $releasedMutex = Enter-VNoteUpdateMutex -InstallDir $lifecycleInstall
     $releasedMutex.ReleaseMutex(); $releasedMutex.Dispose()
+    foreach ($packageKind in @('full', 'delta')) {
+        if ($packageKind -eq 'delta') {
+            $lifecycleInstall = New-FixtureInstall
+            $script:RelaunchRoots.Add($lifecycleInstall)
+            $stoppedExpected = New-FixtureDirectory 'expected delta stopped installation'
+            Copy-FixtureTree $lifecycleInstall $stoppedExpected
+            Write-FixtureText (Join-Path $stoppedExpected 'config/local/saved-on-close.bin') 'saved after ACCEPTED'
+            $stoppedSnapshot = Get-FixtureSnapshot $stoppedExpected
+            $attempt.InstallDir = $lifecycleInstall
+            Publish-FixtureGitHubAssets $script:DeltaPackage
+        }
+        else { Publish-FixtureGitHubAssets $script:Package }
+        $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
+        $attempt.ParentProcessId = $parent.Child.Process.Id
+        $attempt.PipeName = $parent.Pipe
+        $attempt.Token = $parent.Token
+        # Invoke owns and may delete the copied helper directory, so retries receive
+        # another independent copy exactly as the controller would create.
+        $retryDirectory = New-FixtureDirectory 'copied retry helper'
+        $attempt.Updater = Join-Path $retryDirectory 'update-vnote.ps1'
+        [IO.File]::Copy($script:UpdaterScript, $attempt.Updater)
+        [IO.File]::Copy($MinisignPath, (Join-Path $retryDirectory 'minisign.exe'))
+        [IO.File]::Copy($license, (Join-Path $retryDirectory 'LICENSE.minisign'))
+        $offset = Get-FixtureRequestOffset
+        $helper = Start-FixtureMode Update $attempt ('successful-real-' + $packageKind + '-updater')
+        Write-FixtureText $parent.HelperFile ([string]$helper.Process.Id)
+        $null = Wait-FixtureExit $helper 0 30000
+        if ($packageKind -eq 'delta') { Assert-FixtureArchiveRequests $offset 1 0 }
+        else { Assert-FixtureArchiveRequests $offset 0 1 }
+        Assert-Fixture ($parent.Child.Process.HasExited) 'Original VNote did not fully exit'
+        $transcript = [IO.File]::ReadAllText($parent.Log)
+        Assert-Fixture ($transcript.Contains("CLIENT $($helper.Process.Id)`n") -and $transcript.Contains("READY`nSAVED`n")) 'Real peer did not accept and drain its saved data'
+        $record = [IO.File]::ReadAllText((Join-Path $lifecycleInstall '.fixture-launched')).Split('|')
+        Assert-Fixture ($record[0] -ceq 'B') 'Replacement did not run generation B Main'
+        $relaunched = [Diagnostics.Process]::GetProcessById([int]$record[1])
+        Assert-Fixture ((Get-VNoteProcessPath -Process $relaunched) -ieq (Join-Path $lifecycleInstall 'vnote.exe')) 'Relaunch record points outside the updated install'
+        $retainedChild = [pscustomobject]@{ Process = $relaunched; Label = 'observed generation B'; Output = $null; Error = $null }
+        $script:Children.Add($retainedChild)
+        Assert-Fixture (-not $relaunched.HasExited) 'Generation B exited despite successful observation'
+        $backups = @([IO.Directory]::GetDirectories([IO.Path]::GetDirectoryName($lifecycleInstall), [IO.Path]::GetFileName($lifecycleInstall) + '.vnote-old-*'))
+        Assert-Fixture ($backups.Count -eq 1) "$packageKind update did not retain exactly one recovery backup"
+        $savedPath = 'config/local/saved-on-close.bin'
+        Assert-Fixture ([IO.File]::ReadAllText((Join-Path $lifecycleInstall $savedPath)) -ceq 'saved after ACCEPTED') 'Clone preceded the final portable save'
+        Assert-Fixture ([IO.File]::ReadAllText((Join-Path $backups[0] $savedPath)) -ceq 'saved after ACCEPTED') 'Backup lacks stopped-session portable data'
+        Assert-FixtureOverlay $lifecycleInstall $backups[0] $stoppedSnapshot $valid.Manifest
+        Stop-FixtureChild $retainedChild
+        Pass-Fixture "real Invoke $packageKind lifecycle, graceful exit, stopped config clone and observed generation B relaunch"
+    }
     Publish-FixtureGitHubAssets $script:Package
-    $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
-    $attempt.ParentProcessId = $parent.Child.Process.Id
-    $attempt.PipeName = $parent.Pipe
-    $attempt.Token = $parent.Token
-    # Invoke owns and may delete the copied helper directory, so retries receive
-    # another independent copy exactly as the controller would create.
-    $retryDirectory = New-FixtureDirectory 'copied retry helper'
-    $attempt.Updater = Join-Path $retryDirectory 'update-vnote.ps1'
-    [IO.File]::Copy($script:UpdaterScript, $attempt.Updater)
-    [IO.File]::Copy($MinisignPath, (Join-Path $retryDirectory 'minisign.exe'))
-    [IO.File]::Copy($license, (Join-Path $retryDirectory 'LICENSE.minisign'))
-    $helper = Start-FixtureMode Update $attempt 'successful-real-updater'
-    Write-FixtureText $parent.HelperFile ([string]$helper.Process.Id)
-    $null = Wait-FixtureExit $helper 0 30000
-    Assert-Fixture ($parent.Child.Process.HasExited) 'Original VNote did not fully exit'
-    $transcript = [IO.File]::ReadAllText($parent.Log)
-    Assert-Fixture ($transcript.Contains("CLIENT $($helper.Process.Id)`n") -and $transcript.Contains("READY`nSAVED`n")) 'Real peer did not accept and drain its saved data'
-    $record = [IO.File]::ReadAllText((Join-Path $lifecycleInstall '.fixture-launched')).Split('|')
-    Assert-Fixture ($record[0] -ceq 'B') 'Replacement did not run generation B Main'
-    $relaunched = [Diagnostics.Process]::GetProcessById([int]$record[1])
-    Assert-Fixture ((Get-VNoteProcessPath -Process $relaunched) -ieq (Join-Path $lifecycleInstall 'vnote.exe')) 'Relaunch record points outside the updated install'
-    $retainedChild = [pscustomobject]@{ Process = $relaunched; Label = 'observed generation B'; Output = $null; Error = $null }
-    $script:Children.Add($retainedChild)
-    Assert-Fixture (-not $relaunched.HasExited) 'Generation B exited despite successful observation'
-    $backups = @([IO.Directory]::GetDirectories([IO.Path]::GetDirectoryName($lifecycleInstall), [IO.Path]::GetFileName($lifecycleInstall) + '.vnote-old-*'))
-    Assert-Fixture ($backups.Count -eq 1) 'Full update did not retain exactly one recovery backup'
-    $savedPath = 'config/local/saved-on-close.bin'
-    Assert-Fixture ([IO.File]::ReadAllText((Join-Path $lifecycleInstall $savedPath)) -ceq 'saved after ACCEPTED') 'Clone preceded the final portable save'
-    Assert-Fixture ([IO.File]::ReadAllText((Join-Path $backups[0] $savedPath)) -ceq 'saved after ACCEPTED') 'Backup lacks stopped-session portable data'
-    Assert-FixtureOverlay $lifecycleInstall $backups[0] $stoppedSnapshot $valid.Manifest
-    Stop-FixtureChild $retainedChild
-    Pass-Fixture 'real Invoke failure/reset/retry, graceful exit, stopped config clone and observed generation B relaunch'
 
     foreach ($mode in @('exit', 'handoff')) {
         $install = New-FixtureInstall

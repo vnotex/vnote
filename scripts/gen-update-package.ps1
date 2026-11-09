@@ -28,7 +28,8 @@
 
     Ordinary VNote update checks ignore these artifacts. Only the explicit
     Windows Update Now action launches the deployed EXTERNAL PowerShell updater,
-    which requires a signed manifest and consumes the full package, never deltas.
+    which requires a signed manifest and verifies a full package or reconstructs
+    the complete target payload from an eligible delta.
     See the "Update Check" section of AGENTS.md and docs/update-signing.md.
 
 .PARAMETER ExtractedDir
@@ -482,7 +483,6 @@ if ($base) {
 
                     # Entries are INSTALL-ROOT-RELATIVE with NO top-level
                     # directory, as required by the published delta format.
-                    # The external Windows updater consumes only full packages.
                     $deltaEntries = @()
                     foreach ($rel in ($changed | Sort-Object)) {
                         $deltaEntries += @{

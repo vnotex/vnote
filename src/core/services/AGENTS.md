@@ -697,7 +697,8 @@ check-only. The exception adds no installation behavior to `UpdateService` or `U
 
 The removed C++ installer, delta chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`
 and vendored `miniz` / `minicrypto` must not return. The external Windows updater is a
-separate process consuming signed **full packages only**, with no unsigned/source fallback.
+separate process verifying signed full packages or reconstructing eligible deltas,
+with no unsigned/source fallback.
 Its authenticated, launch-scoped graceful-close handshake must receive explicit acceptance
 and wait for full original-process exit before replacement. It must preserve portable
 `config` and unowned files, retain a complete backup, and fail with manual-update guidance
@@ -713,7 +714,7 @@ for authentication/replacement requirements and
 | Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness; explicit Windows helper launch and authenticated shutdown session |
 | View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, Open Release Page / Skip This Version / Later; notes are viewed on the release page |
 | View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with Check Release first and Windows-only Update Now |
-| External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification, safe replacement/backup and same-token relaunch after accepted shutdown |
+| External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification or eligible-delta reconstruction, safe replacement/backup and same-token relaunch after accepted shutdown |
 
 `UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
 `core_services`, so the reverse dependency would be circular. The installed version is

@@ -14,10 +14,10 @@ name: Gitee Mirror
 # to find there.
 #
 # The small update assets (*.manifest.json, *.manifest.json.minisig and the delta
-# ZIP) ARE mirrored automatically. The client itself no longer consumes them -
-# they are published as the artifact interface for a future EXTERNAL updater (see
-# docs/update-signing.md) - but mirroring keeps both forges carrying the same
-# release contents. Uploads are additive:
+# ZIP) ARE mirrored automatically for the explicit EXTERNAL Windows updater.
+# Ordinary checks ignore them; the updater verifies full packages or reconstructs
+# eligible deltas. See docs/update-signing.md for eligibility, same-source full
+# fallback and required signed metadata. Uploads are additive:
 # Gitee has no replace semantics, so an already-attached name is skipped and no
 # existing attachment is ever removed.
 #

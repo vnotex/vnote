@@ -6,9 +6,11 @@
 > launch the deployed external PowerShell updater. Keep **Check Release** and the
 > existing manual-check dialog; do not restore the removed C++ installer.
 >
-> The external updater consumes signed **full packages only**. The Windows
-> `win64` package requires a full ZIP, release manifest and minisign signature.
-> CI may continue publishing deltas, which this updater ignores.
+> The external updater verifies signed full packages or reconstructs the complete
+> target payload from an eligible signed delta. Windows `win64` releases still
+> publish a full ZIP, release manifest and minisign signature; deltas are optional.
+> Signed `fullPackage` metadata is always required, but a successful eligible delta
+> needs neither the full archive's presence on the selected source nor its download.
 
 A downloaded package that the external updater will **execute** cannot be
 authenticated by TLS plus a SHA-256 taken from the same origin: that proves only
@@ -37,7 +39,8 @@ produced and audited with a stock tool rather than something invented here.
   x64 `win64` package; never resolve the latest release during installation.
 - GitHub uses public assets under
   `https://github.com/vnotex/vnote/releases/download/v<version>/`, with exact names
-  `VNote-<version>-win64.zip`, `VNote-<version>-win64.manifest.json` and
+  `VNote-<version>-win64.zip`, optional `VNote-<version>-win64.delta.zip`,
+  `VNote-<version>-win64.manifest.json` and
   `VNote-<version>-win64.manifest.json.minisig`. The updater makes no release-metadata
   API request, creates no synthetic release record and needs no API token or retry.
   GitHub's mutable draft/prerelease flags are not queried or treated as an
@@ -46,10 +49,14 @@ produced and audited with a stock tool rather than something invented here.
   not these asset downloads; see [UpdateService](../src/core/services/AGENTS.md#updateservice).
 - Gitee retains exact-tag API discovery, matching tag and non-prerelease checks,
   rejection of a draft flag if present and not false, and selection of exact,
-  unique ZIP, manifest and signature asset names.
-- Missing selected-source assets fail closed without a source or metadata-API
-  fallback. Validate every HTTPS redirect against that source's disjoint host
-  allowlist, retaining normal system certificate/proxy behavior.
+  unique manifest, signature and selected archive asset names. Resolve the archive
+  only after signed eligibility is known; do not inspect ineligible delta assets
+  or require a full archive when delta preparation succeeds.
+- Missing required selected-source assets fail closed without a source or metadata-API
+  fallback. An absent eligible delta may select the same signed full package only
+  under [the delta rules below](#delta-preparation-and-full-fallback). Validate every
+  HTTPS redirect against that source's disjoint host allowlist, retaining normal
+  system certificate/proxy behavior.
 - Run only the copied bundled verifier, never one downloaded at update time or
   resolved from PATH. Preparation pins the archive, executable and upstream
   license by SHA-256 and performs no network fetch during configure or normal
@@ -66,11 +73,13 @@ produced and audited with a stock tool rather than something invented here.
   key must verify both the manifest and trusted-comment signatures. Missing
   verifier/signature, unknown key or bad signature is fatal; no unsigned,
   TLS-only, hash-only or user-supplied-key production fallback is allowed.
-- Validate schema/identity, fixed `variant: win64` and `fullPackage`, then signed archive size
-  and SHA-256. Bound streaming downloads and validate paths and entry sets before
-  extraction; reject traversal, aliases, reparse/symlink entries, undeclared
-  files and any root `config` payload. Check extracted file sizes/hashes and the
-  in-package manifest against the signed file table. Never apply `delta`.
+- Validate schema/identity, fixed `variant: win64`, mandatory `fullPackage` and
+  any present `delta` metadata, then the selected archive's signed size and SHA-256.
+  Bound streaming downloads and validate paths and entry sets before extraction;
+  reject traversal, aliases, duplicates, conflicting prefixes, reparse/symlink
+  entries, undeclared files, archive bombs and any root `config` payload. Check
+  extracted file sizes/hashes and the completed in-package manifest against the
+  signed target file table. Delta reconstruction follows the rules below.
 - Finish authentication, extraction and permission/space/path preflight **before
   asking VNote to close**. The launch-scoped pipe authenticates both process
   identities and a per-attempt token; only a complete explicit `ACCEPTED` response
@@ -93,9 +102,51 @@ produced and audited with a stock tool rather than something invented here.
   reopened**, not success; keep the backup and report manual-launch guidance.
   Failures release the pipe/locks and remain visible in the console for retry.
 
-These requirements do not add writes or installer dependencies to ordinary
-checks. The root `AGENTS.md` and `src/controllers/AGENTS.md` own the entry-point
-and cancellable-close boundaries.
+These requirements add no settings, configuration migration, writes or installer
+dependencies to ordinary checks. The root `AGENTS.md` and `src/controllers/AGENTS.md`
+own the entry-point and cancellable-close boundaries.
+
+### Delta preparation and full fallback
+
+- The existing artifact schema and generator behavior are unchanged. Authenticate
+  the release manifest before using `delta`; malformed present metadata is fatal,
+  even when the delta would not be eligible. Require the exact asset name
+  `VNote-<version>-win64.delta.zip`, a positive integral size no greater than 4 GiB,
+  SHA-256 and a numeric three-component `baseVersion` older than the target. Prefer
+  delta only when `baseVersion` exactly matches the running version and its signed
+  archive size is strictly smaller than `fullPackage.size`. No delta chains.
+- The delta ZIP contains only changed/new, install-root-relative files declared
+  by the signed target table: no wrapper directory and no `manifest.json`. Use
+  the same held-archive verification and guarded extraction as full packages,
+  accepting a subset of target files and verifying every supplied file.
+- Complete missing target files from the live installation into private staging
+  using read-only source handles. Bound copies by signed target sizes and verify
+  staged bytes against target hashes while the destination is write-locked. The
+  installed manifest is not a trust source. Synthesize `manifest.json` solely from
+  the authenticated target schema, identity and complete file table, without
+  `fullPackage` or `delta` references. Revalidate the entire reconstructed payload
+  before READY; preparation never changes the original installation.
+- Select the same source's signed full package only when delta metadata is absent
+  or ineligible, the eligible delta asset is absent from Gitee's exact-tag asset
+  list, an eligible delta GET returns exactly HTTP 404 through an otherwise valid
+  redirect path, or a required reusable local file is missing or has a target
+  size/hash mismatch. A 404 uses the download's response headers, not a separate
+  HEAD request or a retry. Remove only the updater-owned delta staging/archive
+  before fallback and repeat the full-package space preflight. If full is needed,
+  its exact selected asset must exist and pass the same signed verification.
+- Corrupt signatures, invalid metadata, unsafe/duplicate selected assets, bad
+  archive size/hash, unsafe ZIP entries or changed-file mismatches are fatal, not
+  reasons to download full. Other HTTP statuses, redirect-policy failures,
+  timeouts, truncated downloads, access/sharing errors, reparse hazards, other
+  I/O failures and cancellation are also fatal. Never switch source, downgrade
+  authentication or treat arbitrary download failures as absence.
+- Reconstruction does not delete files omitted from the target table. The
+  existing stopped-tree clone/overlay/swap, portable `config`, unowned-file,
+  collision-refusal, complete-backup and rollback rules above are unchanged.
+  There is no C++ or in-process delta application or new quit protocol.
+- Already-installed updater scripts remain full-only until a release containing
+  the new helper has been installed. Publishing a delta alone does not upgrade
+  those scripts or change ordinary checks.
 
 ## Public keys
 
@@ -249,13 +300,15 @@ The signature covers the **release-asset manifest** —
 `VNote-<ver>-win64.manifest.json` — over its exact bytes as served. Since
 that manifest contains the SHA-256 and size of the full package, optional delta
 archive, and every individual payload file, one signature transitively
-authenticates the bytes the external updater downloads or installs. This updater
-uses only `fullPackage` and `files`; a signed delta is still not an instruction
-to apply one.
+authenticates the bytes the external updater downloads or installs. The updater
+uses mandatory `fullPackage`, complete target `files` and eligible optional `delta`;
+a signature alone does not establish delta eligibility or trust local base bytes.
 
-The in-package `manifest.json` (inside the ZIP) is *not* separately signed; the
-external updater must compare its schema, identity and file table to the signed
-release manifest. Only the release manifest has `fullPackage`/optional `delta`.
+The full ZIP's in-package `manifest.json` is *not* separately signed; the external
+updater must compare its schema, identity and file table to the signed release
+manifest. Delta reconstruction synthesizes that target-only manifest from the
+authenticated release manifest, never the installed manifest. Only the release
+manifest has `fullPackage`/optional `delta`.
 
 The minisign `untrusted comment:` line is, as the name says, **not**
 authenticated — do not rely on it. The `trusted comment:` line *is* covered, by

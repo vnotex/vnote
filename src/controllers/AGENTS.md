@@ -129,9 +129,10 @@ explicit response in that call stack, never block the GUI, and retain an accepte
 through teardown. EOF, timeout or cancellation never authorizes installation. The helper must
 wait on the retained original process handle through save/sync drains without force-killing.
 
-The external process alone owns signed full-package authentication, preservation of portable
-`config` and unowned files, clone/overlay/swap with complete recovery backup, and same-token
-relaunch. Protected installations fail with manual-update guidance, not UAC/ACL changes.
+The external process alone owns signed full-package verification or eligible-delta reconstruction,
+preservation of portable `config` and unowned files, clone/overlay/swap with complete recovery backup,
+and same-token relaunch. Protected installations fail with manual-update guidance,
+not UAC/ACL changes.
 [../../docs/update-signing.md](../../docs/update-signing.md) owns that contract.
 
 ## Native Typst runtime and image cleanup

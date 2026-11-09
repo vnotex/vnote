@@ -302,7 +302,8 @@ jobs:
       # Update manifest / delta artifacts run before the composition check below
       # (which inspects the extracted directory, now including manifest.json).
       # Ordinary checks remain metadata-only; the explicit external updater
-      # consumes signed full packages, never deltas. See docs/update-signing.md.
+      # verifies signed full packages or reconstructs eligible deltas.
+      # See docs/update-signing.md for eligibility and safe full fallback.
       # The MSI produced by pack intentionally does not contain manifest.json.
       - name: Generate update manifest and delta
         # Update artifacts are only meaningful for a real release. This repo

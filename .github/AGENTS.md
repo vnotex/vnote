@@ -404,17 +404,18 @@ Keep `qtpdf` in the CI SDK for the required runtime and its attribution.
 Ordinary startup/manual checks remain metadata-only and read-only for the installation;
 `UpdateService` ignores assets. The sole installation entry point is the explicit Windows
 `Update Now` notification action launching the deployed external PowerShell updater, not an
-in-process installer or a manual-dialog action. The script consumes signed **full packages
-only**, with no unsigned or cross-source fallback. See
+in-process installer or a manual-dialog action. The script verifies signed full packages or
+reconstructs complete payloads from eligible deltas, with no unsigned or cross-source fallback. See
 [../docs/update-signing.md](../docs/update-signing.md) and root
 [AGENTS.md § Update Check](../AGENTS.md#update-check).
 
 On the existing `[Release]` master-push condition, `win64` must publish a ZIP,
-`.manifest.json` and `.manifest.json.minisig`. Retain optional delta publication,
-although this updater never consumes deltas. Preserve the stable-channel and
+`.manifest.json` and `.manifest.json.minisig`. Retain optional delta publication
+for the external updater. Preserve the stable-channel and
 artifact-list gates. Missing `MINISIGN_SECRET_KEY` must fail release signing, and
-secret files stay outside the workspace. Missing Gitee mirrors fail closed at
-runtime; never switch the user's source to GitHub.
+secret files stay outside the workspace. Missing required Gitee assets fail closed;
+an absent eligible delta may select the same signed full package as documented above.
+Never switch the user's source to GitHub.
 
 `prepare_win_updater` must run `package/prepare-win-updater.cmake` with
 `UPDATER_OUTPUT_DIR=<build>/src/win-updater` as a **deploy-only prerequisite**: no network on

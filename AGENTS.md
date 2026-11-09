@@ -361,10 +361,11 @@ launching the deployed external PowerShell script. Keep “Check Release” firs
 the manual-check dialog is unchanged and has no automatic-install entry point. The action
 must disclose downloading, closing and reopening VNote; checks never activate it themselves.
 
-The external updater must authenticate the offered version's signed full-package manifest
-with the bundled minisign verifier before using it, then verify the archive and payload.
-It consumes no deltas, never falls back to another source or unsigned artifacts, and requests
-shutdown only after preparation succeeds. A launch-scoped, PID/token-authenticated pipe and
+The external updater must authenticate the offered version's signed manifest with the
+bundled minisign verifier, then verify a full package or reconstruct the complete target
+payload from an eligible delta. It never falls back to another source or unsigned artifacts,
+and requests shutdown only after preparation succeeds.
+A launch-scoped, PID/token-authenticated pipe and
 an explicit accepted close authorize installation; cancellation or pipe EOF does not. Wait
 for the original process to exit, including save/sync drains, without force-killing it.
 
@@ -383,8 +384,9 @@ Repo-wide forbidden patterns (also constrain CI, packaging, controllers and widg
 - **Never** give `UpdateService` a `ConfigMgr2` dependency — add policy to the controller.
 - **Never** restore the C++ installer, delta application or a general-purpose quit CLI/protocol.
 
-The Windows release publishes a signed full-package manifest and may also publish
-unused delta ZIPs. Signing and external-verifier contract: [docs/update-signing.md](docs/update-signing.md).
+The Windows release publishes a signed full-package manifest and optional delta ZIPs.
+External-only delta eligibility and safe full fallback:
+[docs/update-signing.md](docs/update-signing.md).
 Controller launch/shutdown ownership: [src/controllers/AGENTS.md § Update Check](src/controllers/AGENTS.md#update-check).
 Endpoints, source-scoped redirects and check threading:
 [src/core/services/AGENTS.md § Update Check](src/core/services/AGENTS.md#update-check).

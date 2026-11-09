@@ -205,7 +205,8 @@ function Receive-VNoteFile {
         [Parameter(Mandatory = $true)]$Url,
         [Parameter(Mandatory = $true)][string]$Destination,
         [Parameter(Mandatory = $true)][ValidateSet('github', 'gitee')][string]$Source,
-        [Parameter(Mandatory = $true)]$MaxBytes
+        [Parameter(Mandatory = $true)]$MaxBytes,
+        [switch]$AllowNotFound
     )
 
     Assert-VNoteInteger -Value $MaxBytes -Name 'download byte limit' -Minimum 1 -Maximum 4294967296
@@ -343,9 +344,28 @@ function Receive-VNoteFile {
             }
             $outputStream.Flush()
             $complete = $true
+            if ($AllowNotFound) { return $true }
             return
         }
         throw 'The update download exceeded five redirects.'
+    }
+    catch [Net.WebException] {
+        # PowerShell can match an inner WebException while retaining its method-
+        # invocation wrapper in ErrorRecord.Exception (including Wait-VNoteTask).
+        $webError = $_.Exception
+        while ($webError -isnot [Net.WebException] -and $null -ne $webError.InnerException) {
+            $webError = $webError.InnerException
+        }
+        if ($webError -isnot [Net.WebException]) { throw }
+        $response = $webError.Response
+        # GetResponseAsync faults on HTTP errors. Only an eligible optional delta
+        # may interpret an exact 404 as absence; never consume that response body.
+        if ($AllowNotFound -and $null -ne $response -and [int]$response.StatusCode -eq 404) {
+            if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+            if ($clock.ElapsedMilliseconds -ge $deadline) { throw 'The update download exceeded its overall deadline.' }
+            return $false
+        }
+        throw
     }
     finally {
         if ($null -ne $inputStream) { $inputStream.Dispose() }
@@ -393,11 +413,11 @@ function Get-VNoteReleaseAssets {
     Assert-VNoteVersion -Version $Version
     $baseName = "VNote-$Version-win64"
     $required = @{
-        Zip = "$baseName.zip"
         Manifest = "$baseName.manifest.json"
         Signature = "$baseName.manifest.json.minisig"
     }
     $selected = @{}
+    $releaseAssets = $null
     if ($Source -eq 'github') {
         # Public versioned assets avoid the unauthenticated REST API quota.
         # The verified manifest, not mutable release flags, enforces stable identity.
@@ -416,6 +436,7 @@ function Get-VNoteReleaseAssets {
             $downloaded = $true
             $release = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($apiPath, [Text.Encoding]::UTF8)) -ErrorAction Stop
             Assert-VNoteRelease -Release $release -Version $Version
+            $releaseAssets = $release.assets
             foreach ($kind in $required.Keys) {
                 $match = $null
                 foreach ($asset in $release.assets) {
@@ -440,11 +461,44 @@ function Get-VNoteReleaseAssets {
         $null = Assert-VNoteUrl -Url $selected[$kind] -Source $Source
     }
     return [PSCustomObject]@{
-        Zip = $selected.Zip
         Manifest = $selected.Manifest
         Signature = $selected.Signature
-        ZipName = $required.Zip
+        ReleaseAssets = $releaseAssets
     }
+}
+
+function Get-VNoteArchiveUrl {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet('github', 'gitee')][string]$Source,
+        [Parameter(Mandatory = $true)]$Version,
+        [Parameter(Mandatory = $true)]$Assets,
+        [switch]$Delta
+    )
+
+    Assert-VNoteVersion -Version $Version
+    $name = if ($Delta) { "VNote-$Version-win64.delta.zip" } else { "VNote-$Version-win64.zip" }
+    if ($Source -eq 'github') {
+        $url = $script:VNoteOrigins[$Source].ReleaseBaseUrl + 'v' + $Version + '/' + $name
+    } else {
+        # Inspect archive assets only after signature verification and eligibility.
+        # An unrelated or ineligible delta must not prevent a full-package update.
+        $match = $null
+        foreach ($asset in $Assets.ReleaseAssets) {
+            $assetName = Get-VNoteProperty -Object $asset -Name 'name'
+            if ($assetName -isnot [string]) { throw 'A release asset name is not a string.' }
+            if ($assetName -ceq $name) {
+                if ($null -ne $match) { throw "The release has duplicate '$name' assets." }
+                $match = $asset
+            }
+        }
+        if ($null -eq $match) {
+            if ($Delta) { return $null }
+            throw "The configured source is missing '$name'. Use Check Release to update manually."
+        }
+        $url = Get-VNoteProperty -Object $match -Name 'browser_download_url'
+    }
+    $null = Assert-VNoteUrl -Url $url -Source $Source
+    return $url
 }
 
 function Assert-VNoteManifestFiles {
@@ -511,6 +565,30 @@ function Assert-VNoteManifestFiles {
     }
 }
 
+function Get-VNoteDelta {
+    param([Parameter(Mandatory = $true)]$Manifest)
+
+    if ($Manifest.PSObject.Properties.Name -cnotcontains 'delta') { return $null }
+    $delta = Get-VNoteProperty -Object $Manifest -Name 'delta'
+    $version = Get-VNoteProperty -Object $Manifest -Name 'version'
+    $baseVersion = Get-VNoteProperty -Object $delta -Name 'baseVersion'
+    Assert-VNoteVersion -Version $baseVersion
+    if ((Compare-VNoteVersion -Left $baseVersion -Right $version) -ge 0) {
+        throw 'The signed delta base version must be older than the offered version.'
+    }
+    $asset = Get-VNoteProperty -Object $delta -Name 'asset'
+    if ($asset -isnot [string] -or $asset -cne "VNote-$version-win64.delta.zip") {
+        throw 'The signed delta asset name does not match the offered update.'
+    }
+    Assert-VNoteInteger -Value (Get-VNoteProperty -Object $delta -Name 'size') `
+        -Name 'delta.size' -Minimum 1 -Maximum 4294967296
+    $hash = Get-VNoteProperty -Object $delta -Name 'sha256'
+    if ($hash -isnot [string] -or $hash -cnotmatch '\A[0-9a-fA-F]{64}\z') {
+        throw 'The signed delta has an invalid SHA-256.'
+    }
+    return $delta
+}
+
 function Assert-VNoteManifest {
     param(
         [Parameter(Mandatory = $true)]$Manifest,
@@ -534,7 +612,7 @@ function Assert-VNoteManifest {
     if ($hash -isnot [string] -or $hash -cnotmatch '\A[0-9a-fA-F]{64}\z') {
         throw 'The signed full package has an invalid SHA-256.'
     }
-    # Delta metadata is intentionally neither consumed nor used as a fallback.
+    $null = Get-VNoteDelta -Manifest $Manifest
     return $Manifest
 }
 
@@ -723,22 +801,24 @@ function Expand-VerifiedVNotePackage {
     param(
         [Parameter(Mandatory = $true)][string]$ArchivePath,
         [Parameter(Mandatory = $true)][string]$Destination,
-        [Parameter(Mandatory = $true)]$Manifest
+        [Parameter(Mandatory = $true)]$Manifest,
+        [switch]$Delta
     )
 
     if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
     $version = Get-VNoteProperty -Object $Manifest -Name 'version'
     $null = Assert-VNoteManifestFiles -Manifest $Manifest -Version $version
-    $fullPackage = Get-VNoteProperty -Object $Manifest -Name 'fullPackage'
-    $asset = Get-VNoteProperty -Object $fullPackage -Name 'asset'
-    $archiveSize = Get-VNoteProperty -Object $fullPackage -Name 'size'
-    $archiveHash = Get-VNoteProperty -Object $fullPackage -Name 'sha256'
-    $null = Assert-VNoteInteger -Value $archiveSize -Name 'fullPackage.size' -Minimum 1 -Maximum 4294967296
-    if ($asset -isnot [string] -or $asset -cne "VNote-$version-win64.zip") {
-        throw 'The signed full-package asset does not match the requested package.'
+    $reference = if ($Delta) { Get-VNoteDelta -Manifest $Manifest } else { Get-VNoteProperty -Object $Manifest -Name 'fullPackage' }
+    $asset = Get-VNoteProperty -Object $reference -Name 'asset'
+    $archiveSize = Get-VNoteProperty -Object $reference -Name 'size'
+    $archiveHash = Get-VNoteProperty -Object $reference -Name 'sha256'
+    $null = Assert-VNoteInteger -Value $archiveSize -Name 'archive.size' -Minimum 1 -Maximum 4294967296
+    $expectedAsset = if ($Delta) { "VNote-$version-win64.delta.zip" } else { "VNote-$version-win64.zip" }
+    if ($asset -isnot [string] -or $asset -cne $expectedAsset) {
+        throw 'The signed archive asset does not match the requested package.'
     }
     if ($archiveHash -isnot [string] -or $archiveHash -notmatch '\A[0-9a-fA-F]{64}\z') {
-        throw 'The signed full-package SHA-256 is invalid.'
+        throw 'The signed archive SHA-256 is invalid.'
     }
     $archiveSize = [long]$archiveSize
     $archiveFullPath = [System.IO.Path]::GetFullPath($ArchivePath)
@@ -821,14 +901,17 @@ function Expand-VerifiedVNotePackage {
                 (-not $isDirectory -and ($unixType -eq 16384 -or ($attributes -band 16) -ne 0))) {
                 throw "The ZIP has inconsistent file/directory metadata: $entryName"
             }
-            if ($plainName -ceq $wrapper -and $isDirectory) {
-                if (-not $seenPaths.Add('')) { throw "The ZIP repeats its wrapper directory: $entryName" }
-                continue
+            $relative = $plainName
+            if (-not $Delta) {
+                if ($plainName -ceq $wrapper -and $isDirectory) {
+                    if (-not $seenPaths.Add('')) { throw "The ZIP repeats its wrapper directory: $entryName" }
+                    continue
+                }
+                if (-not $entryName.StartsWith($wrapperPrefix, [System.StringComparison]::Ordinal)) {
+                    throw "The ZIP entry is outside the exact expected wrapper '$wrapper': $entryName"
+                }
+                $relative = $plainName.Substring($wrapperPrefix.Length)
             }
-            if (-not $entryName.StartsWith($wrapperPrefix, [System.StringComparison]::Ordinal)) {
-                throw "The ZIP entry is outside the exact expected wrapper '$wrapper': $entryName"
-            }
-            $relative = $plainName.Substring($wrapperPrefix.Length)
             Assert-VNoteSafePath -Path $relative
             if (-not $seenPaths.Add($relative)) { throw "The ZIP contains duplicate case-insensitive paths: $relative" }
             $targetPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($destinationFullPath,
@@ -841,6 +924,7 @@ function Expand-VerifiedVNotePackage {
                 continue
             }
             if ($relative -ieq 'manifest.json') {
+                if ($Delta) { throw 'A delta must not contain an in-package manifest.' }
                 if ($entry.Length -le 0 -or $entry.Length -gt $manifestLimit) {
                     throw 'The in-package manifest exceeds its size bound or is empty.'
                 }
@@ -872,11 +956,15 @@ function Expand-VerifiedVNotePackage {
                 $slash = $relative.LastIndexOf('/', $slash - 1)
             }
         }
-        if ($null -eq $inPackageEntry) { throw 'The ZIP is missing its in-package manifest.json.' }
-        foreach ($path in $declaredFiles.Keys) {
-            if (-not $archiveFiles.ContainsKey($path)) { throw "The ZIP is missing a signed payload file: $path" }
+        if ($Delta) {
+            if ($archiveFiles.Count -eq 0) { throw 'The delta ZIP contains no payload files.' }
+        } else {
+            if ($null -eq $inPackageEntry) { throw 'The ZIP is missing its in-package manifest.json.' }
+            foreach ($path in $declaredFiles.Keys) {
+                if (-not $archiveFiles.ContainsKey($path)) { throw "The ZIP is missing a signed payload file: $path" }
+            }
+            if ($listedPayloadSize -ne $signedPayloadSize) { throw 'The ZIP does not contain the complete signed payload.' }
         }
-        if ($listedPayloadSize -ne $signedPayloadSize) { throw 'The ZIP does not contain the complete signed payload.' }
         foreach ($path in $requiredDirectories) {
             if ($archiveFiles.ContainsKey($path)) { throw "The ZIP has a file/directory prefix conflict: $path" }
         }
@@ -887,49 +975,51 @@ function Expand-VerifiedVNotePackage {
         }
 
         $buffer = New-Object byte[] 65536
-        $inPackageBytes = [System.IO.MemoryStream]::new()
-        $manifestStream = $inPackageEntry.Open()
-        try {
-            while ($true) {
-                if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
-                $readCount = $manifestStream.Read($buffer, 0, $buffer.Length)
-                if ($readCount -eq 0) { break }
-                if ($readCount -gt $inPackageEntry.Length - $inPackageBytes.Length -or
-                    $readCount -gt $manifestLimit - $inPackageBytes.Length) {
-                    throw 'The in-package manifest stream exceeds its size bound.'
+        if (-not $Delta) {
+            $inPackageBytes = [System.IO.MemoryStream]::new()
+            $manifestStream = $inPackageEntry.Open()
+            try {
+                while ($true) {
+                    if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+                    $readCount = $manifestStream.Read($buffer, 0, $buffer.Length)
+                    if ($readCount -eq 0) { break }
+                    if ($readCount -gt $inPackageEntry.Length - $inPackageBytes.Length -or
+                        $readCount -gt $manifestLimit - $inPackageBytes.Length) {
+                        throw 'The in-package manifest stream exceeds its size bound.'
+                    }
+                    $inPackageBytes.Write($buffer, 0, $readCount)
                 }
-                $inPackageBytes.Write($buffer, 0, $readCount)
+                if ($inPackageBytes.Length -ne $inPackageEntry.Length) { throw 'The in-package manifest stream is truncated.' }
+            } finally {
+                $manifestStream.Dispose()
             }
-            if ($inPackageBytes.Length -ne $inPackageEntry.Length) { throw 'The in-package manifest stream is truncated.' }
-        } finally {
-            $manifestStream.Dispose()
-        }
-        if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
-        $utf8 = [System.Text.UTF8Encoding]::new($false, $true)
-        $manifestText = $utf8.GetString($inPackageBytes.GetBuffer(), 0, [int]$inPackageBytes.Length)
-        if ($manifestText.Length -gt 0 -and $manifestText[0] -eq [char]0xfeff) {
-            $manifestText = $manifestText.Substring(1)
-        }
-        $inPackageManifest = ConvertFrom-Json -InputObject $manifestText -ErrorAction Stop
-        $null = Assert-VNoteManifestFiles -Manifest $inPackageManifest -Version $version
-        if ($inPackageManifest.PSObject.Properties.Name -icontains 'fullPackage' -or
-            $inPackageManifest.PSObject.Properties.Name -icontains 'delta') {
-            throw 'The in-package manifest must not contain release archive references.'
-        }
-        foreach ($name in @('schema', 'product', 'channel', 'version', 'variant', 'platform', 'commit', 'generatedAt')) {
-            $expected = Get-VNoteProperty -Object $Manifest -Name $name
-            $actual = Get-VNoteProperty -Object $inPackageManifest -Name $name
-            if ($actual -cne $expected) { throw "The in-package manifest differs from the signed identity field: $name" }
-        }
-        $inPackageFiles = Get-VNoteProperty -Object $inPackageManifest -Name 'files'
-        if ($inPackageFiles.Count -ne $declaredFiles.Count) { throw 'The in-package manifest file table differs from the signed table.' }
-        foreach ($file in $inPackageFiles) {
-            if (-not $declaredFiles.ContainsKey($file.path)) {
-                throw "The in-package manifest declares an unsigned file: $($file.path)"
+            if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+            $utf8 = [System.Text.UTF8Encoding]::new($false, $true)
+            $manifestText = $utf8.GetString($inPackageBytes.GetBuffer(), 0, [int]$inPackageBytes.Length)
+            if ($manifestText.Length -gt 0 -and $manifestText[0] -eq [char]0xfeff) {
+                $manifestText = $manifestText.Substring(1)
             }
-            $signedFile = $declaredFiles[$file.path]
-            if ([long]$file.size -ne [long]$signedFile.size -or $file.sha256 -ine $signedFile.sha256) {
-                throw "The in-package manifest differs from the signed file table: $($file.path)"
+            $inPackageManifest = ConvertFrom-Json -InputObject $manifestText -ErrorAction Stop
+            $null = Assert-VNoteManifestFiles -Manifest $inPackageManifest -Version $version
+            if ($inPackageManifest.PSObject.Properties.Name -icontains 'fullPackage' -or
+                $inPackageManifest.PSObject.Properties.Name -icontains 'delta') {
+                throw 'The in-package manifest must not contain release archive references.'
+            }
+            foreach ($name in @('schema', 'product', 'channel', 'version', 'variant', 'platform', 'commit', 'generatedAt')) {
+                $expected = Get-VNoteProperty -Object $Manifest -Name $name
+                $actual = Get-VNoteProperty -Object $inPackageManifest -Name $name
+                if ($actual -cne $expected) { throw "The in-package manifest differs from the signed identity field: $name" }
+            }
+            $inPackageFiles = Get-VNoteProperty -Object $inPackageManifest -Name 'files'
+            if ($inPackageFiles.Count -ne $declaredFiles.Count) { throw 'The in-package manifest file table differs from the signed table.' }
+            foreach ($file in $inPackageFiles) {
+                if (-not $declaredFiles.ContainsKey($file.path)) {
+                    throw "The in-package manifest declares an unsigned file: $($file.path)"
+                }
+                $signedFile = $declaredFiles[$file.path]
+                if ([long]$file.size -ne [long]$signedFile.size -or $file.sha256 -ine $signedFile.sha256) {
+                    throw "The in-package manifest differs from the signed file table: $($file.path)"
+                }
             }
         }
         if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
@@ -999,7 +1089,7 @@ function Expand-VerifiedVNotePackage {
                 if ($null -ne $outputStream) { $outputStream.Dispose() }
             }
         }
-        if ($payloadWritten -ne $signedPayloadSize) { throw 'The extracted payload is incomplete.' }
+        if ($payloadWritten -ne $listedPayloadSize) { throw 'The extracted payload is incomplete.' }
         if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
         return $destinationFullPath
     } catch {
@@ -1034,6 +1124,157 @@ function Expand-VerifiedVNotePackage {
         if ($null -ne $zip) { $zip.Dispose() }
         if ($null -ne $archiveStream) { $archiveStream.Dispose() }
     }
+}
+
+function Complete-VNoteDeltaPackage {
+    param(
+        [Parameter(Mandatory = $true)][string]$InstallDir,
+        [Parameter(Mandatory = $true)][string]$PackageDir,
+        [Parameter(Mandatory = $true)]$Manifest
+    )
+
+    Assert-VNoteManifestFiles -Manifest $Manifest -Version $Manifest.version
+    $root = Get-VNoteInstallRoot -InstallDir $InstallDir
+    $packageRoot = (Get-VNoteDirectoryIdentity -Path $PackageDir).Path
+    if ([string]::IsNullOrWhiteSpace($script:VNoteStageRoot)) {
+        throw 'A private attempt staging directory is required before delta reconstruction.'
+    }
+    $stagePrefix = [IO.Path]::GetFullPath($script:VNoteStageRoot).TrimEnd([char[]]'\/') + '\'
+    if (-not $packageRoot.StartsWith($stagePrefix, [StringComparison]::OrdinalIgnoreCase) -or
+        $packageRoot.StartsWith($root + '\', [StringComparison]::OrdinalIgnoreCase) -or
+        $root.StartsWith($packageRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($root, $packageRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Delta reconstruction requires a private package directory separate from the installation.'
+    }
+    $buffer = New-Object byte[] 65536
+    foreach ($file in $Manifest.files) {
+        if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+        $relative = $file.path.Replace('/', '\')
+        $destination = [IO.Path]::Combine($packageRoot, $relative)
+        Assert-VNoteNoReparse -Path $destination
+        if ([IO.File]::Exists($destination)) { continue }
+        $source = [IO.Path]::Combine($root, $relative)
+        Assert-VNoteNoReparse -Path $source
+        $inputStream = $null
+        $outputStream = $null
+        try {
+            # Loaded binaries must remain readable while the original app is live.
+            # Missing/modified reusable bytes mean this base cannot supply the delta;
+            # access, sharing, reparse and cancellation failures must remain fatal.
+            try {
+                $inputStream = [IO.FileStream]::new($source, [IO.FileMode]::Open,
+                    [IO.FileAccess]::Read, [IO.FileShare]::Read)
+            } catch [IO.FileNotFoundException] {
+                if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+                return $false
+            } catch [IO.DirectoryNotFoundException] {
+                if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+                return $false
+            }
+            if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+            if ($inputStream.Length -ne [long]$file.size) { return $false }
+            $parent = [IO.Path]::GetDirectoryName($destination)
+            Assert-VNoteNoReparse -Path $parent
+            $null = [IO.Directory]::CreateDirectory($parent)
+            Assert-VNoteNoReparse -Path $destination
+            $outputStream = [IO.FileStream]::new($destination, [IO.FileMode]::CreateNew,
+                [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+            [long]$written = 0
+            while ($true) {
+                if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+                $count = $inputStream.Read($buffer, 0, $buffer.Length)
+                if ($count -eq 0) { break }
+                if ($count -gt [long]$file.size - $written) { return $false }
+                $outputStream.Write($buffer, 0, $count)
+                $written += $count
+            }
+            if ($written -ne [long]$file.size) { return $false }
+            $outputStream.Flush()
+            $outputStream.Position = 0
+            $hash = (Get-FileHash -InputStream $outputStream -Algorithm SHA256 -ErrorAction Stop).Hash
+            if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+            if ($hash -ine $file.sha256) { return $false }
+        } finally {
+            if ($null -ne $outputStream) { $outputStream.Dispose() }
+            if ($null -ne $inputStream) { $inputStream.Dispose() }
+        }
+    }
+
+    # Delta archives carry no embedded manifest. Derive it only from authenticated
+    # target fields, never from an installed manifest or untrusted base metadata.
+    $embedded = [ordered]@{}
+    foreach ($name in @('schema', 'product', 'channel', 'version', 'variant', 'platform', 'commit', 'generatedAt', 'files')) {
+        $embedded[$name] = Get-VNoteProperty -Object $Manifest -Name $name
+    }
+    $json = ConvertTo-Json -InputObject $embedded -Depth 10 -Compress
+    $encoding = [Text.UTF8Encoding]::new($false)
+    if ($encoding.GetByteCount($json) -gt 16777216) { throw 'The reconstructed manifest exceeds its size bound.' }
+    $manifestPath = [IO.Path]::Combine($packageRoot, 'manifest.json')
+    Assert-VNoteNoReparse -Path $manifestPath
+    $stream = $null
+    $writer = $null
+    try {
+        if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+        $stream = [IO.FileStream]::new($manifestPath, [IO.FileMode]::CreateNew,
+            [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $writer = [IO.StreamWriter]::new($stream, $encoding)
+        $writer.Write($json)
+    } finally {
+        if ($null -ne $writer) { $writer.Dispose() }
+        if ($null -ne $stream) { $stream.Dispose() }
+    }
+    return $true
+}
+
+function Receive-VNotePackage {
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet('github', 'gitee')][string]$Source,
+        [Parameter(Mandatory = $true)]$Assets,
+        [Parameter(Mandatory = $true)]$Manifest,
+        [Parameter(Mandatory = $true)]$CurrentVersion,
+        [Parameter(Mandatory = $true)][string]$InstallDir
+    )
+
+    $null = Assert-VNoteManifest -Manifest $Manifest -Version $Manifest.version -CurrentVersion $CurrentVersion
+    $delta = Get-VNoteDelta -Manifest $Manifest
+    $useDelta = $null -ne $delta -and $delta.baseVersion -ceq $CurrentVersion -and
+        [long]$delta.size -lt [long]$Manifest.fullPackage.size
+    foreach ($isDelta in @($true, $false)) {
+        if ($isDelta -and -not $useDelta) { continue }
+        if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
+        $url = Get-VNoteArchiveUrl -Source $Source -Version $Manifest.version -Assets $Assets -Delta:$isDelta
+        if ($null -eq $url) {
+            Write-Host 'The selected source does not offer the delta. Using the signed full package.'
+            continue
+        }
+        Assert-VNoteInstallReady -InstallDir $InstallDir -Manifest $Manifest -PreparingDownload -Delta:$isDelta
+        $reference = if ($isDelta) { $delta } else { $Manifest.fullPackage }
+        $archivePath = [IO.Path]::Combine($script:VNoteStageRoot, $reference.asset)
+        $received = Receive-VNoteFile -Url $url -Destination $archivePath -Source $Source `
+            -MaxBytes $reference.size -AllowNotFound:$isDelta
+        if ($isDelta -and -not $received) {
+            Write-Host 'The selected source returned 404 for the delta. Using the signed full package.'
+            continue
+        }
+        $packageName = if ($isDelta) { 'package-delta' } else { 'package' }
+        $kind = if ($isDelta) { 'delta' } else { 'full' }
+        Write-Host "Verifying and extracting the $kind update package..."
+        $packagePath = [IO.Path]::Combine($script:VNoteStageRoot, $packageName)
+        [VNoteUpdate.Native]::CreateDirectoryExclusive($packagePath)
+        $null = Expand-VerifiedVNotePackage -ArchivePath $archivePath -Destination $packagePath -Manifest $Manifest -Delta:$isDelta
+        if ($isDelta -and -not (Complete-VNoteDeltaPackage -InstallDir $InstallDir -PackageDir $packagePath -Manifest $Manifest)) {
+            # No security or network exception reaches this branch. Discard only
+            # our private delta attempt before preflighting/downloading the full ZIP.
+            Remove-VNoteOwnedStage -Path $packagePath
+            Assert-VNoteNoReparse -Path $archivePath
+            [IO.File]::Delete($archivePath)
+            Write-Host 'Reusable installed files differ from the signed target. Using the signed full package.'
+            continue
+        }
+        Assert-VNoteInstallReady -InstallDir $InstallDir -PackageDir $packagePath -Manifest $Manifest
+        return $packagePath
+    }
+    throw 'No signed update package could be prepared.'
 }
 
 # A launch-scoped pipe is the only authority to request shutdown. Process EOF alone
@@ -1387,14 +1628,8 @@ function Invoke-VNoteUpdate {
         Receive-VNoteFile -Url $assets.Signature -Destination $signaturePath -Source $Source -MaxBytes 65536
         $manifest = Read-VerifiedVNoteManifest -Path $manifestPath -SignaturePath $signaturePath -MinisignPath $minisign `
             -Version $Version -CurrentVersion $CurrentVersion -TrustedKeys $script:VNoteTrustedKeys
-        Assert-VNoteInstallReady -InstallDir $root -Manifest $manifest -PreparingDownload
-        $archivePath = [IO.Path]::Combine($stage, $assets.ZipName)
-        Receive-VNoteFile -Url $assets.Zip -Destination $archivePath -Source $Source -MaxBytes $manifest.fullPackage.size
-        Write-Host 'Verifying and extracting the full update package...'
-        $packagePath = [IO.Path]::Combine($stage, 'package')
-        [VNoteUpdate.Native]::CreateDirectoryExclusive($packagePath)
-        $null = Expand-VerifiedVNotePackage -ArchivePath $archivePath -Destination $packagePath -Manifest $manifest
-        Assert-VNoteInstallReady -InstallDir $root -PackageDir $packagePath -Manifest $manifest
+        $packagePath = Receive-VNotePackage -Source $Source -Assets $assets -Manifest $manifest `
+            -CurrentVersion $CurrentVersion -InstallDir $root
         Assert-VNoteParentPreparing -Session $session
         $script:VNotePreparationGuard = $null
         Request-VNoteShutdown -Session $session
@@ -1678,7 +1913,8 @@ function Assert-VNoteInstallReady {
         [Parameter(Mandatory = $true)][string]$InstallDir,
         [Parameter(Mandatory = $true)]$Manifest,
         [string]$PackageDir,
-        [switch]$PreparingDownload
+        [switch]$PreparingDownload,
+        [switch]$Delta
     )
 
     $root = Get-VNoteInstallRoot -InstallDir $InstallDir
@@ -1726,8 +1962,9 @@ function Assert-VNoteInstallReady {
     $installDrive = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($installIdentity.Path))
     [decimal]$installRequired = $oldSize + $ownedSize + 67108864
     if ($PreparingDownload) {
-        $archiveSize = Get-VNoteProperty -Object (Get-VNoteProperty -Object $Manifest -Name 'fullPackage') -Name 'size'
-        Assert-VNoteInteger -Value $archiveSize -Name 'fullPackage.size' -Minimum 1 -Maximum 4294967296
+        $reference = if ($Delta) { Get-VNoteDelta -Manifest $Manifest } else { Get-VNoteProperty -Object $Manifest -Name 'fullPackage' }
+        $archiveSize = Get-VNoteProperty -Object $reference -Name 'size'
+        Assert-VNoteInteger -Value $archiveSize -Name 'archive.size' -Minimum 1 -Maximum 4294967296
         if ([string]::IsNullOrWhiteSpace($script:VNoteStageRoot) -or
             -not [IO.Path]::IsPathRooted($script:VNoteStageRoot)) {
             throw 'The private download directory is required for the free-space check.'
