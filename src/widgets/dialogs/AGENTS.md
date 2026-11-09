@@ -122,7 +122,11 @@ Settings → File Associations exposes the **System Context Menu** card only on 
 They apply immediately for the current Windows user, independently of Apply/Reset; opening or
 resetting Settings never mutates the registry. Read in VNote requests Read in a detached window;
 Edit in VNote requests Edit in the main window. Windows 11 may list them under **Show more options**.
-The script does not change default file associations or require administrator access.
+Only applied **Built-In File Types** suffixes are registered (including Image, excluding Others
+and external-program mappings). Apply suffix edits first, then click Add again to reconcile the
+registered types and remove old all-files entries. Unsaved edits are ignored; an empty supported
+suffix list clears registration. Remove works even after the suffix configuration or install path
+changes. The script does not change default file associations or require administrator access.
 
 ## Banner Suppression Pattern (Quiet Dialog UX)
 

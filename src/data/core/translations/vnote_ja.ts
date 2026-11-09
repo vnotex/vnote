@@ -2894,8 +2894,8 @@
         <translation>コンテキストメニューから削除</translation>
     </message>
     <message>
-        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for all files. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
-        <translation>すべてのファイルに Read in VNote（独立ウィンドウの閲覧モード）と Edit in VNote（メインウィンドウの編集モード）を追加します。変更は現在の Windows ユーザーにのみ即時適用され、リセットでは元に戻りません。Windows 11 では「その他のオプションを確認」を開いてください</translation>
+        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for built-in file types. Apply suffix changes first, then click Add to Context Menu again to update registered types. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
+        <translation>組み込みファイルタイプに Read in VNote（独立ウィンドウの閲覧モード）と Edit in VNote（メインウィンドウの編集モード）を追加します。拡張子の変更を適用してから「コンテキストメニューに追加」をもう一度クリックし、登録するタイプを更新してください。変更は現在の Windows ユーザーにのみ即時適用され、リセットでは元に戻りません。Windows 11 では「その他のオプションを確認」を開いてください</translation>
     </message>
 </context>
 <context>
@@ -13513,6 +13513,14 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <source>Windows PowerShell is unavailable at %1.</source>
         <translation>%1 で Windows PowerShell を利用できません。</translation>
+    </message>
+    <message>
+        <source>The built-in file types are unavailable.</source>
+        <translation>組み込みファイルタイプを利用できません。</translation>
+    </message>
+    <message>
+        <source>A built-in file suffix is invalid for the Windows context menu: %1</source>
+        <translation>Windows のコンテキストメニューに使用できない組み込みファイル拡張子です: %1</translation>
     </message>
 </context>
 </TS>

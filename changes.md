@@ -3,7 +3,7 @@
 ## Unreleased
 * Add an Attach to Main Window button beside the detached window's Stay on Top pin to move all its tabs into the selected main split without losing unsaved edits or undo history
 * Match the detached window's Stay on Top pin color to the active Open Windows button, including after theme changes
-* **Windows context menu**: Add or remove per-user “Read in VNote” (Read mode in a detached window) and “Edit in VNote” (Edit mode in the main window) actions from Settings → File Associations; bundle a PowerShell helper and preserve explicit modes through startup and single-instance forwarding
+* **Windows context menu**: Add or remove per-user “Read in VNote” (Read mode in a detached window) and “Edit in VNote” (Edit mode in the main window) actions for applied built-in file suffixes from Settings → File Associations; reconcile changed suffixes and remove legacy all-files entries, bundle a PowerShell helper, and preserve explicit modes through startup and single-instance forwarding
 * Show text beside the Home and United Entry toolbar icons, matching Export
 * **Markdown concealment**: Replace the two editor toggles with a Concealment submenu containing None, Passive and Aggressive radio choices; default to Aggressive without migrating the old settings, map the editing-experience choices to Aggressive/Passive, and use Aggressive in embedded Markdown editors
 * Update vtextedit to upstream `10a9a1d` for longer compact URL destinations and insertion carets that stay inside concealed closing markers while typing

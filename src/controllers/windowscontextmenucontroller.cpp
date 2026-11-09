@@ -4,14 +4,16 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <windows.h>
 
 #include <core/servicelocator.h>
+#include <core/services/filetypecoreservice.h>
 
 using namespace vnotex;
 
 WindowsContextMenuController::WindowsContextMenuController(ServiceLocator &p_services)
-    : QObject(QCoreApplication::instance()) {
+    : QObject(QCoreApplication::instance()), m_services(p_services) {
   Q_ASSERT(QCoreApplication::instance());
   Q_ASSERT(!p_services.get<WindowsContextMenuController>());
   p_services.registerService(this);
@@ -62,6 +64,40 @@ bool WindowsContextMenuController::start(Action p_action) {
                                          : tr("Removing the VNote context menu actions...");
   emit stateChanged();
 
+  QStringList suffixes;
+  if (p_action == Action::Add) {
+    const auto *fileTypes = m_services.get<FileTypeCoreService>();
+    const auto types = fileTypes ? fileTypes->getAllFileTypes() : QVector<FileType>();
+    if (types.isEmpty()) {
+      complete(false, tr("The built-in file types are unavailable."));
+      return false;
+    }
+    static const QRegularExpression invalidSuffix(QStringLiteral(R"([.\s\\/:*?"<>|;\x00-\x1f])"),
+                                                  QRegularExpression::UseUnicodePropertiesOption);
+    for (const auto &type : types) {
+      if (type.m_typeName == QLatin1String("Others")) {
+        continue;
+      }
+      for (const auto &configuredSuffix : type.m_suffixes) {
+        auto suffix = configuredSuffix.trimmed().toLower();
+        if (suffix.isEmpty()) {
+          continue;
+        }
+        if (suffix.startsWith(QLatin1Char('.'))) {
+          suffix.remove(0, 1);
+        }
+        // Validate individual values before joining: a stored ';' must not add another suffix.
+        if (suffix.isEmpty() || suffix.size() > 254 || invalidSuffix.match(suffix).hasMatch()) {
+          complete(false, tr("A built-in file suffix is invalid for the Windows context menu: %1")
+                              .arg(configuredSuffix));
+          return false;
+        }
+        suffixes.append(suffix);
+      }
+    }
+    suffixes.removeDuplicates();
+  }
+
   const auto helperPath = QDir(QCoreApplication::applicationDirPath())
                               .filePath(QStringLiteral("windows-context-menu.ps1"));
   if (!QFileInfo(helperPath).isFile()) {
@@ -86,14 +122,20 @@ bool WindowsContextMenuController::start(Action p_action) {
   }
 
   m_process.setWorkingDirectory(QCoreApplication::applicationDirPath());
-  m_process.start(program,
-                  {QStringLiteral("-NoProfile"), QStringLiteral("-NonInteractive"),
-                   QStringLiteral("-ExecutionPolicy"), QStringLiteral("Bypass"),
-                   QStringLiteral("-File"), QDir::toNativeSeparators(helperPath),
-                   QStringLiteral("-Action"),
-                   p_action == Action::Add ? QStringLiteral("Add") : QStringLiteral("Remove"),
-                   QStringLiteral("-VNotePath"),
-                   QDir::toNativeSeparators(QCoreApplication::applicationFilePath())});
+  QStringList arguments{QStringLiteral("-NoProfile"),
+                        QStringLiteral("-NonInteractive"),
+                        QStringLiteral("-ExecutionPolicy"),
+                        QStringLiteral("Bypass"),
+                        QStringLiteral("-File"),
+                        QDir::toNativeSeparators(helperPath),
+                        QStringLiteral("-Action"),
+                        p_action == Action::Add ? QStringLiteral("Add") : QStringLiteral("Remove"),
+                        QStringLiteral("-VNotePath"),
+                        QDir::toNativeSeparators(QCoreApplication::applicationFilePath())};
+  if (p_action == Action::Add) {
+    arguments << QStringLiteral("-Suffixes") << suffixes.join(QLatin1Char(';'));
+  }
+  m_process.start(program, arguments);
   return true;
 }
 

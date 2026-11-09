@@ -71,11 +71,23 @@ with separate `-NoProfile -NonInteractive -ExecutionPolicy Bypass -File` argumen
 search PATH for helpers, construct shell code, or change global execution policy. Page closure must
 not kill registration; application shutdown allows a bounded grace period before reaping the helper.
 
-`scripts/windows-context-menu.ps1 -Action Add|Remove [-VNotePath <exe>]` owns only
-`HKCU\Software\Classes\*\shell\VNote.Read` and `VNote.Edit`. Add validates the executable before
-writes, quotes it and `"%1"`, and places `--` before the filename. Remove is idempotent and works after
-the executable is removed. Neither action changes default associations or other verbs. Changes are
-not transactional; retry Add/Remove after interruption. Moving a portable install requires Add again.
+On Add, the controller reads the applied `FileTypeCoreService::getAllFileTypes()` list (including
+its projected Image default), excludes Others, and passes normalized/deduplicated suffixes as one
+semicolon-separated `-Suffixes` argument. Reject invalid individual values, including embedded
+semicolons, before joining or starting PowerShell. A failed type lookup is an error; a valid empty
+suffix set clears registration. Unsaved page edits and external-program suffixes are not inputs.
+
+`scripts/windows-context-menu.ps1 -Action Add|Remove [-VNotePath <exe>]` owns only the two verbs
+`VNote.Read` and `VNote.Edit` below
+`HKCU\Software\Classes\SystemFileAssociations\.<suffix>\shell`. Add requires `-Suffixes 'md;txt'`
+(or an explicit empty string), validates all suffixes and the executable before writes, quotes the
+absolute executable and `"%1"`, and places `--` before the filename. No fallback registers all files.
+Add reconciles stale extension entries and removes the old literal `Classes\*\shell` verbs.
+Remove enumerates existing dot-extension keys and removes these same two verbs plus legacy wildcard
+entries, without needing the current configuration, a suffix list, or the executable. Use .NET
+registry APIs, not wildcard-aware provider paths. Preserve other verbs, extension metadata and
+system/default ProgIDs. Changes are not transactional; retry Add/Remove after interruption.
+After applying suffix edits or moving a portable install, use Add again to refresh registration.
 `src/CMakeLists.txt` refreshes the helper beside development executables and installs it beside
 packaged Windows executables. No application/session configuration or migration is involved.
 

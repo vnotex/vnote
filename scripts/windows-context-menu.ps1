@@ -4,16 +4,53 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('Add', 'Remove')]
     [string]$Action,
-    [string]$VNotePath
+    [string]$VNotePath,
+    [AllowEmptyString()]
+    [string]$Suffixes
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
+function Remove-VNoteVerbs([string]$ShellPath) {
+    # Inspect first so unrelated shell keys never need writable access.
+    $existing = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($ShellPath)
+    if ($null -eq $existing) { return }
+    try {
+        $names = $existing.GetSubKeyNames()
+        $hasVerbs = $names -contains 'VNote.Read' -or $names -contains 'VNote.Edit'
+    } finally {
+        $existing.Dispose()
+    }
+    if (-not $hasVerbs) { return }
+    $shellKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($ShellPath, $true)
+    if ($null -eq $shellKey) { return }
+    try {
+        $shellKey.DeleteSubKeyTree('VNote.Read', $false)
+        $shellKey.DeleteSubKeyTree('VNote.Edit', $false)
+    } finally {
+        $shellKey.Dispose()
+    }
+}
+
 try {
     [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 
+    $extensions = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     if ($Action -eq 'Add') {
+        if (-not $PSBoundParameters.ContainsKey('Suffixes')) {
+            throw 'Add requires -Suffixes with a semicolon-separated list of supported file suffixes.'
+        }
+        foreach ($value in $Suffixes.Split(';')) {
+            $suffix = $value.Trim().ToLowerInvariant()
+            if ($suffix.Length -eq 0) { continue }
+            if ($suffix.StartsWith('.')) { $suffix = $suffix.Substring(1) }
+            if ($suffix.Length -eq 0 -or $suffix.Length -gt 254 -or
+                $suffix -match '[.\s\\/:*?"<>|;\x00-\x1f]') {
+                throw "Invalid file suffix: $value"
+            }
+            [void]$extensions.Add('.' + $suffix)
+        }
         # Windows PowerShell 5.1 has no script root during parameter-default evaluation.
         if (-not $PSBoundParameters.ContainsKey('VNotePath')) {
             $VNotePath = Join-Path $PSScriptRoot 'vnote.exe'
@@ -44,52 +81,60 @@ namespace VNote {
 '@
     }
 
-    # .NET registry APIs treat '*' literally, unlike PowerShell's registry provider.
-    $shellPath = 'Software\Classes\*\shell'
-    $shellKey = $null
-    try {
-        if ($Action -eq 'Add') {
-            $verbs = @(
-                @{
-                    Key = 'VNote.Read'
-                    Label = 'Read in VNote'
-                    Command = '"{0}" --read-mode --detached-view -- "%1"' -f $executable
-                },
-                @{
-                    Key = 'VNote.Edit'
-                    Label = 'Edit in VNote'
-                    Command = '"{0}" --edit-mode -- "%1"' -f $executable
-                }
-            )
-            $shellKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($shellPath)
-            foreach ($verb in $verbs) {
-                $verbKey = $shellKey.CreateSubKey($verb.Key)
-                try {
-                    $verbKey.SetValue('', $verb.Label, [Microsoft.Win32.RegistryValueKind]::String)
-                    $verbKey.SetValue('Icon', ('"{0}",0' -f $executable),
-                        [Microsoft.Win32.RegistryValueKind]::String)
-                    $commandKey = $verbKey.CreateSubKey('command')
-                    try {
-                        $commandKey.SetValue('', $verb.Command,
-                            [Microsoft.Win32.RegistryValueKind]::String)
-                    } finally {
-                        $commandKey.Dispose()
-                    }
-                } finally {
-                    $verbKey.Dispose()
+    # .NET APIs treat the legacy '*' key literally. Never use provider wildcard paths.
+    Remove-VNoteVerbs 'Software\Classes\*\shell'
+    $associationsPath = 'Software\Classes\SystemFileAssociations'
+    $associations = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($associationsPath)
+    if ($null -ne $associations) {
+        try {
+            foreach ($extension in $associations.GetSubKeyNames()) {
+                if ($extension.StartsWith('.') -and
+                    ($Action -eq 'Remove' -or -not $extensions.Contains($extension))) {
+                    Remove-VNoteVerbs ($associationsPath + '\' + $extension + '\shell')
                 }
             }
-        } else {
-            # Removal neither creates keys nor requires the previously registered executable.
-            $shellKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($shellPath, $true)
-            if ($null -ne $shellKey) {
-                $shellKey.DeleteSubKeyTree('VNote.Read', $false)
-                $shellKey.DeleteSubKeyTree('VNote.Edit', $false)
-            }
+        } finally {
+            $associations.Dispose()
         }
-    } finally {
-        if ($null -ne $shellKey) {
-            $shellKey.Dispose()
+    }
+
+    if ($Action -eq 'Add') {
+        $verbs = @(
+            @{
+                Key = 'VNote.Read'
+                Label = 'Read in VNote'
+                Command = '"{0}" --read-mode --detached-view -- "%1"' -f $executable
+            },
+            @{
+                Key = 'VNote.Edit'
+                Label = 'Edit in VNote'
+                Command = '"{0}" --edit-mode -- "%1"' -f $executable
+            }
+        )
+        foreach ($extension in $extensions) {
+            $shellKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey(
+                $associationsPath + '\' + $extension + '\shell')
+            try {
+                foreach ($verb in $verbs) {
+                    $verbKey = $shellKey.CreateSubKey($verb.Key)
+                    try {
+                        $verbKey.SetValue('', $verb.Label, [Microsoft.Win32.RegistryValueKind]::String)
+                        $verbKey.SetValue('Icon', ('"{0}",0' -f $executable),
+                            [Microsoft.Win32.RegistryValueKind]::String)
+                        $commandKey = $verbKey.CreateSubKey('command')
+                        try {
+                            $commandKey.SetValue('', $verb.Command,
+                                [Microsoft.Win32.RegistryValueKind]::String)
+                        } finally {
+                            $commandKey.Dispose()
+                        }
+                    } finally {
+                        $verbKey.Dispose()
+                    }
+                }
+            } finally {
+                $shellKey.Dispose()
+            }
         }
     }
 

@@ -35,6 +35,7 @@ private:
   void complete(bool p_success, const QString &p_message);
   void shutdown();
 
+  ServiceLocator &m_services;
   QProcess m_process;
   Action m_action = Action::Add;
   bool m_busy = false;
