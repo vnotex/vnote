@@ -1094,6 +1094,17 @@ void TestMarkdownWebJobs::htmlMath() {
       "$$\na^{m}\\cdot a^{n}=\\underbrace{a\\cdots a}_{m\\text{ 个}}"
       "\\cdot \\underbrace{a\\cdots a}_{n\\text{ 个}}\n$$\n\n"
       "两者都是 $m+n$ 个 $a$ 相乘，所以相等。这是指数运算最基本的性质，也叫**指数律**。");
+  QFile sincClipboardFile(QFINDTESTDATA("../data/katex-sinc-clipboard.html"));
+  QVERIFY(sincClipboardFile.open(QIODevice::ReadOnly));
+  const auto sincClipboardHtml = QString::fromUtf8(sincClipboardFile.readAll());
+  const QString sincClipboardMarkdown =
+      QStringLiteral("## 1. 定义\n\n"
+                     "### 非归一化定义（数学/物理常见）\n\n"
+                     "$$\n\\operatorname{sinc}(x)=\\frac{\\sin x}{x},\\hspace{2em}x\\ne 0\n$$\n\n"
+                     "并规定\n\n"
+                     "$$\n\\operatorname{sinc}(0)=1\n$$\n\n"
+                     "因为 $\\lim _{x\\to 0}\\frac{\\sin x}{x}=1$。\n\n"
+                     "零点在 $x=kπ,\\text{ }k=\\pm 1,\\pm 2,\\ldots $。");
   const auto presentation = [](const QString &body) {
     return QStringLiteral("<math><semantics>%1</semantics></math>").arg(body);
   };
@@ -1121,6 +1132,47 @@ void TestMarkdownWebJobs::htmlMath() {
   };
   const Case cases[] = {
       {"browser-clipboard-without-annotations", clipboardHtml, clipboardMarkdown},
+      {"sinc-browser-clipboard-without-annotations", sincClipboardHtml, sincClipboardMarkdown},
+      {"normal-single-letter-identifier",
+       presentation(QStringLiteral("<mrow><mi mathvariant=\"normal\">x</mi><mi>x</mi></mrow>")),
+       QStringLiteral(R"($\mathrm{x}x$)")},
+      {"applied-custom-and-standard-functions",
+       presentation(QStringLiteral("<mrow><mi>foo</mi><mo>⁡</mo><mi>x</mi><mo>+</mo>"
+                                   "<mi>sin</mi><mo>⁡</mo><mi>x</mi></mrow>")),
+       QStringLiteral(R"($\operatorname{foo}x+\sin x$)")},
+      {"scripted-limit-operator",
+       presentation(QStringLiteral("<msubsup><mrow><mi>lim</mi><mo>⁡</mo></mrow>"
+                                   "<mi>x</mi><mi>y</mi></msubsup>")),
+       QStringLiteral(R"($\lim _{x}^{y}$)")},
+      {"case-sensitive-probability-operator",
+       presentation(QStringLiteral("<mrow><mi>Pr</mi><mo>⁡</mo><mi>x</mi><mo>+</mo>"
+                                   "<mi>pr</mi><mo>⁡</mo><mi>x</mi></mrow>")),
+       QStringLiteral(R"($\Pr x+\operatorname{pr}x$)")},
+      {"fractional-em-spacing",
+       presentation(QStringLiteral("<mrow><mi>x</mi><mspace width=\"0.5em\"/>"
+                                   "<mi>y</mi></mrow>")),
+       QStringLiteral(R"($x\hspace{0.5em}y$)")},
+      {"unsupported-function-variant",
+       presentation(QStringLiteral("<mrow><mi mathvariant=\"bold\">sin</mi><mo>⁡</mo>"
+                                   "<mi>x</mi></mrow>")),
+       QStringLiteral("sin⁡x")},
+      {"standalone-application-marker", presentation(QStringLiteral("<mo>⁡</mo>")),
+       QStringLiteral("⁡")},
+      {"application-after-non-identifier",
+       presentation(QStringLiteral("<mrow><mn>2</mn><mo>⁡</mo><mi>x</mi></mrow>")),
+       QStringLiteral("2⁡x")},
+      {"unsupported-space-unit",
+       presentation(QStringLiteral("<mrow><mi>x</mi><mspace width=\"2px\"/>"
+                                   "<mi>y</mi></mrow>")),
+       QStringLiteral("xy")},
+      {"malformed-space-width",
+       presentation(QStringLiteral("<mrow><mi>x</mi><mspace width=\"2em}x{\"/>"
+                                   "<mi>y</mi></mrow>")),
+       QStringLiteral("xy")},
+      {"space-with-height",
+       presentation(QStringLiteral("<mrow><mi>x</mi><mspace width=\"2em\" height=\"1em\"/>"
+                                   "<mi>y</mi></mrow>")),
+       QStringLiteral("xy")},
       {"presentation-formatting-whitespace",
        presentation(QStringLiteral("\n<mrow>\n<mi>m</mi><!-- layout -->\n<mo>+</mo>\n"
                                    "<mi>n</mi>\n</mrow>\n")),

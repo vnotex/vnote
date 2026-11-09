@@ -106,8 +106,22 @@ class TurndownConverter {
             ['−', '-'], ['⋅', '\\cdot '], ['×', '\\times '], ['÷', '\\div '],
             ['⋯', '\\cdots '], ['…', '\\ldots '], ['±', '\\pm '],
             ['≤', '\\le '], ['≥', '\\ge '], ['≠', '\\ne '], ['∞', '\\infty '],
-            ['{', '\\{'], ['}', '\\}']
+            ['→', '\\to '], ['{', '\\{'], ['}', '\\}']
         ]);
+        // Keep named operators as operators (not upright identifiers), including
+        // limit placement. Terminate control words before adjoining identifiers.
+        const functions = new Set([
+            'arcsin', 'arccos', 'arctan', 'arctg', 'arcctg', 'arg', 'ch', 'cos', 'cosec',
+            'cosh', 'cot', 'cotg', 'coth', 'csc', 'ctg', 'cth', 'deg', 'dim', 'exp', 'hom',
+            'ker', 'lg', 'ln', 'log', 'sec', 'sin', 'sinh', 'sh', 'tan', 'tanh', 'tg', 'th',
+            'det', 'gcd', 'inf', 'lim', 'max', 'min', 'Pr', 'sup'
+        ]);
+        const normalVariant = node => !node.hasAttribute('mathvariant') ||
+            node.getAttribute('mathvariant') === 'normal';
+        const identifier = node => node?.localName === 'mi' && !node.children.length &&
+            normalVariant(node) && /^\p{L}+$/u.test(node.textContent.trim());
+        const application = node => node?.localName === 'mo' && !node.children.length &&
+            normalVariant(node) && node.textContent.trim() === '\u2061';
         const brace = node => {
             if (!node || !['munder', 'mover'].includes(node.localName) || node.children.length !== 2) {
                 return false;
@@ -123,7 +137,7 @@ class TurndownConverter {
             const name = node.localName;
             const children = Array.from(node.children);
             if (['mi', 'mn', 'mo', 'mtext'].includes(name)) {
-                if (children.length || node.hasAttribute('mathvariant')) {
+                if (children.length || !normalVariant(node)) {
                     return null;
                 }
                 const value = node.textContent.trim();
@@ -132,12 +146,19 @@ class TurndownConverter {
                     if (!/^\p{L}+$/u.test(value)) {
                         return null;
                     }
-                    return Array.from(value).length === 1 ? value : '\\mathrm{' + value + '}';
+                    if (application(node.nextElementSibling)) {
+                        return functions.has(value) ? '\\' + value + ' ' : '\\operatorname{' + value + '}';
+                    }
+                    return Array.from(value).length === 1 && !node.hasAttribute('mathvariant') ?
+                        value : '\\mathrm{' + value + '}';
                 }
                 if (name === 'mn') {
                     return /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value) ? value : null;
                 }
                 if (name === 'mo') {
+                    if (application(node)) {
+                        return identifier(node.previousElementSibling) ? '' : null;
+                    }
                     return /^[+\-=<>(),.;:!/\[\]|]$/.test(value) ? value : operators.get(value) ?? null;
                 }
                 const text = node.textContent.replace(/\r\n|[\r\n\t\u00a0]/g, ' ')
@@ -167,13 +188,21 @@ class TurndownConverter {
                 return null;
             }
             const baseName = children[0]?.localName;
-            const atomicBase = ['mi', 'mo'].includes(baseName) ||
+            const functionBase = baseName === 'mrow' && children[0].children.length === 2 &&
+                identifier(children[0].children[0]) && application(children[0].children[1]);
+            const atomicBase = functionBase || ['mi', 'mo'].includes(baseName) ||
                 (baseName === 'mn' && parts[0].length === 1);
             const scriptBase = atomicBase ? parts[0] : '{' + parts[0] + '}';
             switch (name) {
             case 'math':
             case 'mrow':
                 return parts.join('');
+            case 'mspace': {
+                const width = node.getAttribute('width') || '';
+                return !parts.length && /^(?:\d+(?:\.\d*)?|\.\d+)em$/.test(width) &&
+                    !['height', 'depth', 'linebreak'].some(attr => node.hasAttribute(attr)) ?
+                    '\\hspace{' + width + '}' : null;
+            }
             case 'msqrt':
                 return parts.length ? '\\sqrt{' + parts.join('') + '}' : null;
             case 'mfrac':

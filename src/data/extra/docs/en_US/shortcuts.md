@@ -200,7 +200,7 @@ Open the snippet selector and insert a snippet (also available in the text edito
 - `Ctrl+Shift+V`  
 Use alternate paste: plain text when rich paste is the default, or rich paste when plain text is the default.
 - `Ctrl+G, Ctrl+P`  
-Convert HTML from the clipboard to Markdown and paste it. KaTeX and MathML formulas with a nonempty `application/x-tex` annotation retain their TeX source as inline `$...$` or display `$$` math; multiline formulas use display math. When that annotation is missing or empty, supported MathML is converted to equivalent TeX, including powers, fractions, roots and labeled underbraces. Unsupported or malformed MathML uses the normal HTML conversion.
+Convert HTML from the clipboard to Markdown and paste it. KaTeX and MathML formulas with a nonempty `application/x-tex` annotation retain their TeX source as inline `$...$` or display `$$` math; multiline formulas use display math. When that annotation is missing or empty, supported MathML is converted to equivalent TeX, including powers, fractions, roots, labeled underbraces, named functions and limits, upright identifiers, and explicit em spacing. Unsupported or malformed MathML uses the normal HTML conversion.
 
 #### Text Editing
 With a multi-line selection, inline formatting applies to each line's content while preserving list, quote, and heading prefixes.
