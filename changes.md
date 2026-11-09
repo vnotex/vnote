@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Make the Pure theme's notebook tree more compact with smaller indentation, row padding and icon/text gaps; keep inline renaming within the row and restore normal spacing when switching themes
 
 * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
 

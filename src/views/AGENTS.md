@@ -83,8 +83,26 @@ into a `QMargins` derived from
 Gates: `tests/utils/test_itemheight_drift.cpp` (grep gate over the five
 overriding delegates), `tests/gui/test_itemviewutils.cpp` (behavioural),
 `tests/gui/test_uniformrowheight_invalidation.cpp` (asserts Qt resamples uniform
-row heights on `QEvent::StyleChange`, which is why the views need no
-`changeEvent` override).
+row heights on `QEvent::StyleChange`, so no height-specific cache invalidation
+is needed).
+
+## Notebook tree compact spacing
+
+`NotebookNodeView::compactSpacing` is a transient QSS opt-in, not saved config.
+Only `pure` currently enables it: 12px hierarchy indentation and 4px delegate
+horizontal padding, with `::item { padding: 2px 4px; }` for row height and editor
+geometry. Keep these scoped rules after the generic `QTreeView::item` rule: Qt
+gives base and subclass selectors equal specificity. File icons remain 16px.
+The notebook inline rename editor also drops the general form-field minimum
+height and padding so it fits the compact row. Other trees and themes keep
+their existing spacing; no configuration migration is needed.
+
+QSS does not restore omitted `qproperty-*` values on theme switches. The view
+handles `StyleChange` in `event()`: call `setCompactSpacing(false)` to restore
+both the flag and shared indentation, then polish with the current style before
+`QTreeView::event()` relayouts the rows. Do not move this after the base event or
+into `changeEvent()`. The delegate uses the same horizontal padding for painting
+and width measurement, falling back to 8px without an opted-in widget.
 
 ## Search result selection colors
 

@@ -5,12 +5,14 @@
 #include <QDebug>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QEvent>
 #include <QKeyEvent>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QQueue>
 #include <QSet>
 #include <QSortFilterProxyModel>
+#include <QStyle>
 #include <QUrl>
 
 #include <controllers/notebooknodecontroller.h>
@@ -144,6 +146,21 @@ bool allDraggedShareParent(NotebookNodeController *p_controller,
 NotebookNodeView::NotebookNodeView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
 
 NotebookNodeView::~NotebookNodeView() {}
+
+void NotebookNodeView::setCompactSpacing(bool p_enabled) {
+  m_compactSpacing = p_enabled;
+  setIndentation(p_enabled ? 12 : TreeViewUtils::indentation());
+}
+
+bool NotebookNodeView::event(QEvent *p_event) {
+  if (p_event->type() == QEvent::StyleChange) {
+    // QSS does not restore qproperty values omitted by the next theme. Restore
+    // both defaults, then reapply its opt-in before Qt relayouts the rows.
+    setCompactSpacing(false);
+    style()->polish(this);
+  }
+  return QTreeView::event(p_event);
+}
 
 void NotebookNodeView::setupView() {
   // Enable drag and drop

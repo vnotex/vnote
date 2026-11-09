@@ -752,6 +752,21 @@ QTreeView::item {
     padding: 4px 8px;
 }
 
+/* Compact notebook spacing; other trees retain the generic padding above. */
+vnotex--NotebookNodeView {
+    qproperty-compactSpacing: true;
+}
+
+vnotex--NotebookNodeView::item {
+    padding: 2px 4px;
+}
+
+/* Inline rename must fit the compact row instead of the form-field minimum. */
+vnotex--NotebookNodeView QLineEdit {
+    min-height: 0px;
+    padding: 0px;
+}
+
 QTreeView::item:hover {
     color: @widgets#qtreeview#item#hover#fg;
     background-color: @widgets#qtreeview#item#hover#bg;

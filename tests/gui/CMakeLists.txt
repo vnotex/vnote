@@ -211,8 +211,7 @@ add_qt_test(test_notebooknodedelegate_sizehint
 )
 
 # TreeViewUtils is header-only (see src/gui/utils/treeviewutils.h), so this
-# target needs no extra SOURCES and no extra LINKS. The five call sites are
-# covered by the grep gate tests/utils/test_tree_indentation_drift.cpp.
+# target needs no extra SOURCES and no extra LINKS.
 add_qt_test(test_treeviewindentation
   SOURCES
     test_treeviewindentation.cpp

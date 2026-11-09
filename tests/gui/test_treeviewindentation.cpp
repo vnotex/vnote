@@ -1,7 +1,5 @@
-// Tests for TreeViewUtils: every dock/sidebar tree must share one indentation
-// step, so a level-2 item lines up across the Notebooks, Tags, Search, Outline
-// and Tasks docks. The call sites themselves are covered by the grep gate
-// tests/utils/test_tree_indentation_drift.cpp; this test covers the helper.
+// Tests for TreeViewUtils: dock/sidebar trees share this default indentation
+// step unless their active theme opts into a different spacing policy.
 
 #include <QtTest>
 

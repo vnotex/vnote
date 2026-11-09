@@ -19,8 +19,8 @@
 //     headers, which is how the drift arose in the first place.
 //
 // === Why a grep gate rather than a behavioural test ===
-// Same reason as test_tree_indentation_drift.cpp: constructing the real views
-// needs the full model/service graph (NotebookNodeView wants model + proxy +
+// Constructing the real views needs the full model/service graph
+// (NotebookNodeView wants model + proxy +
 // controller, the united entry wants a whole service locator). The helper itself
 // is covered behaviourally by tests/gui/test_itemviewutils.cpp, and the Qt
 // cache-invalidation assumption by tests/gui/test_uniformrowheight_invalidation.cpp.

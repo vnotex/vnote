@@ -48,7 +48,6 @@ private:
   // Configuration
   ServiceLocator &m_services;
   bool m_showChildCount = true;
-  const int m_hPadding = 8; // Horizontal padding
   const int m_iconSize = 16;
 };
 
