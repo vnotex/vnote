@@ -2893,10 +2893,6 @@
         <source>Remove from Context Menu</source>
         <translation>상황에 맞는 메뉴에서 제거</translation>
     </message>
-    <message>
-        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for built-in file types. Apply suffix changes first, then click Add to Context Menu again to update registered types. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
-        <translation>기본 제공 파일 형식에 Read in VNote(분리된 창에서 읽기 모드)와 Edit in VNote(기본 창에서 편집 모드)를 추가합니다. 확장자 변경 사항을 먼저 적용한 다음 상황에 맞는 메뉴에 추가를 다시 클릭하여 등록된 형식을 업데이트하세요. 변경 사항은 현재 Windows 사용자에게만 즉시 적용되며 재설정으로 되돌릴 수 없습니다. Windows 11에서는 더 많은 옵션 표시에서 찾으세요</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::FileTypeCoreService</name>

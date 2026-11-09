@@ -117,6 +117,7 @@ do not clip labels or values to hide that limit.
 ## Windows system context menu
 
 Settings → File Associations exposes the **System Context Menu** card only on Windows.
+Keep it compact: section title, action buttons and operation feedback, without a static description.
 **Add to Context Menu** and **Remove from Context Menu** call the application-owned
 `WindowsContextMenuController`, disable while busy, and show its retained success/error result.
 They apply immediately for the current Windows user, independently of Apply/Reset; opening or

@@ -70,13 +70,7 @@ void FileAssociationPage::setupSystemContextMenu(QVBoxLayout *p_layout) {
   }
 
   const auto sectionTitle = tr("System Context Menu");
-  const auto description =
-      tr("Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in "
-         "the main window) for built-in file types. Apply suffix changes first, then click Add "
-         "to Context Menu again to update registered types. Changes affect only the current "
-         "Windows user, apply immediately, and are not undone by Reset. On Windows 11, look "
-         "under Show more options");
-  auto *cardLayout = SettingsPageHelper::addSection(p_layout, sectionTitle, description, this);
+  auto *cardLayout = SettingsPageHelper::addSection(p_layout, sectionTitle, QString(), this);
   auto *card = cardLayout->parentWidget();
   card->setObjectName(QLatin1String(kContextMenuCardName));
 
@@ -103,9 +97,9 @@ void FileAssociationPage::setupSystemContextMenu(QVBoxLayout *p_layout) {
   actionLayout->addWidget(m_contextMenuStatus);
   cardLayout->addWidget(actionRow);
 
-  addSearchItem(sectionTitle + QLatin1Char(' ') + m_addContextMenuButton->text(), description,
+  addSearchItem(sectionTitle + QLatin1Char(' ') + m_addContextMenuButton->text(),
                 m_addContextMenuButton);
-  addSearchItem(sectionTitle + QLatin1Char(' ') + m_removeContextMenuButton->text(), description,
+  addSearchItem(sectionTitle + QLatin1Char(' ') + m_removeContextMenuButton->text(),
                 m_removeContextMenuButton);
   connect(m_addContextMenuButton, &QPushButton::clicked, this,
           [this]() { m_contextMenuController->start(WindowsContextMenuController::Action::Add); });
