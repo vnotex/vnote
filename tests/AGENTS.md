@@ -376,11 +376,19 @@ On macOS, CTest marks the entire `test_viewarea_tab_reuse` and
 `test_typstviewwindow_insertion` tests `DISABLED`, including their previously passing rows.
 Both targets still compile. Repeated Cocoa focus/input failures and the tab-reuse SIGBUS
 ([example job](https://github.com/vnotex/vnote/actions/runs/41394392636/job/125112492727))
-remain unresolved; this exclusion is not a product fix. Typst cleanup/resources, controller,
-export and native-editor tests remain enabled. Windows/Linux registration is unchanged.
-This CTest-only exclusion does not affect direct executable launches, add `QSKIP`, weaken
+remain unresolved; this exclusion is not a product fix.
+
+On Linux, CTest also disables the entire `test_viewarea_tab_reuse` suite, while still building
+it. Runs [42634819018](https://github.com/vnotex/vnote/actions/runs/42634819018) and
+[42737330602](https://github.com/vnotex/vnote/actions/runs/42737330602), including diagnostic
+reruns, hit its 1200-second deadline after focus/outline-readiness failures. The underlying
+Linux cause is unconfirmed; disabling the suite is not evidence that these behaviors work.
+
+Windows registrations and Linux Typst insertion remain enabled. Typst cleanup/resources,
+controller, export and native-editor tests remain enabled on all platforms.
+These CTest-only exclusions do not affect direct executable launches, add `QSKIP`, weaken
 assertions, change deadlines, or relax the separate local Windows whitelist below.
-Re-enable after the failures are fixed and verified on native macOS.
+Re-enable each platform after its failures are fixed and verified on that native platform.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

@@ -556,15 +556,19 @@ Finally $\BigTheta{n^3}$.
 
 void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending_data() {
   QTest::addColumn<bool>("blockwise");
-  QTest::newRow("inline-math") << false;
-  QTest::newRow("display-math") << true;
+  QTest::addColumn<bool>("autoFold");
+  QTest::newRow("inline-math") << false << true;
+  QTest::newRow("display-math-folded") << true << true;
+  QTest::newRow("display-math-unfolded") << true << false;
 }
 
 void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
   QFETCH(bool, blockwise);
+  QFETCH(bool, autoFold);
   auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
   textConfig->m_scaleFactor = 1.25;
   auto config = QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig);
+  config->m_autoFoldPreviewedBlocksEnabled = autoFold;
   vte::VMarkdownEditor editor(config, QSharedPointer<vte::TextEditorParameters>::create());
   const int baseFontSize = editor.baseEditorFontPointSize();
   // Integral geometry at every reachable point-size ratio, including odd base fonts.
@@ -610,8 +614,13 @@ void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
     const auto image = data ? editor.findImageFromDocumentResourceMgr(data->m_imageName) : nullptr;
     return image ? image->size() : QSize();
   };
-  auto blockHeight = [&]() {
-    return editor.document()->documentLayout()->blockBoundingRect(block).height();
+  // A folded display preview is painted on the first block, not the hidden
+  // terminal block holding its data. Observe its displacement of following text.
+  auto followingY = [&]() {
+    return editor.document()
+        ->documentLayout()
+        ->blockBoundingRect(editor.document()->lastBlock())
+        .y();
   };
   auto deliver = [&](const QList<QVariant> &p_request) {
     const qreal zoom = p_request[3].toReal();
@@ -636,10 +645,10 @@ void TestMarkdownViewerAdapterAnchor::mathPreviewZoomWhileRasterPending() {
   // Zoom the existing preview before the request debounce or a new raster can
   // complete. This is the interval hidden by arithmetic/adapter-only tests.
   editor.zoom(baseFontSize);
-  const auto heightBeforePreviewZoom = blockHeight();
+  const auto yBeforePreviewZoom = followingY();
   helper.editorZoomChanged();
   QCOMPARE(previewSize(), baseSize * 2);
-  QCOMPARE(blockHeight(), heightBeforePreviewZoom + baseSize.height());
+  QCOMPARE(followingY(), yBeforePreviewZoom + baseSize.height());
   QCOMPARE(rasterSize(), baseRasterSize);
   // A reset before the debounce fires must not be mistaken for "no change"
   // merely because the last raster request was also at 1x.

@@ -1382,26 +1382,19 @@ void TestNotebookSyncInfoController::endpointRetirementPreservesPayloadsAfterDis
   QVERIFY(!fixture.id.isEmpty());
   QVERIFY(QFileInfo::exists(fixture.statePath));
   const auto dav = QFileInfo(fixture.statePath).absolutePath();
-  const auto older = backend == QLatin1String("jianguoyun")
-                         ? QUuid::createUuid().toString(QUuid::WithoutBraces)
-                         : QStringLiteral("older");
+  const auto older = QUuid::createUuid().toString(QUuid::WithoutBraces);
   const auto prior = QStringLiteral("retired/") + older + QLatin1Char('/');
-  const auto snapshot =
-      backend == QLatin1String("jianguoyun")
-          ? QStringLiteral("snapshots/") + QUuid::createUuid().toString(QUuid::WithoutBraces) +
-                QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
-          : QStringLiteral("snapshots/old-operation/body");
-  const auto olderSnapshot =
-      backend == QLatin1String("jianguoyun")
-          ? QStringLiteral("snapshots/") + QUuid::createUuid().toString(QUuid::WithoutBraces) +
-                QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
-          : QStringLiteral("snapshots/saved");
+  const auto snapshot = QStringLiteral("snapshots/") +
+                        QUuid::createUuid().toString(QUuid::WithoutBraces) + QLatin1Char('/') +
+                        QUuid::createUuid().toString(QUuid::WithoutBraces);
+  const auto olderSnapshot = QStringLiteral("snapshots/") +
+                             QUuid::createUuid().toString(QUuid::WithoutBraces) + QLatin1Char('/') +
+                             QUuid::createUuid().toString(QUuid::WithoutBraces);
   QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(snapshot), "retained bytes"));
   QVERIFY(
       RetirementFixture::writeBytes(QDir(dav).filePath(prior + olderSnapshot), "older archive"));
-  if (backend == QLatin1String("jianguoyun"))
-    QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(prior + QStringLiteral("state.json")),
-                                          fixture.stateBytes));
+  QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(prior + QStringLiteral("state.json")),
+                                        fixture.stateBytes));
   NotebookSyncInfoController controller(fixture.services, fixture.id);
   QSignalSpy confirm(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
   QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
@@ -1503,8 +1496,13 @@ void TestNotebookSyncInfoController::gitEndpointCleanupPreservesWebDavArchive() 
           .toJson(QJsonDocument::Compact));
   QCOMPARE(fixture.notebooks->enableSync(fixture.id, config, QStringLiteral("{\"pat\":\"token\"}")),
            VXCORE_OK);
-  const auto preserved =
-      fixture.root + QStringLiteral("/vx_notebook/vx_sync/webdav/retired/previous/payload");
+  const auto archive = fixture.root + QStringLiteral("/vx_notebook/vx_sync/webdav/retired/") +
+                       QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QVERIFY(
+      RetirementFixture::writeBytes(archive + QStringLiteral("/state.json"), fixture.stateBytes));
+  const auto preserved = archive + QStringLiteral("/snapshots/") +
+                         QUuid::createUuid().toString(QUuid::WithoutBraces) + QLatin1Char('/') +
+                         QUuid::createUuid().toString(QUuid::WithoutBraces);
   QVERIFY(RetirementFixture::writeBytes(preserved, "WebDAV recovery bytes"));
   const auto managedArchive = fixture.root +
                               QStringLiteral("/vx_notebook/vx_sync/jianguoyun/retired/") +
@@ -1536,6 +1534,7 @@ void TestNotebookSyncInfoController::gitEndpointCleanupPreservesWebDavArchive() 
   QVERIFY(!fixture.sync->isSyncRegistered(fixture.id));
   QVERIFY(!QFileInfo::exists(fixture.root + QStringLiteral("/vx_notebook/vx_sync/HEAD")));
   QCOMPARE(RetirementFixture::bytes(preserved), QByteArray("WebDAV recovery bytes"));
+  QCOMPARE(RetirementFixture::bytes(archive + QStringLiteral("/state.json")), fixture.stateBytes);
   QCOMPARE(RetirementFixture::bytes(managedArchive + QStringLiteral("/state.json")), managedBytes);
   QCOMPARE(RetirementFixture::bytes(managedSnapshot), QByteArray("managed recovery"));
   QCOMPARE(RetirementFixture::bytes(workingFile), workingBytes);

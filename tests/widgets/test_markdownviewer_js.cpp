@@ -323,6 +323,8 @@ var document = {
 };
 window.addEventListener = function() {};
 window.setTimeout = function(callback) { callback(); };
+// Timers above complete synchronously, so no callback remains to cancel.
+window.clearTimeout = function() {};
 window.scrollTo = function() {};
 
 function add(parent, tag, id, text, className) {
