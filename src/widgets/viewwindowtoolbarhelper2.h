@@ -59,9 +59,8 @@ public:
     // In-place preview toggle (Edit mode only).
     InplacePreview,
 
-    // Persisted Markdown concealment preferences (Edit mode only).
-    ConcealDestinations,
-    ConcealMarkdownMarkers,
+    // Persisted Markdown concealment preset (Edit mode only).
+    Concealment,
 
     // Per-window permission for automatic section numbering in every mode.
     AllowAutoSectionNumber,

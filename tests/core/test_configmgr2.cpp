@@ -89,8 +89,8 @@ private slots:
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
   void testInactiveReaderTimeoutMinutes_roundTripAndNormalization();
-  void testConcealment_defaultsMergeAndPersistedOptOut();
-  void testConcealmentPreferences_persistIndependently();
+  void testConcealmentMode_ignoresOldPreferencesAndNormalizes();
+  void testConcealmentMode_persistsAllModes();
   void testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
   void testEditSectionNumber_mergeAndIndependentPersistence();
@@ -1054,62 +1054,97 @@ void TestConfigMgr2::testInactiveReaderTimeoutMinutes_roundTripAndNormalization(
   }
 }
 
-void TestConfigMgr2::testConcealment_defaultsMergeAndPersistedOptOut() {
+void TestConfigMgr2::testConcealmentMode_ignoresOldPreferencesAndNormalizes() {
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
   const auto original =
       m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
   const auto restore = qScopeGuard([&] {
     m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
   });
   const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
-                         QStringLiteral("concealment")};
+                         QStringLiteral("concealmentMode")};
   MainConfig defaults(m_configMgr);
   const auto loaded = loadThroughMergePath(withoutKeyAt(defaults.toJson(), path));
-  QCOMPARE(valueAt(loaded, path), QJsonValue(true));
+  QCOMPARE(valueAt(loaded, path), QJsonValue(QStringLiteral("aggressive")));
 
-  {
-    ConfigMgr2 settings(m_configService);
-    settings.init();
-    settings.getEditorConfig().getMarkdownEditorConfig().setConcealmentEnabled(false);
-    // Destruction flushes the normal pending write, as at application shutdown.
+  for (const bool destinations : {false, true}) {
+    for (const bool markers : {false, true}) {
+      QJsonObject markdown{{QStringLiteral("concealment"), destinations},
+                           {QStringLiteral("concealMarkdownMarkers"), markers}};
+      const auto legacy =
+          loadThroughMergePath(QJsonObject{{path[0], QJsonObject{{path[1], markdown}}}});
+      QCOMPARE(valueAt(legacy, path), QJsonValue(QStringLiteral("aggressive")));
+      const auto normalized = valueAt(legacy, {path[0], path[1]}).toObject();
+      QVERIFY(!normalized.contains(QStringLiteral("concealment")));
+      QVERIFY(!normalized.contains(QStringLiteral("concealMarkdownMarkers")));
+      {
+        ConfigMgr2 restarted(m_configService);
+        restarted.init();
+        QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(),
+                 Mode::Aggressive);
+      }
+
+      // Old booleans cannot override an explicit choice of the new mode, either.
+      markdown[path[2]] = QStringLiteral("passive");
+      const auto explicitMode =
+          loadThroughMergePath(QJsonObject{{path[0], QJsonObject{{path[1], markdown}}}});
+      QCOMPARE(valueAt(explicitMode, path), QJsonValue(QStringLiteral("passive")));
+    }
   }
-  ConfigMgr2 restarted(m_configService);
-  restarted.init();
-  QVERIFY(!restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
+
+  for (const auto &invalid : {QJsonValue(QJsonValue::Null), QJsonValue(true), QJsonValue(42),
+                              QJsonValue(QString()), QJsonValue(QStringLiteral("unknown")),
+                              QJsonValue(QJsonArray()), QJsonValue(QJsonObject())}) {
+    const auto normalized = loadThroughMergePath(
+        QJsonObject{{path[0], QJsonObject{{path[1], QJsonObject{{path[2], invalid}}}}}});
+    QCOMPARE(valueAt(normalized, path), QJsonValue(QStringLiteral("aggressive")));
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(),
+             Mode::Aggressive);
+  }
 }
 
-void TestConfigMgr2::testConcealmentPreferences_persistIndependently() {
+void TestConfigMgr2::testConcealmentMode_persistsAllModes() {
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
   const auto original =
       m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
   const auto restore = qScopeGuard([&] {
     m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
   });
-  const QStringList markerPath{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
-                               QStringLiteral("concealMarkdownMarkers")};
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("concealmentMode")};
   MainConfig defaults(m_configMgr);
-  defaults.getEditorConfig().getMarkdownEditorConfig().setConcealmentEnabled(false);
-  const auto migrated = loadThroughMergePath(withoutKeyAt(defaults.toJson(), markerPath));
-  QCOMPARE(valueAt(migrated, markerPath), QJsonValue(true));
-  {
-    ConfigMgr2 settings(m_configService);
-    settings.init();
-    QVERIFY(!settings.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
-  }
-
-  for (const bool destinations : {false, true}) {
-    for (const bool markers : {false, true}) {
-      {
-        ConfigMgr2 settings(m_configService);
-        settings.init();
-        auto &markdown = settings.getEditorConfig().getMarkdownEditorConfig();
-        markdown.setConcealmentEnabled(destinations);
-        markdown.setConcealMarkdownMarkersEnabled(markers);
-      }
-      ConfigMgr2 restarted(m_configService);
-      restarted.init();
-      const auto &markdown = restarted.getEditorConfig().getMarkdownEditorConfig();
-      QCOMPARE(markdown.getConcealmentEnabled(), destinations);
-      QCOMPARE(markdown.getConcealMarkdownMarkersEnabled(), markers);
+  QVERIFY(!loadThroughMergePath(defaults.toJson()).isEmpty());
+  struct Case {
+    Mode m_input;
+    Mode m_expected;
+    QString m_serialized;
+  };
+  const Case cases[]{{Mode::None, Mode::None, QStringLiteral("none")},
+                     {Mode::Passive, Mode::Passive, QStringLiteral("passive")},
+                     {Mode::Aggressive, Mode::Aggressive, QStringLiteral("aggressive")},
+                     {static_cast<Mode>(-1), Mode::Aggressive, QStringLiteral("aggressive")}};
+  for (const auto &testCase : cases) {
+    {
+      ConfigMgr2 settings(m_configService);
+      settings.init();
+      auto &markdown = settings.getEditorConfig().getMarkdownEditorConfig();
+      markdown.setConcealmentMode(testCase.m_input);
+      QCOMPARE(markdown.getConcealmentMode(), testCase.m_expected);
+      // Destruction flushes the normal pending write, as at application shutdown.
     }
+    const auto persisted =
+        m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+    QCOMPARE(valueAt(persisted, path), QJsonValue(testCase.m_serialized));
+    const auto persistedMarkdown = valueAt(persisted, {path[0], path[1]}).toObject();
+    QVERIFY(!persistedMarkdown.contains(QStringLiteral("concealment")));
+    QVERIFY(!persistedMarkdown.contains(QStringLiteral("concealMarkdownMarkers")));
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(),
+             testCase.m_expected);
+    QCOMPARE(valueAt(restarted.getConfig().toJson(), path), QJsonValue(testCase.m_serialized));
   }
 }
 

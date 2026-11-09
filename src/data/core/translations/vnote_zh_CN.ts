@@ -459,26 +459,8 @@
         <translation>原地预览</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Conceal long link destinations</source>
-        <translation>省略显示较长的链接目标</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>缩略显示较长的图片、链接和引用目标，不修改 Markdown 源文本。悬停可查看完整目标</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+5"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
-        <source>Conceal Markdown Markers</source>
-        <translation>隐藏 Markdown 标记</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>编辑时保持 Markdown 格式标记隐藏，不改变源码；光标移动会跳过这些标记，链接语法则在光标移入时显示</translation>
+        <source>Concealment</source>
+        <translation>隐藏</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5284,14 +5266,8 @@
         <translation>在源码编辑器内显示图片、代码块、数学公式和表格的预览（在下方的编辑部分选择要预览的内容类型）</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Shorten long image, link and reference destinations without changing the Markdown source (hover to see the full destination)</source>
-        <translation>缩短过长的图片、链接和引用目标地址的显示，不改变 Markdown 源码（悬停可查看完整地址）</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>编辑时保持 Markdown 格式标记隐藏，不改变源码；光标移动会跳过这些标记，链接语法则在光标移入时显示</translation>
+        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
+        <translation>无：显示全部源码；温和：缩短较长的链接、图片和引用网址，同时显示语法；强烈：隐藏支持的标记和链接语法，并缩短较长的图片和引用网址（光标移入时显示链接语法）</translation>
     </message>
     <message>
         <location line="+182"/>
@@ -5719,6 +5695,30 @@
 </context>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Passive</source>
+        <translation>温和</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>强烈</translation>
+    </message>
+    <message>
+        <source>Show all Markdown source</source>
+        <translation>显示全部 Markdown 源码</translation>
+    </message>
+    <message>
+        <source>Shorten long link, image and reference URLs while showing Markdown syntax</source>
+        <translation>缩短较长的链接、图片和引用网址，同时显示 Markdown 语法</translation>
+    </message>
+    <message>
+        <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
+        <translation>隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入时显示链接语法</translation>
+    </message>
     <message>
         <location filename="../../../widgets/markdownviewwindow2.cpp" line="+223"/>
         <source>Choose Markdown Editing Experience</source>

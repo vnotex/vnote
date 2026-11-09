@@ -1799,6 +1799,7 @@ endif()
 add_qt_test(test_viewarea_tab_reuse
   SOURCES test_viewarea_tab_reuse.cpp ${_markdown_window_test_sources}
   LINKS ${_markdown_window_links} Qt6::Pdf
+  ARGS -o -,txt -o test_viewarea_tab_reuse.xml,junitxml
 )
 target_include_directories(test_viewarea_tab_reuse PRIVATE
   $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>

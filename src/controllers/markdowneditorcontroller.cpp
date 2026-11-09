@@ -77,18 +77,16 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
 
   p_editorConfig->m_autoFoldPreviewedBlocksEnabled = p_mdConfig.getAutoFoldPreviewedBlocksEnabled();
 
-  if (!p_mdConfig.getConcealmentEnabled()) {
+  switch (p_mdConfig.getConcealmentMode()) {
+  case MarkdownEditorConfig::ConcealmentMode::None:
     p_editorConfig->m_concealRules.clear();
-  }
-  if (p_mdConfig.getConcealMarkdownMarkersEnabled()) {
-    for (const auto kind :
-         {vte::MarkdownConcealElement::EmphasisMarkers, vte::MarkdownConcealElement::StrongMarkers,
-          vte::MarkdownConcealElement::StrikethroughMarkers,
-          vte::MarkdownConcealElement::MarkMarkers, vte::MarkdownConcealElement::InlineCodeMarkers,
-          vte::MarkdownConcealElement::LinkSyntax, vte::MarkdownConcealElement::HeadingMarkers,
-          vte::MarkdownConcealElement::InlineFormulaMarkers}) {
-      p_editorConfig->m_concealRules.set(kind);
-    }
+    break;
+  case MarkdownEditorConfig::ConcealmentMode::Passive:
+    p_editorConfig->m_concealRules.setPreset(vte::MarkdownConcealPreset::Passive);
+    break;
+  case MarkdownEditorConfig::ConcealmentMode::Aggressive:
+    p_editorConfig->m_concealRules.setPreset(vte::MarkdownConcealPreset::Aggressive);
+    break;
   }
 
   // Map InplacePreviewSources flags from vnotex -> vte.
@@ -126,21 +124,13 @@ bool MarkdownEditorController::beginConcealmentConfirmation() {
   return true;
 }
 
-void MarkdownEditorController::setConcealmentEnabled(bool p_enabled) {
+void MarkdownEditorController::setConcealmentMode(MarkdownEditorConfig::ConcealmentMode p_mode) {
   auto &config = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
-  if (config.getConcealmentEnabled() == p_enabled) {
+  const auto previous = config.getConcealmentMode();
+  config.setConcealmentMode(p_mode);
+  if (config.getConcealmentMode() == previous) {
     return;
   }
-  config.setConcealmentEnabled(p_enabled);
-  m_services.get<HookManager>()->doAction(HookNames::ConfigEditorChanged);
-}
-
-void MarkdownEditorController::setConcealMarkdownMarkersEnabled(bool p_enabled) {
-  auto &config = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
-  if (config.getConcealMarkdownMarkersEnabled() == p_enabled) {
-    return;
-  }
-  config.setConcealMarkdownMarkersEnabled(p_enabled);
   m_services.get<HookManager>()->doAction(HookNames::ConfigEditorChanged);
 }
 

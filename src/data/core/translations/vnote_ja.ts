@@ -459,26 +459,8 @@
         <translation>インプレースプレビュー</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Conceal long link destinations</source>
-        <translation>長いリンク先を省略表示</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>Markdown のソースを変更せずに、長い画像・リンク・参照のリンク先を短く表示します。マウスを重ねるとリンク先全体を表示します</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+5"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
-        <source>Conceal Markdown Markers</source>
-        <translation>Markdown マーカーを隠す</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>ソースを変更せず、編集中も Markdown の書式マーカーを非表示にします。カーソル移動ではマーカーをスキップし、リンク構文はカーソルが入ると表示されます</translation>
+        <source>Concealment</source>
+        <translation>非表示化</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5284,14 +5266,8 @@
         <translation>ソースエディタ内に画像、コードブロック、数式、表のプレビューを表示します（プレビューする対象は下の「編集」セクションで選択できます）</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Shorten long image, link and reference destinations without changing the Markdown source (hover to see the full destination)</source>
-        <translation>Markdown ソースを変更せずに、画像、リンク、参照の長いリンク先を短縮表示します（マウスポインターを合わせるとリンク先全体を表示します）</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>ソースを変更せず、編集中も Markdown の書式マーカーを非表示にします。カーソル移動ではマーカーをスキップし、リンク構文はカーソルが入ると表示されます</translation>
+        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
+        <translation>なし：ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。積極的：対応するマーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示（リンク構文はカーソルが入ると表示）</translation>
     </message>
     <message>
         <location line="+176"/>
@@ -5719,6 +5695,30 @@
 </context>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
+    <message>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message>
+        <source>Passive</source>
+        <translation>控えめ</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>積極的</translation>
+    </message>
+    <message>
+        <source>Show all Markdown source</source>
+        <translation>Markdown ソースをすべて表示</translation>
+    </message>
+    <message>
+        <source>Shorten long link, image and reference URLs while showing Markdown syntax</source>
+        <translation>Markdown 構文を表示したまま、長いリンク・画像・参照の URL を短縮表示</translation>
+    </message>
+    <message>
+        <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
+        <translation>対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンク構文はカーソルが入ると表示</translation>
+    </message>
     <message>
         <location filename="../../../widgets/markdownviewwindow2.cpp" line="+223"/>
         <source>Choose Markdown Editing Experience</source>

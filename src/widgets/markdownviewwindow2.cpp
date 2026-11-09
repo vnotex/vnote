@@ -255,13 +255,13 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
       tr("Show Markdown markers"),
       tr("I prefer a strong control of what I have written and enjoy the muscles of Markdown"),
       QStringLiteral("showMarkdownMarkersRadio"));
-  const bool enabled = getServices()
-                           .get<ConfigMgr2>()
-                           ->getEditorConfig()
-                           .getMarkdownEditorConfig()
-                           .getConcealMarkdownMarkersEnabled();
-  conceal->setChecked(enabled);
-  show->setChecked(!enabled);
+  const auto mode = getServices()
+                        .get<ConfigMgr2>()
+                        ->getEditorConfig()
+                        .getMarkdownEditorConfig()
+                        .getConcealmentMode();
+  conceal->setChecked(mode == MarkdownEditorConfig::ConcealmentMode::Aggressive);
+  show->setChecked(!conceal->isChecked());
 
   auto *hint = new QLabel(
       tr("You could always change Markdown editing experience using the toolbar menu at the "
@@ -274,7 +274,9 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
   connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
   connect(dialog, &QDialog::accepted, m_editorController,
           [controller = m_editorController, conceal]() {
-            controller->setConcealMarkdownMarkersEnabled(conceal->isChecked());
+            controller->setConcealmentMode(conceal->isChecked()
+                                               ? MarkdownEditorConfig::ConcealmentMode::Aggressive
+                                               : MarkdownEditorConfig::ConcealmentMode::Passive);
           });
   connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
   dialog->show();
@@ -893,22 +895,44 @@ void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
   }
 
   {
-    auto *destinations = addAction(p_menu, ViewWindowToolBarHelper2::ConcealDestinations);
-    auto *markers = addAction(p_menu, ViewWindowToolBarHelper2::ConcealMarkdownMarkers);
-    const auto refreshConcealmentActions = [this, destinations, markers]() {
-      const auto &config =
-          getServices().get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
-      const QSignalBlocker destinationsBlocker(destinations);
-      const QSignalBlocker markersBlocker(markers);
-      destinations->setChecked(config.getConcealmentEnabled());
-      markers->setChecked(config.getConcealMarkdownMarkersEnabled());
+    using ConcealmentMode = MarkdownEditorConfig::ConcealmentMode;
+    auto *menu = addAction(p_menu, ViewWindowToolBarHelper2::Concealment)->menu();
+    auto *group = new QActionGroup(menu);
+    group->setExclusive(true);
+    const auto addPreset = [this, menu, group](const QString &p_text, const QString &p_name,
+                                               const QString &p_toolTip, ConcealmentMode p_mode) {
+      auto *action = menu->addAction(p_text);
+      action->setObjectName(p_name);
+      action->setToolTip(p_toolTip);
+      action->setCheckable(true);
+      action->setData(static_cast<int>(p_mode));
+      group->addAction(action);
+      connect(
+          action, &QAction::triggered, m_editorController,
+          [controller = m_editorController, p_mode]() { controller->setConcealmentMode(p_mode); });
+    };
+    addPreset(tr("None"), QStringLiteral("concealmentNoneAction"), tr("Show all Markdown source"),
+              ConcealmentMode::None);
+    addPreset(tr("Passive"), QStringLiteral("concealmentPassiveAction"),
+              tr("Shorten long link, image and reference URLs while showing Markdown syntax"),
+              ConcealmentMode::Passive);
+    addPreset(tr("Aggressive"), QStringLiteral("concealmentAggressiveAction"),
+              tr("Hide supported Markdown markers and link syntax, and shorten long image and "
+                 "reference URLs; link syntax reveals on entry"),
+              ConcealmentMode::Aggressive);
+    const auto refreshConcealmentActions = [this, group]() {
+      const auto mode = getServices()
+                            .get<ConfigMgr2>()
+                            ->getEditorConfig()
+                            .getMarkdownEditorConfig()
+                            .getConcealmentMode();
+      for (auto *action : group->actions()) {
+        action->setChecked(action->data().toInt() == static_cast<int>(mode));
+      }
     };
     refreshConcealmentActions();
     connect(p_menu, &QMenu::aboutToShow, this, refreshConcealmentActions);
-    connect(destinations, &QAction::toggled, m_editorController,
-            &MarkdownEditorController::setConcealmentEnabled);
-    connect(markers, &QAction::toggled, m_editorController,
-            &MarkdownEditorController::setConcealMarkdownMarkersEnabled);
+    connect(menu, &QMenu::aboutToShow, this, refreshConcealmentActions);
   }
 
   {

@@ -431,22 +431,10 @@ QAction *ViewWindowToolBarHelper2::addAction(QMenu *p_menu, Action p_action,
     act->setCheckable(true);
     break;
 
-  case Action::ConcealDestinations:
-    act = p_menu->addAction(QObject::tr("Conceal long link destinations"));
-    act->setObjectName(QStringLiteral("concealDestinationsAction"));
-    act->setToolTip(QObject::tr(
-        "Shorten long image, link, and reference destinations without changing the Markdown "
-        "source. Hover to see the full destination"));
-    act->setCheckable(true);
-    break;
-
-  case Action::ConcealMarkdownMarkers:
-    act = p_menu->addAction(QObject::tr("Conceal Markdown Markers"));
-    act->setObjectName(QStringLiteral("concealMarkdownMarkersAction"));
-    act->setToolTip(QObject::tr(
-        "Keep Markdown formatting markers hidden while editing without changing the source; "
-        "cursor movement skips them, while link syntax reveals on entry"));
-    act->setCheckable(true);
+  case Action::Concealment:
+    act = p_menu->addAction(QObject::tr("Concealment"));
+    act->setObjectName(QStringLiteral("concealmentAction"));
+    act->setMenu(new QMenu(p_menu));
     break;
 
   case Action::AllowAutoSectionNumber:

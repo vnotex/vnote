@@ -931,26 +931,8 @@
         <translation>본문 내 미리 보기</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Conceal long link destinations</source>
-        <translation>긴 링크 대상 주소 숨기기</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>Markdown 소스를 변경하지 않고 이미지, 링크, 참조의 긴 대상 주소를 줄여 표시합니다. 전체 주소를 보려면 마우스를 올려놓으세요</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+4"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
-        <source>Conceal Markdown Markers</source>
-        <translation>Markdown 마커 숨기기</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+2"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>소스를 변경하지 않고 편집 중에도 Markdown 서식 마커를 숨깁니다. 커서 이동은 마커를 건너뛰며, 링크 구문은 커서가 들어가면 표시됩니다</translation>
+        <source>Concealment</source>
+        <translation>숨김</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -5284,14 +5266,8 @@
         <translation>소스 편집기 안에 이미지, 코드 블록, 수식 및 표의 미리보기를 표시합니다(아래 편집 섹션에서 미리볼 소스 유형을 선택하세요)</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <source>Shorten long image, link and reference destinations without changing the Markdown source (hover to see the full destination)</source>
-        <translation>Markdown 소스를 변경하지 않고 긴 이미지, 링크 및 참조 대상 주소를 짧게 표시합니다(마우스를 올리면 전체 주소가 표시됩니다)</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Keep Markdown formatting markers hidden while editing without changing the source; cursor movement skips them, while link syntax reveals on entry</source>
-        <translation>소스를 변경하지 않고 편집 중에도 Markdown 서식 마커를 숨깁니다. 커서 이동은 마커를 건너뛰며, 링크 구문은 커서가 들어가면 표시됩니다</translation>
+        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
+        <translation>없음: 모든 소스 표시; 소극적: 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시; 적극적: 지원되는 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시(커서가 들어가면 링크 구문 표시)</translation>
     </message>
     <message>
         <location line="+176"/>
@@ -5719,6 +5695,30 @@
 </context>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
+    <message>
+        <source>None</source>
+        <translation>없음</translation>
+    </message>
+    <message>
+        <source>Passive</source>
+        <translation>소극적</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>적극적</translation>
+    </message>
+    <message>
+        <source>Show all Markdown source</source>
+        <translation>Markdown 소스를 모두 표시</translation>
+    </message>
+    <message>
+        <source>Shorten long link, image and reference URLs while showing Markdown syntax</source>
+        <translation>Markdown 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시</translation>
+    </message>
+    <message>
+        <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
+        <translation>지원되는 Markdown 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시하며, 커서가 들어가면 링크 구문을 표시</translation>
+    </message>
     <message>
         <source>Choose Markdown Editing Experience</source>
         <translation>Markdown 편집 환경 선택</translation>

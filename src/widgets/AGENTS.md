@@ -145,7 +145,7 @@ underlying `vte::VTextEdit` for cursor, selection and other advanced text operat
 
 It uses the active theme's resolved Markdown editor styles and native code-highlight
 theme, updating on theme switch/refresh without reloading source or discarding undo.
-Destination shortening and syntax concealment are enabled independently of document-editor
+The upstream Aggressive concealment preset is always enabled, independently of document-editor
 preferences; concealment does not strip source markers. Normal input, no line numbers/folding,
 and disabled in-place previews keep embedding independent of resource paths, WebEngine and
 preview helpers. This is a source editor, not the HTML reading view.
@@ -970,8 +970,7 @@ PDF's existing rotate/cursor/scroll/spread/properties entries. Only viewer-owned
 readiness-gated: Menu and Readable Width remain available during loading/reloading.
 
 `addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview, In-Place Preview,
-Conceal long link destinations, Conceal Markdown Markers, Allow Auto Section Number and Debug
-after a separator.
+the Concealment submenu, Allow Auto Section Number and Debug after a separator.
 Edit-only/Read-only visibility and encrypted-note restrictions still apply.
 Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
@@ -1328,38 +1327,40 @@ popup outlines, without mutating producer names.
 
 ### Markdown concealment
 
-Markdown's top-right **Menu** exposes two Edit-only checkable preferences immediately below
-**In-Place Preview**. After onboarding, the controls remain menu-only;
-**Settings > Markdown Editor** provides searchable, read-only hints explaining them and the preview toggles:
+Markdown's top-right **Menu** exposes an Edit-only **Concealment** submenu immediately below
+**In-Place Preview**, with three exclusive radio actions:
 
-- **Conceal long link destinations** retains `editor.markdown_editor.concealment`, default `true`.
-- **Conceal Markdown Markers** stores `editor.markdown_editor.concealMarkdownMarkers`, default
-  `true`. A saved `false` remains off. It hides emphasis, strong, strikethrough, mark, inline-code,
-  link, ATX-heading and inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax`
-  rules.
+- **None** shows all Markdown source without concealment.
+- **Passive** shortens long link, image and reference URLs while leaving syntax visible.
+- **Aggressive** hides supported formatting markers and link syntax, and shortens image and
+  reference URLs. Link syntax reveals on caret entry; inline link URLs are not separately shortened.
 
-The first displayed Markdown view (Read or Edit) opens **Choose Markdown Editing Experience**,
-a one-time radio choice between concealing and showing markers, with a themed vertical separator
-between the columns. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment`
-stores `editor.hasConfirmedMarkdownEditorConcealment` in `session.json`, default `false`.
-The controller marks it `true` before the nonblocking application-modal dialog is shown, so
-restored tabs cannot duplicate the prompt. Hidden/background tabs and minimized hosts defer it.
-The current marker setting is preselected; OK applies the choice through the same controller
-as the toolbar. Escape/window-close retains that setting but still consumes the prompt.
-The hint points to the top-right toolbar menu for later changes; long-link concealment is untouched.
+The global portable preference is `editor.markdown_editor.concealmentMode` in `vnotex.json`,
+stored as `none`, `passive` or `aggressive`. Missing or unknown values select Aggressive.
+The old `concealment` and `concealMarkdownMarkers` booleans are ignored and no longer written;
+there is deliberately no compatibility migration. Explicit choices in the new setting persist.
+**Settings > Markdown Editor** provides a searchable, read-only description of the presets.
 
-Both preferences are global and persist independently through `ConfigMgr2`; moving the original
-control must preserve saved opt-outs. Menu actions call `MarkdownEditorController`, which emits
-the existing `ConfigEditorChanged` notification to refresh open editors. Each menu refreshes its
-checks from current configuration before opening, without emitting another toggle.
-`applyMarkdownConfigFields()` supplies both editor-config builders: destination opt-out clears
-URL rules before independently adding any enabled marker rules. Link-syntax hiding includes the
-link destination suffix; image/reference URL shortening remains separately controlled.
+The first displayed Markdown view (Read or Edit) opens **Choose Markdown Editing Experience**.
+Its two radio choices map **Conceal Markdown markers** to Aggressive and **Show Markdown markers**
+to Passive. Aggressive preselects Conceal; None and Passive preselect Show. None remains available
+in the toolbar submenu. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment` stores
+`editor.hasConfirmedMarkdownEditorConcealment` in `session.json`, default `false`. The controller
+marks it `true` before showing the nonblocking application-modal dialog, so restored tabs cannot
+duplicate it. Hidden/background tabs and minimized hosts defer it. OK applies the choice through
+the same controller as the toolbar; Escape/window-close retains the mode but consumes the prompt.
+
+Menu actions call `MarkdownEditorController::setConcealmentMode()`. An effective change emits
+`ConfigEditorChanged` to refresh open editors; selecting the current mode is a no-op. Both the
+parent menu and submenu refresh the exclusive check from current configuration before opening,
+without triggering another update. `applyMarkdownConfigFields()` supplies both editor-config
+builders, clearing rules for None or applying the corresponding upstream preset directly.
 
 Concealment is visual only: never rewrite Markdown or change dirty state, cursor or undo history.
-Hover reveals a shortened destination. Formatting markers stay hidden while editing, and
-character movement skips them; link syntax still reveals on caret entry. The existing toggles
-remain independent. Setext underlines and multiline math-block delimiters remain unchanged.
+Aggressive formatting markers stay hidden during editing and character movement skips them;
+link syntax still reveals on entry. Setext underlines and multiline math-block delimiters remain
+unchanged. Shortened destinations keep five prefix graphemes, three middle dots and twelve suffix
+graphemes; hover exposes the full destination.
 
 Every bundled `text-editor.theme` defines `markdown-editor-styles.ConcealedText` with foreground
 and background colors. `ThemeService` resolves palette tokens before vtextedit loads the theme.

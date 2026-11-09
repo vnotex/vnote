@@ -96,8 +96,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_headingFoldingEnabled = READBOOL(QStringLiteral("headingFolding"));
   m_autoSectionNumberEnabled = READBOOL(QStringLiteral("autoSectionNumber"));
   m_autoSectionNumberInEditModeEnabled = READBOOL(QStringLiteral("autoSectionNumberInEditMode"));
-  m_concealmentEnabled = READBOOL(QStringLiteral("concealment"));
-  m_concealMarkdownMarkersEnabled = READBOOL(QStringLiteral("concealMarkdownMarkers"));
+  m_concealmentMode = stringToConcealmentMode(READSTR(QStringLiteral("concealmentMode")));
   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
 
@@ -153,8 +152,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("headingFolding")] = m_headingFoldingEnabled;
   obj[QStringLiteral("autoSectionNumber")] = m_autoSectionNumberEnabled;
   obj[QStringLiteral("autoSectionNumberInEditMode")] = m_autoSectionNumberInEditModeEnabled;
-  obj[QStringLiteral("concealment")] = m_concealmentEnabled;
-  obj[QStringLiteral("concealMarkdownMarkers")] = m_concealMarkdownMarkersEnabled;
+  obj[QStringLiteral("concealmentMode")] = concealmentModeToString(m_concealmentMode);
   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
   obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
   obj[QStringLiteral("protectFromXss")] = m_protectFromXss;
@@ -334,18 +332,42 @@ void MarkdownEditorConfig::setAutoSectionNumberInEditModeEnabled(bool p_enabled)
   updateConfig(m_autoSectionNumberInEditModeEnabled, p_enabled, this);
 }
 
-bool MarkdownEditorConfig::getConcealmentEnabled() const { return m_concealmentEnabled; }
-
-void MarkdownEditorConfig::setConcealmentEnabled(bool p_enabled) {
-  updateConfig(m_concealmentEnabled, p_enabled, this);
+QString MarkdownEditorConfig::concealmentModeToString(ConcealmentMode p_mode) {
+  switch (p_mode) {
+  case ConcealmentMode::None:
+    return QStringLiteral("none");
+  case ConcealmentMode::Passive:
+    return QStringLiteral("passive");
+  default:
+    return QStringLiteral("aggressive");
+  }
 }
 
-bool MarkdownEditorConfig::getConcealMarkdownMarkersEnabled() const {
-  return m_concealMarkdownMarkersEnabled;
+MarkdownEditorConfig::ConcealmentMode
+MarkdownEditorConfig::stringToConcealmentMode(const QString &p_str) {
+  if (p_str.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0) {
+    return ConcealmentMode::None;
+  } else if (p_str.compare(QLatin1String("passive"), Qt::CaseInsensitive) == 0) {
+    return ConcealmentMode::Passive;
+  }
+  return ConcealmentMode::Aggressive;
 }
 
-void MarkdownEditorConfig::setConcealMarkdownMarkersEnabled(bool p_enabled) {
-  updateConfig(m_concealMarkdownMarkersEnabled, p_enabled, this);
+MarkdownEditorConfig::ConcealmentMode MarkdownEditorConfig::getConcealmentMode() const {
+  return m_concealmentMode;
+}
+
+void MarkdownEditorConfig::setConcealmentMode(ConcealmentMode p_mode) {
+  switch (p_mode) {
+  case ConcealmentMode::None:
+  case ConcealmentMode::Passive:
+  case ConcealmentMode::Aggressive:
+    break;
+  default:
+    p_mode = ConcealmentMode::Aggressive;
+    break;
+  }
+  updateConfig(m_concealmentMode, p_mode, this);
 }
 
 bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const {

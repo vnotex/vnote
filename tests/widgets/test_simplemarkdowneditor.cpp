@@ -52,8 +52,10 @@ private slots:
     ServiceLocator services;
     services.registerService(&theme);
     SimpleMarkdownEditor editor(services);
-    const auto source =
-        QStringLiteral("# Heading\n\n**bold** and `code`\n\n<b>literal</b>\n\noutside");
+    const auto destination = QStringLiteral("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+    const auto source = QStringLiteral("# Heading\n\n**bold** and `code`\n\n<b>literal</b>\n\n"
+                                       "[label](%1)\n\n![image](%1)\n\n[ref]: %1\n\n%1\n\noutside")
+                            .arg(destination);
     editor.setPlainText(source);
     editor.setReadOnly(true);
     auto cursor = editor.getTextEdit()->textCursor();
@@ -70,6 +72,17 @@ private slots:
     QTRY_VERIFY(qAbs(rangeWidth(editor, bold + 6, bold + 8)) < 0.1);
     QTRY_VERIFY(qAbs(rangeWidth(editor, code, code + 1)) < 0.1);
     QVERIFY(rangeWidth(editor, bold + 2, bold + 6) > 1);
+    const int link = source.indexOf(destination);
+    const int image = source.indexOf(destination, link + destination.size());
+    const int reference = source.indexOf(destination, image + destination.size());
+    const int raw = source.lastIndexOf(destination);
+    QTRY_VERIFY(qAbs(rangeWidth(editor, link, link + destination.size())) < 0.1);
+    for (const int start : {image, reference}) {
+      QTRY_VERIFY(rangeWidth(editor, start, start + destination.size()) > 1);
+      QTRY_VERIFY(rangeWidth(editor, start, start + destination.size()) + 1 <
+                  rangeWidth(editor, raw, raw + destination.size()));
+    }
+
     QTest::keyClicks(editor.getTextEdit(), "ignored");
     QCOMPARE(editor.toPlainText(), source);
     QVERIFY(!editor.isModified());

@@ -119,6 +119,21 @@ Encryption fixtures created by `prepare_notebook` / `commit_notebook` are self-c
 notes. Reopen them with `vxcore_encryption_unlock_note`, using the notebook-relative path
 captured before closing the buffer; `unlock_notebook` is only for explicit legacy-vault tests.
 
+## Shared real-window test environment
+
+After initializing an isolated `ConfigMgr2`, real-window fixtures apply
+`TestEnvironment` from `helpers/test_environment.h` before constructing or showing views:
+
+```cpp
+TestEnvironment{}.apply(*config);
+```
+
+Its `m_markdownExperiencePromptEnabled` flag defaults to `false`, suppressing the one-time
+**Choose Markdown Editing Experience** dialog. Only tests exercising that dialog explicitly
+set the flag to `true` and apply it before showing the view. The helper maps this option to
+`SessionConfig::hasConfirmedMarkdownEditorConcealment`; production behavior is unchanged.
+It does not replace `vxcore_set_test_mode(1)` or disposable data/profile setup.
+
 ## Writing Service Tests
 
 ```cpp
@@ -354,6 +369,8 @@ ConfigMgr2, and prune only in the test class `init()`, never inside `Fixture::in
 intra-row fixture recreation intentionally tests persisted sessions. This suite must not edit
 installed assets, including `web/css/user.css` or user-created templates; asset-customization
 fixtures must retain the full test-directory reset. Keep the existing suite deadlines.
+CTest explicitly requests text output and `test_viewarea_tab_reuse.xml` (JUnit) in the test's
+working directory, so Windows GUI logging cannot discard the failed assertion report.
 
 On macOS, CTest marks the entire `test_viewarea_tab_reuse` and
 `test_typstviewwindow_insertion` tests `DISABLED`, including their previously passing rows.

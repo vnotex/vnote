@@ -1,5 +1,7 @@
 #include <QtTest>
 
+#include "../helpers/test_environment.h"
+
 #ifdef Q_OS_WIN
 #include <QtCore/qt_windows.h>
 #endif
@@ -862,6 +864,7 @@ struct Fixture {
     configCore = std::make_unique<ConfigCoreService>(context);
     config = std::make_unique<ConfigMgr2>(configCore.get());
     config->init();
+    tests::TestEnvironment{}.apply(*config);
     QDir::setSearchPaths(QStringLiteral("app"), {QFileInfo(rcc).absolutePath()});
     config->initAfterQtAppStarted();
     if (!config->extraDataCopyFailures().isEmpty()) {
@@ -873,7 +876,7 @@ struct Fixture {
     markdown.setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
     markdown.setAutoSectionNumberInEditModeEnabled(false);
     markdown.setAutoFoldPreviewedBlocksEnabled(false);
-    markdown.setConcealmentEnabled(false);
+    markdown.setConcealmentMode(MarkdownEditorConfig::ConcealmentMode::None);
     markdown.setMathRenderer(QStringLiteral("katex"));
     markdown.setFetchImagesInParseAndPaste(false);
     hooks = std::make_unique<HookManager>();

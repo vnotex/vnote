@@ -2,6 +2,8 @@
 
 ## Unreleased
 * Show text beside the Home and United Entry toolbar icons, matching Export
+* **Markdown concealment**: Replace the two editor toggles with a Concealment submenu containing None, Passive and Aggressive radio choices; default to Aggressive without migrating the old settings, map the editing-experience choices to Aggressive/Passive, and use Aggressive in embedded Markdown editors
+* Update vtextedit to upstream `10a9a1d` for longer compact URL destinations and insertion carets that stay inside concealed closing markers while typing
 * On version upgrade, add missing default United Entry aliases to saved nonempty lists, preserving custom definitions and explicit empty-list opt-outs; profiles already on 4.14.0 receive this on their next version change
 * **Notebook task trust**: Require local notebook trust before running notebook tasks or evaluating their variables; remember approval across restarts, forget it on explicit close, and trust only newly created local notebooks automatically
 

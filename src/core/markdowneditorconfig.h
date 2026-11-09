@@ -31,6 +31,8 @@ public:
 
   enum EditViewMode { EditOnly, EditPreview };
 
+  enum class ConcealmentMode { None, Passive, Aggressive };
+
   MarkdownEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig,
                        const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
 
@@ -91,11 +93,8 @@ public:
   bool getAutoSectionNumberInEditModeEnabled() const;
   void setAutoSectionNumberInEditModeEnabled(bool p_enabled);
 
-  bool getConcealmentEnabled() const;
-  void setConcealmentEnabled(bool p_enabled);
-
-  bool getConcealMarkdownMarkersEnabled() const;
-  void setConcealMarkdownMarkersEnabled(bool p_enabled);
+  ConcealmentMode getConcealmentMode() const;
+  void setConcealmentMode(ConcealmentMode p_mode);
 
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
@@ -168,6 +167,9 @@ private:
   QString editViewModeToString(EditViewMode p_mode) const;
   EditViewMode stringToEditViewMode(const QString &p_str) const;
 
+  static QString concealmentModeToString(ConcealmentMode p_mode);
+  static ConcealmentMode stringToConcealmentMode(const QString &p_str);
+
   static QString normalizePlantUmlFormat(const QString &p_format);
 
   static QString normalizeMathRenderer(const QString &p_renderer);
@@ -223,11 +225,8 @@ private:
   bool m_autoSectionNumberEnabled = true;
   bool m_autoSectionNumberInEditModeEnabled = false;
 
-  // Shorten long destinations visually without changing Markdown source.
-  bool m_concealmentEnabled = true;
-
-  // Hide Markdown syntax visually without changing source.
-  bool m_concealMarkdownMarkersEnabled = true;
+  // Visually conceal Markdown syntax and destinations without changing source.
+  ConcealmentMode m_concealmentMode = ConcealmentMode::Aggressive;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

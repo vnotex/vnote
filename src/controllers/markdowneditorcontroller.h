@@ -64,8 +64,7 @@ public:
   // Claim the one-time prompt before showing it, including across restored views.
   bool beginConcealmentConfirmation();
 
-  void setConcealmentEnabled(bool p_enabled);
-  void setConcealMarkdownMarkersEnabled(bool p_enabled);
+  void setConcealmentMode(MarkdownEditorConfig::ConcealmentMode p_mode);
 
   // ============ Config Building ============
 

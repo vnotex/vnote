@@ -23,15 +23,7 @@ QSharedPointer<vte::MarkdownEditorConfig> createConfig(ServiceLocator &p_service
 
   auto config = QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig);
   config->m_inplacePreviewSources = vte::MarkdownEditorConfig::NoInplacePreview;
-  // Retain destination shortening and add the full editor's syntax concealment rules.
-  for (const auto kind :
-       {vte::MarkdownConcealElement::EmphasisMarkers, vte::MarkdownConcealElement::StrongMarkers,
-        vte::MarkdownConcealElement::StrikethroughMarkers, vte::MarkdownConcealElement::MarkMarkers,
-        vte::MarkdownConcealElement::InlineCodeMarkers, vte::MarkdownConcealElement::LinkSyntax,
-        vte::MarkdownConcealElement::HeadingMarkers,
-        vte::MarkdownConcealElement::InlineFormulaMarkers}) {
-    config->m_concealRules.set(kind);
-  }
+  config->m_concealRules.setPreset(vte::MarkdownConcealPreset::Aggressive);
   return config;
 }
 } // namespace

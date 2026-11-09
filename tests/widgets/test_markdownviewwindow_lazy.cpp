@@ -1,11 +1,15 @@
 #include <QtTest>
 
+#include "../helpers/test_environment.h"
+
 #include <QAbstractTextDocumentLayout>
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QBuffer>
 #include <QChildEvent>
 #include <QClipboard>
+#include <QDialog>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -17,6 +21,7 @@
 #include <QPdfSelection>
 #include <QPointer>
 #include <QPrinter>
+#include <QRadioButton>
 #include <QScopeGuard>
 #include <QSemaphore>
 #include <QSplitter>
@@ -53,6 +58,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
+#include <core/sessionconfig.h>
 #include <core/theme.h>
 #include <export/webviewexporter.h>
 #include <gui/services/themeservice.h>
@@ -265,7 +271,9 @@ private slots:
   void firstReaderUsesCurrentDraft_data();
   void firstReaderUsesCurrentDraft();
   void themeAndOptionsPreserveEditor();
-  void concealmentMenuPreservesSourceAndIndependentPreferences();
+  void concealmentMenuPreservesSourceAndPresets();
+  void concealmentExperiencePrompt_data();
+  void concealmentExperiencePrompt();
   void imagePopupCreatesOnlyRequestedSurface();
   void printUsesCurrentMode_data();
   void printUsesCurrentMode();
@@ -342,6 +350,7 @@ void TestMarkdownViewWindowLazy::init() {
   m_configCore = std::make_unique<ConfigCoreService>(m_context);
   m_config = std::make_unique<ConfigMgr2>(m_configCore.get());
   m_config->init();
+  TestEnvironment{}.apply(*m_config);
   // init() establishes the executable prefix; install the real bundled runtime from our build.
   QDir::setSearchPaths(QStringLiteral("app"), {QFileInfo(rcc).absolutePath()});
   m_config->initAfterQtAppStarted();
@@ -350,8 +359,7 @@ void TestMarkdownViewWindowLazy::init() {
   markdownConfig().setEditViewMode(MarkdownEditorConfig::EditOnly);
   markdownConfig().setAutoSectionNumberInEditModeEnabled(false);
   markdownConfig().setAutoFoldPreviewedBlocksEnabled(false);
-  markdownConfig().setConcealmentEnabled(false);
-  markdownConfig().setConcealMarkdownMarkersEnabled(false);
+  markdownConfig().setConcealmentMode(MarkdownEditorConfig::ConcealmentMode::None);
   markdownConfig().setMathRenderer(QStringLiteral("katex"));
   markdownConfig().setFetchImagesInParseAndPaste(false);
   m_hooks = std::make_unique<HookManager>();
@@ -770,49 +778,76 @@ void TestMarkdownViewWindowLazy::firstReaderUsesCurrentDraft() {
   QCOMPARE(editor->getText(), QStringLiteral("# Saved heading\n"));
 }
 
-void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndIndependentPreferences() {
+void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
   markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
-  const QString destination =
-      QStringLiteral("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+  const QString suffix = QStringLiteral("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+  const QString imageUrl = QStringLiteral("https://example.invalid/image/") + suffix;
+  const QString linkUrl = QStringLiteral("https://example.invalid/link/") + suffix;
+  const QString referenceUrl = QStringLiteral("https://example.invalid/reference/") + suffix;
   const QString source =
       QStringLiteral("# Heading ###\n\n*emphasis*\n\n**strong**\n\n~~strike~~\n\n==mark==\n\n"
-                     "`code`\n\n[label](https://example.invalid/path)\n\n$math$\n\n$$display$$\n\n"
-                     "![image](%1)\n\noutside")
-          .arg(destination);
+                     "`code`\n\n[label](%1)\n\n$math$\n\n$$display$$\n\n"
+                     "![image](%2)\n\n[reference]: %3\n\noutside")
+          .arg(linkUrl, imageUrl, referenceUrl);
   const auto firstBuffer = openNote(QStringLiteral("conceal-first.md"), source.toUtf8());
   const auto secondBuffer = openNote(QStringLiteral("conceal-second.md"), source.toUtf8());
   QVERIFY(firstBuffer.isValid() && secondBuffer.isValid());
   Window first(m_services, firstBuffer, nullptr, ViewWindowMode::Edit);
   Window second(m_services, secondBuffer, nullptr, ViewWindowMode::Edit);
-  showWindow(first);
   showWindow(second);
+  showWindow(first);
   auto *firstEditor = first.findChild<MarkdownEditor *>();
   auto *secondEditor = second.findChild<MarkdownEditor *>();
   QVERIFY(firstEditor && secondEditor);
   appendDraft(firstEditor, QStringLiteral(" draft"));
+  auto firstCursor = firstEditor->getTextEdit()->textCursor();
+  firstCursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, 3);
+  firstEditor->getTextEdit()->setTextCursor(firstCursor);
   auto secondCursor = secondEditor->getTextEdit()->textCursor();
   secondCursor.movePosition(QTextCursor::End);
+  secondCursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor, 3);
   secondEditor->getTextEdit()->setTextCursor(secondCursor);
-  const auto firstCursor = firstEditor->getTextEdit()->textCursor();
   const auto firstUndo = firstEditor->document()->availableUndoSteps();
   const auto secondUndo = secondEditor->document()->availableUndoSteps();
+  const auto firstRedo = firstEditor->document()->availableRedoSteps();
+  const auto secondRedo = secondEditor->document()->availableRedoSteps();
 
   // Host the same editor-config notification boundary as ViewAreaController.
+  int notifications = 0;
   const int hook =
       m_hooks->addAction(HookNames::ConfigEditorChanged, [&](HookContext &, const QVariantMap &) {
+        ++notifications;
         first.handleEditorConfigChange();
         second.handleEditorConfigChange();
       });
   const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
-  auto *destinations = first.findChild<QAction *>(QStringLiteral("concealDestinationsAction"));
-  auto *markers = first.findChild<QAction *>(QStringLiteral("concealMarkdownMarkersAction"));
-  auto *otherDestinations =
-      second.findChild<QAction *>(QStringLiteral("concealDestinationsAction"));
-  auto *otherMarkers = second.findChild<QAction *>(QStringLiteral("concealMarkdownMarkersAction"));
-  QVERIFY(destinations && markers && otherDestinations && otherMarkers);
-  auto *otherMenu = qobject_cast<QMenu *>(otherDestinations->parent());
-  QVERIFY(otherMenu);
-
+  const QStringList actionNames{QStringLiteral("concealmentNoneAction"),
+                                QStringLiteral("concealmentPassiveAction"),
+                                QStringLiteral("concealmentAggressiveAction")};
+  QList<QMenu *> menus;
+  for (auto *window : {&first, &second}) {
+    auto *action = window->findChild<QAction *>(QStringLiteral("concealmentAction"));
+    QVERIFY(action && action->menu());
+    QVERIFY(action->isVisible());
+    auto *menu = action->menu();
+    menus.append(menu);
+    QCOMPARE(menu->actions().size(), 3);
+    auto *group = menu->actions().first()->actionGroup();
+    QVERIFY(group && group->isExclusive());
+    for (int index = 0; index < actionNames.size(); ++index) {
+      auto *preset = menu->actions().at(index);
+      QCOMPARE(preset->objectName(), actionNames.at(index));
+      QVERIFY(preset->isCheckable());
+      QCOMPARE(preset->actionGroup(), group);
+      QCOMPARE(preset->isChecked(), index == 0);
+    }
+  }
+  const auto verifyChecked = [](QMenu *p_menu, Mode p_mode) {
+    for (int index = 0; index < p_menu->actions().size(); ++index) {
+      QCOMPARE(p_menu->actions().at(index)->isChecked(), index == static_cast<int>(p_mode));
+    }
+  };
   const auto width = [](MarkdownEditor *p_editor, const QString &p_token, int p_length) {
     const int position = p_editor->getText().indexOf(p_token);
     const auto block = p_editor->document()->findBlock(position);
@@ -831,57 +866,189 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndIndependentPre
       {QStringLiteral("~~strike~~"), 2}, {QStringLiteral("==mark=="), 2},
       {QStringLiteral("`code`"), 1},     {QStringLiteral("[label]"), 1},
       {QStringLiteral("$math$"), 1},     {QStringLiteral("$$display$$"), 2}};
-  QTRY_VERIFY(width(firstEditor, destination, destination.size()) > 1.0);
-  QTRY_VERIFY(width(secondEditor, destination, destination.size()) > 1.0);
-  const qreal firstFullDestination = width(firstEditor, destination, destination.size());
-  const qreal secondFullDestination = width(secondEditor, destination, destination.size());
-  const auto hasDisplay = [&](bool p_destinations, bool p_markers) {
+  const QStringList urls{imageUrl, linkUrl, referenceUrl};
+  QList<QList<qreal>> fullWidths;
+  for (auto *editor : {firstEditor, secondEditor}) {
+    QList<qreal> widths;
+    for (const auto &url : urls) {
+      QTRY_VERIFY(width(editor, url, url.size()) > 1.0);
+      widths.append(width(editor, url, url.size()));
+    }
+    fullWidths.append(widths);
+  }
+  const auto hasDisplay = [&](Mode p_mode) {
+    int editorIndex = 0;
     for (auto *editor : {firstEditor, secondEditor}) {
       for (const auto &span : syntax) {
         const qreal actual = width(editor, span.first, span.second);
-        if (actual < 0 || (p_markers ? actual > 0.1 : actual <= 0.1)) {
+        if (actual < 0 || (p_mode == Mode::Aggressive ? actual > 0.1 : actual <= 0.1)) {
           return false;
         }
       }
-      const qreal full = editor == firstEditor ? firstFullDestination : secondFullDestination;
-      const qreal actual = width(editor, destination, destination.size());
-      if (actual < 0 || (p_destinations ? actual + 1.0 >= full : qAbs(actual - full) >= 1.0)) {
-        return false;
+      for (int index = 0; index < urls.size(); ++index) {
+        const auto &url = urls.at(index);
+        const qreal full = fullWidths.at(editorIndex).at(index);
+        const qreal actual = width(editor, url, url.size());
+        if (actual < 0 ||
+            (p_mode == Mode::None ? qAbs(actual - full) >= 1.0 : actual + 1.0 >= full)) {
+          return false;
+        }
+        if (url == linkUrl && p_mode == Mode::Aggressive && actual > 0.1) {
+          return false;
+        }
       }
+      ++editorIndex;
     }
     return true;
   };
   const auto verifySourceState = [&] {
+    QCOMPARE(first.findChild<MarkdownEditor *>(), firstEditor);
+    QCOMPARE(second.findChild<MarkdownEditor *>(), secondEditor);
     QCOMPARE(firstEditor->getText(), source + QStringLiteral(" draft"));
     QCOMPARE(secondEditor->getText(), source);
     QCOMPARE(firstEditor->getTextEdit()->textCursor().position(), firstCursor.position());
     QCOMPARE(firstEditor->getTextEdit()->textCursor().anchor(), firstCursor.anchor());
     QCOMPARE(secondEditor->getTextEdit()->textCursor().position(), secondCursor.position());
+    QCOMPARE(secondEditor->getTextEdit()->textCursor().anchor(), secondCursor.anchor());
     QCOMPARE(firstEditor->document()->availableUndoSteps(), firstUndo);
     QCOMPARE(secondEditor->document()->availableUndoSteps(), secondUndo);
+    QCOMPARE(firstEditor->document()->availableRedoSteps(), firstRedo);
+    QCOMPARE(secondEditor->document()->availableRedoSteps(), secondRedo);
+    QVERIFY(firstEditor->document()->isModified());
+    QVERIFY(!secondEditor->document()->isModified());
     QVERIFY(first.isModified());
     QVERIFY(!second.isModified());
   };
-  QTRY_VERIFY(hasDisplay(false, false));
-  markers->trigger();
-  QTRY_VERIFY(hasDisplay(false, true));
-  verifySourceState();
-  destinations->trigger();
-  QTRY_VERIFY(hasDisplay(true, true));
-  verifySourceState();
-  markers->trigger();
-  QTRY_VERIFY(hasDisplay(true, false));
-  verifySourceState();
+  QTRY_VERIFY(hasDisplay(Mode::None));
+  int transitions = 0;
+  // Exercise every directed transition, alternating the editor that changes the global preset.
+  for (const auto mode :
+       {Mode::Passive, Mode::Aggressive, Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
+    auto *menu = menus.at(transitions % 2);
+    auto *sibling = menus.at((transitions + 1) % 2);
+    auto *preset = menu->actions().at(static_cast<int>(mode));
+    preset->trigger();
+    ++transitions;
+    QCOMPARE(markdownConfig().getConcealmentMode(), mode);
+    QCOMPARE(notifications, transitions);
+    verifyChecked(menu, mode);
+    QTRY_VERIFY(hasDisplay(mode));
+    verifySourceState();
 
-  // A sibling menu opened after the preference changed must show the current state.
-  otherMenu->popup(second.mapToGlobal(QPoint(50, 50)));
-  QTRY_VERIFY(otherMenu->isVisible());
-  QVERIFY(otherDestinations->isChecked());
-  QVERIFY(!otherMarkers->isChecked());
-  otherMenu->hide();
-  otherDestinations->trigger();
-  QTRY_VERIFY(hasDisplay(false, false));
-  verifySourceState();
+    // Refresh through both opening boundaries, without native popup focus side effects.
+    auto *parentMenu = qobject_cast<QMenu *>(sibling->parent());
+    QVERIFY(parentMenu);
+    auto *refreshMenu = transitions % 2 ? parentMenu : sibling;
+    QVERIFY(QMetaObject::invokeMethod(refreshMenu, "aboutToShow", Qt::DirectConnection));
+    verifyChecked(sibling, mode);
+    QCOMPARE(notifications, transitions);
+    preset->trigger();
+    QCOMPARE(notifications, transitions);
+    verifyChecked(menu, mode);
+    verifySourceState();
+  }
+  firstEditor->getTextEdit()->document()->undo();
+  QCOMPARE(firstEditor->getText(), source);
+  firstEditor->getTextEdit()->document()->redo();
+  QCOMPARE(firstEditor->getText(), source + QStringLiteral(" draft"));
+}
+
+void TestMarkdownViewWindowLazy::concealmentExperiencePrompt_data() {
+  QTest::addColumn<int>("initialMode");
+  QTest::addColumn<int>("response");
+  const QStringList modes{QStringLiteral("none"), QStringLiteral("passive"),
+                          QStringLiteral("aggressive")};
+  const QStringList responses{QStringLiteral("close"), QStringLiteral("escape"),
+                              QStringLiteral("show"), QStringLiteral("conceal")};
+  for (int mode = 0; mode < modes.size(); ++mode) {
+    for (int response = -2; response <= 1; ++response) {
+      const auto name = modes.at(mode) + QLatin1Char('-') + responses.at(response + 2);
+      QTest::newRow(qPrintable(name)) << mode << response;
+    }
+  }
+}
+
+void TestMarkdownViewWindowLazy::concealmentExperiencePrompt() {
+  QFETCH(int, initialMode);
+  QFETCH(int, response);
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
+  const auto initial = static_cast<Mode>(initialMode);
+  markdownConfig().setConcealmentMode(initial);
+  markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  const auto buffer = openNote(QStringLiteral("experience.md"), QByteArrayLiteral("**source**\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  appendDraft(editor, QStringLiteral("draft"));
+  const auto source = editor->getText();
+  const auto cursor = editor->getTextEdit()->textCursor();
+  const auto undo = editor->document()->availableUndoSteps();
+  const auto redo = editor->document()->availableRedoSteps();
+  QVERIFY(window.isModified());
+  int notifications = 0;
+  const int hook =
+      m_hooks->addAction(HookNames::ConfigEditorChanged, [&](HookContext &, const QVariantMap &) {
+        ++notifications;
+        window.handleEditorConfigChange();
+      });
+  const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  auto &session = m_config->getSessionConfig();
+  TestEnvironment environment;
+  environment.m_markdownExperiencePromptEnabled = true;
+  environment.apply(*m_config);
+  window.hide();
+  window.show();
+  QTRY_VERIFY(window.findChild<QDialog *>(QStringLiteral("markdownConcealmentDialog")));
+  QPointer<QDialog> dialog =
+      window.findChild<QDialog *>(QStringLiteral("markdownConcealmentDialog"));
+  QTRY_VERIFY(dialog->isVisible());
+  auto *conceal = dialog->findChild<QRadioButton *>(QStringLiteral("concealMarkdownMarkersRadio"));
+  auto *show = dialog->findChild<QRadioButton *>(QStringLiteral("showMarkdownMarkersRadio"));
+  QVERIFY(conceal && show);
+  QCOMPARE(conceal->isChecked(), initial == Mode::Aggressive);
+  QCOMPARE(show->isChecked(), initial != Mode::Aggressive);
+  QVERIFY(session.getHasConfirmedMarkdownEditorConcealment());
+  QCOMPARE(notifications, 0);
+  QCOMPARE(markdownConfig().getConcealmentMode(), initial);
+
+  Mode expected = initial;
+  if (response >= 0) {
+    expected = response ? Mode::Aggressive : Mode::Passive;
+    (response ? conceal : show)->setChecked(true);
+    dialog->accept();
+  } else {
+    // Even changing the pending choice must not mutate config on Escape or window close.
+    (conceal->isChecked() ? show : conceal)->setChecked(true);
+    if (response == -1) {
+      QTest::keyClick(dialog.data(), Qt::Key_Escape);
+    } else {
+      dialog->close();
+    }
+  }
+  QTRY_VERIFY(dialog.isNull());
+  QCOMPARE(markdownConfig().getConcealmentMode(), expected);
+  QCOMPARE(notifications, expected == initial ? 0 : 1);
+  QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getText(), source);
+  QCOMPARE(editor->getTextEdit()->textCursor().position(), cursor.position());
+  QCOMPARE(editor->getTextEdit()->textCursor().anchor(), cursor.anchor());
+  QCOMPARE(editor->document()->availableUndoSteps(), undo);
+  QCOMPARE(editor->document()->availableRedoSteps(), redo);
+  QVERIFY(editor->document()->isModified());
+  QVERIFY(window.isModified());
+  QVERIFY(session.getHasConfirmedMarkdownEditorConcealment());
+
+  // Cancellation and acceptance both consume the once-only session prompt, across views too.
+  window.hide();
+  showWindow(window);
+  QVERIFY(!window.findChild<QDialog *>(QStringLiteral("markdownConcealmentDialog")));
+  Window sibling(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(sibling);
+  QVERIFY(!sibling.findChild<QDialog *>(QStringLiteral("markdownConcealmentDialog")));
+  QCOMPARE(markdownConfig().getConcealmentMode(), expected);
+  QCOMPARE(notifications, expected == initial ? 0 : 1);
 }
 
 void TestMarkdownViewWindowLazy::themeAndOptionsPreserveEditor() {

@@ -59,14 +59,11 @@ void MarkdownEditorPage::setupUI() {
               tr("Show previews of images, code blocks, math and tables inside the source editor "
                  "(choose which sources to preview in the Edit section below)"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
-  addMenuHint(QObject::tr("Conceal long link destinations"),
-              tr("Shorten long image, link and reference destinations without changing the "
-                 "Markdown source (hover to see the full destination)"));
-  menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addMenuHint(
-      QObject::tr("Conceal Markdown Markers"),
-      tr("Keep Markdown formatting markers hidden while editing without changing the source; "
-         "cursor movement skips them, while link syntax reveals on entry"));
+      QObject::tr("Concealment"),
+      tr("None shows all source; Passive shortens long link, image and reference URLs while "
+         "showing syntax; Aggressive hides supported markers and link syntax and shortens long "
+         "image and reference URLs (link syntax reveals on entry)"));
 
   setupGeneralGroup();
   setupReadGroup();

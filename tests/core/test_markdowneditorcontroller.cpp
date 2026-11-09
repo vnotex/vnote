@@ -85,8 +85,8 @@ private slots:
   void testBuildMarkdownEditorConfigFromContent_tableSourceOff();
   void testBuildMarkdownEditorConfig_autoFoldPreviewedBlocks();
   void testOrderedListsFollowPersistedSetting();
-  void testConcealmentControlsRenderedDestinations_data();
-  void testConcealmentControlsRenderedDestinations();
+  void testConcealmentModesPreserveSourceWhileRendering_data();
+  void testConcealmentModesPreserveSourceWhileRendering();
 
   // ============ Group 4: prepareBufferState (static, requires vxcore) ============
 
@@ -509,17 +509,18 @@ void TestMarkdownEditorController::testBuildMarkdownEditorConfig_autoFoldPreview
   mdConfig.setAutoFoldPreviewedBlocksEnabled(true);
 }
 
-void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations_data() {
+void TestMarkdownEditorController::testConcealmentModesPreserveSourceWhileRendering_data() {
   QTest::addColumn<bool>("fromContent");
   QTest::newRow("content-theme") << true;
   QTest::newRow("file-theme") << false;
 }
 
-void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations() {
+void TestMarkdownEditorController::testConcealmentModesPreserveSourceWhileRendering() {
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
   QFETCH(bool, fromContent);
   auto ec = makeEditorConfig();
   auto &mdConfig = ec.getMarkdownEditorConfig();
-  mdConfig.setConcealMarkdownMarkersEnabled(false);
+  mdConfig.setConcealmentMode(Mode::None);
   mdConfig.setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
   QTemporaryDir themeDir;
   QVERIFY(themeDir.isValid());
@@ -535,11 +536,11 @@ void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations()
                : MarkdownEditorController::buildMarkdownEditorConfig(ec, mdConfig, themePath,
                                                                      QString(), 1.0);
   };
-  // A raw display reference independent of the controller's opt-out mapping.
+  // A raw display reference independent of the controller's None mapping.
   auto rawConfig = buildConfig();
   rawConfig->m_concealRules.clear();
   vte::VMarkdownEditor editor(rawConfig, QSharedPointer<vte::TextEditorParameters>::create());
-  editor.resize(1000, 400);
+  editor.resize(1000, 900);
   editor.show();
   auto *document = editor.document();
   const auto settle = [&] {
@@ -552,61 +553,130 @@ void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations()
     QTest::qWait(50);
     return ready;
   };
-  const auto widths = [&](const QString &payload) {
-    QVector<qreal> result;
-    int position = 0;
-    const auto text = document->toPlainText();
-    while ((position = text.indexOf(payload, position)) >= 0) {
-      const auto block = document->findBlock(position);
-      document->documentLayout()->blockBoundingRect(block);
-      const auto line = block.layout()->lineForTextPosition(position - block.position());
-      if (!line.isValid())
-        return QVector<qreal>();
-      result.append(line.cursorToX(position + payload.size() - block.position()) -
-                    line.cursorToX(position - block.position()));
-      position += payload.size();
+  const auto width = [&](int p_start, int p_length) -> qreal {
+    const auto block = document->findBlock(p_start);
+    document->documentLayout()->blockBoundingRect(block);
+    const auto line = block.layout()->lineForTextPosition(p_start - block.position());
+    if (!line.isValid()) {
+      return -1;
     }
-    return result;
+    return line.cursorToX(p_start + p_length - block.position()) -
+           line.cursorToX(p_start - block.position());
   };
   const auto payload = QStringLiteral("abcdefghijklmnopqrstuvwxyz");
-  const auto source =
-      QStringLiteral("[link](%1)\n\n![image](%1)\n\n[ref]: %1\n\n[reference][ref]\n\noutside")
-          .arg(payload);
+  struct Marker {
+    QString m_opening;
+    QString m_body;
+    QString m_closing;
+    int m_start = 0;
+  };
+  QVector<Marker> markers{
+      {QStringLiteral("### "), QStringLiteral("Heading"), QStringLiteral(" ###")},
+      {QStringLiteral("*"), QStringLiteral("italic"), QStringLiteral("*")},
+      {QStringLiteral("**"), QStringLiteral("bold"), QStringLiteral("**")},
+      {QStringLiteral("~~"), QStringLiteral("strike"), QStringLiteral("~~")},
+      {QStringLiteral("=="), QStringLiteral("mark"), QStringLiteral("==")},
+      {QStringLiteral("`"), QStringLiteral("code"), QStringLiteral("`")},
+      {QStringLiteral("$"), QStringLiteral("x + y"), QStringLiteral("$")}};
+  QString source;
+  for (auto &marker : markers) {
+    marker.m_start = source.size();
+    source += marker.m_opening + marker.m_body + marker.m_closing + QStringLiteral("\n\n");
+  }
+  const int link = source.size();
+  source += QStringLiteral("[link](%1)\n\n![image](%1)\n\n[ref]: %1\n\n[reference][ref]\n\noutside")
+                .arg(payload);
+  QVector<int> destinations;
+  for (int position = source.indexOf(payload); position >= 0;
+       position = source.indexOf(payload, position + payload.size())) {
+    destinations.append(position);
+  }
+  QCOMPARE(destinations.size(), 3);
   editor.setText(source);
   QTextCursor cursor(document);
   cursor.movePosition(QTextCursor::End);
+  cursor.beginEditBlock();
+  cursor.insertText(QStringLiteral(" retained"));
+  cursor.endEditBlock();
+  cursor.beginEditBlock();
+  cursor.insertText(QStringLiteral(" undone"));
+  cursor.endEditBlock();
+  editor.getTextEdit()->undo();
+  cursor = editor.getTextEdit()->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  cursor.movePosition(QTextCursor::PreviousWord, QTextCursor::KeepAnchor);
   editor.getTextEdit()->setTextCursor(cursor);
+  const auto savedSelection = editor.getTextEdit()->textCursor();
+  const auto savedSource = source + QStringLiteral(" retained");
+  QCOMPARE(document->toPlainText(), savedSource);
   QVERIFY(settle());
-  const auto fullWidths = widths(payload);
-  QCOMPARE(fullWidths.size(), 3);
-
-  editor.setConfig(buildConfig());
-  QVERIFY(settle());
-  const auto concealed = widths(payload);
-  QCOMPARE(concealed.size(), 3);
-  for (int i = 0; i < concealed.size(); ++i) {
-    QVERIFY(concealed[i] + 1.0 < fullWidths[i]);
+  QVector<qreal> fullWidths;
+  for (const int position : destinations) {
+    fullWidths.append(width(position, payload.size()));
+    QVERIFY(fullWidths.last() > 1.0);
   }
-  QCOMPARE(document->toPlainText(), source);
+  const int undoSteps = document->availableUndoSteps();
+  const int redoSteps = document->availableRedoSteps();
+  const bool modified = document->isModified();
+  QVERIFY(document->isUndoAvailable());
+  QVERIFY(document->isRedoAvailable());
 
-  mdConfig.setConcealmentEnabled(false);
-  editor.setConfig(buildConfig());
-  QVERIFY(settle());
-  const auto revealed = widths(payload);
-  QCOMPARE(revealed.size(), 3);
-  for (int i = 0; i < revealed.size(); ++i) {
-    QVERIFY(qAbs(revealed[i] - fullWidths[i]) < 1.0);
-  }
-  QCOMPARE(document->toPlainText(), source);
+  for (const auto mode :
+       {Mode::Passive, Mode::Aggressive, Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
+    mdConfig.setConcealmentMode(mode);
+    editor.setConfig(buildConfig());
+    QVERIFY(settle());
+    QCOMPARE(editor.getTextEdit()->textCursor().position(), savedSelection.position());
+    QCOMPARE(editor.getTextEdit()->textCursor().anchor(), savedSelection.anchor());
+    const bool aggressive = mode == Mode::Aggressive;
+    for (int i = 0; i < destinations.size(); ++i) {
+      const auto rendered = width(destinations[i], payload.size());
+      if (mode == Mode::None) {
+        QVERIFY(qAbs(rendered - fullWidths[i]) < 1.0);
+      } else if (aggressive && i == 0) {
+        QVERIFY(qAbs(rendered) < 0.1);
+      } else {
+        QVERIFY(rendered > 1.0);
+        QVERIFY(rendered + 1.0 < fullWidths[i]);
+      }
+    }
+    if (aggressive) {
+      QVERIFY(qAbs(width(link, 1)) < 0.1);
+    } else {
+      QVERIFY(width(link, 1) > 1.0);
+    }
 
-  mdConfig.setConcealmentEnabled(true);
-  editor.setConfig(buildConfig());
-  QVERIFY(settle());
-  const auto restored = widths(payload);
-  QCOMPARE(restored.size(), 3);
-  for (int i = 0; i < restored.size(); ++i) {
-    QVERIFY(qAbs(restored[i] - concealed[i]) < 1.0);
+    for (const auto &marker : markers) {
+      const int body = marker.m_start + marker.m_opening.size();
+      const int closing = body + marker.m_body.size();
+      cursor.setPosition(body + 1);
+      editor.getTextEdit()->setTextCursor(cursor);
+      // Aggressive markers stay hidden even while editing their contents.
+      if (aggressive) {
+        QVERIFY(qAbs(width(marker.m_start, marker.m_opening.size())) < 0.1);
+        QVERIFY(qAbs(width(closing, marker.m_closing.size())) < 0.1);
+      } else {
+        QVERIFY(width(marker.m_start, marker.m_opening.size()) > 1.0);
+        QVERIFY(width(closing, marker.m_closing.size()) > 1.0);
+      }
+    }
+    // Every URL kind remains fully editable on caret entry in either preset.
+    for (int i = 0; i < destinations.size(); ++i) {
+      cursor.setPosition(destinations[i] + 1);
+      editor.getTextEdit()->setTextCursor(cursor);
+      QVERIFY(qAbs(width(destinations[i], payload.size()) - fullWidths[i]) < 1.0);
+    }
+    editor.getTextEdit()->setTextCursor(savedSelection);
+    QCOMPARE(document->toPlainText(), savedSource);
+    QCOMPARE(document->isModified(), modified);
+    QCOMPARE(document->availableUndoSteps(), undoSteps);
+    QCOMPARE(document->availableRedoSteps(), redoSteps);
   }
+  editor.getTextEdit()->redo();
+  QCOMPARE(document->toPlainText(), savedSource + QStringLiteral(" undone"));
+  editor.getTextEdit()->undo();
+  QCOMPARE(document->toPlainText(), savedSource);
+  editor.getTextEdit()->undo();
   QCOMPARE(document->toPlainText(), source);
 }
 
