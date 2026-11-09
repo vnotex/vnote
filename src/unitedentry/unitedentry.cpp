@@ -74,6 +74,7 @@ void UnitedEntry::setupUI() {
 
   m_toggleButton = new QToolButton(this);
   m_toggleButton->setAutoRaise(true);
+  m_toggleButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   m_toggleButton->setToolTip(tr("United Entry"));
   // Match the toolbar's icon size (passed in by the toolbar helper); the
   // toolbar's setIconSize only propagates to buttons it creates for actions,
@@ -113,8 +114,8 @@ void UnitedEntry::setupUI() {
   // aligned with the other toolbar icons.
   setMinimumHeight(m_comboBox->sizeHint().height() + 2);
 
-  // Collapsed by default: show only the icon button. A hidden combo box
-  // contributes no width, so the widget shrinks to the icon.
+  // Collapsed by default: show only the button. A hidden combo box
+  // contributes no width, so the widget shrinks to the button.
   m_comboBox->hide();
 
   setupActions();

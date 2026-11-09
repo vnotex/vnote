@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Show text beside the Home and United Entry toolbar icons, matching Export
 * On version upgrade, add missing default United Entry aliases to saved nonempty lists, preserving custom definitions and explicit empty-list opt-outs; profiles already on 4.14.0 receive this on their next version change
 * **Notebook task trust**: Require local notebook trust before running notebook tasks or evaluating their variables; remember approval across restarts, forget it on explicit close, and trust only newly created local notebooks automatically
 

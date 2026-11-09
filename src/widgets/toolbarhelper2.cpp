@@ -243,6 +243,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
     // No drop-down menu on this button; createToolButton defaults to
     // MenuButtonPopup which would otherwise draw a spurious menu-arrow section.
     toolBtn->setPopupMode(QToolButton::DelayedPopup);
+    toolBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
     const auto text = MainWindow2::tr("Home");
     auto homeAct = new QAction(text, toolBtn);
