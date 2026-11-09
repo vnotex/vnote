@@ -16,6 +16,9 @@
 #include <QDataStream>
 #include <QDeadlineTimer>
 #include <QDir>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLockFile>
@@ -56,7 +59,7 @@ bool waitForMarker(QProcess *p_process, const QByteArray &p_marker) {
 // Child modes isolate real lock ownership and synchronous secondary forwarding
 // from the test runner's primary event loop.
 int runChildMode(int argc, char *argv[]) {
-  if (argc >= 5 && QString::fromLocal8Bit(argv[1]) == QLatin1String("--send-ipc")) {
+  if (argc >= 6 && QString::fromLocal8Bit(argv[1]) == QLatin1String("--send-ipc")) {
     QCoreApplication app(argc, argv);
     const auto args = app.arguments();
     SingleInstanceGuard secondary(args.at(2), args.at(3));
@@ -65,10 +68,11 @@ int runChildMode(int argc, char *argv[]) {
     }
     fprintf(stdout, "SENDER_READY\n");
     fflush(stdout);
-    const auto files = args.mid(5);
-    const bool ok = args.at(4) == QLatin1String("detached")
-                        ? secondary.requestOpenFilesDetached(files)
-                        : secondary.requestOpenFiles(files) && secondary.requestShow();
+    const auto files = args.mid(6);
+    const bool detached = args.at(4) == QLatin1String("detached");
+    const auto mode = static_cast<ViewWindowMode>(args.at(5).toInt());
+    const bool ok =
+        secondary.requestOpenFiles(files, detached, mode) && (detached || secondary.requestShow());
     return ok ? 0 : 4;
   }
   if (argc < 3 || QString::fromLocal8Bit(argv[1]) != QLatin1String(c_modeHoldLock)) {
@@ -107,9 +111,12 @@ private slots:
   void testUnacknowledgedRequestFails_data();
   void testUnacknowledgedRequestFails();
   void testDisconnectedPartialRequest();
+  void testMalformedOptions_data();
+  void testMalformedOptions();
 
 private:
-  QProcess *startSender(const QString &p_mode, const QStringList &p_files);
+  QProcess *startSender(const QString &p_destination, const QStringList &p_files,
+                        ViewWindowMode p_mode = ViewWindowMode::Invalid);
 
   QString lockPath() const { return m_dir->filePath(QStringLiteral("guard.lock")); }
   QString serverName() const { return m_serverName; }
@@ -256,7 +263,6 @@ void TestSingleInstanceGuard::testOverlappingConnections() {
   SingleInstanceGuard primary(serverName(), lockPath());
   QCOMPARE(primary.tryRun(), SingleInstanceGuard::TryRunResult::Primary);
   QSignalSpy opened(&primary, &SingleInstanceGuard::openFilesRequested);
-  QSignalSpy detached(&primary, &SingleInstanceGuard::openFilesDetachedRequested);
   QLocalSocket first;
   first.connectToServer(serverName());
   QVERIFY(first.waitForConnected(1000));
@@ -273,23 +279,28 @@ void TestSingleInstanceGuard::testOverlappingConnections() {
   const auto secondFrame = requestFrame(3, secondPath);
   QCOMPARE(second.write(secondFrame), qint64(secondFrame.size()));
   second.flush();
-  QTRY_COMPARE(detached.count(), 1);
-  QCOMPARE(detached.at(0).at(0).toStringList(), QStringList{secondPath});
-  QCOMPARE(opened.count(), 0);
+  QTRY_COMPARE(opened.count(), 1);
+  QCOMPARE(opened.at(0).at(0).toStringList(), QStringList{secondPath});
+  QCOMPARE(opened.at(0).at(1).toBool(), true);
+  QCOMPARE(opened.at(0).at(2).value<ViewWindowMode>(), ViewWindowMode::Invalid);
 
   QCOMPARE(first.write(firstFrame.mid(8)), qint64(firstFrame.size() - 8));
   first.flush();
-  QTRY_COMPARE(opened.count(), 1);
-  QCOMPARE(opened.at(0).at(0).toStringList(), QStringList{firstPath});
+  QTRY_COMPARE(opened.count(), 2);
+  QCOMPARE(opened.at(1).at(0).toStringList(), QStringList{firstPath});
+  QCOMPARE(opened.at(1).at(1).toBool(), false);
+  QCOMPARE(opened.at(1).at(2).value<ViewWindowMode>(), ViewWindowMode::Invalid);
 }
 
-QProcess *TestSingleInstanceGuard::startSender(const QString &p_mode, const QStringList &p_files) {
+QProcess *TestSingleInstanceGuard::startSender(const QString &p_destination,
+                                               const QStringList &p_files, ViewWindowMode p_mode) {
   auto *child = new QProcess();
   m_children.append(child);
   child->setProgram(QCoreApplication::applicationFilePath());
   // Resolve temporary-directory aliases (such as macOS /var) before the child chdir.
   child->setWorkingDirectory(QDir(m_dir->path()).canonicalPath());
-  child->setArguments(QStringList{QStringLiteral("--send-ipc"), serverName(), lockPath(), p_mode} +
+  child->setArguments(QStringList{QStringLiteral("--send-ipc"), serverName(), lockPath(),
+                                  p_destination, QString::number(static_cast<int>(p_mode))} +
                       p_files);
   child->start();
   return child;
@@ -299,26 +310,35 @@ void TestSingleInstanceGuard::testChildForwarding_data() {
   QTest::addColumn<bool>("detached");
   QTest::addColumn<int>("delay");
   QTest::addColumn<bool>("empty");
-  QTest::newRow("normal-unicode-and-relative") << false << 0 << false;
-  QTest::newRow("detached-no-show") << true << 0 << false;
-  QTest::newRow("primary-busy-past-old-timeout") << false << 3500 << false;
-  QTest::newRow("empty-files-still-show") << false << 0 << true;
+  QTest::addColumn<int>("mode");
+  QTest::newRow("normal-unicode-and-relative")
+      << false << 0 << false << int(ViewWindowMode::Invalid);
+  QTest::newRow("detached-no-show") << true << 0 << false << int(ViewWindowMode::Invalid);
+  QTest::newRow("primary-busy-past-old-timeout")
+      << false << 3500 << false << int(ViewWindowMode::Invalid);
+  QTest::newRow("empty-files-still-show") << false << 0 << true << int(ViewWindowMode::Invalid);
+  QTest::newRow("read-detached") << true << 0 << false << int(ViewWindowMode::Read);
+  QTest::newRow("edit-main") << false << 0 << false << int(ViewWindowMode::Edit);
+  QTest::newRow("read-main") << false << 0 << false << int(ViewWindowMode::Read);
+  QTest::newRow("edit-detached") << true << 0 << false << int(ViewWindowMode::Edit);
+  QTest::newRow("read-busy-primary") << true << 3500 << false << int(ViewWindowMode::Read);
+  QTest::newRow("empty-edit-still-show") << false << 0 << true << int(ViewWindowMode::Edit);
 }
 
 void TestSingleInstanceGuard::testChildForwarding() {
   QFETCH(bool, detached);
   QFETCH(int, delay);
   QFETCH(bool, empty);
+  QFETCH(int, mode);
   SingleInstanceGuard primary(serverName(), lockPath());
   QCOMPARE(primary.tryRun(), SingleInstanceGuard::TryRunResult::Primary);
   QSignalSpy opened(&primary, &SingleInstanceGuard::openFilesRequested);
-  QSignalSpy detachedOpened(&primary, &SingleInstanceGuard::openFilesDetachedRequested);
   QSignalSpy shown(&primary, &SingleInstanceGuard::showRequested);
   const QStringList files = empty ? QStringList{}
                                   : QStringList{m_dir->filePath(QString::fromUtf8("中文 文件.md")),
                                                 QStringLiteral("relative note.md")};
-  auto *child =
-      startSender(detached ? QStringLiteral("detached") : QStringLiteral("normal"), files);
+  auto *child = startSender(detached ? QStringLiteral("detached") : QStringLiteral("normal"), files,
+                            static_cast<ViewWindowMode>(mode));
   QVERIFY(child->waitForStarted(10000));
   QVERIFY(waitForMarker(child, "SENDER_READY"));
   // Deliberately do NOT pump the primary event loop during a slow startup.
@@ -328,24 +348,28 @@ void TestSingleInstanceGuard::testChildForwarding() {
   QTRY_COMPARE_WITH_TIMEOUT(child->state(), QProcess::NotRunning, 10000);
   QCOMPARE(child->exitStatus(), QProcess::NormalExit);
   QVERIFY2(child->exitCode() == 0, child->readAllStandardError().constData());
-  QTRY_COMPARE(opened.count(), !empty && !detached ? 1 : 0);
-  QTRY_COMPARE(detachedOpened.count(), !empty && detached ? 1 : 0);
+  QTRY_COMPARE(opened.count(), empty ? 0 : 1);
   QTRY_COMPARE(shown.count(), detached ? 0 : 1);
   if (!empty) {
     const QStringList expected{files.at(0), QDir(child->workingDirectory()).filePath(files.at(1))};
-    const auto &spy = detached ? detachedOpened : opened;
-    QCOMPARE(spy.at(0).at(0).toStringList(), expected);
+    QCOMPARE(opened.at(0).at(0).toStringList(), expected);
+    QCOMPARE(opened.at(0).at(1).toBool(), detached);
+    QCOMPARE(opened.at(0).at(2).value<ViewWindowMode>(), static_cast<ViewWindowMode>(mode));
   }
 }
 
 void TestSingleInstanceGuard::testUnacknowledgedRequestFails_data() {
   QTest::addColumn<bool>("wrongAck");
-  QTest::newRow("peer-disconnects-without-ack") << false;
-  QTest::newRow("wrong-opcode-ack") << true;
+  QTest::addColumn<bool>("explicitMode");
+  QTest::newRow("peer-disconnects-without-ack") << false << false;
+  QTest::newRow("wrong-opcode-ack") << true << false;
+  QTest::newRow("older-primary-rejects-mode-opcode") << false << true;
+  QTest::newRow("mode-opcode-wrong-ack") << true << true;
 }
 
 void TestSingleInstanceGuard::testUnacknowledgedRequestFails() {
   QFETCH(bool, wrongAck);
+  QFETCH(bool, explicitMode);
   QLockFile lock(lockPath());
   QVERIFY(lock.tryLock(0));
   QLocalServer server;
@@ -359,7 +383,7 @@ void TestSingleInstanceGuard::testUnacknowledgedRequestFails() {
         return;
       }
       if (wrongAck) {
-        // Sender requested Show; acknowledge a different operation.
+        // Neither Show nor the new options opcode may accept an OpenFiles ACK.
         socket->write(requestFrame(2));
         socket->flush();
       } else {
@@ -369,12 +393,72 @@ void TestSingleInstanceGuard::testUnacknowledgedRequestFails() {
     connect(socket, &QLocalSocket::readyRead, this, reject);
     reject();
   });
-  auto *child = startSender(QStringLiteral("normal"), {});
+  const QStringList files =
+      explicitMode ? QStringList{m_dir->filePath(QStringLiteral("note.md"))} : QStringList{};
+  auto *child = startSender(QStringLiteral("normal"), files,
+                            explicitMode ? ViewWindowMode::Edit : ViewWindowMode::Invalid);
   QVERIFY(child->waitForStarted(10000));
   QTRY_COMPARE_WITH_TIMEOUT(child->state(), QProcess::NotRunning, 10000);
   QCOMPARE(child->exitStatus(), QProcess::NormalExit);
   QCOMPARE(child->exitCode(), 4);
-  QCOMPARE(received, requestFrame(1));
+  if (explicitMode) {
+    QDataStream request(received);
+    request.setVersion(QDataStream::Qt_5_12);
+    quint32 opcode = 0;
+    request >> opcode;
+    QCOMPARE(opcode, quint32(4));
+  } else {
+    QCOMPARE(received, requestFrame(1));
+  }
+}
+
+void TestSingleInstanceGuard::testMalformedOptions_data() {
+  QTest::addColumn<QString>("payload");
+  const QJsonObject valid{{QStringLiteral("mode"), QStringLiteral("read")},
+                          {QStringLiteral("detached"), true},
+                          {QStringLiteral("files"), QJsonArray{QStringLiteral("note.md")}}};
+  const auto add = [](const char *name, const QJsonObject &options) {
+    QTest::newRow(name) << QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact));
+  };
+  for (const auto &mode : {QJsonValue(), QJsonValue(0), QJsonValue(1), QJsonValue(2),
+                           QJsonValue(true), QJsonValue(QStringLiteral("Invalid")),
+                           QJsonValue(QStringLiteral("Read")), QJsonValue(QString())}) {
+    auto options = valid;
+    options.insert(QStringLiteral("mode"), mode);
+    const auto name = QJsonDocument(QJsonArray{mode}).toJson(QJsonDocument::Compact);
+    add(name.constData(), options);
+  }
+  auto options = valid;
+  options.remove(QStringLiteral("mode"));
+  add("missing-mode", options);
+  options = valid;
+  options.insert(QStringLiteral("detached"), QStringLiteral("true"));
+  add("invalid-destination", options);
+  options = valid;
+  options.insert(QStringLiteral("files"), QJsonArray{});
+  add("empty-files", options);
+  options.insert(QStringLiteral("files"), QJsonArray{42});
+  add("non-string-file", options);
+  QTest::newRow("broken-json") << QStringLiteral("{");
+}
+
+void TestSingleInstanceGuard::testMalformedOptions() {
+  QFETCH(QString, payload);
+  SingleInstanceGuard primary(serverName(), lockPath());
+  QCOMPARE(primary.tryRun(), SingleInstanceGuard::TryRunResult::Primary);
+  QSignalSpy opened(&primary, &SingleInstanceGuard::openFilesRequested);
+  QSignalSpy shown(&primary, &SingleInstanceGuard::showRequested);
+  QLocalSocket sender;
+  sender.connectToServer(serverName());
+  QVERIFY(sender.waitForConnected(1000));
+  // The rejected request must neither be ACKed nor permit a following Show.
+  const auto frame = requestFrame(4, payload) + requestFrame(1);
+  QCOMPARE(sender.write(frame), qint64(frame.size()));
+  sender.flush();
+  QTRY_COMPARE(sender.state(), QLocalSocket::UnconnectedState);
+  QCOMPARE(sender.readAll(), QByteArray());
+  QCOMPARE(opened.count(), 0);
+  QCOMPARE(shown.count(), 0);
 }
 
 void TestSingleInstanceGuard::testDisconnectedPartialRequest() {

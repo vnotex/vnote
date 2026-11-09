@@ -5,6 +5,9 @@
 #include <QDeadlineTimer>
 #include <QDebug>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QLockFile>
@@ -77,23 +80,20 @@ SingleInstanceGuard::TryRunResult SingleInstanceGuard::tryRun() {
   return TryRunResult::Primary;
 }
 
-bool SingleInstanceGuard::requestOpenFiles(const QStringList &p_files) {
-  return sendOpenFilesRequest(p_files, OpCode::OpenFiles, "open files");
-}
-
-bool SingleInstanceGuard::requestOpenFilesDetached(const QStringList &p_files) {
-  return sendOpenFilesRequest(p_files, OpCode::OpenFilesDetached, "open files detached");
-}
-
-bool SingleInstanceGuard::sendOpenFilesRequest(const QStringList &p_files, OpCode p_code,
-                                               const char *p_what) {
+bool SingleInstanceGuard::requestOpenFiles(const QStringList &p_files, bool p_detached,
+                                           ViewWindowMode p_mode) {
   if (p_files.isEmpty()) {
     return true;
+  }
+  if (p_mode != ViewWindowMode::Invalid && p_mode != ViewWindowMode::Read &&
+      p_mode != ViewWindowMode::Edit) {
+    qWarning() << "invalid requested file mode";
+    return false;
   }
 
   Q_ASSERT(!m_online);
   if (!m_client || m_client->state() != QLocalSocket::ConnectedState) {
-    qWarning() << "failed to request" << p_what
+    qWarning() << "failed to request open files"
                << (m_client ? m_client->errorString() : QStringLiteral("no client"));
     return false;
   }
@@ -114,7 +114,19 @@ bool SingleInstanceGuard::sendOpenFilesRequest(const QStringList &p_files, OpCod
     return true;
   }
 
-  return sendRequest(m_client.data(), p_code, absFiles.join(c_stringListSeparator));
+  if (p_mode == ViewWindowMode::Invalid) {
+    // Keep no-mode requests compatible with the existing wire protocol.
+    return sendRequest(m_client.data(), p_detached ? OpCode::OpenFilesDetached : OpCode::OpenFiles,
+                       absFiles.join(c_stringListSeparator));
+  }
+  const QJsonObject options{{QStringLiteral("mode"), p_mode == ViewWindowMode::Read
+                                                         ? QStringLiteral("read")
+                                                         : QStringLiteral("edit")},
+                            {QStringLiteral("detached"), p_detached},
+                            {QStringLiteral("files"), QJsonArray::fromStringList(absFiles)}};
+  // A distinct opcode makes older primaries reject rather than lose explicit mode.
+  return sendRequest(m_client.data(), OpCode::OpenFilesWithOptions,
+                     QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact)));
 }
 
 bool SingleInstanceGuard::requestShow() {
@@ -220,31 +232,59 @@ void SingleInstanceGuard::receiveCommand(QLocalSocket *p_socket) {
     }
     const auto code = static_cast<OpCode>(opCode);
     if (size != quint32(payload.size()) ||
-        (code == OpCode::Show
-             ? size != 0
-             : (code != OpCode::OpenFiles && code != OpCode::OpenFilesDetached) || size == 0)) {
+        (code == OpCode::Show ? size != 0
+                              : (code != OpCode::OpenFiles && code != OpCode::OpenFilesDetached &&
+                                 code != OpCode::OpenFilesWithOptions) ||
+                                    size == 0)) {
       qWarning() << "invalid IPC request" << opCode << size;
       p_socket->abort();
       return;
+    }
+
+    QStringList files;
+    bool detached = code == OpCode::OpenFilesDetached;
+    ViewWindowMode mode = ViewWindowMode::Invalid;
+    if (code == OpCode::OpenFilesWithOptions) {
+      const auto document = QJsonDocument::fromJson(payload.toUtf8());
+      const auto options = document.object();
+      const auto requestedMode = options.value(QStringLiteral("mode")).toString();
+      const auto paths = options.value(QStringLiteral("files"));
+      const auto detachedValue = options.value(QStringLiteral("detached"));
+      bool valid =
+          document.isObject() && detachedValue.isBool() && paths.isArray() &&
+          (requestedMode == QLatin1String("read") || requestedMode == QLatin1String("edit"));
+      if (valid) {
+        const auto array = paths.toArray();
+        valid = !array.isEmpty();
+        files.reserve(array.size());
+        for (const auto &path : array) {
+          if (!path.isString() || path.toString().isEmpty()) {
+            valid = false;
+            break;
+          }
+          files.append(path.toString());
+        }
+      }
+      if (!valid) {
+        qWarning() << "invalid IPC file-open options";
+        p_socket->abort();
+        return;
+      }
+      detached = detachedValue.toBool();
+      mode = requestedMode == QLatin1String("read") ? ViewWindowMode::Read : ViewWindowMode::Edit;
+    } else if (code != OpCode::Show) {
+      files = payload.split(c_stringListSeparator);
     }
 
     // Queue delivery before acknowledging acceptance. GUI handlers can run
     // nested event loops; none may run inside this socket's read transaction.
     QMetaObject::invokeMethod(
         this,
-        [this, code, payload]() {
-          switch (code) {
-          case OpCode::Show:
+        [this, code, files, detached, mode]() {
+          if (code == OpCode::Show) {
             emit showRequested();
-            break;
-          case OpCode::OpenFiles:
-            emit openFilesRequested(payload.split(c_stringListSeparator));
-            break;
-          case OpCode::OpenFilesDetached:
-            emit openFilesDetachedRequested(payload.split(c_stringListSeparator));
-            break;
-          default:
-            break;
+          } else {
+            emit openFilesRequested(files, detached, mode);
           }
         },
         Qt::QueuedConnection);

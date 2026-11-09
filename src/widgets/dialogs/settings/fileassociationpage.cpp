@@ -3,6 +3,14 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#ifdef Q_OS_WIN
+#include <QHBoxLayout>
+#include <QLabel>
+
+#include <controllers/windowscontextmenucontroller.h>
+#include <utils/widgetutils.h>
+#endif
+
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/filetypecoreservice.h>
@@ -14,6 +22,15 @@
 #include "settingspagehelper.h"
 
 using namespace vnotex;
+
+#ifdef Q_OS_WIN
+namespace {
+constexpr char kContextMenuCardName[] = "systemContextMenuCard";
+constexpr char kAddContextMenuButtonName[] = "addToContextMenuButton";
+constexpr char kRemoveContextMenuButtonName[] = "removeFromContextMenuButton";
+constexpr char kContextMenuStatusName[] = "systemContextMenuStatus";
+} // namespace
+#endif
 
 const char *FileAssociationPage::c_nameProperty = "name";
 
@@ -37,8 +54,78 @@ void FileAssociationPage::setupUI() {
       SettingsPageHelper::addSection(mainLayout, tr("External Programs"), QString(), this);
   m_externalRowStartIndex = m_externalCardLayout->count();
 
+#ifdef Q_OS_WIN
+  setupSystemContextMenu(mainLayout);
+#endif
+
   mainLayout->addStretch();
 }
+
+#ifdef Q_OS_WIN
+void FileAssociationPage::setupSystemContextMenu(QVBoxLayout *p_layout) {
+  m_contextMenuController = m_services.get<WindowsContextMenuController>();
+  if (!m_contextMenuController) {
+    // The controller registers itself and belongs to the application, not this page.
+    m_contextMenuController = new WindowsContextMenuController(m_services);
+  }
+
+  const auto sectionTitle = tr("System Context Menu");
+  const auto description =
+      tr("Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in "
+         "the main window) for all files. Changes affect only the current Windows user, apply "
+         "immediately, and are not undone by Reset. On Windows 11, look under Show more options");
+  auto *cardLayout = SettingsPageHelper::addSection(p_layout, sectionTitle, description, this);
+  auto *card = cardLayout->parentWidget();
+  card->setObjectName(QLatin1String(kContextMenuCardName));
+
+  auto *actionRow = new QWidget(card);
+  actionRow->setProperty(PropertyDefs::c_settingsContainer, true);
+  auto *actionLayout = new QVBoxLayout(actionRow);
+  actionLayout->setContentsMargins(16, 6, 16, 6);
+  auto *buttonsLayout = new QHBoxLayout();
+  m_addContextMenuButton = new QPushButton(tr("Add to Context Menu"), actionRow);
+  m_addContextMenuButton->setObjectName(QLatin1String(kAddContextMenuButtonName));
+  m_removeContextMenuButton = new QPushButton(tr("Remove from Context Menu"), actionRow);
+  m_removeContextMenuButton->setObjectName(QLatin1String(kRemoveContextMenuButtonName));
+  buttonsLayout->addWidget(m_addContextMenuButton);
+  buttonsLayout->addWidget(m_removeContextMenuButton);
+  buttonsLayout->addStretch();
+  actionLayout->addLayout(buttonsLayout);
+
+  m_contextMenuStatus = new QLabel(actionRow);
+  m_contextMenuStatus->setObjectName(QLatin1String(kContextMenuStatusName));
+  m_contextMenuStatus->setTextFormat(Qt::PlainText);
+  m_contextMenuStatus->setWordWrap(true);
+  m_contextMenuStatus->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_contextMenuStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  actionLayout->addWidget(m_contextMenuStatus);
+  cardLayout->addWidget(actionRow);
+
+  addSearchItem(sectionTitle + QLatin1Char(' ') + m_addContextMenuButton->text(), description,
+                m_addContextMenuButton);
+  addSearchItem(sectionTitle + QLatin1Char(' ') + m_removeContextMenuButton->text(), description,
+                m_removeContextMenuButton);
+  connect(m_addContextMenuButton, &QPushButton::clicked, this,
+          [this]() { m_contextMenuController->start(WindowsContextMenuController::Action::Add); });
+  connect(m_removeContextMenuButton, &QPushButton::clicked, this, [this]() {
+    m_contextMenuController->start(WindowsContextMenuController::Action::Remove);
+  });
+  connect(m_contextMenuController, &WindowsContextMenuController::stateChanged, this,
+          &FileAssociationPage::refreshSystemContextMenu);
+  refreshSystemContextMenu();
+}
+
+void FileAssociationPage::refreshSystemContextMenu() {
+  const bool busy = m_contextMenuController->isBusy();
+  m_addContextMenuButton->setEnabled(!busy);
+  m_removeContextMenuButton->setEnabled(!busy);
+  m_contextMenuStatus->setText(m_contextMenuController->statusText());
+  WidgetUtils::setPropertyDynamically(m_contextMenuStatus, PropertyDefs::c_severityText,
+                                      m_contextMenuController->hasError() ? QStringLiteral("error")
+                                                                          : QStringLiteral("info"));
+  m_contextMenuStatus->setVisible(!m_contextMenuStatus->text().isEmpty());
+}
+#endif
 
 void FileAssociationPage::loadInternal() {
   loadBuiltInTypesGroup();

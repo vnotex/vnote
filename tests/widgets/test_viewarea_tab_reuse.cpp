@@ -1172,6 +1172,10 @@ private slots:
   void nativeTextAndMindMap();
   void othersUseSystemApplication_data();
   void othersUseSystemApplication();
+  void explicitInternalViewerDispatch_data();
+  void explicitInternalViewerDispatch();
+  void forcedModeDuplicateTransitions_data();
+  void forcedModeDuplicateTransitions();
   void inferredTextAndImageStayInternal();
   void restoreOthersWithoutExternalLaunch();
   void restoreUnlockedProtectedEditors_data();
@@ -9723,12 +9727,20 @@ void TestViewAreaTabReuse::memoryMarkdownAndMindMap() {
 
 void TestViewAreaTabReuse::othersUseSystemApplication_data() {
   QTest::addColumn<bool>("detached");
-  QTest::newRow("main") << false;
-  QTest::newRow("detached") << true;
+  QTest::addColumn<bool>("internal");
+  QTest::addColumn<bool>("owned");
+  QTest::newRow("main") << false << false << false;
+  QTest::newRow("detached") << true << false << false;
+  QTest::newRow("internal-main") << false << true << false;
+  QTest::newRow("internal-detached") << true << true << false;
+  QTest::newRow("internal-main-owned") << false << true << true;
+  QTest::newRow("internal-detached-owned") << true << true << true;
 }
 
 void TestViewAreaTabReuse::othersUseSystemApplication() {
   QFETCH(bool, detached);
+  QFETCH(bool, internal);
+  QFETCH(bool, owned);
   f->reuse();
   const QByteArray binary = QByteArray::fromHex("504b03041400000008000000000000000000");
   QVERIFY(f->create(QStringLiteral("package.apk"), binary));
@@ -9741,6 +9753,20 @@ void TestViewAreaTabReuse::othersUseSystemApplication() {
   QVERIFY(editor);
   appendDraft(editor->getTextEdit(), QStringLiteral("Unsaved draft"));
   const auto draft = editor->getText();
+  const auto owner =
+      owned ? f->workspaces->createWorkspace(QStringLiteral("Hidden owner")) : QString();
+  if (owned)
+    QVERIFY(!owner.isEmpty());
+  QString candidate;
+  const int ownership = f->hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen,
+      [&](HookContext &, const FileOpenEvent &event) {
+        candidate = event.bufferId;
+        if (owned)
+          f->workspaces->addBuffer(owner, candidate);
+      },
+      1);
+  const auto removeOwnership = qScopeGuard([&] { f->hooks->removeAction(ownership); });
   const auto workspaces = f->workspaces->listWorkspaces();
   const auto buffers = f->buffers->listBuffers();
   PreviewDesktopSink desktop;
@@ -9750,18 +9776,182 @@ void TestViewAreaTabReuse::othersUseSystemApplication() {
   QSignalSpy failures(f->area.get(), &ViewArea2::viewWindowCreationFailed);
   FileOpenSettings settings;
   settings.m_detachedView = detached;
+  settings.m_useInternalViewer = internal;
+  settings.m_forceMode = internal;
+  settings.m_mode = ViewWindowMode::Read;
+  settings = FileOpenSettings::fromVariantMap(settings.toVariantMap());
   f->buffers->openBuffer(f->node(QStringLiteral("package.apk")), settings);
-  QCOMPARE(desktop.opened,
-           QList<QUrl>{QUrl::fromLocalFile(f->absolute(QStringLiteral("package.apk")))});
+  if (internal) {
+    QVERIFY(desktop.opened.isEmpty());
+    QCOMPARE(failures.count(), 1);
+    QCOMPARE(failures.at(0).at(0).toString(), QStringLiteral("Others"));
+    QCOMPARE(failures.at(0).at(1).toString(), QStringLiteral("package.apk"));
+  } else {
+    QCOMPARE(desktop.opened,
+             QList<QUrl>{QUrl::fromLocalFile(f->absolute(QStringLiteral("package.apk")))});
+    QCOMPARE(failures.count(), 0);
+  }
   QCOMPARE(f->current(), current.data());
   QVERIFY(current && current->isModified());
   QCOMPARE(editor->getText(), draft);
   QCOMPARE(f->tabs(), 1);
-  QCOMPARE(f->workspaces->listWorkspaces(), workspaces);
-  QCOMPARE(f->buffers->listBuffers(), buffers);
-  QCOMPARE(failures.count(), 0);
+  if (owned) {
+    QCOMPARE(f->workspaces->listWorkspaces().size(), workspaces.size());
+    QCOMPARE(f->order(owner), QStringList{candidate});
+    QCOMPARE(f->buffers->listBuffers().size(), buffers.size() + 1);
+    QVERIFY(!f->buffers->getBufferHandle(candidate).getBuffer().isEmpty());
+  } else {
+    QCOMPARE(f->workspaces->listWorkspaces(), workspaces);
+    QCOMPARE(f->buffers->listBuffers(), buffers);
+  }
   QCOMPARE(readBytes(f->absolute(QStringLiteral("package.apk"))), binary);
   QCOMPARE(readBytes(f->absolute(QStringLiteral("current.txt"))), QByteArray("Keep this text\n"));
+}
+
+void TestViewAreaTabReuse::explicitInternalViewerDispatch_data() {
+  QTest::addColumn<bool>("forced");
+  QTest::addColumn<bool>("internal");
+  QTest::newRow("ordinary-keeps-external-precedence") << false << false;
+  QTest::newRow("forced-mode-is-not-internal-routing") << true << false;
+  QTest::newRow("explicit-mode-stays-in-vnote") << true << true;
+}
+
+void TestViewAreaTabReuse::explicitInternalViewerDispatch() {
+  QFETCH(bool, forced);
+  QFETCH(bool, internal);
+  QVERIFY(f->create(QStringLiteral("external.md"), "# Open inside VNote\n"));
+  const auto oldPrograms = f->config->getSessionConfig().getExternalPrograms();
+  SessionConfig::ExternalProgram program;
+  program.m_name = SessionConfig::ExternalProgram::c_systemProgramName;
+  program.m_suffixes = {QStringLiteral("md")};
+  f->config->getSessionConfig().setExternalPrograms({program});
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto restore = qScopeGuard([&] {
+    QDesktopServices::unsetUrlHandler(QStringLiteral("file"));
+    f->config->getSessionConfig().setExternalPrograms(oldPrograms);
+  });
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Read;
+  settings.m_forceMode = forced;
+  settings.m_useInternalViewer = internal;
+  settings = FileOpenSettings::fromVariantMap(settings.toVariantMap());
+  const auto buffer = f->buffers->openBuffer(f->node(QStringLiteral("external.md")), settings);
+  if (internal) {
+    QVERIFY(buffer.isValid());
+    QVERIFY(desktop.opened.isEmpty());
+    QVERIFY(f->current());
+    QCOMPARE(f->current()->getBuffer().id(), buffer.id());
+    QCOMPARE(f->current()->getMode(), ViewWindowMode::Read);
+  } else {
+    QCOMPARE(desktop.opened,
+             QList<QUrl>{QUrl::fromLocalFile(f->absolute(QStringLiteral("external.md")))});
+    QCOMPARE(f->area->findWindowIdByBufferId(f->workspace(), buffer.id()),
+             ViewAreaController::InvalidViewWindowId);
+  }
+}
+
+void TestViewAreaTabReuse::forcedModeDuplicateTransitions_data() {
+  QTest::addColumn<bool>("detached");
+  QTest::newRow("main-duplicate") << false;
+  QTest::newRow("detached-duplicate-then-main") << true;
+}
+
+void TestViewAreaTabReuse::forcedModeDuplicateTransitions() {
+  QFETCH(bool, detached);
+  const QByteArray original("# Mode transitions\n");
+  QVERIFY(f->create(QStringLiteral("main.txt"), "Main workspace stays here\n"));
+  QVERIFY(f->create(QStringLiteral("mode.md"), original));
+  const auto mainBuffer = f->open(QStringLiteral("main.txt"));
+  QVERIFY(mainBuffer.isValid());
+  const auto main = f->workspace();
+  QString target = main;
+  const int created = f->hooks->addAction<ViewSplitCreateEvent>(
+      HookNames::ViewSplitAfterCreate,
+      [&](HookContext &, const ViewSplitCreateEvent &event) { target = event.newWorkspaceId; });
+  const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(created); });
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Read;
+  settings.m_forceMode = true;
+  settings.m_useInternalViewer = true;
+  settings.m_alwaysNewWindow = true;
+  settings.m_detachedView = detached;
+  const auto buffer = f->buffers->openBuffer(f->node(QStringLiteral("mode.md")), settings);
+  QVERIFY(buffer.isValid());
+  f->controller()->resetCliDetachedBatch();
+  ViewSplit2 *split = f->area->getCurrentViewSplit();
+  QPointer<DetachedWindow> host;
+  if (detached) {
+    for (auto *widget : QApplication::topLevelWidgets()) {
+      auto *candidate = qobject_cast<DetachedWindow *>(widget);
+      if (candidate && candidate->getWorkspaceId() == target)
+        host = candidate;
+    }
+    QVERIFY(host);
+    split = host->getViewSplit();
+  }
+  QPointer<ViewWindow2> window(split->getCurrentViewWindow());
+  QVERIFY(window);
+  const auto id = window->getViewWindowId();
+  QCOMPARE(window->getBuffer().id(), buffer.id());
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  const auto order = f->order(target);
+  settings.m_targetWorkspaceId = target;
+  settings.m_mode = ViewWindowMode::Edit;
+  f->buffers->openBuffer(buffer.nodeId(), settings);
+  QVERIFY(window);
+  QCOMPARE(split->getCurrentViewWindow(), window.data());
+  QCOMPARE(window->getMode(), ViewWindowMode::Edit);
+  QCOMPARE(f->area->findWindowIdByBufferId(target, buffer.id()), id);
+  QCOMPARE(f->order(target), order);
+  auto *editor = window->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  appendDraft(editor->getTextEdit(), QStringLiteral("\nUnsaved mode transition draft\n"));
+  const auto draft = editor->getText();
+  QVERIFY(window->isModified());
+
+  // Use the ordinary mode transition: retain the draft, without saving/discarding it.
+  settings.m_mode = ViewWindowMode::Read;
+  f->buffers->openBuffer(buffer.nodeId(), settings);
+  QVERIFY(window);
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  QCOMPARE(window->getLatestContent(), draft);
+  QVERIFY(window->isModified());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("mode.md"))), original);
+  QCOMPARE(f->order(target), order);
+
+  // A no-mode duplicate still leaves the user's chosen mode untouched.
+  settings.m_mode = ViewWindowMode::Edit;
+  settings.m_forceMode = false;
+  f->buffers->openBuffer(buffer.nodeId(), settings);
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  settings.m_forceMode = true;
+  f->buffers->openBuffer(buffer.nodeId(), settings);
+  QCOMPARE(window->getMode(), ViewWindowMode::Edit);
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(f->area->findWindowIdByBufferId(target, buffer.id()), id);
+  QCOMPARE(f->order(target), order);
+
+  if (detached) {
+    QVERIFY(activateNativeHost(host));
+    QTRY_VERIFY(host->isActiveWindow());
+    QCOMPARE(f->workspace(), main);
+    QCOMPARE(f->coreCurrent(main), mainBuffer.id());
+    // No target override: Edit from Explorer must resolve the main workspace,
+    // not deduplicate against the currently focused detached copy.
+    settings.m_targetWorkspaceId.clear();
+    settings.m_detachedView = false;
+    f->buffers->openBuffer(buffer.nodeId(), settings);
+    QCOMPARE(f->workspace(), main);
+    QVERIFY(f->current() && f->current() != window);
+    QCOMPARE(f->current()->getBuffer().id(), buffer.id());
+    QCOMPARE(f->current()->getMode(), ViewWindowMode::Edit);
+    QCOMPARE(f->order(target), order);
+    QCOMPARE(split->getCurrentViewWindow(), window.data());
+  }
 }
 
 void TestViewAreaTabReuse::inferredTextAndImageStayInternal() {
@@ -9784,6 +9974,15 @@ void TestViewAreaTabReuse::inferredTextAndImageStayInternal() {
   QVERIFY(f->current());
   QCOMPARE(f->current()->getFileType(), QStringLiteral("image"));
   QVERIFY(f->current()->findChild<ImageViewer *>());
+  auto *imageWindow = f->current();
+  FileOpenSettings forcedEdit;
+  forcedEdit.m_mode = ViewWindowMode::Edit;
+  forcedEdit.m_forceMode = true;
+  forcedEdit.m_useInternalViewer = true;
+  f->buffers->openBuffer(imageWindow->getBuffer().nodeId(), forcedEdit);
+  QCOMPARE(f->current(), imageWindow);
+  // Read-only viewers retain their supported mode even for an explicit Edit request.
+  QCOMPARE(imageWindow->getMode(), ViewWindowMode::Read);
   QVERIFY(desktop.opened.isEmpty());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("picture.unknown-image"))), image);
 }

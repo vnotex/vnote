@@ -60,6 +60,9 @@ struct FileOpenSettings {
   // Force to enter m_mode.
   bool m_forceMode = false;
 
+  // Explicit CLI modes must not dispatch to external apps or the system default.
+  bool m_useInternalViewer = false;
+
   // Whether focus to the opened window.
   bool m_focus = true;
 
@@ -106,6 +109,7 @@ struct FileOpenSettings {
     QVariantMap map;
     map[QStringLiteral("mode")] = static_cast<int>(m_mode);
     map[QStringLiteral("forceMode")] = m_forceMode;
+    map[QStringLiteral("useInternalViewer")] = m_useInternalViewer;
     map[QStringLiteral("focus")] = m_focus;
     map[QStringLiteral("newFile")] = m_newFile;
     map[QStringLiteral("readOnly")] = m_readOnly;
@@ -136,6 +140,9 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("forceMode"))) {
       s.m_forceMode = p_map.value(QStringLiteral("forceMode")).toBool();
+    }
+    if (p_map.contains(QStringLiteral("useInternalViewer"))) {
+      s.m_useInternalViewer = p_map.value(QStringLiteral("useInternalViewer")).toBool();
     }
     if (p_map.contains(QStringLiteral("focus"))) {
       s.m_focus = p_map.value(QStringLiteral("focus")).toBool();

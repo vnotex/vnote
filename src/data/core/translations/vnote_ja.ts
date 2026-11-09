@@ -86,6 +86,18 @@
         <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
         <translation>単一インスタンスのロックと IPC をスキップします（テスト専用）。別の設定とノートブックを使用してください。</translation>
     </message>
+    <message>
+        <source>Open files in Read mode in VNote.</source>
+        <translation>VNote の閲覧モードでファイルを開きます。</translation>
+    </message>
+    <message>
+        <source>Open files in Edit mode in VNote.</source>
+        <translation>VNote の編集モードでファイルを開きます。</translation>
+    </message>
+    <message>
+        <source>The --read-mode and --edit-mode options cannot be used together.</source>
+        <translation>--read-mode と --edit-mode オプションは同時に使用できません。</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>
@@ -2868,6 +2880,22 @@
         <location line="-8"/>
         <source>File suffixes to open with the system default application</source>
         <translation>システム既定のアプリケーションで開くファイル拡張子</translation>
+    </message>
+    <message>
+        <source>System Context Menu</source>
+        <translation>システムのコンテキストメニュー</translation>
+    </message>
+    <message>
+        <source>Add to Context Menu</source>
+        <translation>コンテキストメニューに追加</translation>
+    </message>
+    <message>
+        <source>Remove from Context Menu</source>
+        <translation>コンテキストメニューから削除</translation>
+    </message>
+    <message>
+        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for all files. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
+        <translation>すべてのファイルに Read in VNote（独立ウィンドウの閲覧モード）と Edit in VNote（メインウィンドウの編集モード）を追加します。変更は現在の Windows ユーザーにのみ即時適用され、リセットでは元に戻りません。Windows 11 では「その他のオプションを確認」を開いてください</translation>
     </message>
 </context>
 <context>
@@ -13442,6 +13470,49 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <source>Notebook was created, but its trust setting could not be saved</source>
         <translation>ノートブックは作成されましたが、信頼設定を保存できませんでした</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::WindowsContextMenuController</name>
+    <message>
+        <source>Failed to start Windows PowerShell: %1</source>
+        <translation>Windows PowerShell を起動できませんでした: %1</translation>
+    </message>
+    <message>
+        <source>Added the VNote actions to the system context menu.</source>
+        <translation>システムのコンテキストメニューに VNote の操作を追加しました。</translation>
+    </message>
+    <message>
+        <source>Removed the VNote actions from the system context menu.</source>
+        <translation>システムのコンテキストメニューから VNote の操作を削除しました。</translation>
+    </message>
+    <message>
+        <source>The context menu helper stopped unexpectedly.</source>
+        <translation>コンテキストメニューヘルパーが予期せず停止しました。</translation>
+    </message>
+    <message>
+        <source>Failed to update the system context menu (exit code %1).</source>
+        <translation>システムのコンテキストメニューを更新できませんでした（終了コード %1）。</translation>
+    </message>
+    <message>
+        <source>Adding the VNote context menu actions...</source>
+        <translation>VNote のコンテキストメニュー操作を追加しています...</translation>
+    </message>
+    <message>
+        <source>Removing the VNote context menu actions...</source>
+        <translation>VNote のコンテキストメニュー操作を削除しています...</translation>
+    </message>
+    <message>
+        <source>The installed context menu helper is missing: %1</source>
+        <translation>インストール済みのコンテキストメニューヘルパーが見つかりません: %1</translation>
+    </message>
+    <message>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>Windows システムディレクトリが見つかりませんでした。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>%1 で Windows PowerShell を利用できません。</translation>
     </message>
 </context>
 </TS>

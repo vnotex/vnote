@@ -86,6 +86,18 @@
         <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
         <translation>단일 인스턴스 잠금과 IPC를 건너뜁니다(테스트 전용). 별도의 설정과 노트북을 사용하세요.</translation>
     </message>
+    <message>
+        <source>Open files in Read mode in VNote.</source>
+        <translation>VNote에서 읽기 모드로 파일을 엽니다.</translation>
+    </message>
+    <message>
+        <source>Open files in Edit mode in VNote.</source>
+        <translation>VNote에서 편집 모드로 파일을 엽니다.</translation>
+    </message>
+    <message>
+        <source>The --read-mode and --edit-mode options cannot be used together.</source>
+        <translation>--read-mode와 --edit-mode 옵션은 함께 사용할 수 없습니다.</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>
@@ -2868,6 +2880,22 @@
         <location line="-8"/>
         <source>File suffixes to open with the system default application</source>
         <translation>시스템 기본 앱으로 열 파일 확장자</translation>
+    </message>
+    <message>
+        <source>System Context Menu</source>
+        <translation>시스템 상황에 맞는 메뉴</translation>
+    </message>
+    <message>
+        <source>Add to Context Menu</source>
+        <translation>상황에 맞는 메뉴에 추가</translation>
+    </message>
+    <message>
+        <source>Remove from Context Menu</source>
+        <translation>상황에 맞는 메뉴에서 제거</translation>
+    </message>
+    <message>
+        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for all files. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
+        <translation>모든 파일에 Read in VNote(분리된 창에서 읽기 모드)와 Edit in VNote(기본 창에서 편집 모드)를 추가합니다. 변경 사항은 현재 Windows 사용자에게만 즉시 적용되며 재설정으로 되돌릴 수 없습니다. Windows 11에서는 더 많은 옵션 표시에서 찾으세요</translation>
     </message>
 </context>
 <context>
@@ -13384,6 +13412,49 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <source>Notebook was created, but its trust setting could not be saved</source>
         <translation>노트북이 생성되었지만 신뢰 설정을 저장할 수 없습니다</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::WindowsContextMenuController</name>
+    <message>
+        <source>Failed to start Windows PowerShell: %1</source>
+        <translation>Windows PowerShell을 시작하지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <source>Added the VNote actions to the system context menu.</source>
+        <translation>시스템 상황에 맞는 메뉴에 VNote 작업을 추가했습니다.</translation>
+    </message>
+    <message>
+        <source>Removed the VNote actions from the system context menu.</source>
+        <translation>시스템 상황에 맞는 메뉴에서 VNote 작업을 제거했습니다.</translation>
+    </message>
+    <message>
+        <source>The context menu helper stopped unexpectedly.</source>
+        <translation>상황에 맞는 메뉴 도우미가 예기치 않게 중지되었습니다.</translation>
+    </message>
+    <message>
+        <source>Failed to update the system context menu (exit code %1).</source>
+        <translation>시스템 상황에 맞는 메뉴를 업데이트하지 못했습니다(종료 코드 %1).</translation>
+    </message>
+    <message>
+        <source>Adding the VNote context menu actions...</source>
+        <translation>VNote 상황에 맞는 메뉴 작업을 추가하는 중...</translation>
+    </message>
+    <message>
+        <source>Removing the VNote context menu actions...</source>
+        <translation>VNote 상황에 맞는 메뉴 작업을 제거하는 중...</translation>
+    </message>
+    <message>
+        <source>The installed context menu helper is missing: %1</source>
+        <translation>설치된 상황에 맞는 메뉴 도우미가 없습니다: %1</translation>
+    </message>
+    <message>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>Windows 시스템 디렉터리를 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>%1에서 Windows PowerShell을 사용할 수 없습니다.</translation>
     </message>
 </context>
 </TS>

@@ -54,6 +54,31 @@ Coverage: `tests/widgets/test_viewarea_tab_reuse.cpp` exercises real services an
 windows, destination precedence, batch boundaries, duplicates, background opens,
 main-tab reuse, unavailable targets, ownership cleanup and reentrant opens.
 
+Explicit CLI modes additionally set `FileOpenSettings::m_useInternalViewer`, propagated through
+`FileOpenEvent::useInternalViewer` and QVariant maps. This independently bypasses external-program
+and unsupported-type system dispatch, avoiding Explorer association recursion. Unsupported types
+report the normal view-creation failure and close only unowned buffers. Do not infer this routing
+from `m_forceMode`: existing force-mode callers retain normal external precedence. Duplicate
+windows apply forced mode through guarded `setMode()` before navigation; drafts and each viewer's
+supported modes remain authoritative. Detached focus never chooses the main-window destination.
+
+## Windows Explorer context menu
+
+`WindowsContextMenuController` is application-owned and registered in the supplied `ServiceLocator`;
+transient File Associations pages share its busy state and result. The controller starts only
+`windows-context-menu.ps1` beside the running executable, using resolved system Windows PowerShell
+with separate `-NoProfile -NonInteractive -ExecutionPolicy Bypass -File` arguments. Never elevate,
+search PATH for helpers, construct shell code, or change global execution policy. Page closure must
+not kill registration; application shutdown allows a bounded grace period before reaping the helper.
+
+`scripts/windows-context-menu.ps1 -Action Add|Remove [-VNotePath <exe>]` owns only
+`HKCU\Software\Classes\*\shell\VNote.Read` and `VNote.Edit`. Add validates the executable before
+writes, quotes it and `"%1"`, and places `--` before the filename. Remove is idempotent and works after
+the executable is removed. Neither action changes default associations or other verbs. Changes are
+not transactional; retry Add/Remove after interruption. Moving a portable install requires Add again.
+`src/CMakeLists.txt` refreshes the helper beside development executables and installs it beside
+packaged Windows executables. No application/session configuration or migration is involved.
+
 ## Node Mark menus
 
 `NotebookNodeController` builds **Mark → Text / Background** for bundled nodes in

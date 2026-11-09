@@ -475,7 +475,8 @@ void MainWindow2::setupNavigationMode() {
   }
 }
 
-void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached) {
+void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached,
+                                  ViewWindowMode p_mode) {
   qInfo() << "MainWindow2::kickOffPostInit: paths:" << p_pathsToOpen << "detached:" << p_detached;
 
   // Restore notebook explorer state from session config.
@@ -511,14 +512,10 @@ void MainWindow2::kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detac
   // corePropagationReady handler once the view area is ready. Queuing here
   // (before the deferred lambda above) guarantees the paths are present when
   // the ready signal fires.
-  if (p_detached) {
-    m_pendingOpenBatches.append({p_pathsToOpen, true});
-  } else {
-    m_pendingOpenBatches.append({p_pathsToOpen, false});
-  }
+  m_pendingOpenBatches.append({p_pathsToOpen, p_detached, p_mode});
 }
 
-void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached) {
+void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached, ViewWindowMode p_mode) {
   qInfo() << "MainWindow2::openFiles: paths:" << p_paths << "detached:" << p_detached
           << "post-init complete:" << m_postInitComplete;
   if (p_paths.isEmpty()) {
@@ -528,14 +525,14 @@ void MainWindow2::openFiles(const QStringList &p_paths, bool p_detached) {
   // If startup is still in progress, queue the paths and let the post-init
   // drain open them once the view area is ready.
   if (!m_postInitComplete) {
-    m_pendingOpenBatches.append({p_paths, p_detached});
+    m_pendingOpenBatches.append({p_paths, p_detached, p_mode});
     return;
   }
 
-  doOpenFiles(p_paths, p_detached);
+  doOpenFiles(p_paths, p_detached, p_mode);
 }
 
-void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
+void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached, ViewWindowMode p_mode) {
   qInfo() << "MainWindow2::doOpenFiles: paths:" << p_paths << "detached:" << p_detached;
   if (p_paths.isEmpty()) {
     return;
@@ -578,6 +575,11 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
     FileOpenSettings settings;
     settings.m_detachedView = p_detached;
     settings.m_alwaysNewWindow = p_detached || p_paths.size() > 1;
+    if (p_mode == ViewWindowMode::Read || p_mode == ViewWindowMode::Edit) {
+      settings.m_mode = p_mode;
+      settings.m_forceMode = true;
+      settings.m_useInternalViewer = true;
+    }
     qInfo() << "MainWindow2::doOpenFiles: opening external file:" << absolutePath;
     bufferSvc->openBuffer(nodeId, settings);
   }
@@ -590,7 +592,7 @@ void MainWindow2::drainPendingOpenBatches() {
 
   ViewAreaController *controller = m_viewArea ? m_viewArea->getController() : nullptr;
   for (const auto &batch : batches) {
-    doOpenFiles(batch.m_paths, batch.m_detached);
+    doOpenFiles(batch.m_paths, batch.m_detached, batch.m_mode);
     // Reset the controller's per-batch detached workspace synchronously after
     // each detached invocation so the NEXT detached invocation opens into a
     // fresh detached window. This is deterministic and does not depend on

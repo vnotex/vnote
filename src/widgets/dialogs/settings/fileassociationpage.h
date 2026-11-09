@@ -8,6 +8,10 @@ class QPushButton;
 class QVBoxLayout;
 
 namespace vnotex {
+#ifdef Q_OS_WIN
+class WindowsContextMenuController;
+#endif
+
 class FileAssociationPage : public SettingsPage {
   Q_OBJECT
 public:
@@ -24,6 +28,11 @@ protected:
 
 private:
   void setupUI();
+
+#ifdef Q_OS_WIN
+  void setupSystemContextMenu(QVBoxLayout *p_layout);
+  void refreshSystemContextMenu();
+#endif
 
   void loadBuiltInTypesGroup();
 
@@ -43,6 +52,13 @@ private:
   int m_externalRowStartIndex = 0;
 
   QPushButton *m_addProgramButton = nullptr;
+
+#ifdef Q_OS_WIN
+  WindowsContextMenuController *m_contextMenuController = nullptr;
+  QPushButton *m_addContextMenuButton = nullptr;
+  QPushButton *m_removeContextMenuButton = nullptr;
+  QLabel *m_contextMenuStatus = nullptr;
+#endif
 
   static const char *c_nameProperty;
 

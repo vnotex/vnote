@@ -229,6 +229,21 @@ Regression coverage: `tests/core/test_singleinstanceguard.cpp`, using unique pip
 lock paths plus real child senders (including delayed startup, fragmentation and overlapping
 connections). Never exercise tests against the production `vnote` pipe or lock.
 
+#### Explicit command-line open modes
+
+`--read-mode` and `--edit-mode` are mutually exclusive and compose with `--detached-view`.
+Without either, `ViewWindowMode::Invalid` means unspecified; never infer explicit Read from
+`FileOpenSettings`' default. Preserve this sentinel through both startup queues and IPC replay.
+Only explicit CLI modes set `m_forceMode` and `m_useInternalViewer` on the receiving primary.
+Read is a presentation mode, not file write protection; single-mode viewers retain their mode.
+
+`requestOpenFiles(files, detached, mode)` uses the existing opcodes 2/3 for unspecified mode.
+Opcode 4 carries compact JSON `{mode:"read"|"edit", detached:bool, files:[...]}`. Validate the
+complete options before acknowledgement; invalid options abort without dispatch. Restart an
+older primary after upgrading: it rejects opcode 4 rather than silently dropping the mode.
+Ordinary and explicit main-window opens request Show; detached opens do not. Parser coverage:
+`tests/core/test_commandlineoptions.cpp`; cross-process delivery uses the unique-pipe guard suite.
+
 #### Agent / manual testing bypass
 
 `vnote --no-single-instance [paths...]` starts an independent process without acquiring the

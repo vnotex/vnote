@@ -7,6 +7,8 @@
 #include <QSharedPointer>
 #include <QString>
 
+#include "global.h"
+
 class QLocalServer;
 class QLocalSocket;
 
@@ -57,21 +59,18 @@ public:
   // Clients API.
 public:
   // True only after acceptance by the primary (or an empty file list).
-  bool requestOpenFiles(const QStringList &p_files);
-
-  bool requestOpenFilesDetached(const QStringList &p_files);
+  bool requestOpenFiles(const QStringList &p_files, bool p_detached = false,
+                        ViewWindowMode p_mode = ViewWindowMode::Invalid);
 
   bool requestShow();
 
 signals:
-  void openFilesRequested(const QStringList &p_files);
-
-  void openFilesDetachedRequested(const QStringList &p_files);
+  void openFilesRequested(const QStringList &p_files, bool p_detached, ViewWindowMode p_mode);
 
   void showRequested();
 
 private:
-  enum OpCode { Null = 0, Show, OpenFiles, OpenFilesDetached };
+  enum OpCode { Null = 0, Show, OpenFiles, OpenFilesDetached, OpenFilesWithOptions };
 
   QSharedPointer<QLocalSocket> tryConnect();
 
@@ -80,11 +79,6 @@ private:
   void setupServer();
 
   void receiveCommand(QLocalSocket *p_socket);
-
-  // Shared body for requestOpenFiles / requestOpenFilesDetached: validates the
-  // connection, resolves each path to absolute against THIS process's working
-  // directory, and sends it under p_code. p_what labels the operation in logs.
-  bool sendOpenFilesRequest(const QStringList &p_files, OpCode p_code, const char *p_what);
 
   bool sendRequest(QLocalSocket *p_socket, OpCode p_code, const QString &p_payload);
 

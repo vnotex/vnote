@@ -131,6 +131,7 @@ QVariantMap FileOpenEvent::toVariantMap() const {
   m[QStringLiteral("bufferId")] = bufferId;
   m[QStringLiteral("mode")] = mode;
   m[QStringLiteral("forceMode")] = forceMode;
+  m[QStringLiteral("useInternalViewer")] = useInternalViewer;
   m[QStringLiteral("focus")] = focus;
   m[QStringLiteral("newFile")] = newFile;
   m[QLatin1String(vxcore::kJsonKeyReadOnly)] = readOnly;
@@ -158,6 +159,7 @@ FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   e.bufferId = p_args.value(QStringLiteral("bufferId")).toString();
   e.mode = p_args.value(QStringLiteral("mode")).toInt();
   e.forceMode = p_args.value(QStringLiteral("forceMode")).toBool();
+  e.useInternalViewer = p_args.value(QStringLiteral("useInternalViewer")).toBool();
   e.focus = p_args.value(QStringLiteral("focus"), true).toBool();
   e.newFile = p_args.value(QStringLiteral("newFile")).toBool();
   e.readOnly = p_args.value(QLatin1String(vxcore::kJsonKeyReadOnly)).toBool();

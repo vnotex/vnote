@@ -350,6 +350,13 @@ add_qt_test(test_settings_persistence
     Qt6::Widgets
 )
 
+if(WIN32)
+  target_sources(test_settings_persistence PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/controllers/windowscontextmenucontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/windowscontextmenucontroller.h
+  )
+endif()
+
 target_include_directories(test_settings_persistence PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )

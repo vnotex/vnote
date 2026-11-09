@@ -25,7 +25,8 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
   parser.addOption(logStderrOpt);
 
   const QCommandLineOption quietOpt(
-      "quiet", QCoreApplication::translate("CommandLineOptions", "Suppress non-critical console logs."));
+      "quiet",
+      QCoreApplication::translate("CommandLineOptions", "Suppress non-critical console logs."));
   parser.addOption(quietOpt);
 
   const QCommandLineOption watchThemesOpt(
@@ -38,6 +39,16 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
       QCoreApplication::translate("CommandLineOptions", "Open files in a detached view split."));
   parser.addOption(detachedViewOpt);
 
+  const QCommandLineOption readModeOpt(
+      "read-mode",
+      QCoreApplication::translate("CommandLineOptions", "Open files in Read mode in VNote."));
+  parser.addOption(readModeOpt);
+
+  const QCommandLineOption editModeOpt(
+      "edit-mode",
+      QCoreApplication::translate("CommandLineOptions", "Open files in Edit mode in VNote."));
+  parser.addOption(editModeOpt);
+
   // WebEngine options.
   // No need to handle them. Just add them to the parser to avoid parse error.
   {
@@ -49,12 +60,14 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
     parser.addOption(webRemoteDebuggingPortOpt);
 
     QCommandLineOption webNoSandboxOpt(
-        "no-sandbox", QCoreApplication::translate("CommandLineOptions", "WebEngine without sandbox."));
+        "no-sandbox",
+        QCoreApplication::translate("CommandLineOptions", "WebEngine without sandbox."));
     webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webNoSandboxOpt);
 
     QCommandLineOption webDisableGpu(
-        "disable-gpu", QCoreApplication::translate("CommandLineOptions", "WebEngine with GPU disabled."));
+        "disable-gpu",
+        QCoreApplication::translate("CommandLineOptions", "WebEngine with GPU disabled."));
     webDisableGpu.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webDisableGpu);
   }
@@ -80,6 +93,15 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
   if (parser.isSet(versionOpt)) {
     return ParseResult::VersionRequested;
   }
+
+  if (parser.isSet(readModeOpt) && parser.isSet(editModeOpt)) {
+    m_errorMsg = QCoreApplication::translate(
+        "CommandLineOptions", "The --read-mode and --edit-mode options cannot be used together.");
+    return ParseResult::Error;
+  }
+  m_mode = parser.isSet(readModeOpt)   ? vnotex::ViewWindowMode::Read
+           : parser.isSet(editModeOpt) ? vnotex::ViewWindowMode::Edit
+                                       : vnotex::ViewWindowMode::Invalid;
 
   // Position arguments.
   const auto args = parser.positionalArguments();

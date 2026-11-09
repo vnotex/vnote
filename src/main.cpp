@@ -658,13 +658,12 @@ int main(int argc, char *argv[]) {
                   << "paths to forward:" << cmdOptions.m_pathsToOpen
                   << "detached:" << cmdOptions.m_detachedView;
         }
-        if (cmdOptions.m_detachedView) {
-          // Forward as a detached-view open. Do NOT raise/show the running main
-          // window; only the new detached window should appear.
-          ret = guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen) ? 0 : 1;
-        } else {
-          ret = guard.requestOpenFiles(cmdOptions.m_pathsToOpen) && guard.requestShow() ? 0 : 1;
-        }
+        // Detached opens must not raise the primary's main window.
+        ret = guard.requestOpenFiles(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView,
+                                     cmdOptions.m_mode) &&
+                      (cmdOptions.m_detachedView || guard.requestShow())
+                  ? 0
+                  : 1;
       } else {
         // BusyUnreachable: the lock is held but the holder cannot be reached.
         // This used to fail OPEN and become a second primary. Exit instead.
@@ -681,21 +680,16 @@ int main(int argc, char *argv[]) {
     struct PendingOpenRequest {
       QStringList m_files;
       bool m_detached = false;
+      ViewWindowMode m_mode = ViewWindowMode::Invalid;
     };
     QVector<PendingOpenRequest> pendingOpenRequests;
     bool pendingShow = false;
-    const auto pendingOpenConnection =
-        QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &app,
-                         [&pendingOpenRequests](const QStringList &p_files) {
-                           qInfo() << "Queued startup IPC open request:" << p_files;
-                           pendingOpenRequests.append(PendingOpenRequest{p_files, false});
-                         });
-    const auto pendingDetachedConnection =
-        QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &app,
-                         [&pendingOpenRequests](const QStringList &p_files) {
-                           qInfo() << "Queued startup detached IPC open request:" << p_files;
-                           pendingOpenRequests.append(PendingOpenRequest{p_files, true});
-                         });
+    const auto pendingOpenConnection = QObject::connect(
+        &guard, &SingleInstanceGuard::openFilesRequested, &app,
+        [&pendingOpenRequests](const QStringList &p_files, bool p_detached, ViewWindowMode p_mode) {
+          qInfo() << "Queued startup IPC open request:" << p_files;
+          pendingOpenRequests.append(PendingOpenRequest{p_files, p_detached, p_mode});
+        });
     const auto pendingShowConnection =
         QObject::connect(&guard, &SingleInstanceGuard::showRequested, &app,
                          [&pendingShow]() { pendingShow = true; });
@@ -866,21 +860,16 @@ int main(int argc, char *argv[]) {
 
     // Handle requests forwarded from a second instance (files passed to
     // "Open with VNote" while VNote is already running, plus raise/show).
-    QObject::connect(&guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
-                     [&mainWindow](const QStringList &p_files) {
-                       qInfo() << "Received IPC open request:" << p_files;
-                       mainWindow.openFiles(p_files);
-                     });
-    QObject::connect(&guard, &SingleInstanceGuard::openFilesDetachedRequested, &mainWindow,
-                     [&mainWindow](const QStringList &p_files) {
-                       qInfo() << "Received detached IPC open request:" << p_files;
-                       mainWindow.openFiles(p_files, true);
-                     });
+    QObject::connect(
+        &guard, &SingleInstanceGuard::openFilesRequested, &mainWindow,
+        [&mainWindow](const QStringList &p_files, bool p_detached, ViewWindowMode p_mode) {
+          qInfo() << "Received IPC open request:" << p_files;
+          mainWindow.openFiles(p_files, p_detached, p_mode);
+        });
     QObject::connect(&guard, &SingleInstanceGuard::showRequested, &mainWindow,
                      &MainWindow2::showMainWindow);
 
     QObject::disconnect(pendingOpenConnection);
-    QObject::disconnect(pendingDetachedConnection);
     QObject::disconnect(pendingShowConnection);
 
     // macOS "Create Note in VNote" system Service. The receiver must be
@@ -904,7 +893,7 @@ int main(int argc, char *argv[]) {
     for (const auto &request : pendingOpenRequests) {
       qInfo() << "Replaying pending open request:" << request.m_files
               << "detached:" << request.m_detached;
-      mainWindow.openFiles(request.m_files, request.m_detached);
+      mainWindow.openFiles(request.m_files, request.m_detached, request.m_mode);
     }
     if (pendingShow) {
       mainWindow.showMainWindow();
@@ -916,7 +905,8 @@ int main(int argc, char *argv[]) {
 
     qInfo() << "Queueing startup paths for post-init:" << cmdOptions.m_pathsToOpen
             << "detached:" << cmdOptions.m_detachedView;
-    mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView);
+    mainWindow.kickOffPostInit(cmdOptions.m_pathsToOpen, cmdOptions.m_detachedView,
+                               cmdOptions.m_mode);
 
     // Register the native Service provider only now: the startup flow is
     // installed, so a request arriving immediately is queued by MainWindow2

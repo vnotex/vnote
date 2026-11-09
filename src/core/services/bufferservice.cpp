@@ -69,6 +69,7 @@ FileOpenEvent fileOpenEvent(const NodeIdentifier &p_nodeId, const FileOpenSettin
   event.filePath = p_nodeId.relativePath;
   event.mode = static_cast<int>(p_settings.m_mode);
   event.forceMode = p_settings.m_forceMode;
+  event.useInternalViewer = p_settings.m_useInternalViewer;
   event.focus = p_settings.m_focus;
   event.newFile = p_settings.m_newFile;
   event.readOnly = p_settings.m_readOnly;

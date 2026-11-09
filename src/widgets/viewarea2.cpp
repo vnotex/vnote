@@ -1750,6 +1750,13 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
 
 void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                            const QString &p_workspaceId, const FileOpenSettings &p_settings) {
+  const bool locked = p_buffer.isEncrypted() && p_buffer.editorType().isEmpty();
+  auto *factory = m_services.get<ViewWindowFactory>();
+  if (!locked && (!factory || !factory->hasCreator(p_fileType))) {
+    qWarning() << "ViewArea2: no creator for file type" << p_fileType;
+    emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
+    return;
+  }
   const ID homeId = splitForWorkspace(p_workspaceId) ? loneHomeWindowId() : 0;
   auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (split && split->isPreview() && !isPreviewWorkspaceAvailable(p_workspaceId)) {
@@ -1757,13 +1764,6 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   }
   if (!split) {
     qWarning() << "ViewArea2::openBuffer: workspace not found:" << p_workspaceId;
-    return;
-  }
-  const bool locked = p_buffer.isEncrypted() && p_buffer.editorType().isEmpty();
-  auto *factory = m_services.get<ViewWindowFactory>();
-  if (!locked && (!factory || !factory->hasCreator(p_fileType))) {
-    qWarning() << "ViewArea2: no creator for file type" << p_fileType;
-    emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
     return;
   }
   const QPointer<ViewWindow2> previousWindow(split->getCurrentViewWindow());
@@ -1908,7 +1908,11 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
 }
 
 void ViewArea2::applyFileOpenSettings(ID p_windowId, const FileOpenSettings &p_settings) {
-  auto *win = windowForId(p_windowId);
+  QPointer<ViewWindow2> win(windowForId(p_windowId));
+  if (win && p_settings.m_forceMode) {
+    // Keep each viewer's supported modes and existing save/discard flow authoritative.
+    win->setMode(p_settings.m_mode);
+  }
   if (win) {
     win->applyFileOpenSettings(p_settings);
   }

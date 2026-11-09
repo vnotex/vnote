@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 
+#include <core/global.h>
 #include <core/noncopyable.h>
 #include <widgets/dockwidgethelper.h>
 
@@ -152,7 +153,8 @@ public:
 
   QWidget *getDockWidget(DockWidgetHelper::DockType p_dockType) const;
 
-  void kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached = false);
+  void kickOffPostInit(const QStringList &p_pathsToOpen, bool p_detached = false,
+                       ViewWindowMode p_mode = ViewWindowMode::Invalid);
 
   // Open the given files/folders (e.g. command-line paths or files forwarded
   // from a second instance). Files are opened as external buffers so they can
@@ -160,7 +162,9 @@ public:
   // completed (workspace/core propagation still disabled during session
   // restore), the paths are queued and opened once startup finishes.
   // @p_detached: open the files in a single detached view split.
-  void openFiles(const QStringList &p_paths, bool p_detached = false);
+  // @p_mode: Invalid keeps the normal mode policy; Read/Edit stay inside VNote.
+  void openFiles(const QStringList &p_paths, bool p_detached = false,
+                 ViewWindowMode p_mode = ViewWindowMode::Invalid);
 
   void setupNavigationMode();
 
@@ -284,7 +288,7 @@ private:
   // Actually open the resolved paths as external buffers. Assumes the view
   // area is ready to receive buffers.
   // @p_detached: open the files in a single detached view split.
-  void doOpenFiles(const QStringList &p_paths, bool p_detached = false);
+  void doOpenFiles(const QStringList &p_paths, bool p_detached, ViewWindowMode p_mode);
 
   // Drain m_pendingOpenBatches in arrival order once startup finishes. Detached
   // batches reset the controller's per-batch detached workspace synchronously
@@ -435,6 +439,7 @@ private:
   struct PendingOpenBatch {
     QStringList m_paths;
     bool m_detached = false;
+    ViewWindowMode m_mode = ViewWindowMode::Invalid;
   };
   QVector<PendingOpenBatch> m_pendingOpenBatches;
   struct ProtectedOpens;

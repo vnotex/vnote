@@ -2037,7 +2037,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   }
 
   // External program dispatch: check if this file suffix has a configured external program.
-  if (p_buffer.isFileBacked() && !p_buffer.isEncrypted()) {
+  if (!settings.m_useInternalViewer && p_buffer.isFileBacked() && !p_buffer.isEncrypted()) {
     const QString suffix = QFileInfo(p_buffer.nodeId().relativePath).suffix().toLower();
     if (!suffix.isEmpty()) {
       auto *configMgr = m_services.get<ConfigMgr2>();
@@ -2089,6 +2089,15 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // leave an empty DetachedWindow behind for a non-editable file type.
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(fileType)) {
+    if (settings.m_useInternalViewer) {
+      // Report through the normal view-creation failure path without creating a
+      // workspace or handing the file back to Explorer's default application.
+      m_view->openBuffer(p_buffer, fileType, QString(), settings);
+      if (guard) {
+        closeUnownedOpenBuffer(p_buffer.id());
+      }
+      return;
+    }
     if (!p_buffer.isFileBacked() || p_buffer.isEncrypted()) {
       closeUnownedOpenBuffer(p_buffer.id());
       return;
@@ -5184,6 +5193,7 @@ void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
   FileOpenSettings settings;
   settings.m_mode = static_cast<ViewWindowMode>(p_event.mode);
   settings.m_forceMode = p_event.forceMode;
+  settings.m_useInternalViewer = p_event.useInternalViewer;
   settings.m_focus = p_event.focus;
   settings.m_newFile = p_event.newFile;
   settings.m_readOnly = p_event.readOnly;

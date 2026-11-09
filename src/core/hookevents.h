@@ -83,6 +83,7 @@ struct FileOpenEvent {
   QString bufferId; // empty for BeforeOpen, filled for AfterOpen
   int mode = 0;     // ViewWindowMode enum as int
   bool forceMode = false;
+  bool useInternalViewer = false; // Bypass external-app and system-default dispatch.
   bool focus = true;
   bool newFile = false;
   bool readOnly = false;
@@ -96,9 +97,9 @@ struct FileOpenEvent {
   QString targetWorkspaceId; // Existing hosted workspace; overrides preview and detached routing.
   quint64 previewSourceWindowId = 0;   // Zero means ordinary routing.
   quint64 previewSourceGeneration = 0; // Zero is a valid source buffer generation.
-  QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
-  int searchOptions = 0;           // FindOptions serialized as int
-  int searchCurrentMatchLine = -1; // line for current-match bias
+  QStringList searchPatterns;          // keyword patterns for highlight (empty = no highlight)
+  int searchOptions = 0;               // FindOptions serialized as int
+  int searchCurrentMatchLine = -1;     // line for current-match bias
 
   QVariantMap toVariantMap() const;
   static FileOpenEvent fromVariantMap(const QVariantMap &p_args);

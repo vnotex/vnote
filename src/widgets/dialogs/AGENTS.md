@@ -114,6 +114,16 @@ Reset and search; for dynamic groups also verify add/remove and saved-value relo
 just widget counts. Widths below a control's intrinsic usable minimum may require scrolling;
 do not clip labels or values to hide that limit.
 
+## Windows system context menu
+
+Settings → File Associations exposes the **System Context Menu** card only on Windows.
+**Add to Context Menu** and **Remove from Context Menu** call the application-owned
+`WindowsContextMenuController`, disable while busy, and show its retained success/error result.
+They apply immediately for the current Windows user, independently of Apply/Reset; opening or
+resetting Settings never mutates the registry. Read in VNote requests Read in a detached window;
+Edit in VNote requests Edit in the main window. Windows 11 may list them under **Show more options**.
+The script does not change default file associations or require administrator access.
+
 ## Banner Suppression Pattern (Quiet Dialog UX)
 
 Some dialogs (currently `opennotebookdialog2` post `refine-open-notebook-dialog`) intentionally suppress the `ScrollDialog::setInformationText` banner on certain field changes to keep the dialog quiet and stable in size while the user is typing.

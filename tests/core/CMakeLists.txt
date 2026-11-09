@@ -1048,6 +1048,13 @@ add_qt_test(test_notebook_core_service_reorder
     vxcore
 )
 
+add_qt_test(test_commandlineoptions
+  SOURCES
+    test_commandlineoptions.cpp
+    ${CMAKE_SOURCE_DIR}/src/commandlineoptions.cpp
+  GUILESS
+)
+
 # SingleInstanceGuard tri-state tryRun(). The important case is BusyUnreachable:
 # the branch that used to fail OPEN and produce a second primary. Uses the
 # guard's testing constructor so it never touches the real "vnote" IPC names.

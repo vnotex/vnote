@@ -86,6 +86,18 @@
         <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
         <translation>跳过单实例锁和进程间通信（仅用于测试）。请使用独立的配置和笔记本。</translation>
     </message>
+    <message>
+        <source>Open files in Read mode in VNote.</source>
+        <translation>在 VNote 中以阅读模式打开文件。</translation>
+    </message>
+    <message>
+        <source>Open files in Edit mode in VNote.</source>
+        <translation>在 VNote 中以编辑模式打开文件。</translation>
+    </message>
+    <message>
+        <source>The --read-mode and --edit-mode options cannot be used together.</source>
+        <translation>--read-mode 和 --edit-mode 选项不能同时使用。</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>
@@ -2868,6 +2880,22 @@
         <location line="-8"/>
         <source>File suffixes to open with the system default application</source>
         <translation>使用系统默认程序打开的文件后缀</translation>
+    </message>
+    <message>
+        <source>System Context Menu</source>
+        <translation>系统右键菜单</translation>
+    </message>
+    <message>
+        <source>Add to Context Menu</source>
+        <translation>添加到右键菜单</translation>
+    </message>
+    <message>
+        <source>Remove from Context Menu</source>
+        <translation>从右键菜单移除</translation>
+    </message>
+    <message>
+        <source>Add Read in VNote (Read mode in a detached window) and Edit in VNote (Edit mode in the main window) for all files. Changes affect only the current Windows user, apply immediately, and are not undone by Reset. On Windows 11, look under Show more options</source>
+        <translation>为所有文件添加 Read in VNote（在独立窗口中以阅读模式打开）和 Edit in VNote（在主窗口中以编辑模式打开）。更改仅影响当前 Windows 用户，立即生效，且不会被重置操作撤销。在 Windows 11 中，请在“显示更多选项”中查找</translation>
     </message>
 </context>
 <context>
@@ -13442,6 +13470,49 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <source>Notebook was created, but its trust setting could not be saved</source>
         <translation>笔记本已创建，但无法保存其信任设置</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::WindowsContextMenuController</name>
+    <message>
+        <source>Failed to start Windows PowerShell: %1</source>
+        <translation>无法启动 Windows PowerShell：%1</translation>
+    </message>
+    <message>
+        <source>Added the VNote actions to the system context menu.</source>
+        <translation>已将 VNote 操作添加到系统右键菜单。</translation>
+    </message>
+    <message>
+        <source>Removed the VNote actions from the system context menu.</source>
+        <translation>已从系统右键菜单移除 VNote 操作。</translation>
+    </message>
+    <message>
+        <source>The context menu helper stopped unexpectedly.</source>
+        <translation>右键菜单辅助程序意外停止。</translation>
+    </message>
+    <message>
+        <source>Failed to update the system context menu (exit code %1).</source>
+        <translation>无法更新系统右键菜单（退出代码 %1）。</translation>
+    </message>
+    <message>
+        <source>Adding the VNote context menu actions...</source>
+        <translation>正在添加 VNote 右键菜单操作...</translation>
+    </message>
+    <message>
+        <source>Removing the VNote context menu actions...</source>
+        <translation>正在移除 VNote 右键菜单操作...</translation>
+    </message>
+    <message>
+        <source>The installed context menu helper is missing: %1</source>
+        <translation>缺少已安装的右键菜单辅助脚本：%1</translation>
+    </message>
+    <message>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>无法找到 Windows 系统目录。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>Windows PowerShell 在 %1 不可用。</translation>
     </message>
 </context>
 </TS>

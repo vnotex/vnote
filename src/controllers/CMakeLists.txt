@@ -42,6 +42,12 @@ target_sources(vnote PRIVATE
     updatecontroller.cpp updatecontroller.h
 )
 
+if(WIN32)
+    target_sources(vnote PRIVATE
+        windowscontextmenucontroller.cpp windowscontextmenucontroller.h
+    )
+endif()
+
 target_include_directories(vnote PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
