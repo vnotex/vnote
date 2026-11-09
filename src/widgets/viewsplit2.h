@@ -6,6 +6,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTabWidget>
+#include <QTimer>
 #include <QVector>
 #include <functional>
 
@@ -199,6 +200,7 @@ private:
   void setupUI();
   void setupTabBar();
   void setupCornerWidget();
+  void updateCornerButtonsVisibility();
   void setupShortcuts();
   void updateShortcutAvailability(QWidget *p_focusWidget);
 
@@ -253,6 +255,8 @@ private:
   // Detached splits only: pin and attach actions.
   QToolButton *m_stayOnTopButton = nullptr;
   QToolButton *m_attachToMainWindowButton = nullptr;
+
+  QTimer m_cornerVisibilityTimer;
 
   // Action groups for menu items (lazy-initialized).
   QActionGroup *m_windowListActionGroup = nullptr;

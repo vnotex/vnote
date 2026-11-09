@@ -4,6 +4,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
+#include <QCursor>
 #include <QDesktopServices>
 #include <QDir>
 #include <QHBoxLayout>
@@ -81,7 +82,11 @@ ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId,
   }
 }
 
-ViewSplit2::~ViewSplit2() {}
+ViewSplit2::~ViewSplit2() {
+  if (qApp) {
+    qApp->removeEventFilter(this);
+  }
+}
 
 void ViewSplit2::refreshIcons() {
   initIcons();
@@ -118,6 +123,25 @@ void ViewSplit2::setupUI() {
 
   setupTabBar();
   setupCornerWidget();
+
+  m_cornerVisibilityTimer.setSingleShot(true);
+  m_cornerVisibilityTimer.setInterval(0);
+  connect(&m_cornerVisibilityTimer, &QTimer::timeout, this,
+          &ViewSplit2::updateCornerButtonsVisibility);
+  for (auto *button :
+       {m_windowListButton, m_menuButton, m_stayOnTopButton, m_attachToMainWindowButton}) {
+    if (!button) {
+      continue;
+    }
+    auto policy = button->sizePolicy();
+    policy.setRetainSizeWhenHidden(true);
+    button->setSizePolicy(policy);
+    button->hide();
+    if (auto *menu = button->menu()) {
+      connect(menu, &QMenu::aboutToHide, this, [this]() { m_cornerVisibilityTimer.start(); });
+    }
+  }
+  qApp->installEventFilter(this);
 
   connect(this, &QTabWidget::tabCloseRequested, this, &ViewSplit2::closeTab);
 
@@ -239,6 +263,8 @@ void ViewSplit2::setupCornerWidget() {
     // setDefaultAction() both registers the action on the button (so the
     // window-scoped shortcut resolves) and mirrors its checked/icon state.
     m_stayOnTopButton->setDefaultAction(act);
+    // Keep the window shortcut available while its button is hidden.
+    addAction(act);
 
     layout->addWidget(m_stayOnTopButton);
 
@@ -296,6 +322,35 @@ void ViewSplit2::setupCornerWidget() {
   widget->installEventFilter(this);
 
   setCornerWidget(widget, Qt::TopRightCorner);
+}
+
+void ViewSplit2::updateCornerButtonsVisibility() {
+  QRect header;
+  if (tabBar()->isVisible()) {
+    header = tabBar()->geometry();
+  }
+  if (cornerWidget()->isVisible()) {
+    header = header.united(cornerWidget()->geometry());
+  }
+  const auto cursorPos = QCursor::pos();
+  bool visible = false;
+  if (header.contains(mapFromGlobal(cursorPos))) {
+    // Popup dismissal can leave underMouse() stale until the next Enter event.
+    // Hit-test the actual widget so a stationary header cursor keeps the buttons.
+    auto *hovered = QApplication::widgetAt(cursorPos);
+    visible = hovered && (hovered == this || isAncestorOf(hovered));
+  }
+  for (auto *button : {m_windowListButton, m_menuButton}) {
+    if (button && button->menu() && button->menu()->isVisible()) {
+      visible = true;
+    }
+  }
+  for (auto *button :
+       {m_windowListButton, m_menuButton, m_stayOnTopButton, m_attachToMainWindowButton}) {
+    if (button && button->isHidden() == visible) {
+      button->setVisible(visible);
+    }
+  }
 }
 
 void ViewSplit2::updateWindowList(QMenu *p_menu) {
@@ -559,6 +614,7 @@ void ViewSplit2::updateTabBarVisibility() {
     }
   }
   tabBar()->setVisible(!hideBar);
+  m_cornerVisibilityTimer.start();
 }
 
 void ViewSplit2::setCurrentViewWindow(ViewWindow2 *p_win) {
@@ -687,6 +743,22 @@ void ViewSplit2::mousePressEvent(QMouseEvent *p_event) {
 }
 
 bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
+  switch (p_event->type()) {
+  case QEvent::Enter:
+  case QEvent::Leave:
+  case QEvent::Show:
+  case QEvent::Hide:
+  case QEvent::WindowActivate:
+  case QEvent::WindowDeactivate:
+    // Child-to-child crossings and menu dismissal settle before sampling the
+    // cursor. Coalesce application events just like PresentationToolBarEffect.
+    if (!m_cornerVisibilityTimer.isActive()) {
+      m_cornerVisibilityTimer.start();
+    }
+    break;
+  default:
+    break;
+  }
   if (p_object == cornerWidget()) {
     if (p_event->type() == QEvent::Resize) {
       auto resizeEve = static_cast<QResizeEvent *>(p_event);
