@@ -109,9 +109,9 @@ new curl runtime; its bundle carries `LICENSE.pugixml` in `Contents/Resources`.
 - **License:** ISC, with an MIT-licensed subset inherited from Feather
 - **Full text:** [`licenses/Lucide-LICENSE.txt`](licenses/Lucide-LICENSE.txt) (verbatim copy of upstream `LICENSE`)
 
-Covers 78 files in `src/data/core/icons/`:
+Covers 79 files in `src/data/core/icons/`:
 
-- 76 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
+- 77 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
 - `read_only.svg` and `theme_switcher.svg` carry no class but are path-identical to
   upstream `pen-off` and `shirt`.
 
@@ -120,6 +120,7 @@ Covers 78 files in `src/data/core/icons/`:
 `layout_dashboard_editor.svg` uses upstream [Layout Dashboard](https://lucide.dev/icons/layout-dashboard) (ISC).
 `brain_editor.svg` uses upstream [Brain](https://lucide.dev/icons/brain) (ISC).
 `folder_pen.svg` uses upstream [Folder Pen](https://lucide.dev/icons/folder-pen) (ISC).
+`attach_to_main_window.svg` uses upstream [Picture in Picture](https://lucide.dev/icons/picture-in-picture) (ISC).
 
 The files are modified from upstream in one respect: VNote rewrites Lucide
 `currentColor` stroke and fill values to explicit `#000000` so

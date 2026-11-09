@@ -2366,11 +2366,31 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
   auto *split = dw->getViewSplit();
 
   connect(dw, &DetachedWindow::closeRequested, this, &ViewArea2::onCloseDetachedWindow);
+  connect(split, &ViewSplit2::attachToMainWindowRequested, this, [this, dw]() {
+    const QPointer<ViewArea2> guard(this);
+    const QPointer<DetachedWindow> detached(dw);
+    // An active preview is a command target, not a main split to attach into.
+    m_controller->clearActivePreviewWindow();
+    if (!guard || !detached) {
+      return;
+    }
+    reattachDetachedWindow(detached);
+    if (!guard || m_detachedWindows.contains(detached.data())) {
+      return;
+    }
+    // Retire a pinned host before giving focus back to the main window.
+    if (detached) {
+      detached->hide();
+    }
+    auto *mainWindow = window();
+    mainWindow->setWindowState(mainWindow->windowState() & ~Qt::WindowMinimized);
+    mainWindow->show();
+    mainWindow->raise();
+    mainWindow->activateWindow();
+  });
 
-  // Wire the minimal subset of split signals needed for a detached window:
-  // tab close (routes through the controller) and current-tab tracking (updates
-  // the window title). Splitting/moving/workspace ops from a detached window are
-  // out of scope for now.
+  // Detached splits keep independent focus, tab closure and title tracking;
+  // ordinary main-split navigation actions remain unavailable.
   connect(split, &ViewSplit2::focused, this, [this](ViewSplit2 *) {
     // An ordinary detached editor is not its child preview's command target.
     m_controller->clearActivePreviewWindow();

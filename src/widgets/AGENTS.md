@@ -669,6 +669,15 @@ blank native frame before the themed content. Keep failed creation hidden, prese
 background selection, and leave focused activation on the existing paths. The first-show
 content contract is covered by `test_viewarea_tab_reuse::detachedWindowFirstShow`.
 
+The detached corner places **Attach to Main Window** (Lucide `picture-in-picture`)
+to the right of **Stay on Top**, using the same active/inactive icon palette. Its
+`ViewSplit2::attachToMainWindowRequested` signal routes through `ViewArea2`'s existing
+reattachment operation: append every live view in tab order to the selected ordinary
+main split, preserving unsaved edits and undo, then retire the detached host. Clear
+the active preview command target before resolving the main split; a preview overlay
+must never receive these tabs. Hide the retiring pinned host before revealing and
+activating the main window, clearing only its minimized state.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

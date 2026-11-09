@@ -90,6 +90,7 @@
         <file>icons/delete.svg</file>
         <file>icons/print_editor.svg</file>
         <file>icons/stay_on_top.svg</file>
+        <file>icons/attach_to_main_window.svg</file>
         <file>icons/outline_editor.svg</file>
         <file>icons/sidebar_editor.svg</file>
         <file>icons/page_previous_editor.svg</file>

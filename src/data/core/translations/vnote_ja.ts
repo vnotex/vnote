@@ -12812,6 +12812,10 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>常に手前に表示</translation>
     </message>
     <message>
+        <source>Attach to Main Window</source>
+        <translation>メインウィンドウに戻す</translation>
+    </message>
+    <message>
         <location line="+36"/>
         <source>Open Windows</source>
         <translation>開いているウィンドウ</translation>

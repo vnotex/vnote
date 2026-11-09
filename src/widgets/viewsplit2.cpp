@@ -96,6 +96,10 @@ void ViewSplit2::refreshIcons() {
     // Keep the same action so its checked state survives a theme switch.
     m_stayOnTopButton->defaultAction()->setIcon(m_active ? m_stayOnTopActiveIcon : m_stayOnTopIcon);
   }
+  if (m_attachToMainWindowButton) {
+    m_attachToMainWindowButton->defaultAction()->setIcon(m_active ? m_attachToMainWindowActiveIcon
+                                                                  : m_attachToMainWindowIcon);
+  }
   for (int i = 0; i < count(); ++i) {
     auto *win = getViewWindow(i);
     if (win) {
@@ -185,6 +189,11 @@ void ViewSplit2::initIcons() {
     const auto iconFile = themeService->getIconFile(QStringLiteral("stay_on_top.svg"));
     m_stayOnTopIcon = IconUtils::fetchIcon(iconFile, fg);
     m_stayOnTopActiveIcon = IconUtils::fetchIcon(iconFile, activeFg);
+
+    const auto attachIconFile =
+        themeService->getIconFile(QStringLiteral("attach_to_main_window.svg"));
+    m_attachToMainWindowIcon = IconUtils::fetchIcon(attachIconFile, fg);
+    m_attachToMainWindowActiveIcon = IconUtils::fetchIcon(attachIconFile, activeFg);
   }
 
   // Read-only buffers display this pen-off badge on their tab (see effectiveTabIcon()).
@@ -203,9 +212,8 @@ void ViewSplit2::setupCornerWidget() {
   auto layout = new QHBoxLayout(widget);
   layout->setContentsMargins(0, 0, 0, 0);
 
-  // A detached window holds a single tab and offers no split/workspace operations,
-  // so it drops the "Open Windows"/"Menu" buttons and shows a "Stay on Top" pin
-  // for its own top-level window instead.
+  // Detached windows replace the main split's window list/menu with their own
+  // pin and an action to attach every hosted view back to the main window.
   if (m_detached) {
     m_stayOnTopButton = new QToolButton(this);
     m_stayOnTopButton->setProperty(PropertyDefs::c_actionToolButton, true);
@@ -233,6 +241,15 @@ void ViewSplit2::setupCornerWidget() {
     m_stayOnTopButton->setDefaultAction(act);
 
     layout->addWidget(m_stayOnTopButton);
+
+    m_attachToMainWindowButton = new QToolButton(this);
+    m_attachToMainWindowButton->setProperty(PropertyDefs::c_actionToolButton, true);
+    auto attachAct = new QAction(m_attachToMainWindowIcon, tr("Attach to Main Window"),
+                                 m_attachToMainWindowButton);
+    connect(attachAct, &QAction::triggered, this, &ViewSplit2::attachToMainWindowRequested);
+    m_attachToMainWindowButton->setDefaultAction(attachAct);
+
+    layout->addWidget(m_attachToMainWindowButton);
 
     widget->installEventFilter(this);
 
@@ -590,6 +607,10 @@ void ViewSplit2::setActive(bool p_active) {
   }
   if (m_stayOnTopButton) {
     m_stayOnTopButton->defaultAction()->setIcon(p_active ? m_stayOnTopActiveIcon : m_stayOnTopIcon);
+  }
+  if (m_attachToMainWindowButton) {
+    m_attachToMainWindowButton->defaultAction()->setIcon(p_active ? m_attachToMainWindowActiveIcon
+                                                                  : m_attachToMainWindowIcon);
   }
 }
 

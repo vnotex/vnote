@@ -12754,6 +12754,10 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>항상 위에 표시</translation>
     </message>
     <message>
+        <source>Attach to Main Window</source>
+        <translation>메인 창에 연결</translation>
+    </message>
+    <message>
         <location line="+36"/>
         <source>Open Windows</source>
         <translation>열린 창</translation>

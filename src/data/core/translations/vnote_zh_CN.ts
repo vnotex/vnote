@@ -12812,6 +12812,10 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>置顶</translation>
     </message>
     <message>
+        <source>Attach to Main Window</source>
+        <translation>附加到主窗口</translation>
+    </message>
+    <message>
         <location line="+36"/>
         <source>Open Windows</source>
         <translation>已打开窗口</translation>

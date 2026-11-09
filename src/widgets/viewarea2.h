@@ -216,8 +216,8 @@ private:
   // nullptr if no detached window hosts that workspace.
   ViewSplit2 *detachedSplitForWorkspace(const QString &p_workspaceId) const;
 
-  // Move all windows from a detached window back into a main split and tear down
-  // the detached workspace for app-quit teardown (reattachAllDetachedWindows).
+  // Move all windows back into the current main split and tear down the detached
+  // workspace, for explicit attachment or app-quit teardown.
   void reattachDetachedWindow(DetachedWindow *p_window);
 
   // Reattach every open detached window (used on app quit so their buffers route

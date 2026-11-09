@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Add an Attach to Main Window button beside the detached window's Stay on Top pin to move all its tabs into the selected main split without losing unsaved edits or undo history
 * Match the detached window's Stay on Top pin color to the active Open Windows button, including after theme changes
 * Show text beside the Home and United Entry toolbar icons, matching Export
 * **Markdown concealment**: Replace the two editor toggles with a Concealment submenu containing None, Passive and Aggressive radio choices; default to Aggressive without migrating the old settings, map the editing-experience choices to Aggressive/Passive, and use Aggressive in embedded Markdown editors
