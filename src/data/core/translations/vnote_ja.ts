@@ -492,7 +492,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>マインドマップ</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+43"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+48"/>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+85"/>
         <source>Readable Width</source>
         <translation>読みやすい幅</translation>
@@ -1975,7 +1975,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::EditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+110"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+64"/>
         <source>Default image format</source>
         <translation>既定の画像形式</translation>
     </message>
@@ -2007,7 +2007,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>自動保存</translation>
     </message>
     <message>
-        <location line="-30"/>
+        <location line="-32"/>
         <source>Editor Toolbar Options</source>
         <translation>エディタのツールバーオプション</translation>
     </message>
@@ -2017,7 +2017,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>エディタのツールバーにあるオプション</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+8"/>
+        <source>Center the content in a readable-width area</source>
+        <translation>内容を読みやすい幅の領域に収めて中央に配置します</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>PDF view window</source>
         <translation>PDF 表示ウィンドウ</translation>
     </message>
@@ -6244,7 +6249,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MindMapEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+134"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+175"/>
         <source>Mind Map Editor</source>
         <translation>マインドマップエディター</translation>
     </message>
@@ -6254,7 +6259,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>スタイル</translation>
     </message>
     <message>
-        <location line="-13"/>
+        <location line="-11"/>
         <source>Editor Toolbar Options</source>
         <translation>エディタのツールバーオプション</translation>
     </message>
@@ -6272,11 +6277,6 @@ Trust is remembered until you close this notebook.</source>
         <location line="+1"/>
         <source>Choose a Balanced, Right, Left or Outline layout for the mind map</source>
         <translation>マインドマップのレイアウトを「バランス」「右方向」「左方向」「アウトライン」から選択します</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Center the content in a readable-width area</source>
-        <translation>内容を読みやすい幅の領域に収めて中央に配置します</translation>
     </message>
     <message>
         <location line="+6"/>

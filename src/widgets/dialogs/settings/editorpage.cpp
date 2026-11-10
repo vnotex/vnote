@@ -45,6 +45,8 @@ void EditorPage::setupUI() {
     addSearchItem(p_label, p_description,
                   row->findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly));
   };
+  addViewHint(QObject::tr("Readable Width"), tr("Center the content in a readable-width area"));
+  viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addViewHint(
       tr("PDF view window"),
       tr("Cursor chooses text selection or hand panning, Scroll Mode controls page flow, and "

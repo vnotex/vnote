@@ -978,6 +978,10 @@ base creates one otherwise. Readable Width is first, followed by a separator and
 PDF's existing rotate/cursor/scroll/spread/properties entries. Only viewer-owned entries are
 readiness-gated: Menu and Readable Width remain available during loading/reloading.
 
+The shared Readable Width toolbar description belongs in **Settings > Editor**, alongside
+the shared Content layout and Readable width controls. Editor-specific pages keep only
+their own toolbar descriptions; Mind Map Editor documents Layout.
+
 `addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview, In-Place Preview,
 the Markers Concealment submenu, Allow Auto Section Number and Debug after a separator.
 Edit-only/Read-only visibility and encrypted-note restrictions still apply.

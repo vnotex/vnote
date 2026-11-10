@@ -964,7 +964,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>인쇄</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+43"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+48"/>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
         <source>Readable Width</source>
         <translation>읽기 편한 너비</translation>
@@ -1975,7 +1975,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::EditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+40"/>
+        <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="-8"/>
         <source>Editor Toolbar Options</source>
         <translation>편집기 도구 모음 옵션</translation>
     </message>
@@ -1985,7 +1985,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>편집기 도구 모음의 옵션</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+8"/>
+        <source>Center the content in a readable-width area</source>
+        <translation>내용을 읽기 편한 너비의 영역 안에 가운데 정렬합니다</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>PDF view window</source>
         <translation>PDF 보기 창</translation>
     </message>
@@ -6244,7 +6249,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MindMapEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="-11"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+32"/>
         <source>Editor Toolbar Options</source>
         <translation>편집기 도구 모음 옵션</translation>
     </message>
@@ -6262,11 +6267,6 @@ Trust is remembered until you close this notebook.</source>
         <location line="+1"/>
         <source>Choose a Balanced, Right, Left or Outline layout for the mind map</source>
         <translation>마인드맵의 레이아웃을 균형, 오른쪽, 왼쪽 또는 개요 중에서 선택하세요</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Center the content in a readable-width area</source>
-        <translation>내용을 읽기 편한 너비의 영역 안에 가운데 정렬합니다</translation>
     </message>
     <message>
         <location line="+2"/>

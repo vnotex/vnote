@@ -39,8 +39,6 @@ void MindMapEditorPage::setupUI() {
   };
   addViewHint(tr("Layout"),
               tr("Choose a Balanced, Right, Left or Outline layout for the mind map"));
-  viewLayout->addWidget(SettingsPageHelper::createSeparator(this));
-  addViewHint(QObject::tr("Readable Width"), tr("Center the content in a readable-width area"));
 
   auto *style = SettingsPageHelper::addSection(mainLayout, tr("Style"), QString(), this);
   {
