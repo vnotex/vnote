@@ -1,6 +1,7 @@
 {
     "metadata" : {
         "revision" : 2,
+        "compact-tree-spacing" : true,
         "editor-highlight-theme" : "Breeze Dark",
         "markdown-editor-highlight-theme" : "Breeze Dark",
         "display_name" : "Vue Dark",

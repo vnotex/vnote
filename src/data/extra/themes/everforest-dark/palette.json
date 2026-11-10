@@ -1,6 +1,7 @@
 {
     "metadata": {
         "revision": 2,
+        "compact-tree-spacing": true,
         "//comment": "Display name for different locales",
         "editor-highlight-theme": "Breeze Dark",
         "markdown-editor-highlight-theme": "Breeze Dark",

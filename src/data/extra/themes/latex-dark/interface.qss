@@ -759,8 +759,14 @@ QTreeView {
 }
 
 QTreeView::item {
-    padding: 4px 8px;
+    padding: 4px 4px;
     border-left: 2px solid transparent;
+}
+
+/* Inline rename must fit the row instead of the form-field minimum. */
+QTreeView QLineEdit {
+    min-height: 0px;
+    padding: 0px;
 }
 
 QTreeView::item:hover {

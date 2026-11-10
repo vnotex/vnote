@@ -58,9 +58,10 @@ offscreen runs cannot verify it. Restore the system scheme and palette between t
 
 The optional `palette.json` metadata flag `compact-tree-spacing` enables 12px
 indentation and 4px custom-delegate horizontal padding for every `QTreeView`,
-including `QTreeWidget` subclasses. Only `pure` opts in; its generic QSS item
-padding is `4px 4px`, preserving row heights, fonts and icons. Its tree inline
-editors drop the form-field minimum height/padding to fit their rows.
+including `QTreeWidget` subclasses. All bundled themes except `native` opt in;
+their generic QSS item padding is `4px 4px`, preserving row heights, fonts,
+icons and theme-specific borders. Their tree inline editors drop the form-field
+minimum height/padding to fit their rows.
 
 `Application::notify()` applies the active `ThemeService` policy through
 `TreeViewUtils` before initial `Polish` and before Qt handles `StyleChange` for
@@ -74,6 +75,8 @@ The application's service reference is guarded; an absent/destroyed service is
 a no-op. Preview theme services/local QSS do not drive this policy. Missing
 metadata keeps the legacy spacing, including user-defined themes; this changes
 bundled theme styling, not app/session configuration, so no migration is needed.
+Existing installed theme copies still follow the normal versioned resource refresh;
+this rollout does not overwrite user theme folders.
 
 ## Native MindMap image transport
 

@@ -1,6 +1,7 @@
 {
     "metadata" : {
         "revision" : 3,
+        "compact-tree-spacing" : true,
         "editor-highlight-theme" : "Catppuccin Latte",
         "markdown-editor-highlight-theme" : "Catppuccin Latte",
         "display_name" : "Vue Light",

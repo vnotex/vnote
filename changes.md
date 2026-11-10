@@ -1,7 +1,7 @@
 # Changes
 
 ## Unreleased
-* Make all tree views in the Pure theme more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when switching themes
+* Make tree views in every bundled theme except Native more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when returning to Native
 
 * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
 
