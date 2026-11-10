@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+* Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
+
 ## v4.14.2
 A refinement release with safer notebook tasks, Windows integration and smoother editing on top of VNote 4.14.1:
 
