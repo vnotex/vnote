@@ -108,6 +108,16 @@ class TurndownConverter {
             ['≤', '\\le '], ['≥', '\\ge '], ['≠', '\\ne '], ['∞', '\\infty '],
             ['→', '\\to '], ['{', '\\{'], ['}', '\\}']
         ]);
+        // MathML token roles do not restrict their contents to letters: KaTeX puts
+        // bars, slashes and infinity in mi. Preserve Unicode math symbols without
+        // growing a per-symbol TeX table, but never interpret TeX syntax as a glyph.
+        const symbol = value => operators.get(value) ??
+            (value !== '~' && /^(?:[+\-=<>(),.;:!/\[\]|]|\p{Sm})$/u.test(value) ? value : null);
+        const fonts = new Map([
+            ['italic', 'mathit'], ['bold', 'mathbf'], ['bold-italic', 'boldsymbol'],
+            ['script', 'mathcal'], ['fraktur', 'mathfrak'], ['double-struck', 'mathbb'],
+            ['sans-serif', 'mathsf'], ['monospace', 'mathtt']
+        ]);
         // Keep named operators as operators (not upright identifiers), including
         // limit placement. Terminate control words before adjoining identifiers.
         const functions = new Set([
@@ -137,18 +147,33 @@ class TurndownConverter {
             const name = node.localName;
             const children = Array.from(node.children);
             if (['mi', 'mn', 'mo', 'mtext'].includes(name)) {
-                if (children.length || !normalVariant(node)) {
+                if (children.length || (name !== 'mi' && !normalVariant(node))) {
                     return null;
                 }
                 const value = node.textContent.trim();
                 if (name === 'mi') {
-                    // Multi-letter identifiers default to upright in MathML.
                     if (!/^\p{L}+$/u.test(value)) {
-                        return null;
+                        const tex = symbol(value);
+                        // An identifier bar is ordinary, not the relation atom of raw ∣.
+                        return normalVariant(node) && tex !== null ? '\\mathord{' + tex.trim() + '}' : null;
                     }
                     if (application(node.nextElementSibling)) {
+                        if (!normalVariant(node)) {
+                            return null;
+                        }
                         return functions.has(value) ? '\\' + value + ' ' : '\\operatorname{' + value + '}';
                     }
+                    if (!normalVariant(node)) {
+                        const font = fonts.get(node.getAttribute('mathvariant'));
+                        // Bound styled alphabets to bundled glyphs; script/blackboard
+                        // lowercase can silently fall back to an unstyled letter.
+                        if (!font || !/^[A-Za-z]+$/.test(value) ||
+                            (['mathcal', 'mathbb'].includes(font) && !/^[A-Z]+$/.test(value))) {
+                            return null;
+                        }
+                        return '\\' + font + '{' + value + '}';
+                    }
+                    // Multi-letter identifiers default to upright in MathML.
                     return Array.from(value).length === 1 && !node.hasAttribute('mathvariant') ?
                         value : '\\mathrm{' + value + '}';
                 }
@@ -159,7 +184,7 @@ class TurndownConverter {
                     if (application(node)) {
                         return identifier(node.previousElementSibling) ? '' : null;
                     }
-                    return /^[+\-=<>(),.;:!/\[\]|]$/.test(value) ? value : operators.get(value) ?? null;
+                    return symbol(value);
                 }
                 const text = node.textContent.replace(/\r\n|[\r\n\t\u00a0]/g, ' ')
                     .replace(/[\\{}$%&#_^~]/g, ch => {

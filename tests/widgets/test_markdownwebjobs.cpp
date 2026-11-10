@@ -531,6 +531,8 @@ private slots:
   void htmlHeadings();
   void htmlMath();
   void htmlMathRoundTrip();
+  void htmlMathTokenRecovery();
+  void htmlMathUnsupportedTokens();
   void allOperations_data();
   void allOperations();
   void previewWorkspaceDoesNotAffectReader();
@@ -1354,6 +1356,119 @@ void TestMarkdownWebJobs::htmlMathRoundTrip() {
       QCOMPARE(result.value(QStringLiteral("text")).toString(), entry.text);
     }
   }
+}
+
+void TestMarkdownWebJobs::htmlMathTokenRecovery() {
+  QFile clipboardFile(QFINDTESTDATA("../data/katex-properties-clipboard.html"));
+  QVERIFY(clipboardFile.open(QIODevice::ReadOnly));
+  const QStringList sources = {
+      QString::fromUtf8(clipboardFile.readAll()),
+      QStringLiteral(
+          "<p>Symbols <math><mrow><mi>a</mi><mo>∈</mo><mi>b</mi><mo>⇒</mo><mi>c</mi>"
+          "</mrow></math> and <math><mrow><mi>∣</mi><mi>x</mi><mi>∣</mi><mo>∣</mo><mi>y</mi>"
+          "</mrow></math>, braces <math><mrow><mi>{</mi><mi>x</mi><mi>}</mi></mrow></math>.</p>"
+          "<p>Fonts <math><mrow><mi mathvariant=normal>N</mi><mi mathvariant=italic>I</mi>"
+          "<mi mathvariant=bold>B</mi><mi mathvariant=bold-italic>V</mi>"
+          "<mi mathvariant=script>F</mi><mi mathvariant=fraktur>G</mi>"
+          "<mi mathvariant=double-struck>R</mi><mi mathvariant=sans-serif>S</mi>"
+          "<mi mathvariant=monospace>T</mi></mrow></math>.</p>")};
+  Runtime runtime(true);
+  QObject owner;
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  const auto properties = QStringLiteral(R"JS(root => {
+    const formulas = Array.from(root.querySelectorAll('math'));
+    const contents = node => (node.querySelector('semantics > :first-child') || node).textContent;
+    const parts = selector => Array.from(root.querySelectorAll(selector),
+      node => Array.from(node.children, contents));
+    const prose = root.cloneNode(true);
+    prose.querySelectorAll('.tex-to-render, .katex, math').forEach(node => node.remove());
+    return {formulas:formulas.map(contents), scripts:parts('msubsup'), fractions:parts('mfrac'),
+      prose:prose.textContent.replace(/\s+/g, ''), listItems:prose.querySelectorAll('li').length};
+  })JS");
+  for (int i = 0; i < sources.size(); ++i) {
+    const auto &html = sources.at(i);
+    const auto encoded =
+        QString::fromUtf8(QJsonDocument(source(html)).toJson(QJsonDocument::Compact));
+    const auto expected = evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+      const root = document.implementation.createHTMLDocument('').body;
+      root.innerHTML = (%1).source;
+      return (%2)(root);
+    })())JS")
+                                                           .arg(encoded, properties));
+    const auto job =
+        submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"), source(html), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+    QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
+    rendered.clear();
+    const auto document = runtime.renderDocument(job->result.value.toString());
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    const auto actual = evaluateObject(
+        runtime.page, QStringLiteral("(%1)(vxcore.contentContainer)").arg(properties));
+    QCOMPARE(actual, expected);
+    const auto appearance = evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+      const root = vxcore.contentContainer;
+      const atoms = Array.from(root.querySelectorAll('.katex-html .base'))
+        .flatMap(base => Array.from(base.children));
+      const fonts = Object.fromEntries(['mathrm','mathit','mathbf','boldsymbol','mathcal',
+        'mathfrak','mathbb','mathsf','mathtt'].map(name => [name,
+        root.querySelector('.katex-html .' + name)?.textContent]));
+      return {inline:root.querySelectorAll('eq .katex').length,
+        display:root.querySelectorAll('.katex-display').length,
+        errors:root.querySelectorAll('.katex-error').length, fonts,
+        barRoles:atoms.filter(node => node.textContent === '∣')
+          .map(node => node.classList.contains('mord') ? 'ordinary' : 'relation')};
+    })())JS"));
+    QCOMPARE(appearance.value(QStringLiteral("inline")).toInt(), i == 0 ? 7 : 4);
+    QCOMPARE(appearance.value(QStringLiteral("display")).toInt(), i == 0 ? 1 : 0);
+    QCOMPARE(appearance.value(QStringLiteral("errors")).toInt(), 0);
+    const auto fonts = appearance.value(QStringLiteral("fonts")).toObject();
+    QCOMPARE(fonts.value(QStringLiteral("mathcal")).toString(), QStringLiteral("F"));
+    const auto roles = appearance.value(QStringLiteral("barRoles")).toArray();
+    if (i == 0) {
+      QCOMPARE(roles, QJsonArray({"ordinary", "ordinary", "ordinary", "ordinary"}));
+    } else {
+      QCOMPARE(roles, QJsonArray({"ordinary", "ordinary", "relation"}));
+      const QJsonObject expectedFonts{{"mathrm", "N"},     {"mathit", "I"},  {"mathbf", "B"},
+                                      {"boldsymbol", "V"}, {"mathcal", "F"}, {"mathfrak", "G"},
+                                      {"mathbb", "R"},     {"mathsf", "S"},  {"mathtt", "T"}};
+      QCOMPARE(fonts, expectedFonts);
+    }
+  }
+}
+
+void TestMarkdownWebJobs::htmlMathUnsupportedTokens() {
+  QString html, expectedText;
+  for (const auto &tag : {QStringLiteral("mi"), QStringLiteral("mo")}) {
+    for (const auto &token : {QStringLiteral("~"), QStringLiteral("$"), QStringLiteral("\\"),
+                              QStringLiteral("^"), QStringLiteral("_")}) {
+      html += QStringLiteral("<p>x<math><%1>%2</%1></math>y</p>").arg(tag, token);
+      expectedText += QStringLiteral("x%1y\n").arg(token);
+    }
+  }
+  for (const auto &identifier : {QStringLiteral("f"), QStringLiteral("π")}) {
+    html += QStringLiteral("<p>x<math><mi mathvariant=script>%1</mi></math>y</p>").arg(identifier);
+    expectedText += QStringLiteral("x%1y\n").arg(identifier);
+  }
+  Runtime runtime(true);
+  QObject owner;
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  const auto job =
+      submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"), source(html), &owner);
+  QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+  QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
+  const auto document = runtime.renderDocument(job->result.value.toString());
+  QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+  QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.textContent")).toString(),
+           expectedText);
+  QCOMPARE(
+      evaluate(
+          runtime.page,
+          QStringLiteral(
+              "vxcore.contentContainer.querySelectorAll('.tex-to-render, .katex-error').length"))
+          .toInt(),
+      0);
 }
 
 void TestMarkdownWebJobs::allOperations_data() {
