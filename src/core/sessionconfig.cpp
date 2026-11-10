@@ -470,6 +470,13 @@ void SessionConfig::doVersionSpecificOverride(const QString &p_previousVersion) 
       QVersionNumber::fromString(p_previousVersion) < c_quickNoteSchemesVersion) {
     setQuickNoteSchemes(defaultQuickNoteSchemes());
   }
+
+  // Offer the expanded Markdown experience choices to users of the earlier presets.
+  const auto previousVersion = QVersionNumber::fromString(p_previousVersion);
+  static const QVersionNumber c_markdownExperienceVersion(4, 14, 4);
+  if (!previousVersion.isNull() && previousVersion < c_markdownExperienceVersion) {
+    setHasConfirmedMarkdownEditorConcealment(false);
+  }
 }
 
 const ExportOption &SessionConfig::getExportOption() const { return m_exportOption; }

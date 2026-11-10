@@ -1354,7 +1354,7 @@ Markdown's top-right **Menu** exposes an Edit-only **Markers Concealment** subme
 The global portable preference is `editor.markdown_editor.concealmentMode` in `vnotex.json`,
 stored as `none`, `passive`, `moderate` or `aggressive`. The default remains Aggressive, as do
 missing or unknown values. Existing saved choices remain authoritative; adding `moderate` needs
-no migration or prompt-flag reset.
+no preset migration.
 The old `concealment` and `concealMarkdownMarkers` booleans are ignored and no longer written;
 there is deliberately no compatibility migration. Explicit choices in the new setting persist.
 **Settings > Markdown Editor** provides a searchable, read-only description of the presets.
@@ -1369,6 +1369,9 @@ None/Passive preselect Show. None remains menu-only.
 marks it `true` before showing the nonblocking application-modal dialog, so restored tabs cannot
 duplicate it. Hidden/background tabs and minimized hosts defer it. OK applies the choice through
 the same controller as the toolbar; Escape/window-close retains the mode but consumes the prompt.
+The [version-specific session migration](../core/AGENTS.md#configuration-migration-contract)
+resets confirmation for known versions below `4.14.4` so existing users see the expanded choices
+on their next version change. It preserves their selected preset and the normal once-only behavior.
 
 Menu actions call `MarkdownEditorController::setConcealmentMode()`. An effective change emits
 `ConfigEditorChanged` to refresh open editors; selecting the current mode is a no-op. Both the

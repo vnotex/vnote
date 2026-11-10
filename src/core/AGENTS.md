@@ -177,6 +177,18 @@ An unreadable session skips migration without delaying the main-config stamp: re
 only on a later version change still starting below the boundary, not after stamping `4.14.2`+.
 Coverage: the quick-note migration cases in `tests/core/test_configmgr2.cpp`.
 
+The Markdown experience migration resets
+`SessionConfig::m_hasConfirmedMarkdownEditorConcealment` for a parsed previous version below
+`4.14.4`, so existing users see the expanded three-choice prompt. Missing, empty or unparsable
+versions are excluded; unreadable sessions keep the existing migration/write protection.
+Only the session confirmation flag changes: the selected main-config concealment preset is
+preserved. The normal setter persists the reset; showing the prompt consumes it as before.
+No version bump is included: ordinary same-version `4.14.3` launches do not reset the flag;
+those profiles wait for their next version change. `VX_DEBUG_REFRESH` resets it on every launch
+while the application stamp remains `4.14.3`, below the `4.14.4` boundary. A downgrade followed
+by re-upgrade can also repeat the reset. Coverage: `testMarkdownExperienceMigration` in
+`tests/core/test_configmgr2.cpp` verifies version gates, all presets, persistence and restart.
+
 ### Update-check state
 
 `SessionConfig` owns `core.lastUpdateCheckTime` in local `session.json`, persisted as a decimal

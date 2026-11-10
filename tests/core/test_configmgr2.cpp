@@ -54,6 +54,8 @@ private slots:
   void testQuickNoteMigration_data();
   void testQuickNoteMigration();
   void testQuickNoteMigration_preservesUnreadableSession();
+  void testMarkdownExperienceMigration_data();
+  void testMarkdownExperienceMigration();
   void testEditorZoom_sessionPersistence_data();
   void testEditorZoom_sessionPersistence();
   void testDebouncing();
@@ -395,6 +397,121 @@ void TestConfigMgr2::testQuickNoteMigration_preservesUnreadableSession() {
   }
   QVERIFY(sessionFile.open(QIODevice::ReadOnly));
   QCOMPARE(sessionFile.readAll(), corrupt);
+}
+
+void TestConfigMgr2::testMarkdownExperienceMigration_data() {
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
+  QTest::addColumn<QString>("previousVersion");
+  QTest::addColumn<QString>("modeToken");
+  QTest::addColumn<int>("modeValue");
+  QTest::addColumn<QJsonValue>("confirmed");
+  QTest::addColumn<bool>("invokeHookDirectly");
+  QTest::addColumn<bool>("expectedConfirmed");
+  const QList<QPair<QString, Mode>> modes{{QStringLiteral("none"), Mode::None},
+                                          {QStringLiteral("passive"), Mode::Passive},
+                                          {QStringLiteral("moderate"), Mode::Moderate},
+                                          {QStringLiteral("aggressive"), Mode::Aggressive}};
+  for (const auto &mode : modes) {
+    const auto name = QStringLiteral("legacy-") + mode.first;
+    QTest::newRow(qPrintable(name))
+        << QStringLiteral("4.14.2") << mode.first << static_cast<int>(mode.second)
+        << QJsonValue(true) << false << false;
+  }
+  const auto addModerateCase = [](const char *p_name, const QString &p_version,
+                                  QJsonValue p_confirmed, bool p_direct, bool p_expected) {
+    QTest::newRow(p_name) << p_version << QStringLiteral("moderate")
+                          << static_cast<int>(Mode::Moderate) << p_confirmed << p_direct
+                          << p_expected;
+  };
+  addModerateCase("already-unconfirmed", QStringLiteral("4.14.2"), false, false, false);
+  addModerateCase("missing-confirmation", QStringLiteral("4.14.2"),
+                  QJsonValue(QJsonValue::Undefined), false, false);
+  // Exercise the next upgrade's gate while the application still carries the prior version.
+  addModerateCase("previous-release-hook", QStringLiteral("4.14.3"), true, true, false);
+  addModerateCase("migration-boundary", QStringLiteral("4.14.4"), true, false, true);
+  addModerateCase("newer-version", QStringLiteral("4.15.0"), true, false, true);
+  addModerateCase("same-version", ConfigMgr2::getApplicationVersion(), true, false, true);
+  // Fresh or unversioned profiles must retain explicitly suppressed prompts.
+  addModerateCase("missing-version", QString(), true, false, true);
+  addModerateCase("empty-version", QStringLiteral(""), true, false, true);
+  addModerateCase("invalid-version", QStringLiteral("unknown"), true, false, true);
+}
+
+void TestConfigMgr2::testMarkdownExperienceMigration() {
+  QFETCH(QString, previousVersion);
+  QFETCH(QString, modeToken);
+  QFETCH(int, modeValue);
+  QFETCH(QJsonValue, confirmed);
+  QFETCH(bool, invokeHookDirectly);
+  QFETCH(bool, expectedConfirmed);
+  const auto mode = static_cast<MarkdownEditorConfig::ConcealmentMode>(modeValue);
+  const auto originalMain = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto originalSession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", originalMain);
+    m_configService->updateConfigByName(DataLocation::Local, "session", originalSession);
+  });
+  QJsonObject main{{QStringLiteral("editor"),
+                    QJsonObject{{QStringLiteral("markdown_editor"),
+                                 QJsonObject{{QStringLiteral("concealmentMode"), modeToken}}}}}};
+  if (!previousVersion.isNull()) {
+    main.insert(QStringLiteral("metadata"),
+                QJsonObject{{QStringLiteral("version"), previousVersion}});
+  }
+  const auto key = QStringLiteral("hasConfirmedMarkdownEditorConcealment");
+  const QJsonObject session{{QStringLiteral("editor"), QJsonObject{{key, confirmed}}}};
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::App, "vnotex", main));
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::Local, "session", session));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto fixture = buildExtraDataFixture(tmp);
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QCOMPARE(mgr.getSessionConfig().getHasConfirmedMarkdownEditorConcealment(),
+             confirmed.toBool(false));
+    QCOMPARE(mgr.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(), mode);
+    if (invokeHookDirectly) {
+      mgr.getSessionConfig().doVersionSpecificOverride(previousVersion);
+    }
+    mgr.initAfterQtAppStarted();
+    QCOMPARE(mgr.getSessionConfig().getHasConfirmedMarkdownEditorConcealment(), expectedConfirmed);
+    QCOMPARE(mgr.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(), mode);
+  }
+  const auto persistedFlag = m_configService->getConfigByName(DataLocation::Local, "session")
+                                 .value(QStringLiteral("editor"))
+                                 .toObject()
+                                 .value(key);
+  QCOMPARE(persistedFlag.toBool(false), expectedConfirmed);
+  if (!confirmed.isUndefined()) {
+    QCOMPARE(persistedFlag, QJsonValue(expectedConfirmed));
+  }
+  const QStringList modePath{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                             QStringLiteral("concealmentMode")};
+  QCOMPARE(valueAt(m_configService->getConfigByName(DataLocation::App, "vnotex"), modePath),
+           QJsonValue(modeToken));
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.setExtraDataSourceRootOverrideForTesting(fixture);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    QCOMPARE(restarted.getSessionConfig().getHasConfirmedMarkdownEditorConcealment(),
+             expectedConfirmed);
+    restarted.initAfterQtAppStarted();
+    QCOMPARE(restarted.getSessionConfig().getHasConfirmedMarkdownEditorConcealment(),
+             expectedConfirmed);
+    QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(), mode);
+    // Showing the prompt consumes it. Ordinary restarts must not reset it again.
+    restarted.getSessionConfig().setHasConfirmedMarkdownEditorConcealment(true);
+  }
+  ConfigMgr2 confirmedAgain(m_configService);
+  confirmedAgain.setExtraDataSourceRootOverrideForTesting(fixture);
+  confirmedAgain.init();
+  QVERIFY(confirmedAgain.getSessionConfig().getHasConfirmedMarkdownEditorConcealment());
+  confirmedAgain.initAfterQtAppStarted();
+  QVERIFY(confirmedAgain.getSessionConfig().getHasConfirmedMarkdownEditorConcealment());
+  QCOMPARE(confirmedAgain.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(), mode);
 }
 
 void TestConfigMgr2::testEditorZoom_sessionPersistence_data() {
