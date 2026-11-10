@@ -60,10 +60,10 @@ void MarkdownEditorPage::setupUI() {
                  "(choose which sources to preview in the Edit section below)"));
   menuLayout->addWidget(SettingsPageHelper::createSeparator(this));
   addMenuHint(
-      QObject::tr("Concealment"),
-      tr("None shows all source; Passive shortens long link, image and reference URLs while "
-         "showing syntax; Aggressive hides supported markers and link syntax and shortens long "
-         "image and reference URLs (link syntax reveals on entry)"));
+      QObject::tr("Markers Concealment"),
+      tr("None: show all Markdown source. Passive: show syntax and shorten long link, image and "
+         "reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten "
+         "long image and reference URLs; link syntax reappears when the cursor enters it"));
 
   setupGeneralGroup();
   setupReadGroup();

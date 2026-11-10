@@ -984,8 +984,8 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <location line="+5"/>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Concealment</source>
-        <translation>숨김</translation>
+        <source>Markers Concealment</source>
+        <translation>마커 숨김</translation>
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
@@ -5343,8 +5343,8 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
-        <translation>없음: 모든 소스 표시; 소극적: 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시; 적극적: 지원되는 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시(커서가 들어가면 링크 구문 표시)</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>없음: 모든 Markdown 소스 표시. 소극적: 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시. 적극적: 지원되는 Markdown 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시하며, 커서가 링크 안으로 들어가면 구문을 다시 표시</translation>
     </message>
     <message>
         <location line="+177"/>

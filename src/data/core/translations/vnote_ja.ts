@@ -512,8 +512,8 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <location line="+5"/>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Concealment</source>
-        <translation>非表示化</translation>
+        <source>Markers Concealment</source>
+        <translation>マーカーの非表示化</translation>
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
@@ -5343,8 +5343,8 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
-        <translation>なし：ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。積極的：対応するマーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示（リンク構文はカーソルが入ると表示）</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>なし：Markdown ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。積極的：対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンクにカーソルが入ると構文を再表示</translation>
     </message>
     <message>
         <location line="+177"/>

@@ -512,8 +512,8 @@ Trust is remembered until you close this notebook.</source>
     <message>
         <location line="+5"/>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+6"/>
-        <source>Concealment</source>
-        <translation>隐藏</translation>
+        <source>Markers Concealment</source>
+        <translation>标记隐藏</translation>
     </message>
     <message>
         <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+7"/>
@@ -5343,8 +5343,8 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None shows all source; Passive shortens long link, image and reference URLs while showing syntax; Aggressive hides supported markers and link syntax and shortens long image and reference URLs (link syntax reveals on entry)</source>
-        <translation>无：显示全部源码；温和：缩短较长的链接、图片和引用网址，同时显示语法；强烈：隐藏支持的标记和链接语法，并缩短较长的图片和引用网址（光标移入时显示链接语法）</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>无：显示全部 Markdown 源码。温和：显示语法，并缩短较长的链接、图片和引用网址。强烈：隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入链接时重新显示其语法</translation>
     </message>
     <message>
         <location line="+183"/>

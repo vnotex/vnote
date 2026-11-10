@@ -432,7 +432,7 @@ QAction *ViewWindowToolBarHelper2::addAction(QMenu *p_menu, Action p_action,
     break;
 
   case Action::Concealment:
-    act = p_menu->addAction(QObject::tr("Concealment"));
+    act = p_menu->addAction(QObject::tr("Markers Concealment"));
     act->setObjectName(QStringLiteral("concealmentAction"));
     act->setMenu(new QMenu(p_menu));
     break;

@@ -979,7 +979,7 @@ PDF's existing rotate/cursor/scroll/spread/properties entries. Only viewer-owned
 readiness-gated: Menu and Readable Width remain available during loading/reloading.
 
 `addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview, In-Place Preview,
-the Concealment submenu, Allow Auto Section Number and Debug after a separator.
+the Markers Concealment submenu, Allow Auto Section Number and Debug after a separator.
 Edit-only/Read-only visibility and encrypted-note restrictions still apply.
 Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
@@ -1336,7 +1336,7 @@ popup outlines, without mutating producer names.
 
 ### Markdown concealment
 
-Markdown's top-right **Menu** exposes an Edit-only **Concealment** submenu immediately below
+Markdown's top-right **Menu** exposes an Edit-only **Markers Concealment** submenu immediately below
 **In-Place Preview**, with three exclusive radio actions:
 
 - **None** shows all Markdown source without concealment.
