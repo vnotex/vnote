@@ -57,11 +57,20 @@ offscreen runs cannot verify it. Restore the system scheme and palette between t
 ### Tree spacing
 
 The optional `palette.json` metadata flag `compact-tree-spacing` enables 12px
-indentation and 4px custom-delegate horizontal padding for every `QTreeView`,
+indentation and 4px item padding/internal spacing for every `QTreeView`,
 including `QTreeWidget` subclasses. All bundled themes except `native` opt in;
 their generic QSS item padding is `4px 4px`, preserving row heights, fonts,
 icons and theme-specific borders. Their tree inline editors drop the form-field
 minimum height/padding to fit their rows.
+
+Custom tree delegates use `TreeViewUtils::horizontalSpacing()` to distinguish
+outer content insets from icon/count gaps. For opted-in trees, an undecorated
+style probe measures the left and right insets independently, including theme
+borders and Qt's native focus-frame text margin. `ItemViewUtils::textRect()`
+shares that glyph-origin calculation with highlighted standard items. Initialize
+the view option first so model fonts participate; do not treat the QSS padding
+number alone as the text origin or count custom icons twice. Row heights are
+unchanged, and non-opted-in views keep the caller's legacy spacing.
 
 `Application::notify()` applies the active `ThemeService` policy through
 `TreeViewUtils` before initial `Polish` and before Qt handles `StyleChange` for

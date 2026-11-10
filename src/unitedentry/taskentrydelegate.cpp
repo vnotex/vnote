@@ -71,18 +71,21 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
     return;
   }
 
+  // Use the same model-provided font for style geometry, painting and sizeHint().
+  QStyleOptionViewItem opt(p_option);
+  initStyleOption(&opt, p_index);
   p_painter->save();
 
-  const QWidget *widget = p_option.widget;
+  const QWidget *widget = opt.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
-  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
+  const auto spacing = TreeViewUtils::horizontalSpacing(opt, 6);
 
   // Selection / hover background on the full row (respects QSS).
   style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
 
-  QRect contentRect = p_option.rect;
-  contentRect.setLeft(contentRect.left() + hPadding);
-  contentRect.setRight(contentRect.right() - hPadding);
+  QRect contentRect = opt.rect;
+  contentRect.setLeft(contentRect.left() + spacing.m_left);
+  contentRect.setRight(contentRect.right() - spacing.m_right);
 
   // Icon on the left, vertically centred across both lines.
   const QIcon icon = p_index.data(Qt::DecorationRole).value<QIcon>();
@@ -97,18 +100,13 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
       iconMode = QIcon::Selected;
     }
     icon.paint(p_painter, iconRect, Qt::AlignCenter, iconMode);
-    contentRect.setLeft(iconRect.right() + hPadding);
+    contentRect.setLeft(iconRect.right() + spacing.m_gap);
   }
 
   const QColor textColor = resolveTextColor(p_option);
   QColor dimColor = textColor;
   // The selected row's background reduces contrast, so dim less there.
   dimColor.setAlpha((p_option.state & QStyle::State_Selected) ? 200 : 150);
-
-  // The initialized option is the only place Qt::FontRole is visible, and it is
-  // what sizeHint() measured; use it for every font/metric decision below.
-  QStyleOptionViewItem opt(p_option);
-  initStyleOption(&opt, p_index);
 
   const QFont nameFont = opt.font;
   const QFont smallFont = pathFont(nameFont);

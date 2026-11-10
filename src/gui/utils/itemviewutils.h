@@ -26,6 +26,15 @@ class ItemViewUtils {
 public:
   ItemViewUtils() = delete;
 
+  // SE_ItemViewItemText is the allocation, not the glyph origin. Qt's standard
+  // item painter adds the native focus-frame margin inside that allocation.
+  static QRect textRect(const QStyleOptionViewItem &p_option, const QStyle *p_style) {
+    const int margin =
+        p_style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, p_option.widget) + 1;
+    return p_style->subElementRect(QStyle::SE_ItemViewItemText, &p_option, p_option.widget)
+        .adjusted(margin, 0, -margin, 0);
+  }
+
   // Vertical chrome (stylesheet padding/border plus whatever the native style
   // adds) around ONE line of item content, for the style and stylesheet in
   // effect on p_option.widget.

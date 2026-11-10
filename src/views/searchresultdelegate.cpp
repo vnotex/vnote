@@ -67,11 +67,11 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   QFont boldFont = p_option.font;
   boldFont.setBold(true);
 
-  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
+  const auto spacing = TreeViewUtils::horizontalSpacing(p_option, 6);
   QFontMetrics fm(boldFont);
   QRect textRect = p_option.rect;
-  textRect.setLeft(textRect.left() + hPadding);
-  textRect.setRight(textRect.right() - hPadding);
+  textRect.setLeft(textRect.left() + spacing.m_left);
+  textRect.setRight(textRect.right() - spacing.m_right);
 
   // Draw match count badge on the right
   int matchCount = p_index.data(SearchResultModel::MatchCountRole).toInt();
@@ -83,7 +83,7 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   QFontMetrics normalFm(p_option.font);
   int badgeWidth = 0;
   if (!badge.isEmpty()) {
-    badgeWidth = normalFm.horizontalAdvance(badge) + hPadding;
+    badgeWidth = normalFm.horizontalAdvance(badge) + spacing.m_gap;
   }
 
   // Draw file name (bold)
@@ -144,11 +144,11 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   // Keep the normal foreground over the themed selection background.
   const QColor textColor = p_option.palette.text().color();
 
-  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
+  const auto spacing = TreeViewUtils::horizontalSpacing(p_option, 6);
   QFontMetrics fm(p_option.font);
   QRect contentRect = p_option.rect;
-  contentRect.setLeft(contentRect.left() + hPadding);
-  contentRect.setRight(contentRect.right() - hPadding);
+  contentRect.setLeft(contentRect.left() + spacing.m_left);
+  contentRect.setRight(contentRect.right() - spacing.m_right);
 
   // Draw line number prefix in gray
   QString linePrefix = QStringLiteral("%1: ").arg(lineNumber);

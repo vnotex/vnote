@@ -46,7 +46,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   // Get the widget style
   const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
-  const int hPadding = TreeViewUtils::horizontalPadding(widget, 8);
+  const auto spacing = TreeViewUtils::horizontalSpacing(p_option, 8);
 
   // Draw custom node background if specified (before selection)
   QColor bgColor = getNodeBackgroundColor(p_nodeInfo, p_option);
@@ -60,7 +60,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
 
   // Calculate icon rect
   QRect iconRect = p_option.rect;
-  iconRect.setLeft(iconRect.left() + hPadding);
+  iconRect.setLeft(iconRect.left() + spacing.m_left);
   iconRect.setWidth(m_iconSize);
   iconRect.setTop(iconRect.top() + (p_option.rect.height() - m_iconSize) / 2);
   iconRect.setHeight(m_iconSize);
@@ -71,9 +71,9 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
     // Folders have no icon — reclaim icon space for text
     textRect.setLeft(iconRect.left());
   } else {
-    textRect.setLeft(iconRect.right() + hPadding);
+    textRect.setLeft(iconRect.right() + spacing.m_gap);
   }
-  textRect.setRight(p_option.rect.right() - hPadding);
+  textRect.setRight(p_option.rect.right() - spacing.m_right);
 
   // Draw icon (files only — folders have no icon)
   if (!p_nodeInfo.isFolder) {
@@ -146,7 +146,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
       int countWidth = fm.horizontalAdvance(countText);
 
       QRect countRect = textRect;
-      countRect.setLeft(countRect.right() - countWidth - hPadding);
+      countRect.setLeft(countRect.right() - countWidth - spacing.m_gap);
 
       // Use same text color with reduced alpha for badge
       QColor countColor = textColor;
@@ -184,12 +184,11 @@ QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
     return QStyledItemDelegate::sizeHint(p_option, p_index);
   }
 
-  // Mirror the geometry of paintNode(): leading padding, icon (files only),
-  // text, optional child count badge and trailing padding.
-  const int hPadding = TreeViewUtils::horizontalPadding(opt.widget, 8);
-  int width = hPadding;
+  // Mirror paintNode(): style insets, icon (files only), text and optional badge.
+  const auto spacing = TreeViewUtils::horizontalSpacing(opt, 8);
+  int width = spacing.m_left;
   if (!nodeInfo.isFolder) {
-    width += m_iconSize + hPadding;
+    width += m_iconSize + spacing.m_gap;
   }
 
   width += fm.horizontalAdvance(nodeInfo.name);
@@ -197,10 +196,10 @@ QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
   if (m_showChildCount && nodeInfo.isFolder && nodeInfo.childCount > 0) {
     // The badge is painted inside the text rect, overlaying its tail, so its
     // width has to be reserved here.
-    width += fm.horizontalAdvance(QString("(%1)").arg(nodeInfo.childCount)) + hPadding;
+    width += fm.horizontalAdvance(QString("(%1)").arg(nodeInfo.childCount)) + spacing.m_gap;
   }
 
-  width += hPadding;
+  width += spacing.m_right;
 
   // No tree indentation here: QTreeView::sizeHintForColumn() adds it.
   return QSize(width, height);

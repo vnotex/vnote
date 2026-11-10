@@ -92,9 +92,16 @@ All tree views follow the active theme's [shared spacing policy](../gui/AGENTS.m
 including raw `QTreeView` and `QTreeWidget` instances. Keep constructor defaults
 through `TreeViewUtils::applyIndentation()` where applicable; do not add per-view
 QSS properties or style-change handlers. Custom notebook, search and task-entry
-delegates use `TreeViewUtils::horizontalPadding(widget, legacyPadding)` for their
-horizontal layout. Preserve each delegate's legacy fallback and use the same
-padding in painting and width measurement. Lists are not part of this policy.
+delegates use `TreeViewUtils::horizontalSpacing(initializedOption, legacyPadding)`.
+Its left/right insets include the style's border, padding and native text margin;
+its icon/count gap is separate. Use the same values for painting and width hints,
+including when `sizeHint()` receives an empty rectangle. Native and non-opted-in
+themes retain each delegate's legacy spacing. Lists are not part of this policy.
+
+`tests/gui/test_notebooknodedelegate_sizehint.cpp` compares rendered folder text
+with the standard delegate under plain and left-bordered styles, and checks
+file-icon/count gaps and empty-rectangle width measurement. Keep inline editors
+on Qt's `SE_ItemViewItemText` allocation, not the inset glyph rectangle.
 
 ## Search result selection colors
 

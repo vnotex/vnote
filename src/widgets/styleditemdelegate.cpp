@@ -107,9 +107,7 @@ void StyledItemDelegate::paintWithHighlights(QPainter *p_painter,
   // (rather than translating to opt.rect plus a hardcoded document margin) is
   // what keeps a highlighted row aligned with its unhighlighted siblings, both
   // horizontally and under any theme's ::item padding.
-  const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, opt.widget) + 1;
-  const QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget)
-                             .adjusted(textMargin, 0, -textMargin, 0);
+  const QRect textRect = ItemViewUtils::textRect(opt, style);
 
   // Draw the item without text.
   opt.text = "";
