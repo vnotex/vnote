@@ -227,7 +227,8 @@ class TurndownConverter {
                 return null;
             }
         };
-        return convert(p_math);
+        // Keep internal TeX command separators, but not whitespace next to $ delimiters.
+        return convert(p_math)?.trim() ?? null;
     }
 
     fixMath() {

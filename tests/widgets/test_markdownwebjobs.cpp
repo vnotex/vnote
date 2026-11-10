@@ -530,6 +530,7 @@ private slots:
   void htmlCodeBlocks();
   void htmlHeadings();
   void htmlMath();
+  void htmlMathRoundTrip();
   void allOperations_data();
   void allOperations();
   void previewWorkspaceDoesNotAffectReader();
@@ -1094,17 +1095,6 @@ void TestMarkdownWebJobs::htmlMath() {
       "$$\na^{m}\\cdot a^{n}=\\underbrace{a\\cdots a}_{m\\text{ 个}}"
       "\\cdot \\underbrace{a\\cdots a}_{n\\text{ 个}}\n$$\n\n"
       "两者都是 $m+n$ 个 $a$ 相乘，所以相等。这是指数运算最基本的性质，也叫**指数律**。");
-  QFile sincClipboardFile(QFINDTESTDATA("../data/katex-sinc-clipboard.html"));
-  QVERIFY(sincClipboardFile.open(QIODevice::ReadOnly));
-  const auto sincClipboardHtml = QString::fromUtf8(sincClipboardFile.readAll());
-  const QString sincClipboardMarkdown =
-      QStringLiteral("## 1. 定义\n\n"
-                     "### 非归一化定义（数学/物理常见）\n\n"
-                     "$$\n\\operatorname{sinc}(x)=\\frac{\\sin x}{x},\\hspace{2em}x\\ne 0\n$$\n\n"
-                     "并规定\n\n"
-                     "$$\n\\operatorname{sinc}(0)=1\n$$\n\n"
-                     "因为 $\\lim _{x\\to 0}\\frac{\\sin x}{x}=1$。\n\n"
-                     "零点在 $x=kπ,\\text{ }k=\\pm 1,\\pm 2,\\ldots $。");
   const auto presentation = [](const QString &body) {
     return QStringLiteral("<math><semantics>%1</semantics></math>").arg(body);
   };
@@ -1132,7 +1122,6 @@ void TestMarkdownWebJobs::htmlMath() {
   };
   const Case cases[] = {
       {"browser-clipboard-without-annotations", clipboardHtml, clipboardMarkdown},
-      {"sinc-browser-clipboard-without-annotations", sincClipboardHtml, sincClipboardMarkdown},
       {"normal-single-letter-identifier",
        presentation(QStringLiteral("<mrow><mi mathvariant=\"normal\">x</mi><mi>x</mi></mrow>")),
        QStringLiteral(R"($\mathrm{x}x$)")},
@@ -1304,6 +1293,66 @@ void TestMarkdownWebJobs::htmlMath() {
              qPrintable(QStringLiteral("%1\nExpected: %2\nActual: %3")
                             .arg(QString::fromUtf8(entry.name), entry.markdown,
                                  job->result.value.toString())));
+  }
+}
+
+void TestMarkdownWebJobs::htmlMathRoundTrip() {
+  QFile clipboardFile(QFINDTESTDATA("../data/katex-sinc-clipboard.html"));
+  QVERIFY(clipboardFile.open(QIODevice::ReadOnly));
+  struct Case {
+    QString html;
+    int inlineCount;
+    int displayCount;
+    QString lastFormula;
+    QString text;
+  };
+  const Case cases[] = {
+      // Includes the reported zeros formula ending in an unannotated ellipsis.
+      {QString::fromUtf8(clipboardFile.readAll()), 2, 2, QStringLiteral("x=kπ, k=±1,±2,…"),
+       QString()},
+      // Command separators and spaces inside text must survive boundary trimming.
+      {QStringLiteral("Before <math><mrow><mi>sin</mi><mo>⁡</mo><mi>x</mi><mo>→</mo>"
+                      "<mi>x</mi><mtext> padded </mtext></mrow></math> after."),
+       1, 0, QStringLiteral("sin⁡x→x padded "), QStringLiteral(" padded ")}};
+  Runtime runtime(true);
+  QObject owner;
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  for (const auto &entry : cases) {
+    const auto job = submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
+                            source(entry.html), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+    QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
+    rendered.clear();
+    const auto document = runtime.renderDocument(job->result.value.toString());
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    const auto result = evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+      const root = vxcore.contentContainer;
+      const formulas = Array.from(root.querySelectorAll('.katex-mathml math'));
+      const last = formulas.at(-1)?.querySelector('semantics > :first-child');
+      const prose = root.cloneNode(true);
+      prose.querySelectorAll('.tex-to-render').forEach(node => node.remove());
+      return {
+        inlineCount: root.querySelectorAll('eq .katex').length,
+        displayCount: root.querySelectorAll('.katex-display').length,
+        errors: root.querySelectorAll('.katex-error').length,
+        lastFormula: last?.textContent.replace(/\u00a0/g, ' '),
+        text: last?.querySelector('mtext')?.textContent.replace(/\u00a0/g, ' '),
+        prose: prose.textContent
+      };
+    })())JS"));
+    QCOMPARE(result.value(QStringLiteral("inlineCount")).toInt(), entry.inlineCount);
+    QCOMPARE(result.value(QStringLiteral("displayCount")).toInt(), entry.displayCount);
+    QCOMPARE(result.value(QStringLiteral("errors")).toInt(), 0);
+    QCOMPARE(result.value(QStringLiteral("lastFormula")).toString(), entry.lastFormula);
+    const auto prose = result.value(QStringLiteral("prose")).toString();
+    QVERIFY2(!prose.contains(QLatin1Char('$')), qPrintable(prose));
+    if (entry.text.isEmpty()) {
+      QVERIFY(prose.contains(QStringLiteral("零点在 。")));
+    } else {
+      QCOMPARE(prose, QStringLiteral("Before  after.\n"));
+      QCOMPARE(result.value(QStringLiteral("text")).toString(), entry.text);
+    }
   }
 }
 
