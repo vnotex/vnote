@@ -758,7 +758,7 @@ vnotex--NotebookNodeView {
 }
 
 vnotex--NotebookNodeView::item {
-    padding: 2px 4px;
+    padding: 4px 4px;
 }
 
 /* Inline rename must fit the compact row instead of the form-field minimum. */

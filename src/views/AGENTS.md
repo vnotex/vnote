@@ -90,7 +90,7 @@ is needed).
 
 `NotebookNodeView::compactSpacing` is a transient QSS opt-in, not saved config.
 Only `pure` currently enables it: 12px hierarchy indentation and 4px delegate
-horizontal padding, with `::item { padding: 2px 4px; }` for row height and editor
+horizontal padding, with `::item { padding: 4px 4px; }` for row height and editor
 geometry. Keep these scoped rules after the generic `QTreeView::item` rule: Qt
 gives base and subclass selectors equal specificity. File icons remain 16px.
 The notebook inline rename editor also drops the general form-field minimum
