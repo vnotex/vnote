@@ -12,20 +12,22 @@
 
 using namespace vnotex;
 
-TreeWidget::TreeWidget(QWidget *p_parent) : QTreeWidget(p_parent) {}
+TreeWidget::TreeWidget(QWidget *p_parent) : QTreeWidget(p_parent) { setAnimated(true); }
 
 TreeWidget::TreeWidget(TreeWidget::Flags p_flags, QWidget *p_parent)
     : QTreeWidget(p_parent), m_flags(p_flags) {
+  setAnimated(true);
   if (m_flags & Flag::EnhancedStyle) {
     auto interface = QSharedPointer<StyledItemDelegateTreeWidget>::create(this);
-    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights,
-                                           QBrush(), QBrush(), this);
+    auto delegate =
+        new StyledItemDelegate(interface, StyledItemDelegate::Highlights, QBrush(), QBrush(), this);
     setItemDelegate(delegate);
   }
 }
 
 TreeWidget::TreeWidget(ServiceLocator &p_services, TreeWidget::Flags p_flags, QWidget *p_parent)
     : QTreeWidget(p_parent), m_flags(p_flags) {
+  setAnimated(true);
   if (m_flags & Flag::EnhancedStyle) {
     auto *themeService = p_services.get<ThemeService>();
     if (themeService) {
@@ -35,8 +37,8 @@ TreeWidget::TreeWidget(ServiceLocator &p_services, TreeWidget::Flags p_flags, QW
           themeService->paletteColor(QStringLiteral("widgets#styleditemdelegate#highlight#bg")));
     }
     auto interface = QSharedPointer<StyledItemDelegateTreeWidget>::create(this);
-    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights,
-                                           m_highlightFg, m_highlightBg, this);
+    auto delegate = new StyledItemDelegate(interface, StyledItemDelegate::Highlights, m_highlightFg,
+                                           m_highlightBg, this);
     setItemDelegate(delegate);
   }
 }

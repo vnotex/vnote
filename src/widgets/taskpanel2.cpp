@@ -45,6 +45,7 @@ void TaskPanel2::setupUI() {
   m_treeView = new QTreeView(this);
   m_treeView->setModel(m_proxyModel);
   m_treeView->setHeaderHidden(true);
+  m_treeView->setAnimated(true);
   TreeViewUtils::applyIndentation(m_treeView);
   m_treeView->setContextMenuPolicy(Qt::CustomContextMenu);
   m_treeView->setSelectionMode(QAbstractItemView::SingleSelection);

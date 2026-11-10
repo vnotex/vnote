@@ -19,6 +19,7 @@ void SearchResultView::setupView() {
   setSelectionBehavior(QAbstractItemView::SelectRows);
   setRootIsDecorated(true);
   setUniformRowHeights(true);
+  setAnimated(true);
   setEditTriggers(QAbstractItemView::NoEditTriggers);
   TreeViewUtils::applyIndentation(this);
 }

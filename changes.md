@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Animate expanding and collapsing Tasks, search results, Settings and United Entry trees consistently with Notebooks, Tags and Outline
 * Align notebook, search and task tree content with standard tree text by including theme borders and native text margins; preserve row heights, icon/count gaps and Native spacing
 * Make tree views in every bundled theme except Native more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when returning to Native
 
