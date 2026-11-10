@@ -2,29 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ja_JP">
 <context>
-    <name>ApiAuth</name>
-    <message>
-        <source>Token administration must run on the owner thread</source>
-        <translation>トークン管理は所有スレッドで実行する必要があります</translation>
-    </message>
-    <message>
-        <source>The token registry is invalid</source>
-        <translation>トークンレジストリが無効です</translation>
-    </message>
-    <message>
-        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
-        <translation>ノートブック、有効な権限、ラベル、有効な期限の選択肢を指定してください</translation>
-    </message>
-    <message>
-        <source>The token limit of 64 has been reached</source>
-        <translation>トークンの上限（64 個）に達しました</translation>
-    </message>
-    <message>
-        <source>The token no longer exists</source>
-        <translation>トークンはもう存在しません</translation>
-    </message>
-</context>
-<context>
     <name>CommandLineOptions</name>
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
@@ -487,13 +464,12 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+7"/>
-        <location line="+1"/>
         <source>Mind Map</source>
         <translation>マインドマップ</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+48"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+85"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+86"/>
         <source>Readable Width</source>
         <translation>読みやすい幅</translation>
     </message>
@@ -1297,7 +1273,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::Application</name>
     <message>
-        <location filename="../../../application.h" line="+51"/>
+        <location filename="../../../application.h" line="+54"/>
         <source>Select some text to create a note in VNote.</source>
         <translation>VNote でノートにするテキストを選択してください。</translation>
     </message>
@@ -7774,24 +7750,24 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     <message>
         <location line="+114"/>
         <location line="+17"/>
-        <location line="+126"/>
+        <location line="+128"/>
         <location line="+16"/>
         <location line="+142"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>まず、データを保持するノートブックを作成してください。</translation>
     </message>
     <message>
-        <location line="-261"/>
+        <location line="-263"/>
         <source>Please set up quick note schemes in the Settings dialog first.</source>
         <translation>先に設定ダイアログでクイックノートのスキームを設定してください。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>New Quick Note</source>
         <translation>新しいクイックノート</translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+262"/>
         <source>The current notebook is read-only, so the note was not created.</source>
         <translation>現在のノートブックは読み取り専用のため、ノートは作成されませんでした。</translation>
     </message>
@@ -7907,13 +7883,13 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
 %4</translation>
     </message>
     <message>
-        <location line="-2245"/>
-        <location line="+2275"/>
+        <location line="-2247"/>
+        <location line="+2277"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="-2399"/>
+        <location line="-2401"/>
         <source>Encrypt Note</source>
         <translation>ノートを暗号化</translation>
     </message>
@@ -8089,7 +8065,7 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
         <translation>読み取り専用ノートブック</translation>
     </message>
     <message>
-        <location line="+1703"/>
+        <location line="+1705"/>
         <source>%1 copied, %2 moved, %3 left at the source, %4 failed.</source>
         <translation>%1 件をコピー、%2 件を移動、%3 件は転送元に残り、%4 件が失敗しました。</translation>
     </message>
@@ -8178,7 +8154,7 @@ Last sync init failed: error code %1</source>
         <translation>準備中…</translation>
     </message>
     <message>
-        <location line="-2117"/>
+        <location line="-2119"/>
         <source>The selected legacy note needs its original vx_notebook/encryption.vne. Restore that file from a backup. Creating a new encryption context cannot recover existing encrypted notes.</source>
         <translation>選択した従来形式のノートには、元の vx_notebook/encryption.vne が必要です。このファイルをバックアップから復元してください。新しい暗号化コンテキストを作成しても、既存の暗号化されたノートを復元することはできません。</translation>
     </message>
@@ -8257,7 +8233,7 @@ Notebook: %1
         <translation>パスワードの確認</translation>
     </message>
     <message>
-        <location line="+1952"/>
+        <location line="+1954"/>
         <location line="+72"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
@@ -11443,7 +11419,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskPanel2</name>
     <message>
-        <location filename="../../../widgets/taskpanel2.cpp" line="+61"/>
+        <location filename="../../../widgets/taskpanel2.cpp" line="+62"/>
         <source>Task</source>
         <translation>タスク</translation>
     </message>
@@ -13550,6 +13526,29 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>ページに合わせる</translation>
+    </message>
+</context>
+<context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>トークン管理は所有スレッドで実行する必要があります</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>トークンレジストリが無効です</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>ノートブック、有効な権限、ラベル、有効な期限の選択肢を指定してください</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>トークンの上限（64 個）に達しました</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>トークンはもう存在しません</translation>
     </message>
 </context>
 </TS>

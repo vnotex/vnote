@@ -1,25 +1,16 @@
-## v4.14.2
-A refinement release with safer notebook tasks, Windows integration and smoother editing on top of VNote 4.14.1:
+## v4.14.3
+A refinement release with smoother tree navigation, clearer editing controls and faster Quick Notes on top of VNote 4.14.2:
 
-* **Notebook tasks and security**
-    * Require local notebook trust before running notebook tasks or evaluating their variables; remember approval across restarts, forget it on explicit close, and automatically trust only newly created local notebooks
+* **Navigation and tasks**
+    * Add `Ctrl+G, F` for the View Window Mind Map action, configurable through `editor.core.shortcuts.MindMap`; existing profiles inherit it unless explicitly customized or disabled
+    * Create a Quick Note directly when only one scheme is available, without opening the scheme picker
+    * Expand or collapse task containers such as Git on double-click or Enter, including when filtering hides their children; keep leaf-task execution unchanged
+* **Interface**
+    * Animate expanding and collapsing Tasks, search results, Settings and United Entry trees consistently with Notebooks, Tags and Outline
+    * Make tree views in every bundled theme except Native more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when returning to Native
+    * Align notebook, search and task tree content with standard tree text by including theme borders and native text margins; preserve row heights and icon/count gaps
 * **Editing and Markdown**
-    * Replace the two Markdown concealment toggles with None, Passive and Aggressive presets; default to Aggressive without migrating the old settings, map the editing-experience choices to Aggressive/Passive, and use Aggressive in embedded Markdown editors
-    * Update vtextedit to support longer compact URL destinations and keep insertion carets inside concealed closing markers while typing
-    * Recover named functions, limits, upright identifiers and supported spacing when pasting browser MathML without TeX annotations, including sinc formulas
-* **Windows integration and updates**
-    * Add per-user Read in VNote and Edit in VNote context-menu actions for applied built-in file suffixes through Settings → File Associations; open reading in a detached window and editing in the main window, preserving explicit modes through startup and single-instance forwarding
-    * Reconcile changed context-menu suffixes and remove legacy all-files entries without requiring administrator privileges
-    * Check GitHub and Gitee releases without REST APIs; fetch explicitly requested GitHub update assets directly to avoid release-metadata API rate limits
-    * Support authenticated Windows delta updates when eligible, reconstruct and verify the complete target payload before requesting shutdown, and use the signed full package only when safe fallback rules permit
-    * Display update release notes in a lightweight themed Markdown editor and migrate the last-update-check timestamp to machine-local session configuration
-* **Interface and configuration**
-    * Auto-hide view-split corner buttons until the tab strip is hovered, keeping tabs stationary, open menus usable and detached-window shortcuts active
-    * Add Attach to Main Window beside the detached window's Stay on Top pin to move all tabs into the selected main split without losing unsaved edits or undo history; keep the pin color consistent with the active Open Windows button across theme changes
-    * Show labels beside the Home and United Entry toolbar icons, matching Export
-    * Restore the default Quick Note scheme for empty saved lists when upgrading from below `4.14.2`, including `4.14.1`; preserve custom schemes and later empty-list opt-outs
-    * Add missing default United Entry aliases when upgrading from below `4.14.1` with a nonempty saved list, preserving custom definitions and explicit empty-list opt-outs
-    * Refresh the English and Chinese welcome guides, README screenshots and development documentation
-* **Reliability**
-    * Fix CI recovery-archive, folded math-preview geometry, heading-navigation and production-view linkage fixtures; disable the repeatedly timing-out Linux view-area suite in CTest while retaining its build and Windows coverage
-* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated
+    * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
+    * Rename the concealment control to Markers Concealment and clarify the None, Passive and Aggressive settings descriptions
+    * Move the readable-width toolbar hint into shared Editor settings instead of Mind Map Editor settings
+* **Translations**: Simplified Chinese (zh_CN) and Japanese (ja) catalogs updated

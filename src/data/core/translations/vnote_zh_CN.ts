@@ -2,29 +2,6 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
-    <name>ApiAuth</name>
-    <message>
-        <source>Token administration must run on the owner thread</source>
-        <translation>令牌管理必须在所有者线程中运行</translation>
-    </message>
-    <message>
-        <source>The token registry is invalid</source>
-        <translation>令牌注册表无效</translation>
-    </message>
-    <message>
-        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
-        <translation>请选择笔记本、有效权限、标签和有效的有效期选项</translation>
-    </message>
-    <message>
-        <source>The token limit of 64 has been reached</source>
-        <translation>已达到 64 个令牌的上限</translation>
-    </message>
-    <message>
-        <source>The token no longer exists</source>
-        <translation>令牌已不存在</translation>
-    </message>
-</context>
-<context>
     <name>CommandLineOptions</name>
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
@@ -487,13 +464,12 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+7"/>
-        <location line="+1"/>
         <source>Mind Map</source>
         <translation>思维导图</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+48"/>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+85"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+86"/>
         <source>Readable Width</source>
         <translation>易读宽度</translation>
     </message>
@@ -1297,7 +1273,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::Application</name>
     <message>
-        <location filename="../../../application.h" line="+51"/>
+        <location filename="../../../application.h" line="+54"/>
         <source>Select some text to create a note in VNote.</source>
         <translation>选择一些文本以在 VNote 中创建笔记。</translation>
     </message>
@@ -7774,24 +7750,24 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     <message>
         <location line="+114"/>
         <location line="+17"/>
-        <location line="+126"/>
+        <location line="+128"/>
         <location line="+16"/>
         <location line="+142"/>
         <source>Please first create a notebook to hold your data.</source>
         <translation>请先创建一个笔记本来保存数据。</translation>
     </message>
     <message>
-        <location line="-261"/>
+        <location line="-263"/>
         <source>Please set up quick note schemes in the Settings dialog first.</source>
         <translation>请先在设置对话框中设置快速笔记方案。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>New Quick Note</source>
         <translation>新建快速笔记</translation>
     </message>
     <message>
-        <location line="+261"/>
+        <location line="+262"/>
         <source>The current notebook is read-only, so the note was not created.</source>
         <translation>当前笔记本为只读，未创建该笔记。</translation>
     </message>
@@ -7907,13 +7883,13 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
 %4</translation>
     </message>
     <message>
-        <location line="-2245"/>
-        <location line="+2275"/>
+        <location line="-2247"/>
+        <location line="+2277"/>
         <source>%1: %2</source>
         <translation>%1：%2</translation>
     </message>
     <message>
-        <location line="-2399"/>
+        <location line="-2401"/>
         <source>Encrypt Note</source>
         <translation>加密笔记</translation>
     </message>
@@ -8089,7 +8065,7 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
         <translation>只读笔记本</translation>
     </message>
     <message>
-        <location line="+1703"/>
+        <location line="+1705"/>
         <source>%1 copied, %2 moved, %3 left at the source, %4 failed.</source>
         <translation>已复制 %1 项，已移动 %2 项，留在源位置 %3 项，失败 %4 项。</translation>
     </message>
@@ -8178,7 +8154,7 @@ Last sync init failed: error code %1</source>
         <translation>正在准备…</translation>
     </message>
     <message>
-        <location line="-2117"/>
+        <location line="-2119"/>
         <source>The selected legacy note needs its original vx_notebook/encryption.vne. Restore that file from a backup. Creating a new encryption context cannot recover existing encrypted notes.</source>
         <translation>所选旧版笔记需要其原始 vx_notebook/encryption.vne 文件。请从备份中恢复该文件。创建新的加密上下文无法恢复已有的加密笔记。</translation>
     </message>
@@ -8257,7 +8233,7 @@ Notebook: %1
         <translation>确认密码</translation>
     </message>
     <message>
-        <location line="+1952"/>
+        <location line="+1954"/>
         <location line="+72"/>
         <source>Cancel</source>
         <translation>取消</translation>
@@ -11443,7 +11419,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskPanel2</name>
     <message>
-        <location filename="../../../widgets/taskpanel2.cpp" line="+61"/>
+        <location filename="../../../widgets/taskpanel2.cpp" line="+62"/>
         <source>Task</source>
         <translation>任务</translation>
     </message>
@@ -13550,6 +13526,29 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>适应页面</translation>
+    </message>
+</context>
+<context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>令牌管理必须在所有者线程中运行</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>令牌注册表无效</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>请选择笔记本、有效权限、标签和有效的有效期选项</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>已达到 64 个令牌的上限</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>令牌已不存在</translation>
     </message>
 </context>
 </TS>
