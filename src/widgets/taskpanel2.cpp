@@ -130,10 +130,10 @@ void TaskPanel2::initialize() {
 void TaskPanel2::onItemActivated(const QModelIndex &p_index) {
   const QModelIndex src = m_proxyModel->mapToSource(p_index);
   auto *task = m_model->taskForIndex(src);
-  if (task) {
+  if (task && task->getChildren().isEmpty()) {
     m_controller->runTask(task);
   } else {
-    // Group row: toggle expansion.
+    // Scope groups and task containers toggle expansion instead of running.
     m_treeView->setExpanded(p_index, !m_treeView->isExpanded(p_index));
   }
 }

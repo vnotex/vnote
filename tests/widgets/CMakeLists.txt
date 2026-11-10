@@ -1,5 +1,39 @@
 find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Core5Compat)
 
+add_qt_test(test_taskpanel2
+  SOURCES
+    test_taskpanel2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/taskpanel2.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/tasktreemodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/treefilterproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/taskcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/titlebar.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/strnatcmp.c
+    ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
+  LINKS
+    core_services
+    core_configs
+    vxcore
+    VTextEdit
+)
+target_include_directories(test_taskpanel2 PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
+
 add_qt_test(test_notebooktasktrust
   SOURCES
     test_notebooktasktrust.cpp
