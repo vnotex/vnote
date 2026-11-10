@@ -338,6 +338,8 @@ QString MarkdownEditorConfig::concealmentModeToString(ConcealmentMode p_mode) {
     return QStringLiteral("none");
   case ConcealmentMode::Passive:
     return QStringLiteral("passive");
+  case ConcealmentMode::Moderate:
+    return QStringLiteral("moderate");
   default:
     return QStringLiteral("aggressive");
   }
@@ -349,6 +351,8 @@ MarkdownEditorConfig::stringToConcealmentMode(const QString &p_str) {
     return ConcealmentMode::None;
   } else if (p_str.compare(QLatin1String("passive"), Qt::CaseInsensitive) == 0) {
     return ConcealmentMode::Passive;
+  } else if (p_str.compare(QLatin1String("moderate"), Qt::CaseInsensitive) == 0) {
+    return ConcealmentMode::Moderate;
   }
   return ConcealmentMode::Aggressive;
 }
@@ -362,6 +366,7 @@ void MarkdownEditorConfig::setConcealmentMode(ConcealmentMode p_mode) {
   case ConcealmentMode::None:
   case ConcealmentMode::Passive:
   case ConcealmentMode::Aggressive:
+  case ConcealmentMode::Moderate:
     break;
   default:
     p_mode = ConcealmentMode::Aggressive;

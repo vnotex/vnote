@@ -615,58 +615,112 @@ void TestMarkdownEditorController::testConcealmentModesPreserveSourceWhileRender
     fullWidths.append(width(position, payload.size()));
     QVERIFY(fullWidths.last() > 1.0);
   }
+  const int linkSyntaxPositions[]{link, destinations[0] - 2, destinations[0] + int(payload.size())};
+  const int linkSyntaxLengths[]{1, 2, 1};
+  QVector<qreal> fullLinkSyntaxWidths;
+  for (int i = 0; i < 3; ++i) {
+    fullLinkSyntaxWidths.append(width(linkSyntaxPositions[i], linkSyntaxLengths[i]));
+    QVERIFY(fullLinkSyntaxWidths.last() > 1.0);
+  }
   const int undoSteps = document->availableUndoSteps();
   const int redoSteps = document->availableRedoSteps();
   const bool modified = document->isModified();
   QVERIFY(document->isUndoAvailable());
   QVERIFY(document->isRedoAvailable());
 
-  for (const auto mode :
-       {Mode::Passive, Mode::Aggressive, Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
+  for (const auto mode : {Mode::Passive, Mode::Moderate, Mode::Aggressive, Mode::None,
+                          Mode::Moderate, Mode::Passive, Mode::Aggressive, Mode::Moderate,
+                          Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
     mdConfig.setConcealmentMode(mode);
     editor.setConfig(buildConfig());
     QVERIFY(settle());
     QCOMPARE(editor.getTextEdit()->textCursor().position(), savedSelection.position());
     QCOMPARE(editor.getTextEdit()->textCursor().anchor(), savedSelection.anchor());
-    const bool aggressive = mode == Mode::Aggressive;
+    const bool hidesAway = mode == Mode::Moderate || mode == Mode::Aggressive;
+    const bool staysHiddenInside = mode == Mode::Aggressive;
     for (int i = 0; i < destinations.size(); ++i) {
-      const auto rendered = width(destinations[i], payload.size());
       if (mode == Mode::None) {
-        QVERIFY(qAbs(rendered - fullWidths[i]) < 1.0);
-      } else if (aggressive && i == 0) {
-        QVERIFY(qAbs(rendered) < 0.1);
+        QTRY_VERIFY(qAbs(width(destinations[i], payload.size()) - fullWidths[i]) < 1.0);
+      } else if (hidesAway && i == 0) {
+        QTRY_VERIFY(qAbs(width(destinations[i], payload.size())) < 0.1);
       } else {
-        QVERIFY(rendered > 1.0);
-        QVERIFY(rendered + 1.0 < fullWidths[i]);
+        QTRY_VERIFY(width(destinations[i], payload.size()) > 1.0 &&
+                    width(destinations[i], payload.size()) + 1.0 < fullWidths[i]);
       }
-    }
-    if (aggressive) {
-      QVERIFY(qAbs(width(link, 1)) < 0.1);
-    } else {
-      QVERIFY(width(link, 1) > 1.0);
     }
 
     for (const auto &marker : markers) {
       const int body = marker.m_start + marker.m_opening.size();
       const int closing = body + marker.m_body.size();
-      cursor.setPosition(body + 1);
-      editor.getTextEdit()->setTextCursor(cursor);
-      // Aggressive markers stay hidden even while editing their contents.
-      if (aggressive) {
-        QVERIFY(qAbs(width(marker.m_start, marker.m_opening.size())) < 0.1);
-        QVERIFY(qAbs(width(closing, marker.m_closing.size())) < 0.1);
-      } else {
-        QVERIFY(width(marker.m_start, marker.m_opening.size()) > 1.0);
-        QVERIFY(width(closing, marker.m_closing.size()) > 1.0);
+      const int end = closing + marker.m_closing.size();
+      // Check both delimiters outside, inside, at both group boundaries, then outside again.
+      for (const int position :
+           {savedSelection.position(), body + 1, marker.m_start, end, savedSelection.position()}) {
+        cursor.setPosition(position);
+        editor.getTextEdit()->setTextCursor(cursor);
+        const bool hidden =
+            staysHiddenInside || (hidesAway && position == savedSelection.position());
+        if (hidden) {
+          QTRY_VERIFY(qAbs(width(marker.m_start, marker.m_opening.size())) < 0.1);
+          QTRY_VERIFY(qAbs(width(closing, marker.m_closing.size())) < 0.1);
+        } else {
+          QTRY_VERIFY(width(marker.m_start, marker.m_opening.size()) > 1.0);
+          QTRY_VERIFY(width(closing, marker.m_closing.size()) > 1.0);
+        }
+        // Aggressive deliberately projects caret positions out of hidden markers.
+        if (!staysHiddenInside) {
+          QCOMPARE(editor.getTextEdit()->textCursor().position(), position);
+        }
       }
     }
-    // Every URL kind remains fully editable on caret entry in either preset.
+
+    // Link syntax and its destination reveal together, including at the group boundaries.
+    const int linkEnd = linkSyntaxPositions[2] + 1;
+    for (const int position :
+         {savedSelection.position(), link + 2, link, linkEnd, savedSelection.position()}) {
+      cursor.setPosition(position);
+      editor.getTextEdit()->setTextCursor(cursor);
+      const bool outside = position == savedSelection.position();
+      for (int i = 0; i < fullLinkSyntaxWidths.size(); ++i) {
+        if (hidesAway && outside) {
+          QTRY_VERIFY(qAbs(width(linkSyntaxPositions[i], linkSyntaxLengths[i])) < 0.1);
+        } else {
+          QTRY_VERIFY(qAbs(width(linkSyntaxPositions[i], linkSyntaxLengths[i]) -
+                           fullLinkSyntaxWidths[i]) < 1.0);
+        }
+      }
+      if (hidesAway && outside) {
+        QTRY_VERIFY(qAbs(width(destinations[0], payload.size())) < 0.1);
+      } else if (mode == Mode::Passive) {
+        QTRY_VERIFY(width(destinations[0], payload.size()) > 1.0 &&
+                    width(destinations[0], payload.size()) + 1.0 < fullWidths[0]);
+      } else {
+        QTRY_VERIFY(qAbs(width(destinations[0], payload.size()) - fullWidths[0]) < 1.0);
+      }
+      if (!staysHiddenInside) {
+        QCOMPARE(editor.getTextEdit()->textCursor().position(), position);
+      }
+    }
+    // Every URL kind remains fully editable on caret entry in every preset.
     for (int i = 0; i < destinations.size(); ++i) {
       cursor.setPosition(destinations[i] + 1);
       editor.getTextEdit()->setTextCursor(cursor);
-      QVERIFY(qAbs(width(destinations[i], payload.size()) - fullWidths[i]) < 1.0);
+      QTRY_VERIFY(qAbs(width(destinations[i], payload.size()) - fullWidths[i]) < 1.0);
+      if (!staysHiddenInside) {
+        QCOMPARE(editor.getTextEdit()->textCursor().position(), destinations[i] + 1);
+      }
     }
     editor.getTextEdit()->setTextCursor(savedSelection);
+    for (int i = 1; i < destinations.size(); ++i) {
+      if (mode == Mode::None) {
+        QTRY_VERIFY(qAbs(width(destinations[i], payload.size()) - fullWidths[i]) < 1.0);
+      } else {
+        QTRY_VERIFY(width(destinations[i], payload.size()) > 1.0 &&
+                    width(destinations[i], payload.size()) + 1.0 < fullWidths[i]);
+      }
+    }
+    QCOMPARE(editor.getTextEdit()->textCursor().position(), savedSelection.position());
+    QCOMPARE(editor.getTextEdit()->textCursor().anchor(), savedSelection.anchor());
     QCOMPARE(document->toPlainText(), savedSource);
     QCOMPARE(document->isModified(), modified);
     QCOMPARE(document->availableUndoSteps(), undoSteps);

@@ -5324,11 +5324,11 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
-        <translation>无：显示全部 Markdown 源码。温和：显示语法，并缩短较长的链接、图片和引用网址。强烈：隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入链接时重新显示其语法</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Moderate: hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>无：显示全部 Markdown 源码。温和：显示语法，并缩短较长的链接、图片和引用网址。适中：隐藏支持的 Markdown 标记和链接语法，光标移入时显示，并缩短较长的图片和引用网址。强烈：隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入链接时重新显示其语法</translation>
     </message>
     <message>
-        <location line="+183"/>
+        <location line="+185"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
@@ -5754,7 +5754,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+914"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+928"/>
         <source>None</source>
         <translation>无</translation>
     </message>
@@ -5764,12 +5764,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>温和</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Moderate</source>
+        <translation>适中</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Aggressive</source>
         <translation>强烈</translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-10"/>
         <source>Show all Markdown source</source>
         <translation>显示全部 Markdown 源码</translation>
     </message>
@@ -5779,12 +5784,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>缩短较长的链接、图片和引用网址，同时显示 Markdown 语法</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs</source>
+        <translation>隐藏支持的 Markdown 标记和链接语法，光标移入时显示，并缩短较长的图片和引用网址</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
         <translation>隐藏支持的 Markdown 标记和链接语法，并缩短较长的图片和引用网址；光标移入时显示链接语法</translation>
     </message>
     <message>
-        <location line="-697"/>
+        <location line="-716"/>
         <source>Choose Markdown Editing Experience</source>
         <translation>选择 Markdown 编辑体验</translation>
     </message>
@@ -5800,6 +5810,16 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+7"/>
+        <source>Both the left and the right look correct</source>
+        <translation>左右两种方式看起来都不错</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Conceal markers to make me attentive and reveal current ones to help me write</source>
+        <translation>隐藏标记让我专注，显示当前标记以帮助我写作</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Show Markdown markers</source>
         <translation>显示 Markdown 标记</translation>
     </message>
@@ -5809,12 +5829,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>我更喜欢完全掌控自己写下的内容，享受 Markdown 的力量</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+13"/>
         <source>You could always change Markdown editing experience using the toolbar menu at the top right corner.</source>
         <translation>您随时都可以使用右上角的工具栏菜单更改 Markdown 编辑体验。</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-100"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>无法将 HTML 转换为 Markdown</translation>
     </message>

@@ -5324,11 +5324,11 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
-        <translation>なし：Markdown ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。積極的：対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンクにカーソルが入ると構文を再表示</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Moderate: hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>なし：Markdown ソースをすべて表示。控えめ：構文を表示したまま、長いリンク・画像・参照の URL を短縮表示。適度：対応する Markdown マーカーとリンク構文を隠し、カーソルが入ると表示。長い画像・参照の URL を短縮表示。積極的：対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンクにカーソルが入ると構文を再表示</translation>
     </message>
     <message>
-        <location line="+177"/>
+        <location line="+179"/>
         <source>Markdown Editor</source>
         <translation>Markdownエディタ</translation>
     </message>
@@ -5754,7 +5754,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+914"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+928"/>
         <source>None</source>
         <translation>なし</translation>
     </message>
@@ -5764,12 +5764,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>控えめ</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Moderate</source>
+        <translation>適度</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Aggressive</source>
         <translation>積極的</translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-10"/>
         <source>Show all Markdown source</source>
         <translation>Markdown ソースをすべて表示</translation>
     </message>
@@ -5779,12 +5784,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>Markdown 構文を表示したまま、長いリンク・画像・参照の URL を短縮表示</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs</source>
+        <translation>対応する Markdown マーカーとリンク構文を隠し、カーソルが入ると表示。長い画像・参照の URL を短縮表示</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
         <translation>対応する Markdown マーカーとリンク構文を隠し、長い画像・参照の URL を短縮表示。リンク構文はカーソルが入ると表示</translation>
     </message>
     <message>
-        <location line="-697"/>
+        <location line="-716"/>
         <source>Choose Markdown Editing Experience</source>
         <translation>Markdown の編集体験を選択</translation>
     </message>
@@ -5800,6 +5810,16 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+7"/>
+        <source>Both the left and the right look correct</source>
+        <translation>左も右もよさそうです</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Conceal markers to make me attentive and reveal current ones to help me write</source>
+        <translation>記号を隠して集中し、編集中の記号を表示して執筆を助けます</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Show Markdown markers</source>
         <translation>Markdown の記号を表示する</translation>
     </message>
@@ -5809,12 +5829,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>書いた内容をしっかり把握し、Markdown の力を活用したいです</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+13"/>
         <source>You could always change Markdown editing experience using the toolbar menu at the top right corner.</source>
         <translation>右上のツールバーメニューから、いつでも Markdown の編集体験を変更できます。</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-100"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>HTML を Markdown に変換できません</translation>
     </message>

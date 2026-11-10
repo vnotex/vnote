@@ -1196,11 +1196,28 @@ void TestConfigMgr2::testConcealmentMode_ignoresOldPreferencesAndNormalizes() {
       }
 
       // Old booleans cannot override an explicit choice of the new mode, either.
-      markdown[path[2]] = QStringLiteral("passive");
-      const auto explicitMode =
-          loadThroughMergePath(QJsonObject{{path[0], QJsonObject{{path[1], markdown}}}});
-      QCOMPARE(valueAt(explicitMode, path), QJsonValue(QStringLiteral("passive")));
+      for (const auto mode : {Mode::Passive, Mode::Moderate}) {
+        const auto token =
+            mode == Mode::Passive ? QStringLiteral("passive") : QStringLiteral("moderate");
+        markdown[path[2]] = token;
+        const auto explicitMode =
+            loadThroughMergePath(QJsonObject{{path[0], QJsonObject{{path[1], markdown}}}});
+        QCOMPARE(valueAt(explicitMode, path), QJsonValue(token));
+        ConfigMgr2 restarted(m_configService);
+        restarted.init();
+        QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(), mode);
+      }
     }
+  }
+
+  const auto mixedCase = loadThroughMergePath(QJsonObject{
+      {path[0], QJsonObject{{path[1], QJsonObject{{path[2], QStringLiteral("MoDeRaTe")}}}}}});
+  QCOMPARE(valueAt(mixedCase, path), QJsonValue(QStringLiteral("moderate")));
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(),
+             Mode::Moderate);
   }
 
   for (const auto &invalid : {QJsonValue(QJsonValue::Null), QJsonValue(true), QJsonValue(42),
@@ -1234,6 +1251,7 @@ void TestConfigMgr2::testConcealmentMode_persistsAllModes() {
   };
   const Case cases[]{{Mode::None, Mode::None, QStringLiteral("none")},
                      {Mode::Passive, Mode::Passive, QStringLiteral("passive")},
+                     {Mode::Moderate, Mode::Moderate, QStringLiteral("moderate")},
                      {Mode::Aggressive, Mode::Aggressive, QStringLiteral("aggressive")},
                      {static_cast<Mode>(-1), Mode::Aggressive, QStringLiteral("aggressive")}};
   for (const auto &testCase : cases) {

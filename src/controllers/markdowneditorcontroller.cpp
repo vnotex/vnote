@@ -84,6 +84,9 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
   case MarkdownEditorConfig::ConcealmentMode::Passive:
     p_editorConfig->m_concealRules.setPreset(vte::MarkdownConcealPreset::Passive);
     break;
+  case MarkdownEditorConfig::ConcealmentMode::Moderate:
+    p_editorConfig->m_concealRules.setPreset(vte::MarkdownConcealPreset::Moderate);
+    break;
   case MarkdownEditorConfig::ConcealmentMode::Aggressive:
     p_editorConfig->m_concealRules.setPreset(vte::MarkdownConcealPreset::Aggressive);
     break;

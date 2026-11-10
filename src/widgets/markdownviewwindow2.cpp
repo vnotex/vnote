@@ -251,6 +251,14 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
   separator->setFrameShape(QFrame::VLine);
   separator->setFrameShadow(QFrame::Sunken);
   choices->addWidget(separator);
+  auto *moderate =
+      addChoice(tr("Both the left and the right look correct"),
+                tr("Conceal markers to make me attentive and reveal current ones to help me write"),
+                QStringLiteral("moderateMarkdownMarkersRadio"));
+  auto *rightSeparator = new QFrame(widget);
+  rightSeparator->setFrameShape(QFrame::VLine);
+  rightSeparator->setFrameShadow(QFrame::Sunken);
+  choices->addWidget(rightSeparator);
   auto *show = addChoice(
       tr("Show Markdown markers"),
       tr("I prefer a strong control of what I have written and enjoy the muscles of Markdown"),
@@ -261,7 +269,9 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
                         .getMarkdownEditorConfig()
                         .getConcealmentMode();
   conceal->setChecked(mode == MarkdownEditorConfig::ConcealmentMode::Aggressive);
-  show->setChecked(!conceal->isChecked());
+  moderate->setChecked(mode == MarkdownEditorConfig::ConcealmentMode::Moderate);
+  show->setChecked(mode == MarkdownEditorConfig::ConcealmentMode::None ||
+                   mode == MarkdownEditorConfig::ConcealmentMode::Passive);
 
   auto *hint = new QLabel(
       tr("You could always change Markdown editing experience using the toolbar menu at the "
@@ -273,10 +283,14 @@ void MarkdownViewWindow2::confirmMarkdownEditorConcealment() {
   dialogLayout->addWidget(buttons);
   connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
   connect(dialog, &QDialog::accepted, m_editorController,
-          [controller = m_editorController, conceal]() {
-            controller->setConcealmentMode(conceal->isChecked()
-                                               ? MarkdownEditorConfig::ConcealmentMode::Aggressive
-                                               : MarkdownEditorConfig::ConcealmentMode::Passive);
+          [controller = m_editorController, conceal, moderate, show]() {
+            if (conceal->isChecked()) {
+              controller->setConcealmentMode(MarkdownEditorConfig::ConcealmentMode::Aggressive);
+            } else if (moderate->isChecked()) {
+              controller->setConcealmentMode(MarkdownEditorConfig::ConcealmentMode::Moderate);
+            } else if (show->isChecked()) {
+              controller->setConcealmentMode(MarkdownEditorConfig::ConcealmentMode::Passive);
+            }
           });
   connect(dialog, &QDialog::finished, dialog, &QObject::deleteLater);
   dialog->show();
@@ -916,6 +930,11 @@ void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
     addPreset(tr("Passive"), QStringLiteral("concealmentPassiveAction"),
               tr("Shorten long link, image and reference URLs while showing Markdown syntax"),
               ConcealmentMode::Passive);
+    addPreset(
+        tr("Moderate"), QStringLiteral("concealmentModerateAction"),
+        tr("Hide supported Markdown markers and link syntax, reveal them on cursor entry, and "
+           "shorten long image and reference URLs"),
+        ConcealmentMode::Moderate);
     addPreset(tr("Aggressive"), QStringLiteral("concealmentAggressiveAction"),
               tr("Hide supported Markdown markers and link syntax, and shorten long image and "
                  "reference URLs; link syntax reveals on entry"),

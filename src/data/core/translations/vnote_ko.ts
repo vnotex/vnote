@@ -5348,11 +5348,11 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+5"/>
-        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
-        <translation>없음: 모든 Markdown 소스 표시. 소극적: 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시. 적극적: 지원되는 Markdown 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시하며, 커서가 링크 안으로 들어가면 구문을 다시 표시</translation>
+        <source>None: show all Markdown source. Passive: show syntax and shorten long link, image and reference URLs. Moderate: hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reappears when the cursor enters it</source>
+        <translation>없음: 모든 Markdown 소스 표시. 소극적: 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시. 중간: 지원되는 Markdown 마커와 링크 구문을 숨기고 커서가 들어가면 표시하며, 긴 이미지 및 참조 URL을 줄여 표시. 적극적: 지원되는 Markdown 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시하며, 커서가 링크 안으로 들어가면 구문을 다시 표시</translation>
     </message>
     <message>
-        <location line="+177"/>
+        <location line="+179"/>
         <source>Markdown Editor</source>
         <translation>Markdown 편집기</translation>
     </message>
@@ -5778,7 +5778,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+914"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+928"/>
         <source>None</source>
         <translation>없음</translation>
     </message>
@@ -5788,12 +5788,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>소극적</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Moderate</source>
+        <translation>중간</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Aggressive</source>
         <translation>적극적</translation>
     </message>
     <message>
-        <location line="-5"/>
+        <location line="-10"/>
         <source>Show all Markdown source</source>
         <translation>Markdown 소스를 모두 표시</translation>
     </message>
@@ -5803,12 +5808,17 @@ Trust is remembered until you close this notebook.</source>
         <translation>Markdown 구문을 표시하면서 긴 링크, 이미지 및 참조 URL을 줄여 표시</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
+        <source>Hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs</source>
+        <translation>지원되는 Markdown 마커와 링크 구문을 숨기고 커서가 들어가면 표시하며, 긴 이미지 및 참조 URL을 줄여 표시</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>Hide supported Markdown markers and link syntax, and shorten long image and reference URLs; link syntax reveals on entry</source>
         <translation>지원되는 Markdown 마커와 링크 구문을 숨기고 긴 이미지 및 참조 URL을 줄여 표시하며, 커서가 들어가면 링크 구문을 표시</translation>
     </message>
     <message>
-        <location line="-697"/>
+        <location line="-716"/>
         <source>Choose Markdown Editing Experience</source>
         <translation>Markdown 편집 환경 선택</translation>
     </message>
@@ -5824,6 +5834,16 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+7"/>
+        <source>Both the left and the right look correct</source>
+        <translation>왼쪽과 오른쪽 모두 좋아 보입니다</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Conceal markers to make me attentive and reveal current ones to help me write</source>
+        <translation>마커를 숨겨 집중하게 하고 현재 마커를 표시해 글쓰기를 돕습니다</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Show Markdown markers</source>
         <translation>Markdown 기호 표시하기</translation>
     </message>
@@ -5833,12 +5853,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>작성한 내용을 세밀하게 제어하고 Markdown의 강력함을 즐기고 싶습니다</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+13"/>
         <source>You could always change Markdown editing experience using the toolbar menu at the top right corner.</source>
         <translation>오른쪽 위의 도구 모음 메뉴에서 언제든지 Markdown 편집 환경을 변경할 수 있습니다.</translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-100"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>HTML을 Markdown으로 변환할 수 없습니다</translation>
     </message>

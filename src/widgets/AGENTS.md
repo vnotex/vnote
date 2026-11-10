@@ -1341,23 +1341,30 @@ popup outlines, without mutating producer names.
 ### Markdown concealment
 
 Markdown's top-right **Menu** exposes an Edit-only **Markers Concealment** submenu immediately below
-**In-Place Preview**, with three exclusive radio actions:
+**In-Place Preview**, with four exclusive radio actions in this order:
 
 - **None** shows all Markdown source without concealment.
 - **Passive** shortens long link, image and reference URLs while leaving syntax visible.
+- **Moderate** hides supported formatting markers and link syntax away from the caret, reveals
+  them on entry (including group boundaries), and shortens image and reference URLs. Inline link
+  URLs hide and reveal with their syntax rather than shortening separately.
 - **Aggressive** hides supported formatting markers and link syntax, and shortens image and
   reference URLs. Link syntax reveals on caret entry; inline link URLs are not separately shortened.
 
 The global portable preference is `editor.markdown_editor.concealmentMode` in `vnotex.json`,
-stored as `none`, `passive` or `aggressive`. Missing or unknown values select Aggressive.
+stored as `none`, `passive`, `moderate` or `aggressive`. The default remains Aggressive, as do
+missing or unknown values. Existing saved choices remain authoritative; adding `moderate` needs
+no migration or prompt-flag reset.
 The old `concealment` and `concealMarkdownMarkers` booleans are ignored and no longer written;
 there is deliberately no compatibility migration. Explicit choices in the new setting persist.
 **Settings > Markdown Editor** provides a searchable, read-only description of the presets.
 
 The first displayed Markdown view (Read or Edit) opens **Choose Markdown Editing Experience**.
-Its two radio choices map **Conceal Markdown markers** to Aggressive and **Show Markdown markers**
-to Passive. Aggressive preselects Conceal; None and Passive preselect Show. None remains available
-in the toolbar submenu. `SessionConfig::m_hasConfirmedMarkdownEditorConcealment` stores
+Its three columns map **Conceal Markdown markers** (left) to Aggressive,
+**Both the left and the right look correct** (middle) to Moderate, and **Show Markdown markers**
+(right) to Passive. Aggressive preselects Conceal, Moderate preselects the middle choice, and
+None/Passive preselect Show. None remains menu-only.
+`SessionConfig::m_hasConfirmedMarkdownEditorConcealment` stores
 `editor.hasConfirmedMarkdownEditorConcealment` in `session.json`, default `false`. The controller
 marks it `true` before showing the nonblocking application-modal dialog, so restored tabs cannot
 duplicate it. Hidden/background tabs and minimized hosts defer it. OK applies the choice through
@@ -1370,8 +1377,9 @@ without triggering another update. `applyMarkdownConfigFields()` supplies both e
 builders, clearing rules for None or applying the corresponding upstream preset directly.
 
 Concealment is visual only: never rewrite Markdown or change dirty state, cursor or undo history.
-Aggressive formatting markers stay hidden during editing and character movement skips them;
-link syntax still reveals on entry. Setext underlines and multiline math-block delimiters remain
+Moderate formatting markers reveal on caret entry and hide again on exit. Aggressive formatting
+markers stay hidden during editing and character movement skips them; link syntax still reveals
+on entry. Setext underlines, multiline math-block delimiters, list markers and code fences remain
 unchanged. Shortened destinations keep five prefix graphemes, three middle dots and twelve suffix
 graphemes; hover exposes the full destination.
 

@@ -4,7 +4,6 @@
 
 #include <QAbstractTextDocumentLayout>
 #include <QAction>
-#include <QActionGroup>
 #include <QApplication>
 #include <QBuffer>
 #include <QChildEvent>
@@ -822,9 +821,11 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
         second.handleEditorConfigChange();
       });
   const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
-  const QStringList actionNames{QStringLiteral("concealmentNoneAction"),
-                                QStringLiteral("concealmentPassiveAction"),
-                                QStringLiteral("concealmentAggressiveAction")};
+  const QList<QPair<QString, Mode>> presets{
+      {QStringLiteral("concealmentNoneAction"), Mode::None},
+      {QStringLiteral("concealmentPassiveAction"), Mode::Passive},
+      {QStringLiteral("concealmentModerateAction"), Mode::Moderate},
+      {QStringLiteral("concealmentAggressiveAction"), Mode::Aggressive}};
   QList<QMenu *> menus;
   for (auto *window : {&first, &second}) {
     auto *action = window->findChild<QAction *>(QStringLiteral("concealmentAction"));
@@ -832,20 +833,16 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
     QVERIFY(action->isVisible());
     auto *menu = action->menu();
     menus.append(menu);
-    QCOMPARE(menu->actions().size(), 3);
-    auto *group = menu->actions().first()->actionGroup();
-    QVERIFY(group && group->isExclusive());
-    for (int index = 0; index < actionNames.size(); ++index) {
-      auto *preset = menu->actions().at(index);
-      QCOMPARE(preset->objectName(), actionNames.at(index));
-      QVERIFY(preset->isCheckable());
-      QCOMPARE(preset->actionGroup(), group);
-      QCOMPARE(preset->isChecked(), index == 0);
+    for (const auto &entry : presets) {
+      auto *preset = menu->findChild<QAction *>(entry.first);
+      QVERIFY(preset);
+      QCOMPARE(preset->data().toInt(), static_cast<int>(entry.second));
+      QCOMPARE(preset->isChecked(), entry.second == Mode::None);
     }
   }
   const auto verifyChecked = [](QMenu *p_menu, Mode p_mode) {
-    for (int index = 0; index < p_menu->actions().size(); ++index) {
-      QCOMPARE(p_menu->actions().at(index)->isChecked(), index == static_cast<int>(p_mode));
+    for (auto *action : p_menu->actions()) {
+      QCOMPARE(action->isChecked(), action->data().toInt() == static_cast<int>(p_mode));
     }
   };
   const auto width = [](MarkdownEditor *p_editor, const QString &p_token, int p_length) {
@@ -877,11 +874,12 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
     fullWidths.append(widths);
   }
   const auto hasDisplay = [&](Mode p_mode) {
+    const bool hidesMarkers = p_mode == Mode::Moderate || p_mode == Mode::Aggressive;
     int editorIndex = 0;
     for (auto *editor : {firstEditor, secondEditor}) {
       for (const auto &span : syntax) {
         const qreal actual = width(editor, span.first, span.second);
-        if (actual < 0 || (p_mode == Mode::Aggressive ? actual > 0.1 : actual <= 0.1)) {
+        if (actual < 0 || (hidesMarkers ? actual > 0.1 : actual <= 0.1)) {
           return false;
         }
       }
@@ -893,7 +891,7 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
             (p_mode == Mode::None ? qAbs(actual - full) >= 1.0 : actual + 1.0 >= full)) {
           return false;
         }
-        if (url == linkUrl && p_mode == Mode::Aggressive && actual > 0.1) {
+        if (url == linkUrl && hidesMarkers && actual > 0.1) {
           return false;
         }
       }
@@ -922,11 +920,19 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
   QTRY_VERIFY(hasDisplay(Mode::None));
   int transitions = 0;
   // Exercise every directed transition, alternating the editor that changes the global preset.
-  for (const auto mode :
-       {Mode::Passive, Mode::Aggressive, Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
+  for (const auto mode : {Mode::Passive, Mode::Moderate, Mode::Aggressive, Mode::None,
+                          Mode::Moderate, Mode::Passive, Mode::Aggressive, Mode::Moderate,
+                          Mode::None, Mode::Aggressive, Mode::Passive, Mode::None}) {
     auto *menu = menus.at(transitions % 2);
     auto *sibling = menus.at((transitions + 1) % 2);
-    auto *preset = menu->actions().at(static_cast<int>(mode));
+    QAction *preset = nullptr;
+    for (auto *action : menu->actions()) {
+      if (action->data().toInt() == static_cast<int>(mode)) {
+        preset = action;
+        break;
+      }
+    }
+    QVERIFY(preset);
     preset->trigger();
     ++transitions;
     QCOMPARE(markdownConfig().getConcealmentMode(), mode);
@@ -956,14 +962,20 @@ void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndPresets() {
 void TestMarkdownViewWindowLazy::concealmentExperiencePrompt_data() {
   QTest::addColumn<int>("initialMode");
   QTest::addColumn<int>("response");
-  const QStringList modes{QStringLiteral("none"), QStringLiteral("passive"),
-                          QStringLiteral("aggressive")};
-  const QStringList responses{QStringLiteral("close"), QStringLiteral("escape"),
-                              QStringLiteral("show"), QStringLiteral("conceal")};
-  for (int mode = 0; mode < modes.size(); ++mode) {
-    for (int response = -2; response <= 1; ++response) {
-      const auto name = modes.at(mode) + QLatin1Char('-') + responses.at(response + 2);
-      QTest::newRow(qPrintable(name)) << mode << response;
+  using Mode = MarkdownEditorConfig::ConcealmentMode;
+  const QList<QPair<QString, Mode>> modes{{QStringLiteral("none"), Mode::None},
+                                          {QStringLiteral("passive"), Mode::Passive},
+                                          {QStringLiteral("moderate"), Mode::Moderate},
+                                          {QStringLiteral("aggressive"), Mode::Aggressive}};
+  const QList<QPair<QString, int>> responses{{QStringLiteral("close"), -2},
+                                             {QStringLiteral("escape"), -1},
+                                             {QStringLiteral("show"), 0},
+                                             {QStringLiteral("moderate"), 1},
+                                             {QStringLiteral("conceal"), 2}};
+  for (const auto &mode : modes) {
+    for (const auto &response : responses) {
+      const auto name = mode.first + QLatin1Char('-') + response.first;
+      QTest::newRow(qPrintable(name)) << static_cast<int>(mode.second) << response.second;
     }
   }
 }
@@ -1005,22 +1017,33 @@ void TestMarkdownViewWindowLazy::concealmentExperiencePrompt() {
       window.findChild<QDialog *>(QStringLiteral("markdownConcealmentDialog"));
   QTRY_VERIFY(dialog->isVisible());
   auto *conceal = dialog->findChild<QRadioButton *>(QStringLiteral("concealMarkdownMarkersRadio"));
+  auto *moderate =
+      dialog->findChild<QRadioButton *>(QStringLiteral("moderateMarkdownMarkersRadio"));
   auto *show = dialog->findChild<QRadioButton *>(QStringLiteral("showMarkdownMarkersRadio"));
-  QVERIFY(conceal && show);
+  QVERIFY(conceal && moderate && show);
   QCOMPARE(conceal->isChecked(), initial == Mode::Aggressive);
-  QCOMPARE(show->isChecked(), initial != Mode::Aggressive);
+  QCOMPARE(moderate->isChecked(), initial == Mode::Moderate);
+  QCOMPARE(show->isChecked(), initial == Mode::None || initial == Mode::Passive);
   QVERIFY(session.getHasConfirmedMarkdownEditorConcealment());
   QCOMPARE(notifications, 0);
   QCOMPARE(markdownConfig().getConcealmentMode(), initial);
 
   Mode expected = initial;
   if (response >= 0) {
-    expected = response ? Mode::Aggressive : Mode::Passive;
-    (response ? conceal : show)->setChecked(true);
+    if (response == 0) {
+      expected = Mode::Passive;
+      show->setChecked(true);
+    } else if (response == 1) {
+      expected = Mode::Moderate;
+      moderate->setChecked(true);
+    } else {
+      expected = Mode::Aggressive;
+      conceal->setChecked(true);
+    }
     dialog->accept();
   } else {
     // Even changing the pending choice must not mutate config on Escape or window close.
-    (conceal->isChecked() ? show : conceal)->setChecked(true);
+    (initial == Mode::Moderate ? conceal : moderate)->setChecked(true);
     if (response == -1) {
       QTest::keyClick(dialog.data(), Qt::Key_Escape);
     } else {

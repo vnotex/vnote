@@ -62,8 +62,10 @@ void MarkdownEditorPage::setupUI() {
   addMenuHint(
       QObject::tr("Markers Concealment"),
       tr("None: show all Markdown source. Passive: show syntax and shorten long link, image and "
-         "reference URLs. Aggressive: hide supported Markdown markers and link syntax, and shorten "
-         "long image and reference URLs; link syntax reappears when the cursor enters it"));
+         "reference URLs. Moderate: hide supported Markdown markers and link syntax, reveal them "
+         "on cursor entry, and shorten long image and reference URLs. Aggressive: hide supported "
+         "Markdown markers and link syntax, and shorten long image and reference URLs; link syntax "
+         "reappears when the cursor enters it"));
 
   setupGeneralGroup();
   setupReadGroup();

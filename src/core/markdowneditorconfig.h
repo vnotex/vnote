@@ -31,7 +31,7 @@ public:
 
   enum EditViewMode { EditOnly, EditPreview };
 
-  enum class ConcealmentMode { None, Passive, Aggressive };
+  enum class ConcealmentMode { None, Passive, Aggressive, Moderate };
 
   MarkdownEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig,
                        const QSharedPointer<TextEditorConfig> &p_textEditorConfig);
