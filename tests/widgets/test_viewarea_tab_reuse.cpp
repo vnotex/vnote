@@ -4315,7 +4315,12 @@ void TestViewAreaTabReuse::outlineMindMapCursorFocus() {
   QTRY_COMPARE(source->getOutlineProvider()->getCurrentHeadingIndex(), index);
   const auto position = edit->textCursor().position();
   QSignalSpy navigation(source->getOutlineProvider().data(), &OutlineProvider::headingClicked);
-  QVERIFY(clickOutlineMindMap(source));
+  QVERIFY(activateNativeHost(edit));
+  edit->setFocus();
+  QTRY_VERIFY(edit->hasFocus());
+  QTest::keyClick(edit, Qt::Key_G, Qt::ControlModifier);
+  QTest::keyClick(edit, Qt::Key_F);
+  QTRY_VERIFY(f->current() != source);
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated != source);
   auto *map = generated->findChild<MindMapEditor *>();

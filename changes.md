@@ -1,6 +1,7 @@
 # Changes
 
 ## Unreleased
+* Add `Ctrl+G, F` for the View Window Mind Map action, configurable through `editor.core.shortcuts.MindMap`; existing profiles inherit it unless explicitly customized or disabled
 * Expand or collapse task containers such as Git on double-click or Enter, including when filtering hides their children; keep leaf-task execution unchanged
 * Animate expanding and collapsing Tasks, search results, Settings and United Entry trees consistently with Notebooks, Tags and Outline
 * Align notebook, search and task tree content with standard tree text by including theme borders and native text margins; preserve row heights, icon/count gaps and Native spacing

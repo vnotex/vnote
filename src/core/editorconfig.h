@@ -69,6 +69,7 @@ public:
     ParseToMarkdownAndPaste,
     ToggleLayoutMode,
     PresentationMode,
+    MindMap,
     MaxShortcut
   };
   Q_ENUM(Shortcut)

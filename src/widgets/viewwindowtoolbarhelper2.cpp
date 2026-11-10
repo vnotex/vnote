@@ -315,9 +315,9 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
   case Action::MindMap:
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("brain_editor.svg")),
                           QObject::tr("Mind Map"));
-    act->setToolTip(QObject::tr("Mind Map"));
     act->setObjectName(QStringLiteral("outlineMindMapAction"));
     act->setProperty("iconName", QStringLiteral("brain_editor.svg"));
+    addActionShortcut(act, editorConfig.getShortcut(Shortcut::MindMap), p_shortcutWidget);
     break;
 
   case Action::Outline: {

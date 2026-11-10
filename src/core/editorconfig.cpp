@@ -392,4 +392,5 @@ void EditorConfig::initDefaults() {
   m_shortcuts[Shortcut::ParseToMarkdownAndPaste] = QStringLiteral("Ctrl+G, Ctrl+P");
   m_shortcuts[Shortcut::ToggleLayoutMode] = QStringLiteral("");
   m_shortcuts[Shortcut::PresentationMode] = QStringLiteral("F9");
+  m_shortcuts[Shortcut::MindMap] = QStringLiteral("Ctrl+G, F");
 }
