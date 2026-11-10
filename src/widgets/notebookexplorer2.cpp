@@ -1740,32 +1740,34 @@ void NotebookExplorer2::newQuickNote() {
     return;
   }
 
-  // Show selection dialog.
-  auto *themeService = m_services.get<ThemeService>();
-  SelectDialog dialog(
-      tr("New Quick Note"),
-      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
-      themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")),
-      dialogParent);
-  if (!dialogParent) {
-    dialog.setWindowModality(Qt::ApplicationModal);
-    // A global hotkey does not activate the application. Wait until exec() shows the picker.
-    QTimer::singleShot(0, &dialog, [&dialog]() {
-      if (dialog.isVisible()) {
-        dialog.raise();
-        dialog.activateWindow();
-      }
-    });
-  }
-  for (int i = 0; i < schemes.size(); ++i) {
-    dialog.addSelection(schemes[i].m_name, i);
-  }
+  int selection = 0;
+  if (schemes.size() > 1) {
+    auto *themeService = m_services.get<ThemeService>();
+    SelectDialog dialog(
+        tr("New Quick Note"),
+        themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
+        themeService->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")),
+        dialogParent);
+    if (!dialogParent) {
+      dialog.setWindowModality(Qt::ApplicationModal);
+      // A global hotkey does not activate the application. Wait until exec() shows the picker.
+      QTimer::singleShot(0, &dialog, [&dialog]() {
+        if (dialog.isVisible()) {
+          dialog.raise();
+          dialog.activateWindow();
+        }
+      });
+    }
+    for (int i = 0; i < schemes.size(); ++i) {
+      dialog.addSelection(schemes[i].m_name, i);
+    }
 
-  if (dialog.exec() != QDialog::Accepted) {
-    return;
-  }
+    if (dialog.exec() != QDialog::Accepted) {
+      return;
+    }
 
-  int selection = dialog.getSelection();
+    selection = dialog.getSelection();
+  }
   const auto &scheme = schemes[selection];
 
   // Supply the current folder for an empty scheme; the controller resolves explicit paths.

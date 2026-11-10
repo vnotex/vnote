@@ -215,8 +215,9 @@ the session cache. The quick-note path is unrelated: its template name is persis
 Settings → Quick Access → Quick Note persists **Open in detached window** per scheme
 as `quickNoteSchemes[].detachedView` in `session.json`. Missing means `false`, preserving
 older schemes. Include this flag in scheme equality: a toggle-only edit must persist.
-Tray, toolbar, keyboard and tab-bar requests share the picker and honor the selected
-scheme; they do not override its destination. Quick notes still open in Edit mode.
+Tray, toolbar, keyboard and tab-bar requests use the only scheme directly when exactly
+one exists, and show the picker when multiple exist. They honor the chosen scheme without
+overriding its destination. Quick notes still open in Edit mode.
 
 Fresh `SessionConfig` instances start with **Quick Note in Current Notebook**, using the
 notebook-relative folder `Quick Notes` and filename `quick_note_%da%.md`, with no template.
