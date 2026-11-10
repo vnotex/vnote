@@ -6,6 +6,7 @@
 #include <QPainter>
 
 #include <gui/utils/itemviewutils.h>
+#include <gui/utils/treeviewutils.h>
 #include <models/searchresultmodel.h>
 
 using namespace vnotex;
@@ -66,10 +67,11 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   QFont boldFont = p_option.font;
   boldFont.setBold(true);
 
+  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
   QFontMetrics fm(boldFont);
   QRect textRect = p_option.rect;
-  textRect.setLeft(textRect.left() + m_hPadding);
-  textRect.setRight(textRect.right() - m_hPadding);
+  textRect.setLeft(textRect.left() + hPadding);
+  textRect.setRight(textRect.right() - hPadding);
 
   // Draw match count badge on the right
   int matchCount = p_index.data(SearchResultModel::MatchCountRole).toInt();
@@ -81,7 +83,7 @@ void SearchResultDelegate::paintFileResult(QPainter *p_painter,
   QFontMetrics normalFm(p_option.font);
   int badgeWidth = 0;
   if (!badge.isEmpty()) {
-    badgeWidth = normalFm.horizontalAdvance(badge) + m_hPadding;
+    badgeWidth = normalFm.horizontalAdvance(badge) + hPadding;
   }
 
   // Draw file name (bold)
@@ -142,10 +144,11 @@ void SearchResultDelegate::paintLineResult(QPainter *p_painter,
   // Keep the normal foreground over the themed selection background.
   const QColor textColor = p_option.palette.text().color();
 
+  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
   QFontMetrics fm(p_option.font);
   QRect contentRect = p_option.rect;
-  contentRect.setLeft(contentRect.left() + m_hPadding);
-  contentRect.setRight(contentRect.right() - m_hPadding);
+  contentRect.setLeft(contentRect.left() + hPadding);
+  contentRect.setRight(contentRect.right() - hPadding);
 
   // Draw line number prefix in gray
   QString linePrefix = QStringLiteral("%1: ").arg(lineNumber);

@@ -2,6 +2,7 @@
 #define APPLICATION_H
 #include <QApplication>
 #include <QCoreApplication>
+#include <QPointer>
 #include <QString>
 
 #include <functional>
@@ -19,6 +20,8 @@ public:
   Application(int &p_argc, char **p_argv);
 
   ~Application() override;
+
+  bool notify(QObject *p_receiver, QEvent *p_event) override;
 
   // Set ThemeService for hot-reload support.
   void setThemeService(ThemeService *p_themeService);
@@ -75,7 +78,7 @@ protected:
   bool event(QEvent *p_event) Q_DECL_OVERRIDE;
 
 private:
-  ThemeService *m_themeService = nullptr;
+  QPointer<ThemeService> m_themeService;
   QFileSystemWatcher *m_styleWatcher = nullptr;
   QTimer *m_reloadTimer = nullptr;
 

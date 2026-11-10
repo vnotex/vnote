@@ -9,17 +9,10 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/itemviewutils.h>
+#include <gui/utils/treeviewutils.h>
 #include <models/notebooknodemodel.h>
 
 using namespace vnotex;
-
-namespace {
-
-int horizontalPadding(const QWidget *p_widget) {
-  return p_widget && p_widget->property("compactSpacing").toBool() ? 4 : 8;
-}
-
-} // namespace
 
 NotebookNodeDelegate::NotebookNodeDelegate(ServiceLocator &p_services, QObject *p_parent)
     : QStyledItemDelegate(p_parent), m_services(p_services) {}
@@ -53,7 +46,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
   // Get the widget style
   const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
-  const int hPadding = horizontalPadding(widget);
+  const int hPadding = TreeViewUtils::horizontalPadding(widget, 8);
 
   // Draw custom node background if specified (before selection)
   QColor bgColor = getNodeBackgroundColor(p_nodeInfo, p_option);
@@ -193,7 +186,7 @@ QSize NotebookNodeDelegate::sizeHint(const QStyleOptionViewItem &p_option,
 
   // Mirror the geometry of paintNode(): leading padding, icon (files only),
   // text, optional child count badge and trailing padding.
-  const int hPadding = horizontalPadding(opt.widget);
+  const int hPadding = TreeViewUtils::horizontalPadding(opt.widget, 8);
   int width = hPadding;
   if (!nodeInfo.isFolder) {
     width += m_iconSize + hPadding;

@@ -8,6 +8,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/itemviewutils.h>
+#include <gui/utils/treeviewutils.h>
 
 using namespace vnotex;
 
@@ -74,13 +75,14 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
 
   const QWidget *widget = p_option.widget;
   QStyle *style = widget ? widget->style() : QApplication::style();
+  const int hPadding = TreeViewUtils::horizontalPadding(widget, 6);
 
   // Selection / hover background on the full row (respects QSS).
   style->drawPrimitive(QStyle::PE_PanelItemViewItem, &p_option, p_painter, widget);
 
   QRect contentRect = p_option.rect;
-  contentRect.setLeft(contentRect.left() + m_hPadding);
-  contentRect.setRight(contentRect.right() - m_hPadding);
+  contentRect.setLeft(contentRect.left() + hPadding);
+  contentRect.setRight(contentRect.right() - hPadding);
 
   // Icon on the left, vertically centred across both lines.
   const QIcon icon = p_index.data(Qt::DecorationRole).value<QIcon>();
@@ -95,7 +97,7 @@ void TaskEntryDelegate::paint(QPainter *p_painter, const QStyleOptionViewItem &p
       iconMode = QIcon::Selected;
     }
     icon.paint(p_painter, iconRect, Qt::AlignCenter, iconMode);
-    contentRect.setLeft(iconRect.right() + m_hPadding);
+    contentRect.setLeft(iconRect.right() + hPadding);
   }
 
   const QColor textColor = resolveTextColor(p_option);

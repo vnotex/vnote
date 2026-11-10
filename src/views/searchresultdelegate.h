@@ -28,8 +28,6 @@ private:
   // Paint a line-level result row (line number + text with highlighted match)
   void paintLineResult(QPainter *p_painter, const QStyleOptionViewItem &p_option,
                        const QModelIndex &p_index) const;
-
-  const int m_hPadding = 6;
 };
 
 } // namespace vnotex

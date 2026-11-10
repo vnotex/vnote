@@ -78,6 +78,7 @@ Theme::Metadata Theme::readMetadata(const Palette &p_obj) {
   data.m_markdownEditorHighlightTheme =
       metaObj[QStringLiteral("markdown-editor-highlight-theme")].toString();
   data.m_backfillSystemPalette = metaObj[QStringLiteral("backfill-system-palette")].toBool(false);
+  data.m_compactTreeSpacing = metaObj[QStringLiteral("compact-tree-spacing")].toBool(false);
 
   return data;
 }

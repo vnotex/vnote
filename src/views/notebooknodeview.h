@@ -17,15 +17,10 @@ struct FileOpenParameters;
 // Handles selection, navigation, and forwards events to controller.
 class NotebookNodeView : public QTreeView {
   Q_OBJECT
-  Q_PROPERTY(bool compactSpacing READ getCompactSpacing WRITE setCompactSpacing)
 
 public:
   explicit NotebookNodeView(QWidget *p_parent = nullptr);
   ~NotebookNodeView() override;
-
-  // Theme-owned spacing; reset before each stylesheet is applied.
-  bool getCompactSpacing() const { return m_compactSpacing; }
-  void setCompactSpacing(bool p_enabled);
 
   // Set the controller that handles user actions
   void setController(NotebookNodeController *p_controller);
@@ -56,7 +51,6 @@ signals:
 
 protected:
   // Event handlers
-  bool event(QEvent *p_event) override;
   void mouseDoubleClickEvent(QMouseEvent *p_event) override;
   void keyPressEvent(QKeyEvent *p_event) override;
   void contextMenuEvent(QContextMenuEvent *p_event) override;
@@ -94,7 +88,6 @@ private:
   void setupView();
 
   NotebookNodeController *m_controller = nullptr;
-  bool m_compactSpacing = false;
 
   // T9 (notebook-explorer-drag-reorder): connection to the controller's
   // nodesReordered signal. Stored so setController() can disconnect cleanly

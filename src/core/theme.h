@@ -52,6 +52,8 @@ public:
 
   QString getThemeFolder() const;
 
+  bool getCompactTreeSpacing() const { return m_metadata.m_compactTreeSpacing; }
+
   static bool isValidThemeFolder(const QString &p_folder);
 
   // Callback type for preprocessing the palette JSON (e.g., backfilling system palette).
@@ -83,6 +85,9 @@ private:
 
     // Whether this theme needs to backfill current standard palette to the theme palette.
     bool m_backfillSystemPalette = false;
+
+    // Opt into compact horizontal spacing for all tree views.
+    bool m_compactTreeSpacing = false;
   };
 
   typedef QJsonObject Palette;

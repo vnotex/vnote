@@ -54,6 +54,27 @@ metadata-based system themes, and Windows standard-menu icon contrast in both
 Undo/Redo states. Run on the native Windows platform to exercise the icon provider;
 offscreen runs cannot verify it. Restore the system scheme and palette between test slots.
 
+### Tree spacing
+
+The optional `palette.json` metadata flag `compact-tree-spacing` enables 12px
+indentation and 4px custom-delegate horizontal padding for every `QTreeView`,
+including `QTreeWidget` subclasses. Only `pure` opts in; its generic QSS item
+padding is `4px 4px`, preserving row heights, fonts and icons. Its tree inline
+editors drop the form-field minimum height/padding to fit their rows.
+
+`Application::notify()` applies the active `ThemeService` policy through
+`TreeViewUtils` before initial `Polish` and before Qt handles `StyleChange` for
+an already-polished tree. Ignore constructor-time `StyleChange`: sidebar setup
+may not have applied its default indentation yet. On entry, record that tree's
+current indentation; repeated refreshes must not overwrite it. On exit, restore
+it and clear the transient widget properties. This preserves platform defaults
+and explicit per-view values rather than forcing every tree back to 16px.
+
+The application's service reference is guarded; an absent/destroyed service is
+a no-op. Preview theme services/local QSS do not drive this policy. Missing
+metadata keeps the legacy spacing, including user-defined themes; this changes
+bundled theme styling, not app/session configuration, so no migration is needed.
+
 ## Native MindMap image transport
 
 `MindMapImageLoader` handles unprotected data/file/relative/HTTP(S) resources only. Preserve the

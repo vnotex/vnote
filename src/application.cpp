@@ -8,6 +8,7 @@
 #include <QTimer>
 
 #include <gui/services/themeservice.h>
+#include <gui/utils/treeviewutils.h>
 
 #ifdef Q_OS_MACOS
 #import <AppKit/AppKit.h>
@@ -142,6 +143,21 @@ void Application::reloadThemeResources() {
   }
 
   m_themeService->refreshCurrentTheme();
+}
+
+bool Application::notify(QObject *p_receiver, QEvent *p_event) {
+  const auto type = p_event->type();
+  if (type == QEvent::Polish || type == QEvent::StyleChange) {
+    auto *tree = qobject_cast<QTreeView *>(p_receiver);
+    // Constructor-time StyleChange can precede the view's own indentation setup.
+    // Apply the active policy only once construction is complete, before Qt lays out rows.
+    if (tree && m_themeService &&
+        (type == QEvent::Polish || tree->testAttribute(Qt::WA_WState_Polished))) {
+      TreeViewUtils::applyThemeSpacing(tree,
+                                       m_themeService->getCurrentTheme().getCompactTreeSpacing());
+    }
+  }
+  return QApplication::notify(p_receiver, p_event);
 }
 
 bool Application::event(QEvent *p_event) {

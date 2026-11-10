@@ -86,23 +86,15 @@ overriding delegates), `tests/gui/test_itemviewutils.cpp` (behavioural),
 row heights on `QEvent::StyleChange`, so no height-specific cache invalidation
 is needed).
 
-## Notebook tree compact spacing
+## Tree spacing
 
-`NotebookNodeView::compactSpacing` is a transient QSS opt-in, not saved config.
-Only `pure` currently enables it: 12px hierarchy indentation and 4px delegate
-horizontal padding, with `::item { padding: 4px 4px; }` for row height and editor
-geometry. Keep these scoped rules after the generic `QTreeView::item` rule: Qt
-gives base and subclass selectors equal specificity. File icons remain 16px.
-The notebook inline rename editor also drops the general form-field minimum
-height and padding so it fits the compact row. Other trees and themes keep
-their existing spacing; no configuration migration is needed.
-
-QSS does not restore omitted `qproperty-*` values on theme switches. The view
-handles `StyleChange` in `event()`: call `setCompactSpacing(false)` to restore
-both the flag and shared indentation, then polish with the current style before
-`QTreeView::event()` relayouts the rows. Do not move this after the base event or
-into `changeEvent()`. The delegate uses the same horizontal padding for painting
-and width measurement, falling back to 8px without an opted-in widget.
+All tree views follow the active theme's [shared spacing policy](../gui/AGENTS.md#tree-spacing),
+including raw `QTreeView` and `QTreeWidget` instances. Keep constructor defaults
+through `TreeViewUtils::applyIndentation()` where applicable; do not add per-view
+QSS properties or style-change handlers. Custom notebook, search and task-entry
+delegates use `TreeViewUtils::horizontalPadding(widget, legacyPadding)` for their
+horizontal layout. Preserve each delegate's legacy fallback and use the same
+padding in painting and width measurement. Lists are not part of this policy.
 
 ## Search result selection colors
 
