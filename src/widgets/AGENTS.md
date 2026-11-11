@@ -151,9 +151,11 @@ and disabled in-place previews keep embedding independent of resource paths, Web
 preview helpers. This is a source editor, not the HTML reading view.
 
 `UpdateDialog` uses a read-only instance for nonempty `UpdateInfo::releaseNotes` when
-an update is available. It receives the locator from `UpdateController`; empty notes
-and up-to-date results allocate no editor. This only changes presentation: ordinary
-HEAD-only update checks still leave release notes empty, and the dialog fetches nothing.
+an update is available. It receives the locator from `UpdateController`; `UpdateService`
+provides source-specific notes after HEAD discovery. The dialog fetches nothing. Empty
+notes (including an optional notes-fetch failure) and up-to-date results allocate no
+editor and use a compact layout. The release-page action stays available when notes are
+missing; the Windows `Update Now` action remains exclusive to startup notifications.
 
 `test_simplemarkdowneditor` covers concealed source preservation and live theme changes
 with selection, read-only state, dirty state and undo/redo history intact.

@@ -1,15 +1,21 @@
 #include "updateservice.h"
 
+#include <QElapsedTimer>
 #include <QEventLoop>
 #include <QMutexLocker>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
+#include <QScopedPointer>
+#include <QTextDocument>
 #include <QTimer>
 #include <QVersionNumber>
+#include <QXmlStreamReader>
 #include <QtConcurrent>
 
 #include <functional>
+#include <utility>
 
 using namespace vnotex;
 
@@ -25,9 +31,118 @@ const QString c_giteeReleasesPageUrl = QStringLiteral("https://gitee.com/vnotex/
 // covers stalls, not a slow-but-alive server.
 constexpr int c_requestTimeoutMs = 60 * 1000;
 
+// Notes are optional: bound both the extra wait and in-memory metadata.
+constexpr int c_notesTimeoutMs = 10 * 1000;
+constexpr qint64 c_maxNotesBytes = 2 * 1024 * 1024;
+
 // How often a blocking request re-checks the cancellation flag. Bounds how long
 // service teardown can wait on an in-flight request.
 constexpr int c_cancelPollMs = 250;
+
+// HTML is metadata, never a request to load images, stylesheets or local files.
+class ReleaseNotesDocument : public QTextDocument {
+protected:
+  QVariant loadResource(int, const QUrl &) override { return QByteArray(); }
+};
+
+QString githubReleaseNotes(const QByteArray &p_feed, const QString &p_releaseUrl) {
+  QXmlStreamReader xml(p_feed);
+  const auto atom = QLatin1String("http://www.w3.org/2005/Atom");
+  if (!xml.readNextStartElement() || xml.name() != QLatin1String("feed") ||
+      xml.namespaceUri() != atom) {
+    return {};
+  }
+
+  QString content;
+  QString type;
+  int matches = 0;
+  while (xml.readNextStartElement()) {
+    if (xml.name() != QLatin1String("entry") || xml.namespaceUri() != atom) {
+      xml.skipCurrentElement();
+      continue;
+    }
+    bool matchesRelease = false;
+    QString entryContent;
+    QString entryType;
+    while (xml.readNextStartElement()) {
+      if (xml.namespaceUri() == atom && xml.name() == QLatin1String("link")) {
+        const auto attributes = xml.attributes();
+        if (attributes.value(QLatin1String("rel")) == QLatin1String("alternate") &&
+            attributes.value(QLatin1String("href")) == p_releaseUrl) {
+          matchesRelease = true;
+        }
+        xml.skipCurrentElement();
+      } else if (xml.namespaceUri() == atom && xml.name() == QLatin1String("content") &&
+                 !xml.attributes().hasAttribute(QLatin1String("src"))) {
+        entryType = xml.attributes().value(QLatin1String("type")).toString();
+        entryContent = xml.readElementText();
+      } else {
+        xml.skipCurrentElement();
+      }
+    }
+    if (matchesRelease) {
+      ++matches;
+      content = std::move(entryContent);
+      type = std::move(entryType);
+    }
+  }
+  // Reject truncated/ambiguous feeds rather than showing another version's notes.
+  while (!xml.atEnd()) {
+    xml.readNext();
+  }
+  if (xml.hasError() || matches != 1 || content.trimmed().isEmpty()) {
+    return {};
+  }
+  ReleaseNotesDocument document;
+  if (type == QLatin1String("html")) {
+    document.setHtml(content);
+  } else if (type.isEmpty() || type == QLatin1String("text")) {
+    document.setPlainText(content);
+  } else {
+    return {};
+  }
+  return document.toMarkdown();
+}
+
+QString giteeReleaseNotes(const QByteArray &p_page, const QString &p_version) {
+  const QString page = QString::fromUtf8(p_page);
+  // The sidebar repeats data-tag too. Only inspect the release's content container,
+  // and stop at the next release so a missing textarea cannot borrow older notes.
+  static const QRegularExpression release(
+      QStringLiteral(
+          R"(<div\b[^>]*\bclass\s*=\s*(['"])(?:[^'"]*\s)?release-tag-item(?:\s[^'"]*)?\1[^>]*>)"),
+      QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression tag(QStringLiteral(R"(\bdata-tag\s*=\s*(['"])([^'"]*)\1)"));
+  static const QRegularExpression textarea(
+      QStringLiteral(
+          R"(<textarea\b[^>]*\bclass\s*=\s*(['"])(?:[^'"]*\s)?content(?:\s[^'"]*)?\1[^>]*>([\s\S]*?)</textarea\s*>)"),
+      QRegularExpression::CaseInsensitiveOption);
+  const QString targetTag = QLatin1Char('v') + p_version;
+  auto releases = release.globalMatch(page);
+  while (releases.hasNext()) {
+    const auto item = releases.next();
+    const auto itemTag = tag.matchView(item.capturedView());
+    if (itemTag.capturedView(2) != targetTag) {
+      continue;
+    }
+    const qsizetype end = releases.hasNext() ? releases.peekNext().capturedStart() : page.size();
+    const auto notes =
+        textarea.matchView(QStringView(page).sliced(item.capturedEnd(), end - item.capturedEnd()));
+    if (!notes.hasMatch()) {
+      return {};
+    }
+    // Textarea contents are raw text with character references, not HTML. Escape
+    // raw angle brackets before decoding once; &lt;b&gt; must also stay literal.
+    QString escaped = notes.captured(2);
+    escaped.replace(QLatin1Char('<'), QLatin1String("&lt;"));
+    escaped.replace(QLatin1Char('>'), QLatin1String("&gt;"));
+    ReleaseNotesDocument document;
+    document.setHtml(QStringLiteral("<pre>%1</pre>").arg(escaped));
+    const QString markdown = document.toPlainText();
+    return markdown.trimmed().isEmpty() ? QString() : markdown;
+  }
+  return {};
+}
 
 } // namespace
 
@@ -237,13 +352,70 @@ bool UpdateService::findLatestRelease(QNetworkAccessManager &p_nam, UpdateInfo *
         page.setPath(nextPath);
       }
       p_info->releaseUrl = page.toString();
-      // Do not request the tag URL or a response body. Notes stay on the page.
+      // Discovery stops here; notes use a separate metadata endpoint, never this tag URL.
       return true;
     }
     url = next;
   }
   *p_error = tr("Too many redirects.");
   return false;
+}
+
+QString UpdateService::fetchReleaseNotes(QNetworkAccessManager &p_nam, const UpdateInfo &p_info) {
+  const QString path = m_source == Source::GitHub ? QStringLiteral("/vnotex/vnote/releases.atom")
+                                                  : QStringLiteral("/vnotex/vnote/releases");
+  QUrl url = latestReleaseUrl();
+  url.setPath(path);
+  QElapsedTimer deadline;
+  deadline.start();
+
+  for (int hop = 0; hop <= c_maxRedirects; ++hop) {
+    const int remaining = c_notesTimeoutMs - static_cast<int>(deadline.elapsed());
+    if (remaining <= 0 || isCancelled() || !isHostAllowed(url) ||
+        (url.path(QUrl::FullyEncoded) != path &&
+         url.path(QUrl::FullyEncoded) != path + QLatin1Char('/'))) {
+      return {};
+    }
+
+    QScopedPointer<QNetworkReply> reply(p_nam.get(buildRequest(url, m_currentVersion)));
+    reply->setReadBufferSize(64 * 1024);
+    QByteArray body;
+    bool tooLarge = false;
+    const auto readBody = [&]() {
+      // Read at most one byte past the cap, even with no/incorrect Content-Length.
+      body.append(reply->read(c_maxNotesBytes + 1 - body.size()));
+      if (body.size() > c_maxNotesBytes) {
+        tooLarge = true;
+        reply->abort();
+      }
+    };
+    connect(reply.data(), &QNetworkReply::readyRead, reply.data(), readBody);
+    bool timedOut = false;
+    bool cancelled = false;
+    waitForReply(
+        reply.data(), remaining, [this]() { return isCancelled(); }, &timedOut, &cancelled);
+    if (tooLarge || timedOut || cancelled || isCancelled() ||
+        reply->error() != QNetworkReply::NoError) {
+      return {};
+    }
+    readBody();
+    if (tooLarge) {
+      return {};
+    }
+
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status == 200) {
+      return m_source == Source::GitHub ? githubReleaseNotes(body, p_info.releaseUrl)
+                                        : giteeReleaseNotes(body, p_info.latestVersion);
+    }
+    const QUrl location = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
+    if ((status != 301 && status != 302 && status != 303 && status != 307 && status != 308) ||
+        !location.isValid() || location.isEmpty()) {
+      return {};
+    }
+    url = url.resolved(location);
+  }
+  return {};
 }
 
 QUrl UpdateService::latestReleaseUrl() const {
@@ -294,6 +466,13 @@ bool UpdateService::checkForUpdates() {
       return;
     }
 
+    if (info.updateAvailable) {
+      info.releaseNotes = fetchReleaseNotes(nam, info);
+    }
+    if (isCancelled()) {
+      fail(tr("Cancelled."));
+      return;
+    }
     finish(info);
   }));
 

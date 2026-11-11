@@ -421,8 +421,8 @@ former. Regression coverage is in `test_buffer` and `test_buffer_save_queue`.
 
 ## UpdateService
 
-Mechanism half of the update check: website HEAD discovery, exact-origin redirect
-validation and cancellation. The full contract (source selection, ordinary checks'
+Mechanism half of the update check: website HEAD discovery, optional release notes,
+exact-origin redirect validation and cancellation. The full contract (source selection, ordinary checks'
 read-only-install invariant, and the separate explicit Windows
 external-updater boundary) lives in [Update Check](#update-check) below; only the
 service-specific rules are repeated here.
@@ -430,15 +430,16 @@ service-specific rules are repeated here.
 ### It is a CHECK, and only a check
 
 `UpdateService` sends HEAD to the selected website's latest-release URL and identifies the
-version from a validated tag redirect. It never requests that tag URL, a response body,
-an API endpoint or an asset. There is no API fallback, token requirement or HTML scraping.
-It has no install/download/staging directory, lease or installation operation, and writes
-nothing to disk. `UpdateInfo` keeps `updateAvailable`, `currentVersion`, `latestVersion`,
-`releaseNotes` and `releaseUrl`; notes stay empty and are viewed on the release page.
+version from a validated tag redirect. For a newer release it then fetches optional notes
+from the selected source's public metadata endpoint; equal/older releases stay HEAD-only.
+It never requests that tag URL, an API endpoint or an asset. There is no API fallback or
+token requirement. It has no install/download/staging directory, lease or installation
+operation, and writes nothing to disk. `UpdateInfo` keeps `updateAvailable`, `currentVersion`,
+`latestVersion`, optional Markdown `releaseNotes` and `releaseUrl`.
 
 Do not add install/download-directory parameters or asset selection. This keeps read-only
 installations usable (issue #2728) and avoids file-ownership races.
-`testHeadDoesNotFetchTagOrBody` and `testTheCheckWritesNothingToDisk` guard that boundary.
+`testDiscoveryDoesNotFollowTagOrReadBody` and `testTheCheckWritesNothingToDisk` guard that boundary.
 
 ### No ConfigMgr2 dependency
 
@@ -469,6 +470,7 @@ selects GitHub; empty, absent and unrecognized values are Gitee. This mirrors
 | | GitHub | Gitee |
 |---|---|---|
 | HEAD discovery | `https://github.com/vnotex/vnote/releases/latest` | `https://gitee.com/vnotex/vnote/releases/latest` |
+| Notes GET | `https://github.com/vnotex/vnote/releases.atom` | `https://gitee.com/vnotex/vnote/releases` |
 | `releasesPageUrl()` | `https://github.com/vnotex/vnote/releases` | `https://gitee.com/vnotex/vnote/releases` |
 | Result `releaseUrl` | `<releasesPageUrl>/tag/v<version>` | `<releasesPageUrl>#release-v<version>` |
 | Exact production host | `github.com` | `gitee.com` |
@@ -478,13 +480,26 @@ then redirects to a source archive: stop at the tag Location, and use the public
 list's `release-v<version>` anchor for the human-facing button instead. Never pass Gitee's
 raw tag Location to `QDesktopServices`. The synthesized button fragment is not a request URL.
 
+GitHub notes select the Atom entry whose alternate link exactly matches the discovered
+tag's release URL; feed order and `continuous-build` must not select the version. HTML
+content is converted to Markdown. Gitee notes select the exact `data-tag` within a
+`release-tag-item`, then decode its embedded Markdown textarea once, preserving raw tags,
+entities and whitespace without borrowing the next release's text. Gitee's advertised
+Atom endpoint is not used (it returns 404). Both sources were exercised against v4.14.4.
+`QTextDocument` conversion disables resource loading: notes may not load local files,
+images or stylesheets. It needs a `QGuiApplication`, not QtWidgets or VTextEdit.
+
 `m_latestReleaseOverride` and `testSetExtraAllowedHost` nominate only the local fixture's
-exact origin, including scheme and port; an override does not also allow production hosts.
+exact origin, including scheme and port; notes paths use that same origin, and an override
+does not also allow production hosts.
 
 ### Outcomes, and who owns a result
 
-A missing, invalid or non-stable tag redirect, unexpected status (including 200, 403 or
-429), network error or cancellation emits `failed()`, never an "up to date" result.
+During discovery, a missing, invalid or non-stable tag redirect, unexpected status
+(including 200, 403 or 429) or network error emits `failed()`, never an "up to date" result.
+Missing, malformed, oversized, timed-out or failed optional notes leave the version result
+successful with empty notes and a usable release-page link. Explicit cancellation during
+either phase still emits `failed()`.
 A validated numeric three-component tag emits `checkFinished()` with `latestVersion`
 without the `v` prefix and a canonical source-specific `releaseUrl`.
 `updateAvailable` is `latest > current` under `QVersionNumber`; equal and older versions
@@ -528,17 +543,22 @@ because `findLatestRelease()` blocks on a nested event loop.
 
 ### Redirect and request boundary
 
-Every request is HEAD with `ManualRedirectPolicy`. Accept only 301, 302, 303, 307 and 308,
-with at most `c_maxRedirects` hops. Production URLs require the selected exact website
+Every request uses `ManualRedirectPolicy`. Accept only 301, 302, 303, 307 and 308 redirects,
+with at most `c_maxRedirects` hops per phase. Production URLs require the selected exact website
 host, HTTPS on port 443 (including an omitted default port), and no userinfo, query or
 fragment. API hosts, asset CDNs, subdomain suffixes and cross-source redirects are rejected.
-Only `/vnotex/vnote/releases/latest` and its trailing-slash form may be requested.
+HEAD discovery requests only `/vnotex/vnote/releases/latest` and its trailing-slash form.
 
 A redirect to `/vnotex/vnote/releases/tag/v<version>` completes discovery without another
 request. Parse the entire numeric version with exactly three components; reject suffixes,
-overflow, other repositories, archive/download/login paths and malformed URLs. There is
-no response-body buffering or API-size cap: HEAD must complete from headers alone even
-when `Content-Length` describes a large GET body.
+overflow, other repositories, archive/download/login paths and malformed URLs. HEAD must
+complete from headers alone even when `Content-Length` describes a large GET body.
+
+The optional notes GET requests only the selected source's notes endpoint above (or its
+trailing-slash form), including every redirect. It cannot follow a tag/archive/asset URL.
+A 2 MiB streaming response cap applies even without `Content-Length`, with a 10-second
+aggregate network deadline across redirects. Conversion stays in memory; no disk cache,
+source fallback or external resource request is introduced.
 
 Cancellation is POLLED every 250 ms inside the blocking request, because
 `QNetworkReply::abort()` must run on the reply's own thread; without the poll, closing VNote
@@ -554,7 +574,7 @@ explicitly nominated origin, and it is independent of the source.
 `tests/core/test_updateservice.cpp` drives the REAL `QNetworkAccessManager` against a local
 `QTcpServer`. Preserve these behavioral boundaries:
 
-- `testHeadDoesNotFetchTagOrBody` serves HEAD headers declaring an 8 GB GET body and leaves
+- `testDiscoveryDoesNotFollowTagOrReadBody` serves HEAD headers declaring an 8 GB GET body and leaves
   the socket open. Both sources must complete without waiting for a body or requesting the
   tag URL, which the fixture redirects to an archive as Gitee does.
 - `testTheCheckWritesNothingToDisk` redirects the process working directory into a scratch
@@ -562,7 +582,11 @@ explicitly nominated origin, and it is independent of the source.
   no asset, manifest or signature request; the CWD catches relative-path writes.
 - Real-socket regressions cover both sources, accepted redirect statuses, malformed or
   cross-origin targets, failed HTTP statuses without fallback, relative canonicalization,
-  redirect bounds, cancellation and ownership of in-flight checks.
+  redirect bounds, cancellation and ownership of in-flight checks. Notes regressions cover
+  exact-version selection in both formats, Unicode/entities/raw tags, absent or malformed
+  notes, streaming overflow, safe GET redirects, and cancellation during notes retrieval.
+  Equal/older releases must never request notes. No configuration migration is needed:
+  source ownership, saved preferences and update-check policy are unchanged.
 
 ### NotificationService fields consumed by UpdateController
 
@@ -710,9 +734,9 @@ for authentication/replacement requirements and
 
 | Layer | Unit | Responsibility |
 |---|---|---|
-| Service | [`UpdateService`](updateservice.h) | website HEAD discovery, validated tag redirects, exact source origins, cancellation, worker lifetime |
+| Service | [`UpdateService`](updateservice.h) | website HEAD discovery, optional bounded notes, validated redirects, exact source origins, cancellation, worker lifetime |
 | Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness; explicit Windows helper launch and authenticated shutdown session |
-| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, Open Release Page / Skip This Version / Later; notes are viewed on the release page |
+| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, optional read-only Markdown notes, Open Release Page / Skip This Version / Later |
 | View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with Check Release first and Windows-only Update Now |
 | External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification or eligible-delta reconstruction, safe replacement/backup and same-token relaunch after accepted shutdown |
 
@@ -722,9 +746,10 @@ injected and every config-dependent decision lives in `UpdateController`, which 
 configured source down via `setSource()`.
 
 `UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
-`releaseNotes` and `releaseUrl`. Ordinary checks leave notes empty and read no body or
-`assets[]` array. No asset is selected and neither a tag page nor an asset URL is requested
-(`testHeadDoesNotFetchTagOrBody` guards this).
+`releaseNotes` and `releaseUrl`. Notes are optional Markdown obtained only from the
+selected source's bounded metadata GET; no `assets[]` array is read. No asset is selected
+and neither a tag page nor an asset URL is requested
+(`testDiscoveryDoesNotFollowTagOrReadBody` guards this).
 
 `checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
 check is dropped and returns `false`). `UpdateController` sets its manual-vs-startup mode
@@ -769,7 +794,7 @@ because it blocks on a nested event loop.
 - Cancellation is POLLED every 250 ms inside a blocking request so service teardown is never
   blocked for the full request timeout.
 - HEAD discovery consumes no body and stops before requesting the validated tag URL;
-  `testHeadDoesNotFetchTagOrBody` covers a large declared GET body and an archive redirect.
+  `testDiscoveryDoesNotFollowTagOrReadBody` covers a large declared GET body and an archive redirect.
 
 ### Forbidden patterns
 

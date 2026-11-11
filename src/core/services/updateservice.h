@@ -25,19 +25,16 @@ struct UpdateInfo {
   QString currentVersion;
   QString latestVersion;
 
-  // Optional release notes and the human-facing release page. HEAD checks leave notes empty.
+  // Optional Markdown release notes and the human-facing release page.
   QString releaseNotes;
   QString releaseUrl;
 };
 
 // Checks the selected forge for a newer release and reports what it found.
 //
-// That is the ENTIRE feature. VNote does not download, extract, execute,
-// install or restart-to-apply anything, and it never writes outside its own
-// configuration directory; when an update exists the user is sent to the
-// release page to fetch it themselves. Do not reintroduce a downloader here
-// without revisiting the "VNote never modifies its own install directory"
-// invariant in the root AGENTS.md.
+// Only release metadata is fetched, in memory. This service never downloads
+// release artifacts, writes files or installs anything; installation belongs
+// exclusively to the explicit external updater. See the root update contract.
 //
 // Deliberately does NOT depend on ConfigMgr2: core_configs links core_services,
 // so the dependency would be circular. The installed version is injected, and
@@ -115,8 +112,11 @@ private:
   bool isHostAllowed(const QUrl &p_url) const;
 
   // HEAD-only discovery on a worker. Stop at a validated stable tag redirect;
-  // never request the tag page, an asset, or a response body.
+  // never request the tag page or an asset.
   bool findLatestRelease(QNetworkAccessManager &p_nam, UpdateInfo *p_info, QString *p_error);
+
+  // Optional, bounded metadata GET after discovery, only when an update is available.
+  QString fetchReleaseNotes(QNetworkAccessManager &p_nam, const UpdateInfo &p_info);
 
   QUrl latestReleaseUrl() const;
 

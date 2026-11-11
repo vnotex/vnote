@@ -79,7 +79,7 @@ void UpdateDialog::setupUi(ServiceLocator &p_services) {
     accept();
   });
 
-  resize(560, 460);
+  resize(560, m_info.releaseNotes.isEmpty() ? 180 : 460);
 }
 
 void UpdateDialog::setFailed(const QString &p_message) {
