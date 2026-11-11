@@ -218,7 +218,7 @@ Wrap selected text as inline math, or insert inline-math markers at the cursor.
 - `Ctrl+G, .`  
 Insert a math block or wrap selected lines in one. Repeating the action inside an empty block removes its delimiters.
 - `Ctrl+G, M`  
-Mark selected text with HTML `<mark>` tags, or insert the tags at the cursor.
+Mark selected text with Markdown `==` markers, or insert the markers at the cursor.
 - `Ctrl+,`  
 Insert or edit a link.
 - `Ctrl+/`  
