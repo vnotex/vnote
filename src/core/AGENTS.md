@@ -183,10 +183,10 @@ The Markdown experience migration resets
 versions are excluded; unreadable sessions keep the existing migration/write protection.
 Only the session confirmation flag changes: the selected main-config concealment preset is
 preserved. The normal setter persists the reset; showing the prompt consumes it as before.
-No version bump is included: ordinary same-version `4.14.3` launches do not reset the flag;
-those profiles wait for their next version change. `VX_DEBUG_REFRESH` resets it on every launch
-while the application stamp remains `4.14.3`, below the `4.14.4` boundary. A downgrade followed
-by re-upgrade can also repeat the reset. Coverage: `testMarkdownExperienceMigration` in
+The `4.14.4` release activates this migration for older profiles. Same-version `4.14.4`
+launches preserve the confirmation flag, including with `VX_DEBUG_REFRESH`, because the
+persisted version has reached the migration boundary. A downgrade followed by re-upgrade
+can repeat the reset. Coverage: `testMarkdownExperienceMigration` in
 `tests/core/test_configmgr2.cpp` verifies version gates, all presets, persistence and restart.
 
 ### Update-check state

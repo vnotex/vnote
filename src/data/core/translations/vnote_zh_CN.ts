@@ -5273,7 +5273,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+247"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+249"/>
         <source>Protect Markdown from XSS</source>
         <translation>防止 Markdown 中的 XSS 攻击</translation>
     </message>
@@ -5303,7 +5303,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>标签页隐藏指定分钟数后释放网页视图内存；返回时重新加载当前 Markdown，不会丢失未保存的文本或撤销历史</translation>
     </message>
     <message>
-        <location line="-347"/>
+        <location line="-349"/>
         <source>Editor Toolbar Options</source>
         <translation>编辑器工具栏选项</translation>
     </message>
@@ -5839,14 +5839,14 @@ Trust is remembered until you close this notebook.</source>
         <translation>无法将 HTML 转换为 Markdown</translation>
     </message>
     <message>
-        <location line="+486"/>
+        <location line="+500"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
     <message>
         <location line="+98"/>
         <location line="+37"/>
-        <location line="+663"/>
+        <location line="+668"/>
         <source>Unable to start presentation</source>
         <translation>无法启动演示</translation>
     </message>
@@ -5934,12 +5934,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>当前无法恢复章节编号。自动章节编号仍处于关闭状态。请将此笔记设为当前笔记并使其可编辑，然后开启再关闭“允许自动章节编号”以重试。</translation>
     </message>
     <message>
-        <location line="-3369"/>
+        <location line="-3388"/>
         <source>Unable to render Markdown</source>
         <translation>无法渲染 Markdown</translation>
     </message>
     <message>
-        <location line="+3826"/>
+        <location line="+3845"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>

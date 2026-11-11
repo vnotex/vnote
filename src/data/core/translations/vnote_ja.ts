@@ -5273,7 +5273,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+247"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+249"/>
         <source>Protect Markdown from XSS</source>
         <translation>Markdown を XSS から保護</translation>
     </message>
@@ -5303,7 +5303,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>タブが非表示になってから指定した分数が経過するとウェブビューのメモリを解放します。タブに戻ると、未保存のテキストや元に戻す履歴を失わずに現在の Markdown を再読み込みします</translation>
     </message>
     <message>
-        <location line="-347"/>
+        <location line="-349"/>
         <source>Editor Toolbar Options</source>
         <translation>エディタのツールバーオプション</translation>
     </message>
@@ -5839,14 +5839,14 @@ Trust is remembered until you close this notebook.</source>
         <translation>HTML を Markdown に変換できません</translation>
     </message>
     <message>
-        <location line="+486"/>
+        <location line="+500"/>
         <source>Presentation Mode</source>
         <translation>プレゼンテーションモード</translation>
     </message>
     <message>
         <location line="+98"/>
         <location line="+37"/>
-        <location line="+663"/>
+        <location line="+668"/>
         <source>Unable to start presentation</source>
         <translation>プレゼンテーションを開始できません</translation>
     </message>
@@ -5934,12 +5934,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>現在、セクション番号を復元できませんでした。セクション番号の自動付与はオフのままです。このノートを現在のノートにして編集可能な状態にし、「セクション番号の自動付与を許可」をオンにしてからオフにして再試行してください。</translation>
     </message>
     <message>
-        <location line="-3369"/>
+        <location line="-3388"/>
         <source>Unable to render Markdown</source>
         <translation>Markdown を描画できません</translation>
     </message>
     <message>
-        <location line="+3826"/>
+        <location line="+3845"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>置換は読み取りモードではサポートされていません</translation>
