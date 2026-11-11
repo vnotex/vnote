@@ -710,9 +710,10 @@ This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-fil
 > [UpdateService](#updateservice) above are the service-scoped subset of this section.
 
 Ordinary startup and manual checks fetch release metadata and offer the **release page**.
-They do not install anything. Only explicit activation of the Windows notification's
-`Update Now` action may launch the deployed external script; the manual-check dialog remains
-check-only. The exception adds no installation behavior to `UpdateService` or `UpdateInfo`.
+They do not install anything. Only explicit activation of Windows' `Update Now` action in
+the startup notification or manual-check dialog may launch the deployed external script.
+Both keep a release-page alternative. The exception adds no installation behavior to
+`UpdateService` or `UpdateInfo`.
 
 > **An ordinary check never modifies the install directory or downloads release artifacts.**
 > It creates no lease, staging tree or journal, and extracts or executes nothing. Its only
@@ -736,7 +737,7 @@ for authentication/replacement requirements and
 |---|---|---|
 | Service | [`UpdateService`](updateservice.h) | website HEAD discovery, optional bounded notes, validated redirects, exact source origins, cancellation, worker lifetime |
 | Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness; explicit Windows helper launch and authenticated shutdown session |
-| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, optional read-only Markdown notes, Open Release Page / Skip This Version / Later |
+| View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, optional read-only Markdown notes, Open Release Page / Skip This Version / Later, explicit Windows-only Update Now intent |
 | View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with Check Release first and Windows-only Update Now |
 | External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification or eligible-delta reconstruction, safe replacement/backup and same-token relaunch after accepted shutdown |
 

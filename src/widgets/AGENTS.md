@@ -155,7 +155,13 @@ an update is available. It receives the locator from `UpdateController`; `Update
 provides source-specific notes after HEAD discovery. The dialog fetches nothing. Empty
 notes (including an optional notes-fetch failure) and up-to-date results allocate no
 editor and use a compact layout. The release-page action stays available when notes are
-missing; the Windows `Update Now` action remains exclusive to startup notifications.
+missing. On Windows, an available update also offers `Update Now`, with visible disclosure
+that it downloads the update, then closes and reopens VNote. This button is neither default
+nor auto-default; opening the dialog or pressing Return must not authorize an update.
+The view emits `updateRequested()` only; `UpdateController` owns the shared external updater
+launch. An existing attempt keeps the dialog open with visible in-progress feedback;
+otherwise the controller closes it before launch so warning notifications are accessible.
+Up-to-date results and non-Windows platforms do not offer the updater action.
 
 `test_simplemarkdowneditor` covers concealed source preservation and live theme changes
 with selection, read-only state, dirty state and undo/redo history intact.

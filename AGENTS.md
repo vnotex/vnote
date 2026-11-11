@@ -356,10 +356,11 @@ or installation is added to them.
 > remain usable from read-only installations (`/usr/bin`, Program Files, a read-only DMG;
 > issue #2728), without probing install-directory writability.
 
-The sole installation exception is an **explicit Windows “Update Now” notification action**
-launching the deployed external PowerShell script. Keep “Check Release” first and available;
-the manual-check dialog is unchanged and has no automatic-install entry point. The action
-must disclose downloading, closing and reopening VNote; checks never activate it themselves.
+The sole installation exception is an **explicit Windows “Update Now” action** from the
+startup notification or manual-check dialog, launching the deployed external PowerShell script.
+Keep “Check Release” first in notifications and “Open Release Page” available in the dialog.
+The action must disclose downloading, closing and reopening VNote, and must not be the
+manual dialog's default button; checks never activate it themselves.
 
 The external updater must authenticate the offered version's signed manifest with the
 bundled minisign verifier, then verify a full package or reconstruct the complete target

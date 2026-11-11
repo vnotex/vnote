@@ -21,4 +21,8 @@ UpdateDialog::UpdateDialog(ServiceLocator &p_services, const UpdateInfo &p_info,
 
 void UpdateDialog::setFailed(const QString &p_message) { Q_UNUSED(p_message) }
 
+#ifdef Q_OS_WIN
+void UpdateDialog::setUpdateInProgress() {}
+#endif
+
 void UpdateDialog::setupUi(ServiceLocator &p_services) { Q_UNUSED(p_services) }

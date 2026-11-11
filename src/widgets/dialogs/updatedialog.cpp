@@ -74,6 +74,15 @@ void UpdateDialog::setupUi(ServiceLocator &p_services) {
                         "version and install it yourself.")
                          .arg(m_info.currentVersion));
 
+#ifdef Q_OS_WIN
+  m_summary->setText(m_summary->text() + QStringLiteral("\n\n") +
+                     tr("Update Now downloads the update, then closes and reopens VNote."));
+  auto *updateButton = buttons->addButton(tr("Update Now"), QDialogButtonBox::ActionRole);
+  updateButton->setAutoDefault(false);
+  updateButton->setDefault(false);
+  connect(updateButton, &QPushButton::clicked, this, &UpdateDialog::updateRequested);
+#endif
+
   connect(m_releasePageButton, &QPushButton::clicked, this, [this]() {
     QDesktopServices::openUrl(QUrl(m_info.releaseUrl));
     accept();
@@ -86,3 +95,10 @@ void UpdateDialog::setFailed(const QString &p_message) {
   m_status->setVisible(true);
   m_status->setText(tr("Could not check for updates: %1").arg(p_message));
 }
+
+#ifdef Q_OS_WIN
+void UpdateDialog::setUpdateInProgress() {
+  m_status->setText(tr("An update is already in progress. Follow the updater window."));
+  m_status->setVisible(true);
+}
+#endif

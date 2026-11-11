@@ -194,6 +194,12 @@ bool UpdateController::startCheck(bool p_manual) {
 
   m_manualCheck = p_manual;
   m_checkInFlight = true;
+  // An accepted check supersedes the manual offer too. Clear it immediately so
+  // a later failure cannot be reported into a hidden, obsolete dialog.
+  if (m_dialog) {
+    m_dialog->close();
+    m_dialog.clear();
+  }
 
   // Advance the throttle on check START, not on completion: a failing network
   // must not cause a check on every single launch. Manual checks bypass the
@@ -702,6 +708,21 @@ void UpdateController::showDialog(const UpdateInfo &p_info) {
 
   connect(dialog, &UpdateDialog::skipRequested, this,
           [this](const QString &p_version) { skipVersion(p_version); });
+#ifdef Q_OS_WIN
+  connect(dialog, &UpdateDialog::updateRequested, this, [this, dialog, p_info]() {
+    if (m_dialog != dialog || !dialog->isVisible() || m_checkInFlight) {
+      return;
+    }
+    if (m_scriptUpdateSession) {
+      dialog->setUpdateInProgress();
+      return;
+    }
+    // Unblock the main window before launch, including its failure notification.
+    // WA_DeleteOnClose defers deletion until this click has finished dispatching.
+    dialog->accept();
+    startScriptUpdate(p_info);
+  });
+#endif
 
   dialog->show();
   dialog->raise();

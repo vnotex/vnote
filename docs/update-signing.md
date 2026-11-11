@@ -2,9 +2,11 @@
 
 > **Ordinary update checks remain metadata-only and read-only for the installation.**
 > `UpdateService` ignores release assets and `UpdateInfo` stays unchanged. Only
-> explicit activation of the Windows notification's **Update Now** action may
-> launch the deployed external PowerShell updater. Keep **Check Release** and the
-> existing manual-check dialog; do not restore the removed C++ installer.
+> explicit activation of Windows' **Update Now** action in the startup notification
+> or manual-check dialog may launch the deployed external PowerShell updater.
+> Keep **Check Release** / **Open Release Page** available, disclose downloading,
+> closing and reopening VNote, and never make the dialog's updater action its default.
+> Do not restore the removed C++ installer.
 >
 > The external updater verifies signed full packages or reconstructs the complete
 > target payload from an eligible signed delta. Windows `win64` releases still

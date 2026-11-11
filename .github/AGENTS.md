@@ -402,10 +402,12 @@ Keep `qtpdf` in the CI SDK for the required runtime and its attribution.
 ## Update artifacts
 
 Ordinary startup/manual checks remain metadata-only and read-only for the installation;
-`UpdateService` ignores assets. The sole installation entry point is the explicit Windows
-`Update Now` notification action launching the deployed external PowerShell updater, not an
-in-process installer or a manual-dialog action. The script verifies signed full packages or
-reconstructs complete payloads from eligible deltas, with no unsigned or cross-source fallback. See
+`UpdateService` ignores assets. Installation requires an explicit Windows `Update Now` action
+from the startup notification or manual-check dialog, launching the deployed external PowerShell
+updater, never an in-process installer. Keep the release-page alternative and disclose downloading,
+closing and reopening VNote; checks never launch the helper themselves. The script verifies signed
+full packages or reconstructs complete payloads from eligible deltas, with no unsigned or
+cross-source fallback. See
 [../docs/update-signing.md](../docs/update-signing.md) and root
 [AGENTS.md § Update Check](../AGENTS.md#update-check).
 

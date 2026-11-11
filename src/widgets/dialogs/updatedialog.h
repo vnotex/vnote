@@ -15,10 +15,9 @@ class ServiceLocator;
 
 // Presents the outcome of an update check.
 //
-// Pure view: it renders the UpdateInfo it is given and emits intents. VNote
-// downloads nothing, so the only affordance for an available update is the
-// release page. Every decision (whether a version is skipped, whether to
-// throttle) belongs to UpdateController.
+// Pure view: renders UpdateInfo and emits intents. The release page is always
+// available for a newer version; Windows also offers an explicit update action.
+// Launch, skip and throttle policy belongs to UpdateController.
 class UpdateDialog : public QDialog {
   Q_OBJECT
 
@@ -27,9 +26,17 @@ public:
 
   void setFailed(const QString &p_message);
 
+#ifdef Q_OS_WIN
+  void setUpdateInProgress();
+#endif
+
 signals:
   // "Skip this version": never offer this exact version again.
   void skipRequested(const QString &p_version);
+
+#ifdef Q_OS_WIN
+  void updateRequested();
+#endif
 
 private:
   void setupUi(ServiceLocator &p_services);

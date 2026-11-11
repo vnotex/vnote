@@ -12522,6 +12522,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <source>Could not check for updates: %1</source>
         <translation>更新を確認できませんでした: %1</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="80"/>
+        <source>Update Now</source>
+        <translation>今すぐ更新</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="79"/>
+        <source>Update Now downloads the update, then closes and reopens VNote.</source>
+        <translation>「今すぐ更新」は更新をダウンロードしてから VNote を終了し、再起動します。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="101"/>
+        <source>An update is already in progress. Follow the updater window.</source>
+        <translation>更新はすでに進行中です。更新プログラムのウィンドウを確認してください。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::UpdateService</name>

@@ -138,13 +138,24 @@ read-only with respect to the installation and fetch no release assets. `UpdateS
 dependency. Full check contract:
 [`../core/services/AGENTS.md` § Update Check](../core/services/AGENTS.md#update-check).
 
-Only explicit activation of Windows' `Update Now` notification action may start the deployed
-external PowerShell updater. Keep `Check Release` first, the existing manual-check dialog
-unchanged, and `m_dismissOnTrigger=false` on the new action. Preserve attention, persistence,
-throttle/skip and supersession behavior; stale/dismissed/evicted offer callbacks cannot
-launch. Allow one active attempt, and retire failures/cancellations so explicit retry works.
-Launch failures are interrupting Warning notifications in category `update`, key
-`update.install`, retaining the release-page fallback.
+Only explicit activation of Windows' `Update Now` action from the startup notification or
+manual-check dialog may start the deployed external PowerShell updater. Keep `Check Release`
+first and `m_dismissOnTrigger=false` on the notification action, and `Open Release Page`
+available in the dialog. Preserve attention, persistence, throttle/skip and supersession
+behavior; stale/dismissed/evicted offer callbacks cannot launch. Allow one active attempt,
+and retire failures/cancellations so explicit retry works. Launch failures are interrupting
+Warning notifications in category `update`, key `update.install`, retaining the release-page
+fallback.
+
+The manual dialog emits `updateRequested()`; the controller captures its immutable offered
+`UpdateInfo` and requires the current visible dialog with no check in flight. If a helper
+attempt already exists, keep the dialog open with `setUpdateInProgress()` feedback rather
+than silently consuming the click. Otherwise accept the dialog (deferred `WA_DeleteOnClose`
+deletion) before calling the same `startScriptUpdate()` used by notifications, so launch
+failure notifications remain accessible. Manual retry starts with another explicit check.
+Only an accepted new check closes/clears an older manual offer; dropped checks preserve it.
+Clear the tracked dialog immediately so a later check failure cannot target a hidden view.
+No config/default changes or migration are needed.
 
 Snapshot `CoreConfig::getUpdateSource()` on activation using the existing source converters;
 absent config normalizes to Gitee. Pass the immutable offered version, never a newly
