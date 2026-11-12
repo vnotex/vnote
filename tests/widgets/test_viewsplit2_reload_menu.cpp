@@ -3,10 +3,15 @@
 #include <QApplication>
 #include <QFile>
 #include <QMessageBox>
+#include <QPointingDevice>
+#include <QProxyStyle>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QTabBar>
 #include <QTextStream>
 #include <QTimer>
+#include <QToolButton>
+#include <QWheelEvent>
 #include <QtTest>
 
 #include <core/nodeidentifier.h>
@@ -18,6 +23,7 @@
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
+#include <widgets/viewsplit2.h>
 #include <widgets/viewwindow2.h>
 
 using namespace vnotex;
@@ -105,6 +111,9 @@ private slots:
   void testModePreservedAcrossReload();
   void testCursorStateHandedBackOnReload();
   void testCursorRestoreSkippedWhenReloadFails();
+  void testTabWheelScrolling_data();
+  void testTabWheelScrolling();
+  void testTabWheelAccumulation();
 
 private:
   vnotex::Buffer2 openBuffer(const QString &p_relativePath);
@@ -458,6 +467,151 @@ void TestViewSplit2ReloadMenu::testCursorRestoreSkippedWhenReloadFails() {
   QCOMPARE(view.restoreScrollCallCount, 0);
   QCOMPARE(view.restoredCursorLine, -1);
   QCOMPARE(view.restoredCursorOffset, -1);
+}
+
+namespace {
+class NoTabWheelStyle : public QProxyStyle {
+public:
+  NoTabWheelStyle() : QProxyStyle(QStringLiteral("Fusion")) {}
+  int styleHint(StyleHint p_hint, const QStyleOption *p_option, const QWidget *p_widget,
+                QStyleHintReturn *p_return) const override {
+    return p_hint == SH_TabBar_AllowWheelScrolling
+               ? 0
+               : QProxyStyle::styleHint(p_hint, p_option, p_widget, p_return);
+  }
+};
+
+void populateTabs(ViewSplit2 &p_split) {
+  for (int i = 0; i < 8; ++i) {
+    p_split.addTab(new QWidget(&p_split), QStringLiteral("Document %1 with a long title").arg(i));
+  }
+  p_split.resize(420, 180);
+  p_split.show();
+}
+
+void sendTabWheel(QTabBar *p_bar, QPoint p_angle, QPoint p_pixels = {}, bool p_precise = false,
+                  bool p_inverted = false, Qt::ScrollPhase p_phase = Qt::NoScrollPhase) {
+  static const QPointingDevice mouse(
+      QStringLiteral("tab-test mouse"), 1, QInputDevice::DeviceType::Mouse,
+      QPointingDevice::PointerType::Generic, QInputDevice::Capability::Position, 1, 0);
+  static const QPointingDevice preciseMouse(
+      QStringLiteral("tab-test precise mouse"), 2, QInputDevice::DeviceType::Mouse,
+      QPointingDevice::PointerType::Generic,
+      QInputDevice::Capability::Position | QInputDevice::Capability::PixelScroll, 1, 0);
+  const QPoint pos = p_bar->rect().center();
+  QWheelEvent event(pos, p_bar->mapToGlobal(pos), p_pixels, p_angle, Qt::NoButton, Qt::NoModifier,
+                    p_phase, p_inverted, Qt::MouseEventNotSynthesized,
+                    p_precise ? &preciseMouse : &mouse);
+  QApplication::sendEvent(p_bar, &event);
+}
+} // namespace
+
+void TestViewSplit2ReloadMenu::testTabWheelScrolling_data() {
+  QTest::addColumn<bool>("rtl");
+  QTest::addColumn<QPoint>("angle");
+  QTest::addColumn<QPoint>("pixels");
+  QTest::addColumn<bool>("precise");
+  QTest::addColumn<bool>("inverted");
+  QTest::newRow("vertical-notch") << false << QPoint(0, -120) << QPoint() << false << false;
+  QTest::newRow("cocoa-estimated-pixels")
+      << false << QPoint(0, -120) << QPoint(0, -10) << false << false;
+  QTest::newRow("cocoa-natural-scrolling")
+      << false << QPoint(0, -120) << QPoint(0, -10) << false << true;
+  QTest::newRow("horizontal-notch") << false << QPoint(-120, 0) << QPoint() << false << false;
+  QTest::newRow("rtl-horizontal-notch") << true << QPoint(120, 0) << QPoint() << false << false;
+  QTest::newRow("precise-horizontal") << false << QPoint(-80, 0) << QPoint(-40, 0) << true << false;
+  QTest::newRow("precise-vertical") << false << QPoint(0, -80) << QPoint(0, -40) << true << false;
+  QTest::newRow("rtl-precise-horizontal") << true << QPoint(80, 0) << QPoint(40, 0) << true << true;
+}
+
+void TestViewSplit2ReloadMenu::testTabWheelScrolling() {
+  QFETCH(bool, rtl);
+  QFETCH(QPoint, angle);
+  QFETCH(QPoint, pixels);
+  QFETCH(bool, precise);
+  QFETCH(bool, inverted);
+  NoTabWheelStyle style;
+  ServiceLocator services;
+  ViewSplit2 split(services, QStringLiteral("wheel-test"));
+  auto *bar = split.tabBar();
+  bar->setStyle(&style);
+  split.setLayoutDirection(rtl ? Qt::RightToLeft : Qt::LeftToRight);
+  populateTabs(split);
+  auto *forward = bar->findChild<QToolButton *>(QStringLiteral("ScrollRightButton"));
+  auto *backward = bar->findChild<QToolButton *>(QStringLiteral("ScrollLeftButton"));
+  QVERIFY(forward && backward);
+  QTRY_VERIFY(forward->isVisible() && forward->isEnabled());
+  const auto initial = bar->tabRect(0);
+  QSignalSpy selection(bar, &QTabBar::currentChanged);
+
+  sendTabWheel(bar, angle, pixels, precise, inverted);
+  const auto scrolled = bar->tabRect(0);
+  QVERIFY(rtl ? scrolled.x() > initial.x() : scrolled.x() < initial.x());
+  sendTabWheel(bar, -angle, -pixels, precise, inverted);
+  QCOMPARE(bar->tabRect(0), initial);
+
+  for (int i = 0; i < 20; ++i) {
+    sendTabWheel(bar, angle, pixels, precise, inverted);
+  }
+  QVERIFY(!forward->isEnabled());
+  const auto end = bar->tabRect(bar->count() - 1);
+  QVERIFY(bar->rect().contains(end.center()));
+  sendTabWheel(bar, angle, pixels, precise, inverted);
+  QCOMPARE(bar->tabRect(bar->count() - 1), end);
+  for (int i = 0; i < 20; ++i) {
+    sendTabWheel(bar, -angle, -pixels, precise, inverted);
+  }
+  QCOMPARE(bar->tabRect(0), initial);
+  QCOMPARE(bar->currentIndex(), 0);
+  QCOMPARE(selection.count(), 0);
+}
+
+void TestViewSplit2ReloadMenu::testTabWheelAccumulation() {
+  ServiceLocator services;
+  ViewSplit2 split(services, QStringLiteral("wheel-accumulation"));
+  populateTabs(split);
+  auto *bar = split.tabBar();
+  auto *forward = bar->findChild<QToolButton *>(QStringLiteral("ScrollRightButton"));
+  QVERIFY(forward);
+  QTRY_VERIFY(forward->isVisible() && forward->isEnabled());
+  const auto initial = bar->tabRect(0);
+  QSignalSpy selection(bar, &QTabBar::currentChanged);
+  sendTabWheel(bar, QPoint(0, -60));
+  QCOMPARE(bar->tabRect(0), initial);
+  sendTabWheel(bar, QPoint(0, -60));
+  QVERIFY(bar->tabRect(0).x() < initial.x());
+  sendTabWheel(bar, QPoint(0, 120));
+  QCOMPARE(bar->tabRect(0), initial);
+
+  sendTabWheel(bar, QPoint(0, -60));
+  sendTabWheel(bar, {}, QPoint(0, -20), true, false, Qt::ScrollBegin);
+  QCOMPARE(bar->tabRect(0), initial);
+  sendTabWheel(bar, {}, QPoint(0, -20), true, false, Qt::ScrollMomentum);
+  QVERIFY(bar->tabRect(0).x() < initial.x());
+  const auto scrolled = bar->tabRect(0);
+  sendTabWheel(bar, {}, QPoint(0, -20), true);
+  sendTabWheel(bar, {}, QPoint(0, 20), true);
+  QCOMPARE(bar->tabRect(0), scrolled);
+  sendTabWheel(bar, {}, QPoint(0, 20), true);
+  QCOMPARE(bar->tabRect(0), initial);
+  sendTabWheel(bar, {}, QPoint(0, -20), true);
+  sendTabWheel(bar, {}, {}, true, false, Qt::ScrollEnd);
+  sendTabWheel(bar, {}, QPoint(0, -20), true);
+  QCOMPARE(bar->tabRect(0), initial);
+  sendTabWheel(bar, {}, QPoint(0, -40), true, false, Qt::ScrollBegin);
+  QVERIFY(bar->tabRect(0).x() < initial.x());
+
+  while (split.count() > 1) {
+    auto *page = split.widget(split.count() - 1);
+    split.removeTab(split.count() - 1);
+    delete page;
+  }
+  QTRY_VERIFY(!forward->isVisible());
+  const auto fitting = bar->tabRect(0);
+  sendTabWheel(bar, QPoint(0, -120));
+  QCOMPARE(bar->tabRect(0), fitting);
+  QCOMPARE(bar->currentIndex(), 0);
+  QCOMPARE(selection.count(), 0);
 }
 
 } // namespace tests

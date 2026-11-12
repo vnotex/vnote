@@ -8,6 +8,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QHBoxLayout>
+#include <QInputDevice>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPointer>
@@ -16,6 +17,7 @@
 #include <QTabBar>
 #include <QToolButton>
 #include <QUrl>
+#include <QWheelEvent>
 
 #include "linkpreviewoverlay.h"
 #include "propertydefs.h"
@@ -185,8 +187,55 @@ void ViewSplit2::setupTabBar() {
     }
   });
 
-  // Middle click to close tab.
+  // Wheel scrolling and middle/double click to close tabs.
   bar->installEventFilter(this);
+}
+
+void ViewSplit2::scrollTabBar(QWheelEvent *p_event) {
+  p_event->accept();
+  auto *bar = tabBar();
+  // Cocoa supplies estimated pixel deltas even for ordinary, notched mice.
+  const bool pixels =
+      p_event->device()->capabilities().testFlag(QInputDevice::Capability::PixelScroll) &&
+      !p_event->pixelDelta().isNull();
+  const QPoint delta = pixels ? p_event->pixelDelta() : p_event->angleDelta();
+  const bool horizontal = qAbs(delta.x()) > qAbs(delta.y());
+  int amount = horizontal ? delta.x() : delta.y();
+  if (horizontal && bar->isRightToLeft()) {
+    amount = -amount;
+  }
+  // The delivered delta already includes the system's natural-scrolling policy.
+  if (pixels != m_tabWheelUsesPixels || p_event->phase() == Qt::ScrollBegin ||
+      p_event->phase() == Qt::ScrollEnd ||
+      (amount != 0 && (amount > 0) != (m_tabWheelRemainder > 0))) {
+    m_tabWheelRemainder = 0;
+  }
+  m_tabWheelUsesPixels = pixels;
+  if (amount == 0) {
+    return;
+  }
+
+  // Qt 6 owns these direct children; clicking them scrolls without selecting a tab.
+  auto *button = bar->findChild<QToolButton *>(amount > 0 ? QLatin1String("ScrollLeftButton")
+                                                          : QLatin1String("ScrollRightButton"),
+                                               Qt::FindDirectChildrenOnly);
+  if (!button || !button->isVisible() || !button->isEnabled()) {
+    m_tabWheelRemainder = 0;
+    return;
+  }
+
+  // One arrow step per wheel notch or 40 logical pixels from a precise device.
+  const int step = pixels ? 40 : QWheelEvent::DefaultDeltasPerStep;
+  m_tabWheelRemainder += amount;
+  for (int remaining = bar->count(); remaining > 0 && qAbs(m_tabWheelRemainder) >= step;
+       --remaining) {
+    m_tabWheelRemainder += amount > 0 ? -step : step;
+    button->click();
+    if (!button->isVisible() || !button->isEnabled()) {
+      m_tabWheelRemainder = 0;
+      break;
+    }
+  }
 }
 
 void ViewSplit2::initIcons() {
@@ -769,6 +818,11 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
       }
     }
   } else if (p_object == tabBar()) {
+    if (p_event->type() == QEvent::Wheel) {
+      scrollTabBar(static_cast<QWheelEvent *>(p_event));
+      // Also installed on qApp: stop here to avoid handling this wheel twice.
+      return true;
+    }
     if (p_event->type() == QEvent::MouseButtonRelease) {
       auto mouseEve = static_cast<QMouseEvent *>(p_event);
       if (mouseEve->button() == Qt::MiddleButton) {

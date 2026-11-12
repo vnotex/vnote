@@ -16,6 +16,7 @@
 class QActionGroup;
 class QToolButton;
 class QMenu;
+class QWheelEvent;
 
 namespace vnotex {
 
@@ -199,6 +200,7 @@ private slots:
 private:
   void setupUI();
   void setupTabBar();
+  void scrollTabBar(QWheelEvent *p_event);
   void setupCornerWidget();
   void updateCornerButtonsVisibility();
   void setupShortcuts();
@@ -248,6 +250,10 @@ private:
   // Used for alternate tab tracking.
   ViewWindow2 *m_currentViewWindow = nullptr;
   ViewWindow2 *m_lastViewWindow = nullptr;
+
+  // Sub-step wheel input is local to this strip, never the active document.
+  int m_tabWheelRemainder = 0;
+  bool m_tabWheelUsesPixels = false;
 
   // Corner widget buttons.
   QToolButton *m_windowListButton = nullptr;

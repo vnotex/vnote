@@ -8,6 +8,7 @@ A refinement release with smoother tree navigation, more flexible Markdown editi
     * Create a Quick Note directly when only one scheme is available, without opening the scheme picker
     * Expand or collapse task containers such as Git on double-click or Enter, including when filtering hides their children; keep leaf-task execution unchanged
 * **Interface**
+    * Scroll overflowing view-area tabs with vertical or horizontal mouse-wheel input, including macOS and high-resolution mice, without switching the active document
     * Show shared circular count badges at the visible right edge of Notebook, Tags, Outline and Tasks trees, keeping counts visible during horizontal scrolling and widening badges for larger counts
     * Show directly tagged note counts in Tags badges; defer tag queries while the panel is hidden or behind another dock tab, reuse unchanged results on reopening, and preserve selection during count refreshes
     * Animate expanding and collapsing Tasks, search results, Settings and United Entry trees consistently with Notebooks, Tags and Outline
