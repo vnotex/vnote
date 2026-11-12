@@ -7,6 +7,7 @@
 #include <QMimeData>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/treechildcountdelegate.h>
 #include <gui/utils/treeviewutils.h>
 #include <gui/utils/widgetutils.h>
 #include <models/outlinemodel.h>
@@ -18,6 +19,7 @@ OutlineView::OutlineView(QWidget *p_parent) : QTreeView(p_parent) { setupView();
 void OutlineView::setupView() {
   // Single column, no header.
   setHeaderHidden(true);
+  setItemDelegate(new TreeChildCountDelegate(this));
 
   // Single selection mode.
   setSelectionMode(QAbstractItemView::SingleSelection);

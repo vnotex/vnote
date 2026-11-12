@@ -4,6 +4,7 @@
 
 #include <QtTest>
 
+#include <QFontMetricsF>
 #include <QImage>
 #include <QPainter>
 #include <QStandardItemModel>
@@ -24,6 +25,7 @@ class TestNotebookNodeDelegateSizeHint : public QObject {
 private slots:
   void testLongNameIsWiderThanLegacyFixedWidth();
   void testChildCountBadgeAddsWidth();
+  void fullNameFitsBesideBadgeAtMeasuredWidth();
   void testCompactContentMatchesStandardDelegate_data();
   void testCompactContentMatchesStandardDelegate();
 
@@ -64,7 +66,6 @@ void TestNotebookNodeDelegateSizeHint::testLongNameIsWiderThanLegacyFixedWidth()
 void TestNotebookNodeDelegateSizeHint::testChildCountBadgeAddsWidth() {
   vnotex::ServiceLocator services;
   vnotex::NotebookNodeDelegate delegate(services);
-  QVERIFY(delegate.showChildCount());
 
   QStandardItemModel model;
 
@@ -83,6 +84,36 @@ void TestNotebookNodeDelegateSizeHint::testChildCountBadgeAddsWidth() {
   const int badgedWidth = delegate.sizeHint(opt, makeIndex(model, badged)).width();
 
   QVERIFY(badgedWidth > plainWidth);
+}
+
+void TestNotebookNodeDelegateSizeHint::fullNameFitsBesideBadgeAtMeasuredWidth() {
+  vnotex::ServiceLocator services;
+  vnotex::NotebookNodeDelegate delegate(services);
+  QStandardItemModel model;
+  vnotex::NodeInfo folder;
+  folder.id.notebookId = QStringLiteral("nb");
+  folder.id.relativePath = QStringLiteral("folder");
+  folder.isFolder = true;
+  folder.childCount = 42;
+  folder.name =
+      QStringLiteral("A very long folder name that needs horizontal scrolling to see its ending");
+  folder.textColor = QStringLiteral("black");
+  const auto index = makeIndex(model, folder);
+  QStyleOptionViewItem option;
+  option.font = QApplication::font();
+  option.fontMetrics = QFontMetrics(option.font);
+  const QSize hint = delegate.sizeHint(option, index);
+  const auto render = [&](int p_width) {
+    QImage image(p_width, hint.height(), QImage::Format_RGB32);
+    image.fill(Qt::white);
+    QPainter painter(&image);
+    option.rect = image.rect();
+    delegate.paint(&painter, option, index);
+    return image;
+  };
+  const int nameWidth = qCeil(QFontMetricsF(option.font).horizontalAdvance(folder.name));
+  const QRect label(0, 0, nameWidth + 8, hint.height());
+  QCOMPARE(render(hint.width()).copy(label), render(hint.width() + 400).copy(label));
 }
 
 int TestNotebookNodeDelegateSizeHint::firstInkColumn(QStyledItemDelegate &p_delegate,
@@ -163,12 +194,6 @@ void TestNotebookNodeDelegateSizeHint::testCompactContentMatchesStandardDelegate
   // Preserve the existing inclusive QRect::right() convention and reserved icon slot.
   QCOMPARE(fileInk - folderInk, 16 - 1 + 4);
   QCOMPARE(notebook.sizeHint(empty, fileIndex).width() - folderWidth, 16 + 4);
-
-  auto badged = folder;
-  badged.childCount = 42;
-  const int badgeWidth = notebook.sizeHint(empty, makeIndex(model, badged)).width();
-  QCOMPARE(badgeWidth - folderWidth,
-           empty.fontMetrics.horizontalAdvance(QStringLiteral("(42)")) + 4);
 }
 
 } // namespace tests

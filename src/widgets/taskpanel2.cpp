@@ -16,6 +16,7 @@
 #include <core/services/taskservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <gui/utils/treechildcountdelegate.h>
 #include <gui/utils/treeviewutils.h>
 #include <models/tasktreemodel.h>
 #include <models/treefilterproxymodel.h>
@@ -44,6 +45,7 @@ void TaskPanel2::setupUI() {
 
   m_treeView = new QTreeView(this);
   m_treeView->setModel(m_proxyModel);
+  m_treeView->setItemDelegate(new TreeChildCountDelegate(m_treeView));
   m_treeView->setHeaderHidden(true);
   m_treeView->setAnimated(true);
   TreeViewUtils::applyIndentation(m_treeView);

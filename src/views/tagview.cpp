@@ -6,6 +6,7 @@
 #include <QKeyEvent>
 #include <QSortFilterProxyModel>
 
+#include <gui/utils/treechildcountdelegate.h>
 #include <gui/utils/treeviewutils.h>
 #include <gui/utils/widgetutils.h>
 #include <models/tagmodel.h>
@@ -26,6 +27,7 @@ void TagView::setupView() {
   setContextMenuPolicy(Qt::CustomContextMenu);
 
   setHeaderHidden(true);
+  setItemDelegate(new TreeChildCountDelegate(this));
   TreeViewUtils::applyIndentation(this);
   setUniformRowHeights(true);
   setAnimated(true);

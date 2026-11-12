@@ -181,6 +181,33 @@ resizing still updates the column periodically instead of waiting for the drag t
 Each callback measures current content and viewport geometry. Tests should wait for
 column coverage or scrollbar behavior, not a fixed sleep or the timer interval.
 
+## Tree child-count badges
+
+`TreeChildCountDelegate` (`utils/treechildcountdelegate.h`) is the shared opt-in
+renderer for single-column trees. Parent the delegate to the `QTreeView` when
+installing it: the horizontal scrollbar connection repaints viewport-fixed badges
+after Qt scroll-copies the row contents. No per-row widgets or model writes.
+
+The default count is the displayed model's immediate `rowCount(index)`, including
+proxy filtering, not the number of descendants or matching notes. Tags, Outline,
+and Tasks use this delegate directly. `NotebookNodeDelegate` derives from it and
+passes cached folder totals to the protected layout/paint/width helpers, so lazy
+loading and the folder-only proxy do not change notebook count semantics. Never
+fetch children from a paint or size-hint path. Zero/unknown counts are hidden.
+
+Badges use the initialized font, theme spacing and foreground; single digits are
+circular and longer counts widen into pills without increasing row height. Anchor
+X to the viewport, not the column or indented row. Preserve name clearance in both
+painting and width hints, including fractional text advances at maximum scroll.
+Keep badge painting active when indentation moves the label outside the viewport.
+Selection, input and inline editing remain owned by Qt. No settings/schema changed;
+no configuration migration is needed.
+
+Coverage: `test_treechildcountdelegate` exercises scrolling, resize, row selection,
+immediate/filtered counts and deeply indented rows; `test_notebooknodedelegate_sizehint`
+covers cached notebook totals and content widths. Native smoke must also inspect
+screen captures after scrolling, rather than relying only on forced widget renders.
+
 ## External-link confirmation
 
 `ExternalLinkConfirmation::ask()` (`utils/externallinkconfirmation.{h,cpp}`) owns

@@ -47,7 +47,7 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_folderView = new NotebookNodeView(this);
   m_folderView->setModel(m_folderProxyModel);
 
-  m_folderDelegate = new NotebookNodeDelegate(m_services, this);
+  m_folderDelegate = new NotebookNodeDelegate(m_services, m_folderView);
   m_folderView->setItemDelegate(m_folderDelegate);
 
   m_folderController = new NotebookNodeController(m_services, this);

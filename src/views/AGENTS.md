@@ -100,8 +100,14 @@ themes retain each delegate's legacy spacing. Lists are not part of this policy.
 
 `tests/gui/test_notebooknodedelegate_sizehint.cpp` compares rendered folder text
 with the standard delegate under plain and left-bordered styles, and checks
-file-icon/count gaps and empty-rectangle width measurement. Keep inline editors
+file-icon gaps and empty-rectangle width measurement. Keep inline editors
 on Qt's `SE_ItemViewItemText` allocation, not the inset glyph rectangle.
+
+Notebook, Tags and Outline share the viewport-fixed count renderer documented in
+[GUI utilities](../gui/AGENTS.md#tree-child-count-badges); Tasks opts in there too.
+Notebook's custom delegate supplies cached folder totals. Paint the badge after
+focus chrome, using the normal theme foreground like the shared standard delegate,
+not the system HighlightedText color over a QSS selection background.
 
 ## Search result selection colors
 

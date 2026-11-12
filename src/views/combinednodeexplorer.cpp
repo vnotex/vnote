@@ -43,7 +43,7 @@ void CombinedNodeExplorer::setupUI() {
   m_view = new NotebookNodeView(this);
   m_view->setModel(m_proxyModel);
 
-  m_delegate = new NotebookNodeDelegate(m_services, this);
+  m_delegate = new NotebookNodeDelegate(m_services, m_view);
   m_view->setItemDelegate(m_delegate);
 
   m_controller = new NotebookNodeController(m_services, this);

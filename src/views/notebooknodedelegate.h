@@ -1,7 +1,7 @@
 #ifndef NOTEBOOKNODEDELEGATE_H
 #define NOTEBOOKNODEDELEGATE_H
 
-#include <QStyledItemDelegate>
+#include <gui/utils/treechildcountdelegate.h>
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
@@ -14,7 +14,7 @@ namespace vnotex {
 // - Node name with optional styling (colors, badges)
 // - Selection highlighting
 // - Drag feedback
-class NotebookNodeDelegate : public QStyledItemDelegate {
+class NotebookNodeDelegate : public TreeChildCountDelegate {
   Q_OBJECT
 
 public:
@@ -28,10 +28,6 @@ public:
 
   // Override to select only base name (without extension) when editing starts
   void setEditorData(QWidget *p_editor, const QModelIndex &p_index) const override;
-
-  // Enable/disable showing node count badge on folders
-  void setShowChildCount(bool p_show);
-  bool showChildCount() const;
 
 private:
   // Paint the node content
@@ -47,7 +43,6 @@ private:
 
   // Configuration
   ServiceLocator &m_services;
-  bool m_showChildCount = true;
   const int m_iconSize = 16;
 };
 
