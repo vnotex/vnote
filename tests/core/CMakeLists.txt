@@ -1,4 +1,13 @@
 # Core module tests
+add_qt_test(test_tododocument
+  SOURCES
+    test_tododocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/tododocument.cpp
+  LINKS
+    cmark
+  GUILESS
+)
+
 add_qt_test(test_error
   SOURCES
     test_error.cpp

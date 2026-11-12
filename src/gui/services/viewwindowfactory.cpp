@@ -7,6 +7,7 @@
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/mindmapviewwindow2.h>
 #include <widgets/textviewwindow2.h>
+#include <widgets/todoviewwindow.h>
 #include <widgets/typstviewwindow.h>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
@@ -29,6 +30,11 @@ void ViewWindowFactory::registerBuiltInCreators() {
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
                      ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
+                  });
+  registerCreator("TODO",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
+                     ViewWindowMode p_mode) -> ViewWindow2 * {
+                    return new TodoViewWindow(p_services, p_buffer, p_parent, p_mode);
                   });
   registerCreator("Typst",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,

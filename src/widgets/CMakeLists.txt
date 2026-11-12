@@ -90,6 +90,7 @@ target_sources(vnote PRIVATE
     editors/statuswidget.cpp editors/statuswidget.h
     editors/statusoverlay.h
     editors/texteditor.cpp editors/texteditor.h
+    editors/todoeditor.cpp editors/todoeditor.h
     editors/webviewadapter.cpp editors/webviewadapter.h
     editreaddiscardaction.cpp editreaddiscardaction.h
     encodingbutton.cpp encodingbutton.h
@@ -147,6 +148,7 @@ target_sources(vnote PRIVATE
     tagviewer2.cpp tagviewer2.h
     textviewwindow2.cpp textviewwindow2.h
     textviewwindowhelper.h
+    todoviewwindow.cpp todoviewwindow.h
     typstviewwindow.cpp typstviewwindow.h
     titlebar.cpp titlebar.h
     titlebarcontainer.cpp titlebarcontainer.h

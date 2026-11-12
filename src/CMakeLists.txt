@@ -165,6 +165,7 @@ target_link_libraries(vnote PRIVATE
     Qt::Widgets
     core_services
     vnote_httpapi
+    cmark
     VTextEdit
     qhotkey
     vxcore

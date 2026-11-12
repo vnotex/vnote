@@ -1731,13 +1731,20 @@ get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
 find_package(Qt6 REQUIRED COMPONENTS Pdf)
 # Dock and window regressions execute the production presentation dependencies.
 foreach(_view_window_test
+    test_todoviewwindow
     test_viewsplit2_reload_menu
     test_view_window2_readonly_toolbar
     test_view_window2_readonly_save_warning
     test_tagexplorer2)
+  set(_view_window_test_args)
+  if(_view_window_test STREQUAL "test_todoviewwindow")
+    set(_view_window_test_args -nocrashhandler -o -,txt
+      -o "${CMAKE_CURRENT_BINARY_DIR}/${_view_window_test}.txt,txt")
+  endif()
   add_qt_test(${_view_window_test}
     SOURCES ${_view_window_test}.cpp ${_markdown_window_test_sources}
     LINKS ${_markdown_window_links} Qt6::Pdf
+    ARGS ${_view_window_test_args}
   )
   target_include_directories(${_view_window_test} PRIVATE
     $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
@@ -1781,6 +1788,24 @@ set_property(TEST test_markdownviewwindow_lazy PROPERTY ENVIRONMENT
 )
 if(WIN32)
   set_property(TEST test_markdownviewwindow_lazy APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()
+target_compile_definitions(test_todoviewwindow PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+add_dependencies(test_todoviewwindow VX_EXTRA_RESOURCE)
+set_tests_properties(test_todoviewwindow PROPERTIES TIMEOUT 600)
+set_property(TEST test_todoviewwindow PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_markdown_window_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set_property(TEST test_todoviewwindow APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
 endif()
 # Real source-aware export and dialog behavior through the complete application services.

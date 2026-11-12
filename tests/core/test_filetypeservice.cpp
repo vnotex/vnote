@@ -43,6 +43,10 @@ private slots:
   void testSavedTypstAssociations_data();
   void testSavedTypstAssociations();
   void testDeletedTypstAssociation();
+  void testTodoRouting();
+  void testTodoRegistryMigrations_data();
+  void testTodoRegistryMigrations();
+  void testDeletedTodoAssociation();
   void testImageFallbackPrecedence();
   void testImageRegistryProjection();
   void testSavedImageAssociations_data();
@@ -388,6 +392,284 @@ void TestFileTypeService::testDeletedTypstAssociation() {
   }
   QCOMPARE(reloaded.getFileType(QStringLiteral("image.PNG")).m_typeName, QStringLiteral("Image"));
   QCOMPARE(rawFileTypes(reloadedContext), saved);
+}
+
+void TestFileTypeService::testTodoRouting() {
+  const auto beforeReads = rawFileTypes(m_context);
+  const auto todo = m_service->getFileTypeByName(QStringLiteral("tOdO"));
+  QCOMPARE(todo.m_typeName, QStringLiteral("TODO"));
+  QCOMPARE(todo.m_defaultDisplayName, QStringLiteral("TODO"));
+  QCOMPARE(todo.m_displayName, QStringLiteral("TODO"));
+  QCOMPARE(todo.m_suffixes, QStringList{QStringLiteral("todo")});
+  QCOMPARE(todo.preferredSuffix(), QStringLiteral("todo"));
+  QVERIFY(todo.m_isNewable);
+  QVERIFY(todo.m_isSearchable);
+  for (const auto &suffix :
+       {QStringLiteral("todo"), QStringLiteral("TODO"), QStringLiteral("ToDo")}) {
+    QCOMPARE(m_service->getFileTypeBySuffix(suffix).m_typeName, todo.m_typeName);
+    QCOMPARE(m_service->getFileType(QStringLiteral("notes/計画 draft.") + suffix).m_typeName,
+             todo.m_typeName);
+    QCOMPARE(m_service->getFileTypeByName(suffix).m_typeName, todo.m_typeName);
+  }
+  QCOMPARE(m_service->getFileType(QStringLiteral("near-miss.tod")).m_typeName,
+           QStringLiteral("Others"));
+  QCOMPARE(m_service->getFileTypeBySuffix(QStringLiteral("TOD")).m_typeName,
+           QStringLiteral("Others"));
+  int count = 0;
+  for (const auto &type : m_service->getAllFileTypes()) {
+    if (type.m_typeName == todo.m_typeName) {
+      ++count;
+      QCOMPARE(type.preferredSuffix(), QStringLiteral("todo"));
+      QVERIFY(type.m_isNewable);
+      QVERIFY(type.m_isSearchable);
+    }
+  }
+  QCOMPARE(count, 1);
+  QCOMPARE(rawFileTypes(m_context), beforeReads);
+}
+
+void TestFileTypeService::testTodoRegistryMigrations_data() {
+  QTest::addColumn<QJsonObject>("registry");
+  QTest::addColumn<QJsonArray>("expectedRows");
+  QTest::addColumn<int>("expectedVersion");
+  const QJsonArray rows{
+      QJsonObject{{"name", "Text"},
+                  {"suffixes", QJsonArray{"TxT"}},
+                  {"displayName", "My text"},
+                  {"isNewable", false},
+                  {"isSearchable", false},
+                  {"metadata", QJsonObject{{"custom", QJsonArray{3, false, "保留"}}}}},
+      QJsonObject{{"name", "Others"},
+                  {"suffixes", QJsonArray()},
+                  {"displayName", "Others"},
+                  {"isNewable", true},
+                  {"isSearchable", false}}};
+  const QJsonObject typst{{"name", "Typst"},
+                          {"suffixes", QJsonArray{"typst"}},
+                          {"displayName", "Typst"},
+                          {"isNewable", true},
+                          {"isSearchable", true}};
+  const QJsonObject todo{{"name", "TODO"},
+                         {"suffixes", QJsonArray{"todo"}},
+                         {"displayName", "TODO"},
+                         {"isNewable", true},
+                         {"isSearchable", true}};
+  auto legacyExpected = rows;
+  legacyExpected.append(typst);
+  legacyExpected.append(todo);
+  QTest::newRow("missing-version") << QJsonObject{{"fileTypes", rows}} << legacyExpected << 2;
+  for (const auto &version : QJsonArray{QJsonValue::Null, false, "invalid", -1, 0, 1, 2, 17}) {
+    auto expected = rows;
+    if (version.toInt() == 0 || version.toInt() < 0) {
+      expected.append(typst);
+    }
+    if (version.toInt() < 2) {
+      expected.append(todo);
+    }
+    const auto label = QJsonDocument(QJsonArray{version}).toJson(QJsonDocument::Compact);
+    QTest::newRow(label.constData()) << QJsonObject{{"fileTypes", rows}, {"schemaVersion", version}}
+                                     << expected << qMax(version.toInt(), 2);
+  }
+  for (const auto version : {0, 1, 2, 17}) {
+    const auto label = QByteArray("empty-") + QByteArray::number(version);
+    QTest::newRow(label.constData())
+        << QJsonObject{{"fileTypes", QJsonArray()}, {"schemaVersion", version}} << QJsonArray()
+        << qMax(version, 2);
+  }
+  const auto defaults = QJsonDocument::fromJson(rawFileTypes(m_context)).array();
+  QTest::newRow("missing-array") << QJsonObject() << defaults << 2;
+  QTest::newRow("non-array") << QJsonObject{{"fileTypes", false}} << defaults << 2;
+  for (const auto version : {0, 1}) {
+    for (int owner = 0; owner < rows.size(); ++owner) {
+      auto claimed = rows;
+      auto row = claimed[owner].toObject();
+      auto suffixes = row["suffixes"].toArray();
+      suffixes.append("ToDo");
+      row["suffixes"] = suffixes;
+      claimed[owner] = row;
+      auto expected = claimed;
+      if (version == 0) {
+        expected.append(typst);
+      }
+      auto unassociated = todo;
+      unassociated["suffixes"] = QJsonArray();
+      expected.append(unassociated);
+      const auto label =
+          QByteArray("claimed-") + QByteArray::number(version) + "-" + QByteArray::number(owner);
+      QTest::newRow(label.constData())
+          << QJsonObject{{"fileTypes", claimed}, {"schemaVersion", version}} << expected << 2;
+    }
+    for (const auto &suffixes : {QJsonArray(), QJsonArray{"customTodo", "draft"}}) {
+      for (const bool missingSearchable : {false, true}) {
+        auto custom = todo;
+        custom["name"] = "tOdO";
+        custom["suffixes"] = suffixes;
+        custom["displayName"] = "My planner";
+        custom["isNewable"] = false;
+        custom["isSearchable"] = false;
+        custom["metadata"] =
+            QJsonObject{{"displayName_en_US", "Private tasks"},
+                        {"displayName_ja_JP", "計画"},
+                        {"custom", QJsonObject{{"values", QJsonArray{1, "two", false}}}}};
+        auto expected = rows;
+        auto expectedTodo = custom;
+        if (missingSearchable) {
+          custom.remove("isSearchable");
+          expectedTodo["isSearchable"] = true;
+        }
+        auto source = rows;
+        source.insert(1, custom);
+        expected.insert(1, expectedTodo);
+        if (version == 0) {
+          expected.append(typst);
+        }
+        const auto label = QByteArray("custom-") + QByteArray::number(version) + "-" +
+                           QByteArray::number(suffixes.size()) + "-" +
+                           QByteArray::number(missingSearchable);
+        QTest::newRow(label.constData())
+            << QJsonObject{{"fileTypes", source}, {"schemaVersion", version}} << expected << 2;
+      }
+    }
+  }
+}
+
+void TestFileTypeService::testTodoRegistryMigrations() {
+  QFETCH(QJsonObject, registry);
+  QFETCH(QJsonArray, expectedRows);
+  QFETCH(int, expectedVersion);
+  char *raw = nullptr;
+  QCOMPARE(vxcore_context_get_config(m_context, &raw), VXCORE_OK);
+  QVERIFY(raw != nullptr);
+  const QByteArray original(raw);
+  vxcore_string_free(raw);
+  raw = nullptr;
+  QCOMPARE(vxcore_context_get_config_path(m_context, &raw), VXCORE_OK);
+  QVERIFY(raw != nullptr);
+  const auto path = QString::fromUtf8(raw);
+  vxcore_string_free(raw);
+  const auto restore = qScopeGuard([&]() {
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(file.write(original), qint64(original.size()));
+  });
+  auto input = QJsonDocument::fromJson(original).object();
+  input["fileTypes"] = registry;
+  const auto bytes = QJsonDocument(input).toJson(QJsonDocument::Compact);
+  {
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(file.write(bytes), qint64(bytes.size()));
+  }
+  VxCoreContextHandle context = nullptr;
+  const auto destroy = qScopeGuard([&]() {
+    if (context) {
+      vxcore_context_destroy(context);
+    }
+  });
+  QByteArray saved;
+  for (int restart = 0; restart < 3; ++restart) {
+    QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+    QVERIFY(context != nullptr);
+    {
+      FileTypeCoreService service(context, QStringLiteral("en_US"));
+      if (restart == 0) {
+        QCOMPARE(QJsonDocument::fromJson(rawFileTypes(context)).array(), expectedRows);
+      } else {
+        QCOMPARE(rawFileTypes(context), saved);
+      }
+      raw = nullptr;
+      QCOMPARE(vxcore_context_get_config(context, &raw), VXCORE_OK);
+      QVERIFY(raw != nullptr);
+      const auto config = QJsonDocument::fromJson(QByteArray(raw)).object();
+      vxcore_string_free(raw);
+      QCOMPARE(config["fileTypes"].toObject()["schemaVersion"].toInt(), expectedVersion);
+
+      bool hasTodo = false;
+      for (const auto &value : expectedRows) {
+        const auto expected = value.toObject();
+        if (expected["name"].toString().compare(QLatin1String("TODO"), Qt::CaseInsensitive) != 0) {
+          continue;
+        }
+        hasTodo = true;
+        const auto todo = service.getFileTypeByName(QStringLiteral("TODO"));
+        QCOMPARE(todo.m_typeName, expected["name"].toString());
+        QCOMPARE(QJsonArray::fromStringList(todo.m_suffixes), expected["suffixes"].toArray());
+        QCOMPARE(todo.m_defaultDisplayName, expected["displayName"].toString());
+        QCOMPARE(todo.m_metadata, expected["metadata"].toObject());
+        QCOMPARE(todo.m_isNewable, expected["isNewable"].toBool());
+        QCOMPARE(todo.m_isSearchable, expected["isSearchable"].toBool());
+        QCOMPARE(todo.m_displayName,
+                 todo.m_metadata.value("displayName_en_US").toString(todo.m_defaultDisplayName));
+        QCOMPARE(todo.preferredSuffix(),
+                 todo.m_suffixes.isEmpty() ? QString() : todo.m_suffixes.first());
+      }
+      if (!hasTodo) {
+        QVERIFY(service.getFileTypeByName(QStringLiteral("TODO")).m_typeName.isEmpty());
+      }
+      QString suffixOwner;
+      for (const auto &value : expectedRows) {
+        const auto row = value.toObject();
+        for (const auto &suffix : row["suffixes"].toArray()) {
+          if (suffix.toString().compare(QLatin1String("todo"), Qt::CaseInsensitive) == 0) {
+            suffixOwner = row["name"].toString();
+            break;
+          }
+        }
+        if (!suffixOwner.isEmpty()) {
+          break;
+        }
+      }
+      if (suffixOwner.isEmpty()) {
+        suffixOwner = service.getFileTypeByName(QStringLiteral("Others")).m_typeName;
+      }
+      QCOMPARE(service.getFileType(QStringLiteral("notes/計画.ToDo")).m_typeName, suffixOwner);
+      QVERIFY(service.setAllFileTypes(service.getAllFileTypes()));
+      saved = rawFileTypes(context);
+      QJsonArray withoutImage;
+      for (const auto &value : QJsonDocument::fromJson(saved).array()) {
+        if (value.toObject()["name"].toString().compare(QLatin1String("Image"),
+                                                        Qt::CaseInsensitive) != 0) {
+          withoutImage.append(value);
+        }
+      }
+      QCOMPARE(withoutImage, expectedRows);
+    }
+    vxcore_context_destroy(context);
+    context = nullptr;
+  }
+}
+
+void TestFileTypeService::testDeletedTodoAssociation() {
+  const auto original = rawFileTypes(m_context);
+  QVERIFY(!original.isEmpty());
+  const auto restore = qScopeGuard(
+      [&]() { QCOMPARE(vxcore_filetype_set(m_context, original.constData()), VXCORE_OK); });
+  auto rows = m_service->getAllFileTypes();
+  bool removed = false;
+  for (auto it = rows.begin(); it != rows.end();) {
+    if (it->m_typeName.compare(QLatin1String("TODO"), Qt::CaseInsensitive) == 0) {
+      it = rows.erase(it);
+      removed = true;
+    } else {
+      ++it;
+    }
+  }
+  QVERIFY(removed);
+  QVERIFY(m_service->setAllFileTypes(rows));
+  const auto saved = rawFileTypes(m_context);
+  for (int restart = 0; restart < 2; ++restart) {
+    VxCoreContextHandle context = nullptr;
+    QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+    QVERIFY(context != nullptr);
+    const auto destroy = qScopeGuard([&]() { vxcore_context_destroy(context); });
+    FileTypeCoreService reloaded(context, QStringLiteral("en_US"));
+    QVERIFY(reloaded.getFileTypeByName(QStringLiteral("TODO")).m_typeName.isEmpty());
+    QCOMPARE(reloaded.getFileType(QStringLiteral("notes/planner.ToDo")).m_typeName,
+             QStringLiteral("Others"));
+    QCOMPARE(rawFileTypes(context), saved);
+    QVERIFY(reloaded.setAllFileTypes(reloaded.getAllFileTypes()));
+    QCOMPARE(rawFileTypes(context), saved);
+  }
 }
 
 void TestFileTypeService::testImageFallbackPrecedence() {

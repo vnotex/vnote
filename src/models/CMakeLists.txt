@@ -11,6 +11,7 @@ target_sources(vnote PRIVATE
     attachmentlistmodel.cpp attachmentlistmodel.h
     snippetlistmodel.cpp snippetlistmodel.h
     tasktreemodel.cpp tasktreemodel.h
+    todomodels.cpp todomodels.h
 )
 
 target_include_directories(vnote PRIVATE

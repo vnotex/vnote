@@ -41,6 +41,20 @@ enum class AutoSavePolicy {
 // May throw when an editor cannot produce a valid snapshot.
 using ContentFetchCallback = std::function<QString()>;
 
+// Bounded facts about actual publications, never retained editor text.
+struct BufferPublication {
+  bool live = false;
+  bool busy = false;
+  bool ownPending = false;
+  bool foreignPending = false;
+  quint64 bufferEpoch = 0;
+  quint64 writerToken = 0;
+  quint64 editorRevision = 0;
+  int coreRevision = 0;
+  int chainStartRevision = 0;
+  bool durable = false;
+};
+
 // Hook-aware wrapper around BufferCoreService.
 // Manages buffer lifecycle (open, close) with vnote.file.* hooks.
 // Per-buffer operations are accessed via the Buffer handle returned by openBuffer().
@@ -216,6 +230,8 @@ public:
   // Wrap selected methods from privately-inherited BufferCoreService.
   // Buffer2 delegates to these; external code should use Buffer2 methods instead.
   // saveBuffer and reloadBuffer emit bufferModifiedChanged after the operation.
+  BufferSnapshotResult saveSnapshot(const QString &p_bufferId, const QByteArray &p_data,
+                                    const BufferSnapshotContext &p_context) override;
   bool saveBuffer(const QString &p_bufferId) override;
   bool saveBuffer(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr);
   bool reloadBuffer(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr);
@@ -226,7 +242,7 @@ public:
   QByteArray getContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
   using BufferCoreService::getResolvedPath;
   using BufferCoreService::getResourceBasePath;
-  using BufferCoreService::getRevision;
+  int getRevision(const QString &p_bufferId) const;
   using BufferCoreService::getState;
   QString insertAsset(const Buffer2 &p_buffer, const QString &p_sourcePath);
   QString insertAssetRaw(const Buffer2 &p_buffer, const QString &p_assetName,
@@ -319,7 +335,7 @@ public:
   // acquire NotebookIoGate (bounded) -> fire vnote.file.before_save -> write ->
   // fire vnote.file.after_save.
   //
-  // Why the gate: the ordinary manual-save path does NOT take it, but a sync
+  // Why the gate: ordinary manual saves use the gated queue, and a sync
   // worker stages/commits the same working tree under it. A share-triggered
   // save that landed inside someone else's `git add` would violate the
   // save/sync serialization invariant. A bounded TRY-acquire is used because
@@ -346,6 +362,13 @@ public:
   //               Used by unregisterActiveWriter to identify which writer to remove.
   void registerActiveWriter(const QString &p_bufferId, quintptr p_writerKey,
                             ContentFetchCallback p_callback);
+
+  // GUI-only descriptor: token survives focus changes, not owner destruction or
+  // buffer replacement. The base getter is called only for actual service captures.
+  quint64 registerSnapshotWriter(const QString &p_bufferId, QObject *p_owner, quintptr p_writerKey,
+                                 std::function<int()> p_knownBaseRevision);
+  void revokeSnapshotWriter(quint64 p_token);
+  BufferPublication snapshotPublication(const QString &p_bufferId, quint64 p_writerToken = 0) const;
 
   // Unregister the active writer for a buffer.
   // Only unregisters if @p_writerKey matches the current active writer.
@@ -386,6 +409,7 @@ public:
   bool checkSingleExternalChange(const QString &p_bufferId);
 
 signals:
+  void bufferPublicationChanged(const QString &p_bufferId);
   void contentReplacementStateChanged(const QString &p_bufferId, bool p_active,
                                       bool p_contentChanged, bool p_saved);
   void searchReplacementFinished(int p_token, const NodeIdentifier &p_nodeId,
@@ -444,6 +468,20 @@ signals:
 private:
   friend class Buffer2;
   friend class NoteOperationService;
+  struct SnapshotProvenance;
+  std::unique_ptr<SnapshotProvenance> m_snapshotProvenance;
+  void trackPublication(const QString &p_bufferId, const QString &p_notebookId);
+  void invalidatePublication(const QString &p_bufferId);
+  void publishSnapshot(const QString &p_bufferId, const BufferSnapshotContext &p_context,
+                       int p_beforeRevision, int p_afterRevision, bool p_saved);
+  bool admitSnapshot(const QString &p_bufferId, const BufferSnapshotContext &p_context,
+                     int p_actualRevision);
+  bool captureWriterSnapshot(const QString &p_bufferId, QString *p_content,
+                             BufferSnapshotContext *p_context);
+  bool installWriterSnapshot(const QString &p_bufferId, const QByteArray &p_content,
+                             const BufferSnapshotContext &p_context, bool p_memory);
+  bool saveOrdinaryBuffer(const QString &p_bufferId, VxCoreError *p_error);
+  bool ordinarySaveBusy(const QString &p_bufferId) const;
   struct MemorySave;
   struct MemoryBufferState;
   struct MemoryBuffers;
@@ -477,7 +515,7 @@ private:
   // p_snapshotOk is false only for failed capture, not for skipped or deferred work.
   bool executeSyncForBuffer(const QString &p_bufferId, bool *p_snapshotOk = nullptr);
 
-  // Async save-completion handler wired to BufferSaveQueue::saveFinished.
+  // Actual-attempt completion only; coalesced request settlement is not durability.
   void onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,
                       const QString &p_errorMsg);
 

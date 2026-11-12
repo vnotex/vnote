@@ -1,0 +1,2341 @@
+#include <QtTest>
+
+#include "../helpers/test_environment.h"
+
+#ifdef Q_OS_WIN
+#include <QtCore/qt_windows.h>
+#endif
+
+#include <QAbstractTextDocumentLayout>
+#include <QAction>
+#include <QApplication>
+#include <QCheckBox>
+#include <QClipboard>
+#include <QComboBox>
+#include <QContextMenuEvent>
+#include <QDateEdit>
+#include <QDesktopServices>
+#include <QDialogButtonBox>
+#include <QDir>
+#include <QElapsedTimer>
+#include <QFile>
+#include <QFileInfo>
+#include <QImage>
+#include <QInputDialog>
+#include <QLabel>
+#include <QLayout>
+#include <QLineEdit>
+#include <QListView>
+#include <QListWidget>
+#include <QLocale>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QPointer>
+#include <QPushButton>
+#include <QScopeGuard>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QSemaphore>
+#include <QSplitter>
+#include <QStandardPaths>
+#include <QStyleHints>
+#include <QTemporaryDir>
+#include <QTextBlock>
+#include <QTextBlockFormat>
+#include <QTextCursor>
+#include <QTextLayout>
+#include <QTimer>
+#include <QToolButton>
+#include <QWindow>
+
+#include <controllers/newnotecontroller.h>
+#include <controllers/todoviewwindowcontroller.h>
+#include <controllers/viewareacontroller.h>
+#include <core/configmgr2.h>
+#include <core/coreconfig.h>
+#include <core/editorconfig.h>
+#include <core/mainconfig.h>
+#include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <core/services/configcoreservice.h>
+#include <core/services/filetypecoreservice.h>
+#include <core/services/hookmanager.h>
+#include <core/services/memorybuffersource.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
+#include <core/services/snippetcoreservice.h>
+#include <core/services/syncworkqueuemanager.h>
+#include <core/services/templateservice.h>
+#include <core/services/workspacecoreservice.h>
+#include <core/sessionconfig.h>
+#include <core/tododocument.h>
+#include <core/widgetconfig.h>
+#include <gui/services/themeservice.h>
+#include <gui/services/viewwindowfactory.h>
+#include <models/todomodels.h>
+#include <vtextedit/vtextedit.h>
+#include <vxcore/vxcore.h>
+#include <widgets/dialogs/newnotedialog2.h>
+#include <widgets/editors/simplemarkdowneditor.h>
+#include <widgets/editors/todoeditor.h>
+#include <widgets/inlinebanner.h>
+#include <widgets/todoviewwindow.h>
+#include <widgets/viewarea2.h>
+#include <widgets/viewsplit2.h>
+
+#include <cmath>
+#include <functional>
+#include <memory>
+#include <thread>
+
+using namespace vnotex;
+
+namespace tests {
+class TodoDesktopSink : public QObject {
+  Q_OBJECT
+public:
+  QList<QUrl> opened;
+public slots:
+  void open(const QUrl &p_url) { opened.append(p_url); }
+};
+
+namespace {
+const QByteArray c_source =
+    "<!-- todo: {\"version\":1} -->\n\n"
+    "<!-- File-scoped author comment -->\n\n"
+    "# Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+    "> Team commitments\n\n"
+    "- [ ] Alpha\n  <!-- todo-item: "
+    "{\"id\":\"alpha\",\"tags\":[\"work\"],\"private\":\"opaque-metadata-only\"} -->\n\n"
+    "  > Existing **note**\n\n"
+    "  - [x] First step\n  - [ ] Second step\n\n"
+    "<!-- Work-scoped separator between root task lists -->\n\n"
+    "+ [ ] Beta\n  <!-- todo-item: {\"id\":\"beta\",\"important\":true} -->\n\n"
+    "- [x] Done\n  <!-- todo-item: {\"id\":\"done\"} -->\n\n"
+    "# Personal\n<!-- todo-list: {\"id\":\"personal\"} -->\n\n"
+    "- [ ] Gamma\n  <!-- todo-item: {\"id\":\"gamma\",\"tags\":[\"home\"]} -->\n";
+
+QByteArray readBytes(const QString &p_path) {
+  QFile file(p_path);
+  return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+bool writeBytes(const QString &p_path, const QByteArray &p_bytes) {
+  QFile file(p_path);
+  return file.open(QIODevice::WriteOnly) && file.write(p_bytes) == p_bytes.size();
+}
+
+bool activate(QWidget *p_widget) {
+  const QPointer<QWidget> widget(p_widget);
+  if (!QTest::qWaitFor([&] { return widget && widget->isVisible(); }))
+    return false;
+  auto *host = p_widget->window();
+  if (!QTest::qWaitForWindowExposed(host))
+    return false;
+#ifdef Q_OS_WIN
+  if (!SetWindowPos(reinterpret_cast<HWND>(host->winId()), HWND_TOPMOST, 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
+    return false;
+#endif
+  host->raise();
+  host->activateWindow();
+  QApplication::setActiveWindow(host);
+  p_widget->setFocus(Qt::OtherFocusReason);
+  return QTest::qWaitFor([=] {
+    return host->isActiveWindow() && QGuiApplication::focusWindow() && p_widget->hasFocus();
+  });
+}
+
+template <typename T> T *control(QObject *p_parent, const char *p_name) {
+  return p_parent->findChild<T *>(QString::fromLatin1(p_name));
+}
+
+bool chooseCombo(QComboBox *p_combo, int p_row) {
+  if (!p_combo || p_row < 0 || p_row >= p_combo->count() || !activate(p_combo))
+    return false;
+  p_combo->showPopup();
+  const auto index = p_combo->model()->index(p_row, 0);
+  p_combo->view()->scrollTo(index);
+  QTest::mouseClick(p_combo->view()->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    p_combo->view()->visualRect(index).center());
+  return p_combo->currentIndex() == p_row;
+}
+
+bool typeText(QLineEdit *p_edit, const QString &p_text, bool p_replace = true) {
+  if (!p_edit || !activate(p_edit))
+    return false;
+  if (p_replace)
+    p_edit->selectAll();
+  QTest::keyClicks(p_edit, p_text);
+  return p_edit->text() == p_text && p_edit->hasFocus();
+}
+
+void replaceDocument(SimpleMarkdownEditor *p_editor, const QString &p_text) {
+  QTextCursor cursor(p_editor->document());
+  cursor.beginEditBlock();
+  cursor.select(QTextCursor::Document);
+  cursor.insertText(p_text);
+  cursor.endEditBlock();
+  p_editor->getTextEdit()->setTextCursor(cursor);
+}
+
+QStringList taskTitles(TodoViewWindow *p_window) {
+  QStringList titles;
+  auto *model = p_window->getController()->getTaskModel();
+  for (int row = 0; row < model->rowCount(); ++row) {
+    const auto index = model->index(row);
+    if (!index.data(TodoTaskModel::SectionRole).toBool())
+      titles.append(index.data(TodoTaskModel::TitleRole).toString());
+  }
+  return titles;
+}
+
+bool openTask(TodoViewWindow *p_window, const QString &p_key) {
+  auto *view = control<QListView>(p_window, "todoTasks");
+  auto *model = p_window->getController()->getTaskModel();
+  const auto index = model->index(model->rowForKey(p_key));
+  if (!view || !index.isValid() || !activate(view))
+    return false;
+  view->setCurrentIndex(index);
+  view->scrollTo(index);
+  QTest::keyClick(view, Qt::Key_Return);
+  return QTest::qWaitFor([=] {
+    auto *details = control<QWidget>(p_window, "todoDetails");
+    return details && details->isVisible() &&
+           p_window->getController()->getSelectedItemKey() == p_key;
+  });
+}
+
+bool selectedTitleReadable(QListView *p_view, const QModelIndex &p_index) {
+  const auto image = p_view->viewport()->grab().toImage();
+  const auto row = p_view->visualRect(p_index);
+  if (image.isNull() || !row.isValid())
+    return false;
+  const qreal scale = image.devicePixelRatio();
+  const auto luminance = [](const QColor &p_color) {
+    const auto linear = [](double p_value) {
+      return p_value <= 0.04045 ? p_value / 12.92 : std::pow((p_value + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * linear(p_color.redF()) + 0.7152 * linear(p_color.greenF()) +
+           0.0722 * linear(p_color.blueF());
+  };
+  const auto background = luminance(
+      image.pixelColor(qRound((row.right() - 2) * scale), qRound(row.center().y() * scale)));
+  const QRect title(qRound((row.left() + 40) * scale), qRound((row.top() + 4) * scale),
+                    qRound(qMax(1, row.width() - 96) * scale),
+                    qRound(qMin(row.height() / 2 - 4, p_view->fontMetrics().height() + 4) * scale));
+  const auto pixels = title.intersected(image.rect());
+  double contrast = 1;
+  for (int y = pixels.top(); y <= pixels.bottom(); ++y) {
+    for (int x = pixels.left(); x <= pixels.right(); ++x) {
+      const auto value = luminance(image.pixelColor(x, y));
+      contrast =
+          qMax(contrast, (qMax(value, background) + 0.05) / (qMin(value, background) + 0.05));
+    }
+  }
+  return contrast >= 4.5;
+}
+
+class SaveGateBarrier {
+public:
+  SaveGateBarrier(NotebookIoGate &p_gate, const QString &p_notebookId)
+      : m_thread([this, &p_gate, p_notebookId]() {
+          NotebookIoGate::ScopedLock lock(p_gate, p_notebookId);
+          m_started.release();
+          m_release.acquire();
+        }) {
+    m_started.acquire();
+  }
+  ~SaveGateBarrier() { release(); }
+  void release() {
+    if (m_thread.joinable()) {
+      m_release.release();
+      m_thread.join();
+    }
+  }
+
+private:
+  QSemaphore m_started;
+  QSemaphore m_release;
+  std::thread m_thread;
+};
+
+// Real dialogs run nested event loops. An unanswered modal fails, then closes,
+// rather than hanging the native test process indefinitely.
+class DialogAnswers {
+public:
+  explicit DialogAnswers(QList<QMessageBox::StandardButton> p_answers,
+                         std::function<void(QMessageBox *)> p_inspect = {})
+      : m_answers(std::move(p_answers)), m_inspect(std::move(p_inspect)) {
+    m_elapsed.start();
+    m_timer.setInterval(10);
+    QObject::connect(&m_timer, &QTimer::timeout, &m_timer, [this] {
+      for (auto *widget : QApplication::topLevelWidgets()) {
+        auto *box = qobject_cast<QMessageBox *>(widget);
+        if (!box || !box->isVisible() || m_answered.contains(box))
+          continue;
+        if (m_count < m_answers.size()) {
+          if (auto *button = box->button(m_answers[m_count])) {
+            m_answered.append(box);
+            ++m_count;
+            if (m_inspect)
+              m_inspect(box);
+            button->click();
+            return;
+          }
+        }
+      }
+      if (m_elapsed.elapsed() < 5000)
+        return;
+      m_timedOut = true;
+      QTest::qFail("Unanswered native confirmation dialog", __FILE__, __LINE__);
+      for (auto *widget : QApplication::topLevelWidgets()) {
+        if (auto *dialog = qobject_cast<QDialog *>(widget); dialog && dialog->isVisible())
+          dialog->reject();
+      }
+      m_timer.stop();
+    });
+    m_timer.start();
+  }
+  bool accepted() {
+    m_timer.stop();
+    return !m_timedOut && m_count == m_answers.size();
+  }
+
+private:
+  QList<QMessageBox::StandardButton> m_answers;
+  std::function<void(QMessageBox *)> m_inspect;
+  QList<QPointer<QMessageBox>> m_answered;
+  QElapsedTimer m_elapsed;
+  QTimer m_timer;
+  int m_count = 0;
+  bool m_timedOut = false;
+};
+
+bool answerInput(const QString &p_text, const std::function<void()> &p_open) {
+  bool answered = false;
+  QElapsedTimer elapsed;
+  elapsed.start();
+  QTimer timer;
+  timer.setInterval(10);
+  QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
+    if (auto *dialog = qobject_cast<QInputDialog *>(QApplication::activeModalWidget())) {
+      dialog->setTextValue(p_text);
+      dialog->accept();
+      answered = true;
+      timer.stop();
+    } else if (elapsed.elapsed() > 5000) {
+      for (auto *widget : QApplication::topLevelWidgets()) {
+        if (auto *dialog = qobject_cast<QDialog *>(widget); dialog && dialog->isVisible())
+          dialog->reject();
+      }
+      timer.stop();
+    }
+  });
+  timer.start();
+  p_open();
+  return answered;
+}
+
+bool chooseMenu(QWidget *p_widget, const QPoint &p_point, const QString &p_label) {
+  bool chosen = false;
+  QElapsedTimer elapsed;
+  elapsed.start();
+  QTimer timer;
+  timer.setInterval(10);
+  QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
+    auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+    if (menu) {
+      for (auto *action : menu->actions()) {
+        if (action->text().remove(QLatin1Char('&')) == p_label && action->isEnabled()) {
+          chosen = true;
+          timer.stop();
+          QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                            menu->actionGeometry(action).center());
+          return;
+        }
+      }
+      if (elapsed.elapsed() > 5000)
+        menu->close();
+    }
+    if (elapsed.elapsed() > 5000)
+      timer.stop();
+  });
+  timer.start();
+  QContextMenuEvent event(QContextMenuEvent::Mouse, p_point, p_widget->mapToGlobal(p_point));
+  QCoreApplication::sendEvent(p_widget, &event);
+  // TodoEditor's menus use popup(), whereas standard text menus may exec().
+  return QTest::qWaitFor([&] { return chosen || !timer.isActive(); }, 6000) && chosen;
+}
+
+struct Store {
+  QMutex mutex;
+  QByteArray bytes = c_source;
+  VxCoreError saveError = VXCORE_OK;
+  VxCoreError loadError = VXCORE_OK;
+  int saves = 0;
+
+  QByteArray snapshot() {
+    QMutexLocker lock(&mutex);
+    return bytes;
+  }
+};
+
+MemoryBufferSource memorySource(const QString &p_name, const QByteArray &p_source = c_source) {
+  MemoryBufferSource source;
+  source.address =
+      QStringLiteral("vx://memory/todo-") + QUuid::createUuid().toString(QUuid::WithoutBraces);
+  source.displayName = p_name;
+  source.editorType = QStringLiteral("todo");
+  source.content = p_source;
+  return source;
+}
+
+MemoryBufferSource storedSource(const std::shared_ptr<Store> &p_store) {
+  auto source = memorySource(QStringLiteral("Callback planner"));
+  source.load = [p_store](QByteArray &p_bytes) {
+    QMutexLocker lock(&p_store->mutex);
+    p_bytes = p_store->bytes;
+    return p_store->loadError;
+  };
+  source.save = [p_store](QByteArrayView p_bytes) {
+    QMutexLocker lock(&p_store->mutex);
+    ++p_store->saves;
+    if (p_store->saveError == VXCORE_OK)
+      p_store->bytes = QByteArray(p_bytes.data(), p_bytes.size());
+    return p_store->saveError;
+  };
+  return source;
+}
+} // namespace
+
+class TestTodoViewWindow : public QObject {
+  Q_OBJECT
+private slots:
+  void initTestCase();
+  void init();
+  void cleanup();
+  void factoryAndDefaultMode_data();
+  void factoryAndDefaultMode();
+  void externalDispatchPrecedence_data();
+  void externalDispatchPrecedence();
+  void newNoteDialogCreatesTodo();
+  void emptyAndAllTasksQuickAdd();
+  void smartQuickAdd_data();
+  void smartQuickAdd();
+  void nativeTypingSharesSourceUndo();
+  void immediateNotesDatesTagsAndSteps();
+  void filteringSortingAndDayRollover();
+  void nativeMoveReorderAndDeletion();
+  void nativeListActions();
+  void deletionConfirmationRejectsForeignReload();
+  void invalidSourceRecovery_data();
+  void invalidSourceRecovery();
+  void repeatedSaveAutosaveAndReopen_data();
+  void repeatedSaveAutosaveAndReopen();
+  void closeDecisions_data();
+  void closeDecisions();
+  void saveAndReloadFailuresRetainDraft();
+  void dirtyReplacement_data();
+  void dirtyReplacement();
+  void readOnlyNavigation_data();
+  void readOnlyNavigation();
+  void sharedBufferRejectsStaleGestures();
+  void foreignReloadAndSameTypeReplacement();
+  void nativeLayoutsKeyboardAndTheme();
+  void sourceNavigationFindReplaceAndPrint();
+  void unavailableSourceIsNotEmpty();
+  void plannedDueDoesNotLeak();
+  void storedMyDayRemainsVisible();
+  void ownPendingSaveKeepsNewerEdits();
+  void manualSaveJoinsPriorAutosave_data();
+  void manualSaveJoinsPriorAutosave();
+  void activeStaleSnapshotCannotAuthorizeHistory();
+  void foreignPendingSplitWaitsForPublication();
+  void foreignMemoryPublicationRetiresHistory_data();
+  void foreignMemoryPublicationRetiresHistory();
+  void ownMemoryCompletionKeepsNewerEdits();
+
+private:
+  Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
+                   const FileOpenSettings &p_settings = {});
+  TodoViewWindow *current() const;
+  void createArea();
+  void focusTasks(TodoViewWindow *p_window);
+  bool selectView(TodoViewWindow *p_window, TodoViewKind p_kind, const QString &p_listKey = {});
+  bool quickAdd(TodoViewWindow *p_window, const QString &p_title);
+  QString absolute(const QString &p_name) const;
+
+  VxCoreContextHandle m_context = nullptr;
+  std::unique_ptr<QTemporaryDir> m_directory;
+  QList<QPair<QByteArray, QByteArray>> m_environment;
+  QStringList m_searchPaths;
+  QStringList m_libraryPaths;
+  QPalette m_palette;
+  QString m_styleSheet;
+  Qt::ColorScheme m_colorScheme = Qt::ColorScheme::Unknown;
+  std::unique_ptr<QMimeData> m_clipboard;
+  std::unique_ptr<ServiceLocator> m_services;
+  std::unique_ptr<ConfigCoreService> m_configCore;
+  std::unique_ptr<ConfigMgr2> m_config;
+  std::unique_ptr<HookManager> m_hooks;
+  std::unique_ptr<NotebookIoGate> m_gate;
+  std::unique_ptr<SyncWorkQueueManager> m_queues;
+  std::unique_ptr<NotebookCoreService> m_notebooks;
+  std::unique_ptr<BufferService> m_buffers;
+  std::unique_ptr<WorkspaceCoreService> m_workspaces;
+  std::unique_ptr<FileTypeCoreService> m_fileTypes;
+  std::unique_ptr<SnippetCoreService> m_snippets;
+  std::unique_ptr<TemplateService> m_templates;
+  std::unique_ptr<ThemeService> m_theme;
+  std::unique_ptr<ViewWindowFactory> m_factory;
+  std::unique_ptr<ViewArea2> m_area;
+  QString m_notebook;
+};
+
+void TestTodoViewWindow::initTestCase() {
+  QStandardPaths::setTestModeEnabled(true);
+  vxcore_set_test_mode(1);
+#ifdef Q_OS_WIN
+  QCOMPARE(QGuiApplication::platformName(), QStringLiteral("windows"));
+#endif
+}
+
+void TestTodoViewWindow::init() {
+  m_directory = std::make_unique<QTemporaryDir>();
+  QVERIFY(m_directory->isValid());
+  for (const char *name : {"TMP", "TEMP", "TMPDIR"}) {
+    m_environment.append({QByteArray(name), qgetenv(name)});
+    QVERIFY(qputenv(name, QFile::encodeName(m_directory->path())));
+  }
+  m_searchPaths = QDir::searchPaths(QStringLiteral("app"));
+  m_libraryPaths = QCoreApplication::libraryPaths();
+  m_palette = qApp->palette();
+  m_styleSheet = qApp->styleSheet();
+  m_colorScheme = QGuiApplication::styleHints()->colorScheme();
+  m_clipboard = std::make_unique<QMimeData>();
+  if (const auto *mime = QApplication::clipboard()->mimeData()) {
+    for (const auto &format : mime->formats())
+      m_clipboard->setData(format, mime->data(format));
+  }
+  vxcore_set_test_mode(1);
+  QCOMPARE(vxcore_context_create(nullptr, &m_context), VXCORE_OK);
+  m_configCore = std::make_unique<ConfigCoreService>(m_context);
+  m_config = std::make_unique<ConfigMgr2>(m_configCore.get());
+  m_config->init();
+  TestEnvironment{}.apply(*m_config);
+  const QString rcc = QStringLiteral(VNOTE_TEST_EXTRA_RCC);
+  QVERIFY2(QFileInfo::exists(rcc), qPrintable(rcc));
+  QDir::setSearchPaths(QStringLiteral("app"), {QFileInfo(rcc).absolutePath()});
+  m_config->initAfterQtAppStarted();
+  QVERIFY(m_config->extraDataCopyFailures().isEmpty());
+  m_hooks = std::make_unique<HookManager>();
+  m_gate = std::make_unique<NotebookIoGate>();
+  m_queues = std::make_unique<SyncWorkQueueManager>();
+  m_notebooks = std::make_unique<NotebookCoreService>(m_context);
+  m_notebooks->setHookManager(m_hooks.get());
+  m_notebooks->setNotebookIoGate(m_gate.get());
+  m_buffers =
+      std::make_unique<BufferService>(m_context, m_hooks.get(), m_gate.get(), AutoSavePolicy::None);
+  m_buffers->setSyncWorkQueueManager(m_queues.get());
+  m_workspaces = std::make_unique<WorkspaceCoreService>(m_context);
+  m_workspaces->setHookManager(m_hooks.get());
+  m_fileTypes = std::make_unique<FileTypeCoreService>(m_context, QStringLiteral("en_US"));
+  m_snippets = std::make_unique<SnippetCoreService>(m_context);
+  m_templates = std::make_unique<TemplateService>(m_config.get());
+  ThemeServiceConfig theme;
+  theme.themeName = QStringLiteral("pure");
+  theme.locale = QStringLiteral("en_US");
+  theme.appDataPath = QStringLiteral(VNOTE_SRC_DIR "/data/extra");
+  m_theme = std::make_unique<ThemeService>(theme);
+  m_factory = std::make_unique<ViewWindowFactory>();
+  m_factory->registerBuiltInCreators();
+  m_services = std::make_unique<ServiceLocator>();
+  m_services->registerService(m_configCore.get());
+  m_services->registerService(m_config.get());
+  m_services->registerService(m_hooks.get());
+  m_services->registerService(m_gate.get());
+  m_services->registerService(m_queues.get());
+  m_services->registerService(m_notebooks.get());
+  m_services->registerService(m_buffers.get());
+  m_services->registerService(m_workspaces.get());
+  m_services->registerService(m_fileTypes.get());
+  m_services->registerService(m_snippets.get());
+  m_services->registerService(m_templates.get());
+  m_services->registerService(m_theme.get());
+  m_services->registerService(m_factory.get());
+  m_notebook = m_notebooks->createNotebook(m_directory->filePath(QStringLiteral("notebook")),
+                                           QStringLiteral("{\"name\":\"TODO native tests\"}"),
+                                           NotebookType::Bundled);
+  QVERIFY(!m_notebook.isEmpty());
+}
+
+void TestTodoViewWindow::cleanup() {
+  if (m_buffers)
+    m_buffers->setAutoSavePolicy(AutoSavePolicy::None);
+  if (m_area) {
+    m_area->getController()->setShouldPropagateToCore(false);
+    m_area->getController()->closeAll(m_area->getVisibleWorkspaceIds().toVector(), true);
+  }
+  const bool drained = !m_buffers || m_buffers->shutdown(10000);
+  // Notebook close dispatches hooks installed by the still-live area controller.
+  if (m_notebooks && !m_notebook.isEmpty())
+    m_notebooks->closeNotebook(m_notebook);
+  m_area.reset();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  m_services.reset();
+  m_factory.reset();
+  m_templates.reset();
+  m_theme.reset();
+  m_snippets.reset();
+  m_fileTypes.reset();
+  m_workspaces.reset();
+  m_buffers.reset();
+  m_notebooks.reset();
+  m_queues.reset();
+  m_gate.reset();
+  m_hooks.reset();
+  m_config.reset();
+  m_configCore.reset();
+  if (m_context) {
+    vxcore_context_destroy(m_context);
+    m_context = nullptr;
+  }
+  m_notebook.clear();
+  QDir::setSearchPaths(QStringLiteral("app"), m_searchPaths);
+  QCoreApplication::setLibraryPaths(m_libraryPaths);
+  qApp->setStyleSheet(m_styleSheet);
+  qApp->setPalette(m_palette);
+  QGuiApplication::styleHints()->setColorScheme(m_colorScheme);
+  if (m_clipboard)
+    QApplication::clipboard()->setMimeData(m_clipboard.release());
+  for (const auto &entry : m_environment) {
+    if (entry.second.isNull())
+      qunsetenv(entry.first.constData());
+    else
+      qputenv(entry.first.constData(), entry.second);
+  }
+  m_environment.clear();
+  m_directory.reset();
+  QVERIFY2(drained, "TODO fixture failed to drain its BufferService save queue");
+}
+
+void TestTodoViewWindow::createArea() {
+  if (m_area)
+    return;
+  m_area = std::make_unique<ViewArea2>(*m_services);
+  m_area->resize(1000, 760);
+  m_area->show();
+  QVERIFY(QTest::qWaitForWindowExposed(m_area.get()));
+  m_area->activateWindow();
+  QApplication::setActiveWindow(m_area.get());
+}
+
+QString TestTodoViewWindow::absolute(const QString &p_name) const {
+  return m_notebooks->buildAbsolutePath(m_notebook, p_name);
+}
+
+Buffer2 TestTodoViewWindow::openNote(const QString &p_name, const QByteArray &p_source,
+                                     const FileOpenSettings &p_settings) {
+  if (m_notebooks->createFile(m_notebook, QString(), p_name).isEmpty() ||
+      !writeBytes(absolute(p_name), p_source))
+    return {};
+  return m_buffers->openBuffer({m_notebook, p_name}, p_settings);
+}
+
+TodoViewWindow *TestTodoViewWindow::current() const {
+  return m_area ? qobject_cast<TodoViewWindow *>(m_area->getCurrentViewWindow()) : nullptr;
+}
+
+void TestTodoViewWindow::focusTasks(TodoViewWindow *p_window) {
+  QVERIFY(p_window);
+  auto *tasks = control<QListView>(p_window, "todoTasks");
+  QVERIFY(tasks);
+  QVERIFY(activate(tasks));
+  QTRY_VERIFY(tasks->hasFocus());
+}
+
+bool TestTodoViewWindow::selectView(TodoViewWindow *p_window, TodoViewKind p_kind,
+                                    const QString &p_listKey) {
+  auto *controller = p_window->getController();
+  const int row = controller->getListModel()->rowForView(p_kind, p_listKey);
+  auto *lists = control<QListView>(p_window, "todoLists");
+  auto *combo = control<QComboBox>(p_window, "todoViewCombo");
+  if (row < 0 || !lists || !combo)
+    return false;
+  if (!QTest::qWaitFor([&] { return lists->isVisible() || combo->isVisible(); }))
+    return false;
+  if (lists->isVisible()) {
+    if (!activate(lists))
+      return false;
+    const auto index = lists->model()->index(row, 0);
+    lists->scrollTo(index);
+    QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      lists->visualRect(index).center());
+  } else {
+    if (!activate(combo))
+      return false;
+    combo->showPopup();
+    const auto index = combo->model()->index(row, 0);
+    combo->view()->scrollTo(index);
+    QTest::mouseClick(combo->view()->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      combo->view()->visualRect(index).center());
+  }
+  return controller->getProjection().m_view == p_kind &&
+         (p_kind != TodoViewKind::List || controller->getProjection().m_listKey == p_listKey);
+}
+
+bool TestTodoViewWindow::quickAdd(TodoViewWindow *p_window, const QString &p_title) {
+  auto *add = control<QLineEdit>(p_window, "todoAddTask");
+  if (!typeText(add, p_title))
+    return false;
+  QTest::keyClick(add, Qt::Key_Return);
+  return add->text().isEmpty() && add->hasFocus();
+}
+
+void TestTodoViewWindow::factoryAndDefaultMode_data() {
+  QTest::addColumn<bool>("memory");
+  QTest::addColumn<bool>("forcedRead");
+  QTest::newRow("file-default-edit") << false << false;
+  QTest::newRow("file-forced-read") << false << true;
+  QTest::newRow("memory-lowercase-todo-edit") << true << false;
+  QTest::newRow("memory-forced-read") << true << true;
+}
+
+void TestTodoViewWindow::factoryAndDefaultMode() {
+  QFETCH(bool, memory);
+  QFETCH(bool, forcedRead);
+  createArea();
+  QVERIFY(m_factory->hasCreator(QStringLiteral("TODO")));
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Read;
+  settings.m_forceMode = forcedRead;
+  const auto buffer =
+      memory ? m_buffers->openMemoryBuffer(memorySource(QStringLiteral("No path.md")), settings)
+             : openNote(QStringLiteral("planner.ToDo"), c_source, settings);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  QCOMPARE(window->getMode(), forcedRead ? ViewWindowMode::Read : ViewWindowMode::Edit);
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->isSourceMode());
+  QVERIFY(!window->isModified());
+  QCOMPARE(window->getController()->getDocument().m_lists.size(), 2);
+  QCOMPARE(window->getController()->getTaskModel()->getActiveCount(), 2);
+  QCOMPARE(buffer.isMemoryBacked(), memory);
+  if (memory) {
+    QVERIFY(buffer.resolvedPath().isEmpty());
+    QVERIFY(!buffer.canSave() && !buffer.canReload());
+    QCOMPARE(buffer.editorType(), QStringLiteral("todo"));
+  }
+  // The actual factory must also pass its mode, not silently use the constructor default.
+  std::unique_ptr<ViewWindow2> direct(m_factory->create(QStringLiteral("TODO"), *m_services, buffer,
+                                                        nullptr, ViewWindowMode::Read));
+  QVERIFY(qobject_cast<TodoViewWindow *>(direct.get()));
+  QCOMPARE(direct->getMode(), ViewWindowMode::Read);
+  QVERIFY(direct->aboutToClose(true));
+}
+
+void TestTodoViewWindow::externalDispatchPrecedence_data() {
+  QTest::addColumn<bool>("forced");
+  QTest::addColumn<bool>("internal");
+  QTest::newRow("external-before-default-edit") << false << false;
+  QTest::newRow("forced-read-does-not-override-external") << true << false;
+  QTest::newRow("explicit-internal-forced-read") << true << true;
+}
+
+void TestTodoViewWindow::externalDispatchPrecedence() {
+  QFETCH(bool, forced);
+  QFETCH(bool, internal);
+  createArea();
+  SessionConfig::ExternalProgram program;
+  program.m_name = SessionConfig::ExternalProgram::c_systemProgramName;
+  program.m_suffixes = {QStringLiteral("todo")};
+  m_config->getSessionConfig().setExternalPrograms({program});
+  TodoDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto restore =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  FileOpenSettings settings;
+  settings.m_forceMode = forced;
+  settings.m_useInternalViewer = internal;
+  settings.m_mode = ViewWindowMode::Read;
+  const auto buffer = openNote(QStringLiteral("external.todo"), c_source, settings);
+  if (internal) {
+    QVERIFY(buffer.isValid());
+    QVERIFY(current());
+    QCOMPARE(current()->getMode(), ViewWindowMode::Read);
+    QVERIFY(desktop.opened.isEmpty());
+  } else {
+    QCOMPARE(desktop.opened,
+             QList<QUrl>{QUrl::fromLocalFile(absolute(QStringLiteral("external.todo")))});
+    QVERIFY(!current());
+    QVERIFY(m_area->findChildren<TodoViewWindow *>().isEmpty());
+  }
+}
+
+void TestTodoViewWindow::newNoteDialogCreatesTodo() {
+  NewNoteDialog2 dialog(*m_services, {m_notebook, QString()});
+  auto *types = control<QComboBox>(&dialog, "newNoteFileTypeCombo");
+  auto *name = control<QLineEdit>(&dialog, "newNoteNameEdit");
+  auto *encrypted = control<QCheckBox>(&dialog, "newNoteEncryptCheckBox");
+  auto *buttons = dialog.findChild<QDialogButtonBox *>();
+  QVERIFY(types && name && encrypted && buttons);
+  QVERIFY(dialog.findChild<NewNoteController *>());
+  const int todo = types->findData(QStringLiteral("TODO"));
+  QVERIFY(todo >= 0);
+  QCOMPARE(types->itemText(todo), QStringLiteral("TODO"));
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  types->setCurrentIndex(todo);
+  QVERIFY(name->text().endsWith(QLatin1String(".todo")));
+  QCOMPARE(m_fileTypes->getFileTypeByName(QStringLiteral("TODO")).preferredSuffix(),
+           QStringLiteral("todo"));
+  QVERIFY(!encrypted->isEnabled());
+  QVERIFY(typeText(name, QStringLiteral("Created planner.todo")));
+  QTest::mouseClick(buttons->button(QDialogButtonBox::Ok), Qt::LeftButton);
+  QTRY_COMPARE(dialog.result(), int(QDialog::Accepted));
+  const auto node = dialog.getNewNodeId();
+  QCOMPARE(node.notebookId, m_notebook);
+  QCOMPARE(node.relativePath, QStringLiteral("Created planner.todo"));
+  QVERIFY(QFileInfo::exists(absolute(node.relativePath)));
+  QCOMPARE(readBytes(absolute(node.relativePath)), QByteArray());
+  QCOMPARE(m_config->getWidgetConfig().getNewNoteDefaultFileTypeName(), QStringLiteral("TODO"));
+  createArea();
+  QVERIFY(m_buffers->openBuffer(node).isValid());
+  QVERIFY(current());
+  QVERIFY(current()->getController()->getDocument().isValid());
+  QVERIFY(!current()->isModified());
+  NewNoteDialog2 remembered(*m_services, {m_notebook, QString()});
+  QCOMPARE(control<QComboBox>(&remembered, "newNoteFileTypeCombo")->currentData().toString(),
+           QStringLiteral("TODO"));
+}
+
+void TestTodoViewWindow::emptyAndAllTasksQuickAdd() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("empty.todo"), QByteArray());
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  QVERIFY(window->getController()->getDocument().m_lists.isEmpty());
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QCOMPARE(window->getLatestContent(), QStringLiteral(""));
+  auto *add = control<QLineEdit>(window, "todoAddTask");
+  QVERIFY(add);
+  QVERIFY(typeText(add, QStringLiteral("   ")));
+  QTest::keyClick(add, Qt::Key_Return);
+  QVERIFY(!window->isModified());
+  QVERIFY(quickAdd(window, QStringLiteral("First task")));
+  auto *controller = window->getController();
+  QCOMPARE(controller->getDocument().m_lists.size(), 1);
+  QCOMPARE(controller->getDocument().m_lists.first().m_title, QStringLiteral("Tasks"));
+  QCOMPARE(controller->getDocument().m_lists.first().m_items.first().m_fields.m_title,
+           QStringLiteral("First task"));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), QStringLiteral(""));
+  window->redo();
+  auto *newList = control<QPushButton>(window, "todoNewList");
+  QVERIFY(newList);
+  QVERIFY(answerInput(QStringLiteral("Other"), [&] { newList->click(); }));
+  QCOMPARE(controller->getDocument().m_lists.size(), 2);
+  const auto destinationKey = controller->getDocument().m_lists.last().m_key;
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *destination = control<QComboBox>(window, "todoDestination");
+  QVERIFY(destination && destination->isVisible());
+  QVERIFY(chooseCombo(destination, destination->findData(destinationKey)));
+  QVERIFY(quickAdd(window, QStringLiteral("From All Tasks")));
+  QCOMPARE(controller->getDocument().findList(destinationKey)->m_items.last().m_fields.m_title,
+           QStringLiteral("From All Tasks"));
+  QVERIFY(taskTitles(window).contains(QStringLiteral("First task")));
+  QVERIFY(taskTitles(window).contains(QStringLiteral("From All Tasks")));
+}
+
+void TestTodoViewWindow::smartQuickAdd_data() {
+  QTest::addColumn<int>("kind");
+  QTest::addColumn<bool>("filtered");
+  for (const auto kind : {TodoViewKind::MyDay, TodoViewKind::Important, TodoViewKind::Planned}) {
+    const QByteArray label = QByteArray::number(int(kind));
+    QTest::newRow((label + "-ordinary").constData()) << int(kind) << false;
+    QTest::newRow((label + "-search").constData()) << int(kind) << true;
+  }
+}
+
+void TestTodoViewWindow::smartQuickAdd() {
+  QFETCH(int, kind);
+  QFETCH(bool, filtered);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("smart.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  QVERIFY(selectView(window, static_cast<TodoViewKind>(kind)));
+  auto *controller = window->getController();
+  const auto today = controller->getProjection().m_today;
+  auto *destination = control<QComboBox>(window, "todoDestination");
+  QVERIFY(destination && destination->isVisible());
+  QVERIFY(chooseCombo(destination, destination->findData(QStringLiteral("id:personal"))));
+  if (filtered) {
+    QVERIFY(typeText(control<QLineEdit>(window, "todoSearch"), QStringLiteral("no-match")));
+  } else if (kind == int(TodoViewKind::Planned)) {
+    auto *add = control<QLineEdit>(window, "todoAddTask");
+    auto *button = control<QPushButton>(window, "todoAddButton");
+    auto *enabled = control<QCheckBox>(window, "todoAddHasDue");
+    auto *due = control<QDateEdit>(window, "todoAddDue");
+    QVERIFY(add && button && enabled && due);
+    QVERIFY(typeText(add, QStringLiteral("Must choose a date")));
+    const auto before = window->getLatestContent();
+    QTest::keyClick(add, Qt::Key_Return);
+    QCOMPARE(window->getLatestContent(), before);
+    QVERIFY(!button->isEnabled());
+    due->setDate(today.addDays(7));
+    enabled->setChecked(true);
+  }
+  QVERIFY(quickAdd(window, QStringLiteral("Smart addition")));
+  const auto *list = controller->getDocument().findList(QStringLiteral("id:personal"));
+  QVERIFY(list && list->m_items.size() == 2);
+  const auto fields = list->m_items.last().m_fields;
+  QCOMPARE(fields.m_title, QStringLiteral("Smart addition"));
+  QCOMPARE(fields.m_important, !filtered && kind == int(TodoViewKind::Important));
+  QCOMPARE(fields.m_myDay, !filtered && kind == int(TodoViewKind::MyDay) ? today : QDate());
+  QCOMPARE(fields.m_due,
+           !filtered && kind == int(TodoViewKind::Planned) ? today.addDays(7) : QDate());
+  QVERIFY(fields.m_tags.isEmpty());
+  if (filtered)
+    QVERIFY(taskTitles(window).isEmpty());
+  window->undo();
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.size(), 1);
+}
+
+void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
+  createArea();
+  const QByteArray source = "# Tasks\n\n- [ ] Original\n";
+  QVERIFY(openNote(QStringLiteral("history.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  const auto oldKey = controller->getDocument().m_lists.first().m_items.first().m_key;
+  QVERIFY(oldKey.startsWith(QLatin1String("source:")));
+  QVERIFY(openTask(window, oldKey));
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  QVERIFY(typeText(title, QStringLiteral("Typed title")));
+  QCOMPARE(title->cursorPosition(), int(QStringLiteral("Typed title").size()));
+  const auto key = controller->getSelectedItemKey();
+  QVERIFY(key.startsWith(QLatin1String("id:")));
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_title,
+           QStringLiteral("Typed title"));
+  const auto typed = window->getLatestContent();
+  QVERIFY(typed.contains(QLatin1String("todo-item:")));
+  QTest::keyClick(title, Qt::Key_Z, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QCOMPARE(title->text(), QStringLiteral("Original"));
+  QVERIFY(title->hasFocus());
+  QVERIFY(!window->getSourceEditor()->getTextEdit()->hasFocus());
+  QTest::keyClick(title, Qt::Key_Y, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent(), typed);
+  QCOMPARE(title->text(), QStringLiteral("Typed title"));
+  // Focus changes delimit typing even when the owner and field are unchanged.
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  QVERIFY(search && activate(search));
+  QVERIFY(typeText(title, QStringLiteral("Separate typing group")));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), typed);
+  QCOMPARE(title->text(), QStringLiteral("Typed title"));
+  // Existing titles may be transiently empty without deleting the task.
+  QVERIFY(activate(search));
+  QVERIFY(activate(title));
+  title->selectAll();
+  QTest::keyClick(title, Qt::Key_Backspace);
+  QVERIFY(controller->getDocument().isValid());
+  QVERIFY(controller->getDocument().findItem(key)->m_fields.m_title.isEmpty());
+  window->undo();
+  QCOMPARE(window->getLatestContent(), typed);
+  auto *important = control<QCheckBox>(window, "todoImportant");
+  QVERIFY(important && activate(important));
+  QTest::keyClick(important, Qt::Key_Space);
+  QVERIFY(controller->getDocument().findItem(key)->m_fields.m_important);
+  const auto starred = window->getLatestContent();
+  window->setSourceMode(true);
+  auto *sourceEdit = window->getSourceEditor()->getTextEdit();
+  QVERIFY(activate(sourceEdit));
+  QTest::keyClick(sourceEdit, Qt::Key_Z, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent(), typed);
+  QTest::keyClick(sourceEdit, Qt::Key_Y, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent(), starred);
+  window->setSourceMode(false);
+  QCOMPARE(controller->getSelectedItemKey(), key);
+  QVERIFY(openTask(window, key));
+  QVERIFY(activate(title));
+  QVERIFY(chooseMenu(title, title->rect().center(), QStringLiteral("Undo")));
+  QCOMPARE(window->getLatestContent(), typed);
+  QVERIFY(title->hasFocus());
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+}
+
+void TestTodoViewWindow::immediateNotesDatesTagsAndSteps() {
+  createArea();
+  auto source = c_source;
+  source.replace("[\"work\"]", "[\"work\",\"WORK\",\" spaced \" ]");
+  QVERIFY(openNote(QStringLiteral("details.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *controller = window->getController();
+  const auto fields = [&] {
+    return controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  };
+  QCOMPARE(fields().m_tags, QStringList({QStringLiteral("work"), QStringLiteral("WORK"),
+                                         QStringLiteral(" spaced ")}));
+  auto *note = control<SimpleMarkdownEditor>(window, "todoNote");
+  auto *description = control<SimpleMarkdownEditor>(window, "todoListDescription");
+  QVERIFY(note && description);
+  QVERIFY(!note->document()->isUndoRedoEnabled());
+  QVERIFY(!description->document()->isUndoRedoEnabled());
+  QVERIFY(activate(note->getTextEdit()));
+  QString markdown = QStringLiteral("**Q4** and [proposal](proposal.md)\n\n- [ ] Note checklist");
+  replaceDocument(note, markdown);
+  QTRY_COMPARE(fields().m_note, markdown);
+  QTest::keyClicks(note->getTextEdit(), " while typing");
+  markdown += QStringLiteral(" while typing");
+  QCOMPARE(fields().m_note, markdown);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 2);
+  QCOMPARE(fields().m_tags.size(), 3); // Unrelated edits do not canonicalize imported tags.
+  QVERIFY(window->getLatestContent().contains(QLatin1String("  > - [ ] Note checklist")));
+  const int caret = note->getTextEdit()->textCursor().position();
+  QCoreApplication::processEvents();
+  QCOMPARE(note->getTextEdit()->textCursor().position(), caret);
+  QVERIFY(note->getTextEdit()->hasFocus());
+  QTest::keyClick(note->getTextEdit(), Qt::Key_Z, Qt::ControlModifier);
+  QCOMPARE(fields().m_note, QStringLiteral("Existing **note**"));
+  QCOMPARE(note->toPlainText(), QStringLiteral("Existing **note**"));
+  QVERIFY(note->getTextEdit()->hasFocus());
+  QTest::keyClick(note->getTextEdit(), Qt::Key_Y, Qt::ControlModifier);
+  QCOMPARE(fields().m_note, markdown);
+  auto *hasDue = control<QCheckBox>(window, "todoHasDue");
+  auto *due = control<QDateEdit>(window, "todoDue");
+  auto *clearDue = control<QPushButton>(window, "todoClearDue");
+  auto *myDay = control<QCheckBox>(window, "todoMyDay");
+  QVERIFY(hasDue && due && clearDue && myDay);
+  hasDue->setChecked(true);
+  due->setDate(QDate(2026, 11, 20));
+  QCOMPARE(fields().m_due, QDate(2026, 11, 20));
+  myDay->setChecked(true);
+  QCOMPARE(fields().m_myDay, controller->getProjection().m_today);
+  clearDue->click();
+  QVERIFY(!fields().m_due.isValid());
+  QCOMPARE(fields().m_myDay, controller->getProjection().m_today);
+  auto *tags = control<QLineEdit>(window, "todoTagInput");
+  QVERIFY(typeText(tags, QStringLiteral("  team, planning  ")));
+  QTest::keyClick(tags, Qt::Key_Return);
+  QVERIFY(tags->text().isEmpty());
+  QCOMPARE(fields().m_tags, QStringList({QStringLiteral("work"), QStringLiteral("spaced"),
+                                         QStringLiteral("team, planning")}));
+  QVERIFY(typeText(tags, QStringLiteral("WORK")));
+  QTest::keyClick(tags, Qt::Key_Return);
+  QCOMPARE(fields().m_tags.size(), 3);
+  auto *removeTag = control<QToolButton>(window, "todoTagRemove_2");
+  QVERIFY(removeTag);
+  removeTag->click();
+  QCOMPARE(fields().m_tags.size(), 2);
+  auto *addStep = control<QLineEdit>(window, "todoAddStep");
+  QVERIFY(typeText(addStep, QStringLiteral("Third step")));
+  QTest::keyClick(addStep, Qt::Key_Return);
+  auto *steps = control<QListWidget>(window, "todoSteps");
+  auto *stepTitle = control<QLineEdit>(window, "todoStepTitle");
+  auto *stepChecked = control<QCheckBox>(window, "todoStepChecked");
+  auto *up = control<QPushButton>(window, "todoStepUp");
+  auto *down = control<QPushButton>(window, "todoStepDown");
+  auto *remove = control<QPushButton>(window, "todoStepDelete");
+  QVERIFY(steps && stepTitle && stepChecked && up && down && remove);
+  QCOMPARE(steps->count(), 3);
+  steps->setCurrentRow(2);
+  QVERIFY(typeText(stepTitle, QStringLiteral("Renamed step")));
+  stepChecked->setChecked(true);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.last().m_title,
+           QStringLiteral("Renamed step"));
+  QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.last().m_checked);
+  QVERIFY(!fields().m_checked);
+  up->click();
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps[1].m_title,
+           QStringLiteral("Renamed step"));
+  down->click();
+  remove->click();
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 2);
+  window->undo();
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 3);
+  QVERIFY(activate(description->getTextEdit()));
+  replaceDocument(description, QStringLiteral("Description **Markdown**\n\n> Nested quote"));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_description,
+           QStringLiteral("Description **Markdown**\n\n> Nested quote"));
+  QVERIFY(window->getLatestContent().contains(QLatin1String("> > Nested quote")));
+}
+
+void TestTodoViewWindow::filteringSortingAndDayRollover() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("filters.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *controller = window->getController();
+  auto alpha = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  alpha.m_due = QDate(2026, 11, 13);
+  alpha.m_myDay = QDate(2026, 11, 12);
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), alpha));
+  controller->setToday(QDate(2026, 11, 12));
+  const auto before = window->getLatestContent();
+  const auto revision = window->getSourceEditor()->document()->revision();
+  const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+  QVERIFY(selectView(window, TodoViewKind::MyDay));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
+  controller->setToday(QDate(2026, 11, 13));
+  QVERIFY(taskTitles(window).isEmpty());
+  QVERIFY(selectView(window, TodoViewKind::Planned));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  QVERIFY(typeText(search, QStringLiteral("First step")));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  auto *chip = control<QToolButton>(window, "todoTagChip_0");
+  QVERIFY(chip);
+  chip->click();
+  QCOMPARE(controller->getProjection().m_tag, QStringLiteral("work"));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
+  QVERIFY(typeText(search, QStringLiteral("Gamma")));
+  QVERIFY(taskTitles(window).isEmpty());
+  search->clear();
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
+  QVERIFY(typeText(search, QStringLiteral("Gamma")));
+  auto *clearTag = control<QPushButton>(window, "todoTagFilter");
+  QVERIFY(clearTag);
+  clearTag->click();
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
+  QCOMPARE(controller->getProjection().m_search, QStringLiteral("Gamma"));
+  search->clear();
+  QCOMPARE(controller->getProjection().m_view, TodoViewKind::List);
+  QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *sort = control<QComboBox>(window, "todoSort");
+  QVERIFY(sort);
+  QVERIFY(chooseCombo(sort, int(TodoSortOrder::Importance)));
+  QCOMPARE(taskTitles(window).first(), QStringLiteral("Beta"));
+  QVERIFY(!controller->getTaskModel()->isReorderingEnabled());
+  QVERIFY(chooseCombo(sort, int(TodoSortOrder::Title)));
+  QCOMPARE(taskTitles(window),
+           QStringList({QStringLiteral("Alpha"), QStringLiteral("Beta"), QStringLiteral("Gamma")}));
+  QVERIFY(typeText(search, QStringLiteral("Done")));
+  auto *model = controller->getTaskModel();
+  QCOMPARE(model->getActiveCount(), 0);
+  QCOMPARE(model->getCompletedCount(), 1);
+  QVERIFY(model->rowCount() > 0);
+  const auto section = model->index(0);
+  QVERIFY(section.data(TodoTaskModel::SectionRole).toBool());
+  auto *tasks = control<QListView>(window, "todoTasks");
+  tasks->setCurrentIndex(section);
+  QVERIFY(activate(tasks));
+  QTest::keyClick(tasks, Qt::Key_Return);
+  QTRY_VERIFY(taskTitles(window).contains(QStringLiteral("Done")));
+  QVERIFY(typeText(search, QStringLiteral("opaque-metadata-only")));
+  QVERIFY(taskTitles(window).isEmpty());
+  QCOMPARE(window->getLatestContent(), before);
+  QCOMPARE(window->getSourceEditor()->document()->revision(), revision);
+  QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+  QTimer *dayTimer = nullptr;
+  for (auto *timer : window->findChildren<QTimer *>(QString(), Qt::FindDirectChildrenOnly)) {
+    if (timer->interval() == 60000)
+      dayTimer = timer;
+  }
+  QVERIFY(dayTimer && dayTimer->isActive());
+  controller->setToday(QDate::currentDate().addDays(-1));
+  QVERIFY(QMetaObject::invokeMethod(dayTimer, "timeout", Qt::DirectConnection));
+  QCOMPARE(controller->getProjection().m_today, QDate::currentDate());
+  window->hide();
+  QVERIFY(!dayTimer->isActive());
+  controller->setToday(QDate::currentDate().addDays(-1));
+  QVERIFY(QMetaObject::invokeMethod(dayTimer, "timeout", Qt::DirectConnection));
+  QCOMPARE(controller->getProjection().m_today, QDate::currentDate().addDays(-1));
+  window->show();
+  QCOMPARE(controller->getProjection().m_today, QDate::currentDate());
+  QCOMPARE(window->getLatestContent(), before);
+  QCOMPARE(window->getSourceEditor()->document()->revision(), revision);
+}
+
+void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("order.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *controller = window->getController();
+  const auto original = *controller->getDocument().findItem(QStringLiteral("id:alpha"));
+  auto *move = control<QPushButton>(window, "todoMoveTask");
+  QVERIFY(move);
+  bool movedThroughPicker = false;
+  QTimer picker;
+  QElapsedTimer pickerDeadline;
+  pickerDeadline.start();
+  picker.setInterval(10);
+  connect(&picker, &QTimer::timeout, this, [&] {
+    auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+    auto *destination = dialog ? control<QComboBox>(dialog, "todoMoveDestination") : nullptr;
+    if (destination) {
+      destination->setCurrentIndex(destination->findData(QStringLiteral("id:personal")));
+      auto *buttons = dialog->findChild<QDialogButtonBox *>();
+      if (buttons) {
+        // A delayed source layout update must not cancel an unchanged owner.
+        QTextCursor sourceCursor(window->getSourceEditor()->document());
+        QTextBlockFormat format;
+        format.setLeftMargin(12);
+        sourceCursor.mergeBlockFormat(format);
+        movedThroughPicker = true;
+        picker.stop();
+        buttons->button(QDialogButtonBox::Ok)->click();
+      }
+    } else if (pickerDeadline.elapsed() > 5000) {
+      picker.stop();
+      if (dialog)
+        dialog->reject();
+    }
+  });
+  picker.start();
+  move->click();
+  QVERIFY(movedThroughPicker);
+  const auto *moved = controller->getDocument().findItem(QStringLiteral("id:alpha"));
+  QVERIFY(moved);
+  QCOMPARE(moved->m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(moved->m_id, original.m_id);
+  QCOMPARE(moved->m_fields.m_note, original.m_fields.m_note);
+  QCOMPARE(moved->m_steps.size(), original.m_steps.size());
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
+  auto *tasks = control<QListView>(window, "todoTasks");
+  auto *model = controller->getTaskModel();
+  QVERIFY(tasks && model->isReorderingEnabled());
+  auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  tasks->setCurrentIndex(index);
+  QVERIFY(
+      chooseMenu(tasks->viewport(), tasks->visualRect(index).center(), QStringLiteral("Move Up")));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.first().m_key,
+           QStringLiteral("id:alpha"));
+  index = model->index(model->rowForKey(QStringLiteral("id:gamma")));
+  std::unique_ptr<QMimeData> drag(model->mimeData({index}));
+  QVERIFY(drag);
+  QVERIFY(model->canDropMimeData(drag.get(), Qt::MoveAction, 0, 0, QModelIndex()));
+  QVERIFY(model->dropMimeData(drag.get(), Qt::MoveAction, 0, 0, QModelIndex()));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.first().m_key,
+           QStringLiteral("id:gamma"));
+  window->undo();
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.first().m_key,
+           QStringLiteral("id:alpha"));
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  auto *remove = control<QPushButton>(window, "todoDeleteTask");
+  QVERIFY(remove);
+  bool named = false;
+  {
+    DialogAnswers answer({QMessageBox::Yes}, [&](QMessageBox *box) {
+      named = box->text().contains(QStringLiteral("Alpha"));
+    });
+    remove->click();
+    QVERIFY(answer.accepted());
+  }
+  QVERIFY(named);
+  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  window->undo();
+  QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_note,
+           original.m_fields.m_note);
+}
+
+void TestTodoViewWindow::nativeListActions() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("lists.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  auto *lists = control<QListView>(window, "todoLists");
+  QVERIFY(lists);
+  const auto listMenu = [&](const QString &key, const QString &label) {
+    const auto index =
+        controller->getListModel()->index(controller->getListModel()->rowForKey(key));
+    if (!index.isValid() || !activate(lists))
+      return false;
+    lists->scrollTo(index);
+    return chooseMenu(lists->viewport(), lists->visualRect(index).center(), label);
+  };
+  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Rename")));
+  auto *title = control<QLineEdit>(window, "todoListTitle");
+  QVERIFY(title && title->hasFocus());
+  QVERIFY(typeText(title, QStringLiteral("Work renamed")));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
+           QStringLiteral("Work renamed"));
+  window->undo();
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
+           QStringLiteral("Work"));
+  window->redo();
+  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Edit description")));
+  auto *description = control<SimpleMarkdownEditor>(window, "todoListDescription");
+  QVERIFY(description && description->getTextEdit()->hasFocus());
+  replaceDocument(description, QStringLiteral("Changed description"));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_description,
+           QStringLiteral("Changed description"));
+  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Move Down")));
+  QCOMPARE(controller->getDocument().m_lists.last().m_key, QStringLiteral("id:work"));
+  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Move Up")));
+  QCOMPARE(controller->getDocument().m_lists.first().m_key, QStringLiteral("id:work"));
+  bool named = false;
+  {
+    DialogAnswers dialog({QMessageBox::No}, [&](QMessageBox *box) {
+      named = box->text().contains(QStringLiteral("Work renamed"));
+    });
+    QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Delete")));
+    QVERIFY(dialog.accepted());
+  }
+  QVERIFY(named);
+  QVERIFY(controller->getDocument().findList(QStringLiteral("id:work")));
+  const auto beforeDelete = window->getLatestContent();
+  {
+    DialogAnswers dialog({QMessageBox::Yes});
+    QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Delete")));
+    QVERIFY(dialog.accepted());
+  }
+  QVERIFY(!controller->getDocument().findList(QStringLiteral("id:work")));
+  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  QVERIFY(!window->getLatestContent().contains(QLatin1String("Work-scoped separator")));
+  QVERIFY(window->getLatestContent().contains(QLatin1String("File-scoped author comment")));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), beforeDelete);
+  auto *newList = control<QPushButton>(window, "todoNewList");
+  QVERIFY(newList);
+  QVERIFY(answerInput(QStringLiteral("Empty"), [&] { newList->click(); }));
+  const auto emptyKey = controller->getDocument().m_lists.last().m_key;
+  QVERIFY(controller->getDocument().findList(emptyKey)->m_items.isEmpty());
+  // An empty-list removal needs no modal confirmation but remains one undo step.
+  QVERIFY(listMenu(emptyKey, QStringLiteral("Delete")));
+  QVERIFY(!QApplication::activeModalWidget());
+  QVERIFY(!controller->getDocument().findList(emptyKey));
+  window->undo();
+  QVERIFY(controller->getDocument().findList(emptyKey));
+}
+
+void TestTodoViewWindow::deletionConfirmationRejectsForeignReload() {
+  createArea();
+  auto store = std::make_shared<Store>();
+  QVERIFY(m_buffers->openMemoryBuffer(storedSource(store)).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto authoritative = c_source;
+  authoritative.replace("Alpha", "Changed while confirmation was open");
+  auto *remove = control<QPushButton>(window, "todoDeleteTask");
+  QVERIFY(remove);
+  bool reloaded = false;
+  DialogAnswers dialog({QMessageBox::Yes}, [&](QMessageBox *) {
+    {
+      QMutexLocker lock(&store->mutex);
+      store->bytes = authoritative;
+    }
+    reloaded = window->reload();
+  });
+  remove->click();
+  QVERIFY(dialog.accepted());
+  QVERIFY(reloaded);
+  QCOMPARE(window->getLatestContent().toUtf8(), authoritative);
+  const auto *item = window->getController()->getDocument().findItem(QStringLiteral("id:alpha"));
+  QVERIFY(item);
+  QCOMPARE(item->m_fields.m_title, QStringLiteral("Changed while confirmation was open"));
+  QVERIFY(!window->isModified());
+}
+
+void TestTodoViewWindow::invalidSourceRecovery_data() {
+  QTest::addColumn<QByteArray>("broken");
+  auto malformed = c_source;
+  malformed.replace("\"id\":\"alpha\"", "\"id\":");
+  QTest::newRow("malformed-owned-json") << malformed;
+  QTest::newRow("unquoted-root-prose") << c_source + "\nUnsupported loose prose\n";
+  QTest::newRow("unaccounted-reference-definition")
+      << c_source + "\n[hidden]: https://example.com\n";
+}
+
+void TestTodoViewWindow::invalidSourceRecovery() {
+  QFETCH(QByteArray, broken);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("broken.todo"), broken).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *banner = control<InlineBanner>(window, "todoDiagnosticBanner");
+  auto *controller = window->getController();
+  QVERIFY(banner);
+  QVERIFY(window->isSourceMode());
+  QTRY_VERIFY(banner->isVisible());
+  QVERIFY(!banner->getText().isEmpty());
+  QVERIFY(!controller->getDocument().isValid());
+  const int line = controller->getDocument().m_diagnostics.first().m_line;
+  QVERIFY(banner->getText().contains(QString::number(line)));
+  QCOMPARE(window->getLatestContent().toUtf8(), broken);
+  QVERIFY(!controller->addList(QStringLiteral("Must not erase malformed source")));
+  QCOMPARE(window->getLatestContent().toUtf8(), broken);
+  QVERIFY(window->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("broken.todo"))), broken);
+  auto *source = window->getSourceEditor();
+  QVERIFY(!source->isReadOnly());
+  QVERIFY(activate(source->getTextEdit()));
+  replaceDocument(source, QString::fromUtf8(c_source));
+  window->setSourceMode(false);
+  QVERIFY(!window->isSourceMode());
+  QVERIFY(controller->getDocument().isValid());
+  QVERIFY(!banner->isVisible());
+  window->undo();
+  QVERIFY(window->isSourceMode());
+  QVERIFY(banner->isVisible());
+  QCOMPARE(window->getLatestContent().toUtf8(), broken);
+  window->redo();
+  window->setSourceMode(false);
+  QVERIFY(controller->getDocument().isValid());
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(window->save());
+}
+
+void TestTodoViewWindow::repeatedSaveAutosaveAndReopen_data() {
+  QTest::addColumn<bool>("crlf");
+  QTest::addColumn<bool>("eofNewline");
+  QTest::newRow("lf-eof-newline") << false << true;
+  QTest::newRow("lf-no-final-newline") << false << false;
+  QTest::newRow("crlf-eof-newline") << true << true;
+  QTest::newRow("crlf-no-final-newline") << true << false;
+}
+
+void TestTodoViewWindow::repeatedSaveAutosaveAndReopen() {
+  QFETCH(bool, crlf);
+  QFETCH(bool, eofNewline);
+  createArea();
+  QString initial = QString::fromUtf8("<!-- untouched α 😀 -->\n# 工作\n"
+                                      "<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+                                      "- [ ] Café 😀\n  <!-- todo-item: {\"id\":\"alpha\"} -->");
+  if (eofNewline)
+    initial += QLatin1Char('\n');
+  if (crlf)
+    initial.replace(QStringLiteral("\n"), QStringLiteral("\r\n"));
+  const auto buffer = openNote(QStringLiteral("unicode.todo"), initial.toUtf8());
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  QCOMPARE(window->getLatestContent(), initial);
+  QVERIFY(!window->getSourceEditor()->toPlainText().contains(QLatin1Char('\r')));
+  auto *controller = window->getController();
+  auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  fields.m_checked = true;
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+  const auto ending = crlf ? QStringLiteral("\r\n") : QStringLiteral("\n");
+  QString expected = QStringLiteral("<!-- todo: {\"version\":1} -->") + ending + ending + initial;
+  expected.replace(QStringLiteral("- [ ]"), QStringLiteral("- [x]"));
+  QCOMPARE(window->getLatestContent(), expected);
+  QVERIFY(window->save());
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(readBytes(absolute(QStringLiteral("unicode.todo"))), expected.toUtf8());
+  QVERIFY(!window->isModified());
+  QCOMPARE(window->getLatestContent(), expected);
+  QVERIFY(window->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("unicode.todo"))), expected.toUtf8());
+  fields.m_title = QString::fromUtf8("Révisé 🗓");
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+  expected.replace(QString::fromUtf8("Café 😀"), fields.m_title);
+  QCOMPARE(window->getLatestContent(), expected);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()) && !window->isModified());
+  QCOMPARE(readBytes(absolute(QStringLiteral("unicode.todo"))), expected.toUtf8());
+  QCOMPARE(window->getLatestContent(), expected);
+  fields.m_checked = false;
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+  expected.replace(QStringLiteral("- [x]"), QStringLiteral("- [ ]"));
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()) && !window->isModified());
+  QCOMPARE(window->getLatestContent(), expected);
+  QCOMPARE(readBytes(absolute(QStringLiteral("unicode.todo"))), expected.toUtf8());
+  QCOMPARE(expected.endsWith(QLatin1Char('\n')), eofNewline);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::None);
+  const auto node = buffer.nodeId();
+  const auto id = window->getViewWindowId();
+  QPointer<TodoViewWindow> retired(window);
+  QVERIFY(m_area->getController()->closeViewWindow(id, false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(retired.isNull());
+  QVERIFY(m_buffers->openBuffer(node).isValid());
+  window = current();
+  QVERIFY(window);
+  QCOMPARE(window->getLatestContent(), expected);
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QCOMPARE(
+      window->getController()->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_title,
+      fields.m_title);
+}
+
+void TestTodoViewWindow::closeDecisions_data() {
+  QTest::addColumn<int>("answer");
+  QTest::newRow("cancel-keeps-window") << int(QMessageBox::Cancel);
+  QTest::newRow("discard-keeps-disk") << int(QMessageBox::Discard);
+  QTest::newRow("save-persists-and-closes") << int(QMessageBox::Save);
+}
+
+void TestTodoViewWindow::closeDecisions() {
+  QFETCH(int, answer);
+  createArea();
+  const auto buffer = openNote(QStringLiteral("close.todo"));
+  QVERIFY(buffer.isValid());
+  QPointer<TodoViewWindow> window(current());
+  QVERIFY(window);
+  focusTasks(window);
+  QVERIFY(quickAdd(window, QStringLiteral("Unsaved close task")));
+  const auto edited = window->getLatestContent();
+  bool named = false;
+  DialogAnswers dialog({static_cast<QMessageBox::StandardButton>(answer)}, [&](QMessageBox *box) {
+    named = box->text().contains(QStringLiteral("close.todo"));
+  });
+  const bool closed = m_area->getController()->closeViewWindow(window->getViewWindowId(), false);
+  QVERIFY(dialog.accepted());
+  QVERIFY(named);
+  QCOMPARE(closed, answer != int(QMessageBox::Cancel));
+  if (!closed) {
+    QVERIFY(window && window->isModified());
+    QCOMPARE(window->getLatestContent(), edited);
+  } else {
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QVERIFY(window.isNull());
+  }
+  QCOMPARE(readBytes(absolute(QStringLiteral("close.todo"))),
+           answer == int(QMessageBox::Save) ? edited.toUtf8() : c_source);
+}
+
+void TestTodoViewWindow::saveAndReloadFailuresRetainDraft() {
+  createArea();
+  auto store = std::make_shared<Store>();
+  const auto buffer = m_buffers->openMemoryBuffer(storedSource(store));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  QVERIFY(buffer.canSave() && buffer.canReload());
+  QVERIFY(buffer.resolvedPath().isEmpty());
+  focusTasks(window);
+  QVERIFY(quickAdd(window, QStringLiteral("Keep this draft")));
+  const auto draft = window->getLatestContent();
+  {
+    QMutexLocker lock(&store->mutex);
+    store->saveError = VXCORE_ERR_IO;
+    store->loadError = VXCORE_ERR_IO;
+  }
+  QVERIFY(!window->save());
+  QVERIFY(window->isModified());
+  QCOMPARE(window->getLatestContent(), draft);
+  QCOMPARE(store->snapshot(), c_source);
+  {
+    DialogAnswers dialog({QMessageBox::Save, QMessageBox::Cancel});
+    QVERIFY(!window->aboutToClose(false));
+    QVERIFY(dialog.accepted());
+  }
+  QCOMPARE(window->getLatestContent(), draft);
+  QVERIFY(window->isModified());
+  {
+    DialogAnswers dialog({QMessageBox::Discard});
+    QVERIFY(!window->reload());
+    QVERIFY(dialog.accepted());
+  }
+  QCOMPARE(window->getLatestContent(), draft);
+  QVERIFY(window->isModified());
+  {
+    QMutexLocker lock(&store->mutex);
+    store->saveError = VXCORE_OK;
+    store->loadError = VXCORE_OK;
+  }
+  QVERIFY(window->save());
+  QCOMPARE(store->snapshot(), draft.toUtf8());
+  QVERIFY(!window->isModified());
+  QVERIFY(window->save());
+  QCOMPARE(store->snapshot(), draft.toUtf8());
+}
+
+void TestTodoViewWindow::dirtyReplacement_data() {
+  QTest::addColumn<int>("answer");
+  QTest::newRow("cancel-keeps-binding-and-undo") << int(QMessageBox::Cancel);
+  QTest::newRow("save-then-rebind") << int(QMessageBox::Save);
+  QTest::newRow("discard-then-rebind") << int(QMessageBox::Discard);
+}
+
+void TestTodoViewWindow::dirtyReplacement() {
+  QFETCH(int, answer);
+  createArea();
+  m_config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
+  const auto first = openNote(QStringLiteral("replace-first.todo"));
+  QVERIFY(first.isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  QVERIFY(typeText(control<QLineEdit>(window, "todoTitle"), QStringLiteral("Outgoing draft")));
+  const auto draft = window->getLatestContent();
+  const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+  const QByteArray incoming = "# Incoming\n\n- [ ] Replacement task\n";
+  DialogAnswers dialog({static_cast<QMessageBox::StandardButton>(answer)});
+  const auto second = openNote(QStringLiteral("replace-second.todo"), incoming);
+  QVERIFY(dialog.accepted());
+  QCOMPARE(current(), window);
+  QCOMPARE(m_area->getCurrentViewSplit()->getViewWindowCount(), 1);
+  if (answer == int(QMessageBox::Cancel)) {
+    QCOMPARE(window->getBuffer().id(), first.id());
+    QCOMPARE(window->getLatestContent(), draft);
+    QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+    QVERIFY(window->isModified());
+    // Cancellation must restore controller binding/editability, not only pixels.
+    focusTasks(window);
+    QVERIFY(quickAdd(window, QStringLiteral("Still the outgoing document")));
+  } else {
+    QVERIFY(second.isValid());
+    QCOMPARE(window->getBuffer().id(), second.id());
+    QCOMPARE(window->getLatestContent().toUtf8(), incoming);
+    QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+    QVERIFY(!window->getController()->getDocument().findItem(QStringLiteral("id:alpha")));
+    QVERIFY(quickAdd(window, QStringLiteral("Only the replacement")));
+    QVERIFY(window->save());
+    QVERIFY(readBytes(absolute(QStringLiteral("replace-second.todo")))
+                .contains("Only the replacement"));
+  }
+  QCOMPARE(readBytes(absolute(QStringLiteral("replace-first.todo"))),
+           answer == int(QMessageBox::Save) ? draft.toUtf8() : c_source);
+}
+
+void TestTodoViewWindow::readOnlyNavigation_data() {
+  QTest::addColumn<bool>("bufferReadOnly");
+  QTest::newRow("explicit-read-mode") << false;
+  QTest::newRow("read-only-buffer-in-edit-mode") << true;
+}
+
+void TestTodoViewWindow::readOnlyNavigation() {
+  QFETCH(bool, bufferReadOnly);
+  createArea();
+  auto source = memorySource(QStringLiteral("Read-only planner"));
+  source.readOnly = bufferReadOnly;
+  FileOpenSettings settings;
+  settings.m_mode = bufferReadOnly ? ViewWindowMode::Edit : ViewWindowMode::Read;
+  settings.m_forceMode = true;
+  QVERIFY(m_buffers->openMemoryBuffer(source, settings).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  window->applyFileOpenSettings(FileOpenSettings());
+  QCOMPARE(window->getMode(), settings.m_mode);
+  const auto before = window->getLatestContent();
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  auto *add = control<QLineEdit>(window, "todoAddTask");
+  auto *important = control<QCheckBox>(window, "todoImportant");
+  auto *note = control<SimpleMarkdownEditor>(window, "todoNote");
+  QVERIFY(title && add && important && note);
+  QVERIFY(title->isReadOnly() || !title->isEnabled());
+  QVERIFY(add->isReadOnly() || !add->isEnabled());
+  QVERIFY(!important->isEnabled());
+  QVERIFY(note->isReadOnly());
+  QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  QVERIFY(typeText(search, QStringLiteral("Gamma")));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
+  window->setSourceMode(true);
+  QVERIFY(window->getSourceEditor()->isReadOnly());
+  QVERIFY(activate(window->getSourceEditor()->getTextEdit()));
+  QTest::keyClicks(window->getSourceEditor()->getTextEdit(), "not editable");
+  QCOMPARE(window->getLatestContent(), before);
+  window->setSourceMode(false);
+  QCOMPARE(window->getLatestContent(), before);
+  QVERIFY(!window->isModified());
+  if (!bufferReadOnly) {
+    search->clear();
+    window->setMode(ViewWindowMode::Edit);
+    QVERIFY(quickAdd(window, QStringLiteral("Now editable")));
+    const auto edited = window->getLatestContent();
+    window->setNoteConversionFrozen(true);
+    QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
+    window->undo();
+    QCOMPARE(window->getLatestContent(), edited);
+    window->setNoteConversionFrozen(false);
+    window->setEnabled(false);
+    QVERIFY(!window->getController()->addList(QStringLiteral("Disabled")));
+    window->setEnabled(true);
+    QCOMPARE(window->getLatestContent(), edited);
+  }
+}
+
+void TestTodoViewWindow::sharedBufferRejectsStaleGestures() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("shared.todo"));
+  QVERIFY(buffer.isValid());
+  auto *first = current();
+  QVERIFY(first);
+  const auto firstWorkspace = m_area->getController()->getCurrentWorkspaceId();
+  focusTasks(first);
+  m_area->getController()->splitViewSplit(firstWorkspace, Direction::Right, true);
+  auto *second = current();
+  QVERIFY(second && second != first);
+  QCOMPARE(second->getBuffer().id(), buffer.id());
+  const auto secondWorkspace = m_area->getController()->getCurrentWorkspaceId();
+  const auto secondModel = second->getController()->getTaskModel();
+  m_area->getController()->focusWindow(firstWorkspace, buffer.id());
+  focusTasks(first);
+  QVERIFY(quickAdd(first, QStringLiteral("Written in first split")));
+  const auto autoSaved = first->getLatestContent();
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()) && !first->isModified());
+  QCOMPARE(readBytes(absolute(QStringLiteral("shared.todo"))), autoSaved.toUtf8());
+  // Focus alone must refresh the inactive source after another window's autosave:
+  // do not let an earlier rejected gesture accidentally perform this refresh.
+  m_area->getController()->focusWindow(secondWorkspace, buffer.id());
+  focusTasks(second);
+  QTRY_COMPARE(second->getSourceEditor()->toPlainText(), autoSaved);
+  QVERIFY(taskTitles(second).contains(QStringLiteral("Written in first split")));
+  QVERIFY(!second->getSourceEditor()->document()->isUndoAvailable());
+  const auto staleIndex = secondModel->index(secondModel->rowForKey(QStringLiteral("id:alpha")));
+  const int staleRevision = secondModel->getRevision();
+  std::unique_ptr<QMimeData> staleDrag(secondModel->mimeData({staleIndex}));
+  m_area->getController()->focusWindow(firstWorkspace, buffer.id());
+  focusTasks(first);
+  QVERIFY(quickAdd(first, QStringLiteral("Another foreign edit")));
+  const auto authoritative = first->getLatestContent();
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()) && !first->isModified());
+  QCOMPARE(readBytes(absolute(QStringLiteral("shared.todo"))), authoritative.toUtf8());
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::None);
+  QSignalSpy rejected(second->getController(), &TodoViewWindowController::operationRejected);
+  secondModel->checkedChangeRequested(QStringLiteral("id:alpha"), true, staleRevision);
+  QVERIFY(!rejected.isEmpty());
+  QCOMPARE(buffer.getContentRaw(), authoritative.toUtf8());
+  QVERIFY(!secondModel->dropMimeData(staleDrag.get(), Qt::MoveAction, 0, 0, QModelIndex()));
+  m_area->getController()->focusWindow(secondWorkspace, buffer.id());
+  focusTasks(second);
+  QTRY_COMPARE(second->getLatestContent(), authoritative);
+  QVERIFY(!second->getController()
+               ->getDocument()
+               .findItem(QStringLiteral("id:alpha"))
+               ->m_fields.m_checked);
+  QVERIFY(!second->getSourceEditor()->document()->isUndoAvailable());
+  secondModel->setData(secondModel->index(secondModel->rowForKey(QStringLiteral("id:alpha"))),
+                       Qt::Checked, Qt::CheckStateRole);
+  QVERIFY(second->getController()
+              ->getDocument()
+              .findItem(QStringLiteral("id:alpha"))
+              ->m_fields.m_checked);
+  QVERIFY(m_buffers->syncNow(buffer.id()));
+  const auto latest = second->getLatestContent();
+  m_area->getController()->focusWindow(firstWorkspace, buffer.id());
+  focusTasks(first);
+  QTRY_COMPARE(first->getLatestContent(), latest);
+  QVERIFY(first->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("shared.todo"))), latest.toUtf8());
+}
+
+void TestTodoViewWindow::foreignReloadAndSameTypeReplacement() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("reload.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  QVERIFY(typeText(title, QStringLiteral("Native draft")));
+  QVERIFY(window->save());
+  const auto model = window->getController()->getTaskModel();
+  const auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  const auto oldRevision = model->getRevision();
+  std::unique_ptr<QMimeData> payload(model->mimeData({index}));
+  auto replacement = c_source;
+  replacement.replace("Alpha", "Authoritative reload");
+  QVERIFY(writeBytes(absolute(QStringLiteral("reload.todo")), replacement));
+  QVERIFY(window->reload());
+  QCOMPARE(window->getLatestContent().toUtf8(), replacement);
+  QCOMPARE(title->text(), QStringLiteral("Authoritative reload"));
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QSignalSpy rejected(window->getController(), &TodoViewWindowController::operationRejected);
+  model->checkedChangeRequested(QStringLiteral("id:alpha"), true, oldRevision);
+  QVERIFY(!rejected.isEmpty());
+  QCOMPARE(window->getLatestContent().toUtf8(), replacement);
+  QVERIFY(!model->dropMimeData(payload.get(), Qt::MoveAction, 0, 0, QModelIndex()));
+  window->setSourceMode(true);
+  window->setSourceMode(false);
+  QCOMPARE(window->getLatestContent().toUtf8(), replacement);
+  // Reuse through the real ViewArea path, not a copied replacement hook.
+  m_config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  const QByteArray nextSource = "# Next\n\n- [ ] New binding\n";
+  const auto next = openNote(QStringLiteral("next.todo"), nextSource, settings);
+  QVERIFY(next.isValid());
+  QCOMPARE(current(), window);
+  QCOMPARE(window->getBuffer().id(), next.id());
+  QVERIFY(window->supportsBufferReplacement());
+  QCOMPARE(window->getLatestContent().toUtf8(), nextSource);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QVERIFY(!window->getController()->getDocument().findItem(QStringLiteral("id:alpha")));
+  QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
+  model->checkedChangeRequested(QStringLiteral("id:alpha"), true, oldRevision);
+  QCOMPARE(window->getLatestContent().toUtf8(), nextSource);
+  QVERIFY(quickAdd(window, QStringLiteral("Only new buffer")));
+  QVERIFY(window->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("reload.todo"))), replacement);
+  QVERIFY(readBytes(absolute(QStringLiteral("next.todo"))).contains("Only new buffer"));
+}
+
+void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
+  qApp->setStyleSheet(m_theme->fetchQtStyleSheet());
+  connect(m_theme.get(), &ThemeService::themeChanged, this,
+          [this]() { qApp->setStyleSheet(m_theme->fetchQtStyleSheet()); });
+  createArea();
+  QVERIFY(openNote(QStringLiteral("layout.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *sidebar = control<QWidget>(window, "todoSidebar");
+  auto *combo = control<QComboBox>(window, "todoViewCombo");
+  auto *tasks = control<QListView>(window, "todoTasks");
+  auto *splitter = control<QSplitter>(window, "todoSplitter");
+  auto *back = control<QPushButton>(window, "todoBack");
+  QVERIFY(sidebar && combo && tasks && splitter && back);
+  QTRY_VERIFY(sidebar->isVisible());
+  QVERIFY(window->getTodoEditor()->width() >= 840);
+  QVERIFY(!combo->isVisible());
+  auto *taskPane = control<QWidget>(window, "todoTaskPane");
+  QVERIFY(taskPane && taskPane->layout());
+  QCOMPARE(taskPane->layout()->spacing(), 4);
+  QVERIFY(tasks->itemDelegate());
+  auto *model = window->getController()->getTaskModel();
+  for (int row = 0; row < model->rowCount(); ++row)
+    QVERIFY(!tasks->indexWidget(model->index(row)));
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  QTRY_VERIFY(
+      selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
+  QTRY_VERIFY(control<QWidget>(window, "todoDetails")->isVisible());
+  QVERIFY(tasks->isVisible());
+  auto *detailsScroll = control<QScrollArea>(window, "todoDetailsScroll");
+  QVERIFY(detailsScroll);
+  QTRY_COMPARE(detailsScroll->horizontalScrollBar()->maximum(), 0);
+  for (const char *name :
+       {"todoStepUp", "todoStepDown", "todoStepDelete", "todoDue", "todoClearDue"}) {
+    auto *action = control<QWidget>(window, name);
+    QVERIFY(action);
+    const auto left = action->mapTo(detailsScroll->viewport(), QPoint()).x();
+    QVERIFY2(left >= 0 && left + action->width() <= detailsScroll->viewport()->width(), name);
+  }
+  const auto source = window->getLatestContent();
+  const auto selection = window->getController()->getSelectedItemKey();
+  m_area->resize(600, 760);
+  QTRY_VERIFY(!sidebar->isVisible());
+  QVERIFY(window->getTodoEditor()->width() < 840);
+  QTRY_VERIFY(combo->isVisible());
+  QVERIFY(back->isVisible());
+  QVERIFY(!tasks->isVisible());
+  QVERIFY(activate(back));
+  QTest::keyClick(back, Qt::Key_Space);
+  QTRY_VERIFY(tasks->isVisible());
+  QVERIFY(tasks->hasFocus());
+  QCOMPARE(window->getController()->getSelectedItemKey(), selection);
+  QTest::keyClick(tasks, Qt::Key_F, Qt::ControlModifier);
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  QVERIFY(search);
+  QTRY_VERIFY(search->hasFocus());
+  QTest::keyClick(search, Qt::Key_Tab);
+  QVERIFY(QApplication::focusWidget());
+  QVERIFY(QApplication::focusWidget() != search);
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Backtab);
+  QTRY_VERIFY(search->hasFocus());
+  window->getTodoEditor()->focusTasks();
+  QTRY_VERIFY(tasks->hasFocus());
+  QTest::keyClick(tasks, Qt::Key_Return);
+  QTRY_VERIFY(back->isVisible());
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  QVERIFY(title && activate(title));
+  QTest::keyClick(title, Qt::Key_Escape);
+  QTRY_VERIFY(tasks->isVisible() && tasks->hasFocus());
+  const auto light = window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text);
+  m_theme->switchTheme(QStringLiteral("everforest-dark"));
+  QTRY_VERIFY(window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text) != light);
+  m_theme->refreshCurrentTheme();
+  m_area->resize(1000, 760);
+  QTRY_VERIFY(sidebar->isVisible());
+  QTRY_VERIFY(
+      selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
+  m_theme->switchTheme(QStringLiteral("pure"));
+  QTRY_COMPARE(window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text), light);
+  QCOMPARE(window->getLatestContent(), source);
+  QCOMPARE(window->getController()->getSelectedItemKey(), selection);
+  QVERIFY(!window->isModified());
+  const int zoom = window->getTodoEditor()->getZoomDelta();
+  window->getTodoEditor()->zoom(1);
+  QCOMPARE(window->getTodoEditor()->getZoomDelta(), zoom + 1);
+  QCOMPARE(window->getLatestContent(), source);
+  QVERIFY(activate(tasks));
+  QTest::keyClick(tasks, Qt::Key_Space);
+  QVERIFY(window->getController()
+              ->getDocument()
+              .findItem(QStringLiteral("id:alpha"))
+              ->m_fields.m_checked);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), source);
+  m_area->resize(600, 760);
+  QTRY_VERIFY(combo->isVisible());
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
+  QVERIFY(quickAdd(window, QStringLiteral("Added in a narrow split")));
+  const auto narrowKey = window->getController()->getSelectedItemKey();
+  QVERIFY(openTask(window, narrowKey));
+  QVERIFY(typeText(title, QStringLiteral("Edited in narrow details")));
+  QCOMPARE(window->getController()->getDocument().findItem(narrowKey)->m_fields.m_title,
+           QStringLiteral("Edited in narrow details"));
+  window->setSourceMode(true);
+  QVERIFY(window->getSourceEditor()->isVisible());
+  window->undo();
+  window->setSourceMode(false);
+  QCOMPARE(window->getController()->getDocument().findItem(narrowKey)->m_fields.m_title,
+           QStringLiteral("Added in a narrow split"));
+  QTRY_VERIFY(back->isVisible());
+  QVERIFY(activate(back));
+  QTest::keyClick(back, Qt::Key_Space);
+  QVERIFY(tasks->isVisible() && tasks->hasFocus());
+  for (const char *name :
+       {"todoSearch", "todoAddTask", "todoTitle", "todoChecked", "todoImportant"}) {
+    auto *widget = control<QWidget>(window, name);
+    QVERIFY(widget);
+    QVERIFY2(!widget->accessibleName().isEmpty(), name);
+  }
+}
+
+void TestTodoViewWindow::sourceNavigationFindReplaceAndPrint() {
+  createArea();
+  FileOpenSettings settings;
+  settings.m_lineNumber = 8;
+  settings.m_forceMode = true;
+  settings.m_mode = ViewWindowMode::Edit;
+  QVERIFY(openNote(QStringLiteral("navigate.todo"), c_source, settings).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  QVERIFY(window->isSourceMode());
+  auto *source = window->getSourceEditor();
+  auto *edit = source->getTextEdit();
+  QTRY_COMPARE(edit->textCursor().blockNumber(), settings.m_lineNumber);
+  QVERIFY(activate(edit));
+  auto cursor = edit->textCursor();
+  cursor.setPosition(3, QTextCursor::MoveAnchor);
+  cursor.setPosition(7, QTextCursor::KeepAnchor);
+  edit->setTextCursor(cursor);
+  QCOMPARE(window->getSelectedText(), source->toPlainText().mid(3, 4));
+  const auto position = window->capturePositionState();
+  edit->moveCursor(QTextCursor::End);
+  window->restorePositionState(position);
+  QCOMPARE(edit->textCursor().blockNumber(), position.m_cursorLine);
+  QCOMPARE(edit->textCursor().positionInBlock(), position.m_cursorPositionInBlock);
+  // Source mode must expose markers even with the caret in a different block.
+  edit->moveCursor(QTextCursor::End);
+  const auto text = source->toPlainText();
+  const auto heading = text.indexOf(QStringLiteral("# Work"));
+  const auto block = source->document()->findBlock(heading);
+  source->document()->documentLayout()->blockBoundingRect(block);
+  const auto line = block.layout()->lineForTextPosition(0);
+  QVERIFY(line.isValid());
+  QTRY_VERIFY(line.cursorToX(2) - line.cursorToX(0) > 1);
+  const auto metadata =
+      source->document()->findBlock(text.indexOf(QStringLiteral("<!-- todo-item:")));
+  source->document()->documentLayout()->blockBoundingRect(metadata);
+  QVERIFY(metadata.layout()->lineAt(0).naturalTextWidth() > 30);
+  window->findNext(QStringLiteral("Alpha"), FindNone);
+  QTRY_VERIFY([&] {
+    for (const auto &highlight : edit->extraSelections()) {
+      if (highlight.cursor.selectedText() == QStringLiteral("Alpha"))
+        return true;
+    }
+    return false;
+  }());
+  QTest::keyClick(edit, Qt::Key_F, Qt::ControlModifier);
+  QTRY_VERIFY(QApplication::focusWidget() != edit);
+  window->setSourceMode(false);
+  window->replaceAll(QStringLiteral("Alpha"), FindNone, QStringLiteral("Renamed from Replace"));
+  QVERIFY(window->isSourceMode());
+  QVERIFY(window->getLatestContent().contains(QLatin1String("Renamed from Replace")));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->isPrintSupported());
+  for (auto *action : window->findChildren<QAction *>()) {
+    QVERIFY(action->text().remove(QLatin1Char('&')) != QLatin1String("Print"));
+    QVERIFY(action->property("iconName").toString() != QLatin1String("print.svg"));
+  }
+  auto *tasksAction = control<QAction>(window, "todoTasksAction");
+  auto *sourceAction = control<QAction>(window, "todoSourceAction");
+  QVERIFY(tasksAction && sourceAction);
+  tasksAction->trigger();
+  QVERIFY(tasksAction->isChecked() && !sourceAction->isChecked());
+  window->setMode(ViewWindowMode::Read);
+  sourceAction->trigger();
+  QVERIFY(sourceAction->isChecked() && !tasksAction->isChecked());
+  QVERIFY(window->isSourceMode());
+}
+
+void TestTodoViewWindow::unavailableSourceIsNotEmpty() {
+  const auto buffer = m_buffers->openMemoryBuffer(memorySource(QStringLiteral("Retired source")));
+  QVERIFY(buffer.isValid());
+  QVERIFY(m_buffers->closeBuffer(buffer.id()));
+  TodoViewWindow window(*m_services, buffer);
+  QString content = QStringLiteral("sentinel");
+  QString error;
+  QVERIFY(!window.tryGetLatestContent(&content, &error));
+  QVERIFY(!error.isEmpty());
+  QVERIFY(!window.getController()->addList(QStringLiteral("No invented source")));
+  QVERIFY(!window.save());
+}
+
+void TestTodoViewWindow::plannedDueDoesNotLeak() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("due-scope.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *controller = window->getController();
+  auto *chosen = control<QCheckBox>(window, "todoAddHasDue");
+  auto *date = control<QDateEdit>(window, "todoAddDue");
+  QVERIFY(chosen && date);
+  struct Destination {
+    TodoViewKind view;
+    QString search;
+    QString tag;
+  };
+  const QList<Destination> destinations{
+      {TodoViewKind::List, {}, {}},
+      {TodoViewKind::All, {}, {}},
+      {TodoViewKind::MyDay, {}, {}},
+      {TodoViewKind::Important, {}, {}},
+      {TodoViewKind::Planned, QStringLiteral("not-matching"), {}},
+      {TodoViewKind::Planned, {}, QStringLiteral("work")},
+      {TodoViewKind::Planned, QStringLiteral("not-matching"), QStringLiteral("work")}};
+  int number = 0;
+  for (const auto &destination : destinations) {
+    controller->setSearch({});
+    controller->setTagFilter({});
+    QVERIFY(selectView(window, TodoViewKind::Planned));
+    QVERIFY(chosen->isVisible() && date->isVisible());
+    chosen->setChecked(true);
+    date->setDate(QDate::currentDate().addDays(9));
+    const auto before = window->getSourceEditor()->toPlainText();
+    QVERIFY(selectView(window, destination.view,
+                       destination.view == TodoViewKind::List ? QStringLiteral("id:personal")
+                                                              : QString()));
+    controller->setSearch(destination.search);
+    controller->setTagFilter(destination.tag);
+    QVERIFY(!chosen->isVisible() && !date->isVisible());
+    QCOMPARE(window->getSourceEditor()->toPlainText(), before);
+    QVERIFY(quickAdd(window, QStringLiteral("No inherited due %1").arg(++number)));
+    const auto *created = controller->getDocument().findItem(controller->getSelectedItemKey());
+    QVERIFY(created);
+    QVERIFY(!created->m_fields.m_due.isValid());
+    QVERIFY(created->m_fields.m_tags.isEmpty());
+  }
+}
+
+void TestTodoViewWindow::storedMyDayRemainsVisible() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("stored-day.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *controller = window->getController();
+  const auto today = QDate::currentDate();
+  controller->setToday(today);
+  auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  fields.m_myDay = today.addDays(-1);
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+  auto *day = control<QCheckBox>(window, "todoMyDay");
+  auto *stored = control<QLabel>(window, "todoMyDayDate");
+  QVERIFY(day && stored);
+  QVERIFY(!day->isChecked());
+  QTRY_VERIFY(stored->isVisible());
+  const auto oldDay = QLocale().toString(fields.m_myDay, QLocale::ShortFormat);
+  QVERIFY(stored->text().contains(oldDay));
+  const auto before = window->getSourceEditor()->toPlainText();
+  controller->setToday(today.addDays(1));
+  QVERIFY(stored->text().contains(oldDay));
+  QCOMPARE(window->getSourceEditor()->toPlainText(), before);
+  controller->setToday(today);
+  day->setChecked(true);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay, today);
+  QVERIFY(stored->text().contains(QLocale().toString(today, QLocale::ShortFormat)));
+  day->setChecked(false);
+  QVERIFY(
+      !controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay.isValid());
+  QVERIFY(!stored->isVisible());
+  window->undo();
+  window->undo();
+  QCOMPARE(window->getSourceEditor()->toPlainText(), before);
+  QVERIFY(stored->text().contains(oldDay));
+}
+
+void TestTodoViewWindow::ownPendingSaveKeepsNewerEdits() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("pending-own.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  SaveGateBarrier barrier(*m_gate, m_notebook);
+  QVERIFY(quickAdd(window, QStringLiteral("First queued task")));
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QVERIFY(m_buffers->isSaveQueueBusy(buffer.id()));
+  QVERIFY(!m_buffers->isDirty(buffer.id()));
+  window->undo();
+  QCOMPARE(window->getSourceEditor()->toPlainText().toUtf8(), c_source);
+  QVERIFY(quickAdd(window, QStringLiteral("Newer local task")));
+  const auto newest = window->getSourceEditor()->toPlainText();
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  barrier.release();
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QTRY_COMPARE(readBytes(absolute(QStringLiteral("pending-own.todo"))), newest.toUtf8());
+  QCOMPARE(window->getSourceEditor()->toPlainText(), newest);
+  QVERIFY(window->getSourceEditor()->document()->isUndoAvailable());
+  window->undo();
+  QCOMPARE(window->getSourceEditor()->toPlainText().toUtf8(), c_source);
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QTRY_COMPARE(readBytes(absolute(QStringLiteral("pending-own.todo"))), c_source);
+}
+
+void TestTodoViewWindow::manualSaveJoinsPriorAutosave_data() {
+  QTest::addColumn<bool>("viewSave");
+  QTest::newRow("view-save-joins-prior-autosave") << true;
+  QTest::newRow("service-save-joins-prior-autosave") << false;
+}
+
+void TestTodoViewWindow::manualSaveJoinsPriorAutosave() {
+  QFETCH(bool, viewSave);
+  createArea();
+  const auto buffer = openNote(QStringLiteral("join-autosave.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  SaveGateBarrier barrier(*m_gate, m_notebook);
+  QVERIFY(quickAdd(window, QStringLiteral("Must be durable before Save returns")));
+  const auto expected = window->getSourceEditor()->toPlainText().toUtf8();
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QVERIFY(m_buffers->isSaveQueueBusy(buffer.id()));
+  QVERIFY(!m_buffers->isDirty(buffer.id()));
+  bool duplicateRan = false;
+  bool duplicateSaved = false;
+  bool releaseRan = false;
+  QTimer duplicate;
+  duplicate.setSingleShot(true);
+  connect(&duplicate, &QTimer::timeout, this, [&] {
+    duplicateRan = true;
+    duplicateSaved = m_buffers->saveBuffer(buffer.id());
+  });
+  QTimer release;
+  release.setSingleShot(true);
+  connect(&release, &QTimer::timeout, this, [&] {
+    releaseRan = true;
+    barrier.release();
+  });
+  duplicate.start(10);
+  release.start(60);
+  const bool saved = viewSave ? window->save() : m_buffers->saveBuffer(buffer.id());
+  QVERIFY(releaseRan); // A responsive event loop released the worker, not a GUI core write.
+  QVERIFY(duplicateRan && duplicateSaved);
+  QVERIFY(saved);
+  QCOMPARE(readBytes(absolute(QStringLiteral("join-autosave.todo"))), expected);
+  QCOMPARE(window->getSourceEditor()->toPlainText().toUtf8(), expected);
+}
+
+void TestTodoViewWindow::activeStaleSnapshotCannotAuthorizeHistory() {
+  createArea();
+  auto buffer = openNote(QStringLiteral("historical-snapshot.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  SaveGateBarrier barrier(*m_gate, m_notebook);
+  QVERIFY(quickAdd(window, QStringLiteral("Actually queued")));
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QVERIFY(m_buffers->isSaveQueueBusy(buffer.id()));
+  QVERIFY(quickAdd(window, QStringLiteral("Observed, never submitted")));
+  const auto observed = window->getLatestContent();
+  window->undo();
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  barrier.release();
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(window->getSourceEditor()->toPlainText().toUtf8(), c_source);
+  // A real foreign core publication deliberately equals an earlier observation.
+  // Do not call getLatestContent before Save: that used to prune the faulty history.
+  QVERIFY(buffer.setContentRaw(observed.toUtf8()));
+  QVERIFY(!window->save());
+  QTRY_COMPARE(window->getSourceEditor()->toPlainText(), observed);
+  QCOMPARE(buffer.getContentRaw(), observed.toUtf8());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QVERIFY(window->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("historical-snapshot.todo"))), observed.toUtf8());
+}
+
+void TestTodoViewWindow::foreignPendingSplitWaitsForPublication() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("pending-handoff.todo"));
+  QVERIFY(buffer.isValid());
+  auto *first = current();
+  QVERIFY(first);
+  focusTasks(first);
+  const auto workspace = m_area->getController()->getCurrentWorkspaceId();
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  SaveGateBarrier barrier(*m_gate, m_notebook);
+  QVERIFY(quickAdd(first, QStringLiteral("Pending handoff body")));
+  const auto expected = first->getSourceEditor()->toPlainText();
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QVERIFY(m_buffers->isSaveQueueBusy(buffer.id()));
+  m_area->getController()->splitViewSplit(workspace, Direction::Right, true);
+  auto *second = current();
+  QVERIFY(second && second != first);
+  QVERIFY(!second->getController()->addList(QStringLiteral("No stale mutation")));
+  QString unavailable;
+  QVERIFY(!second->tryGetLatestContent(&unavailable));
+  barrier.release();
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QTRY_COMPARE(second->getSourceEditor()->toPlainText(), expected);
+  QVERIFY(second->getController()->getDocument().isValid());
+  focusTasks(second);
+  QVERIFY(quickAdd(second, QStringLiteral("After handoff")));
+  QVERIFY(second->save());
+  QVERIFY(
+      readBytes(absolute(QStringLiteral("pending-handoff.todo"))).contains("Pending handoff body"));
+  QVERIFY(readBytes(absolute(QStringLiteral("pending-handoff.todo"))).contains("After handoff"));
+}
+
+void TestTodoViewWindow::foreignMemoryPublicationRetiresHistory_data() {
+  QTest::addColumn<bool>("registeredWriter");
+  QTest::newRow("other-todo-window") << true;
+  QTest::newRow("unregistered-writer") << false;
+}
+
+void TestTodoViewWindow::foreignMemoryPublicationRetiresHistory() {
+  QFETCH(bool, registeredWriter);
+  createArea();
+  auto store = std::make_shared<Store>();
+  const auto buffer = m_buffers->openMemoryBuffer(storedSource(store));
+  QVERIFY(buffer.isValid());
+  auto *first = current();
+  QVERIFY(first);
+  focusTasks(first);
+  QVERIFY(quickAdd(first, QStringLiteral("Persisted memory task")));
+  const auto expected = first->getLatestContent();
+  QVERIFY(first->save());
+  const auto own = m_buffers->snapshotPublication(buffer.id());
+  QVERIFY(own.writerToken != 0);
+  QVERIFY(first->getSourceEditor()->document()->isUndoAvailable());
+  QVERIFY(first->save());
+  QCOMPARE(buffer.getRevision(), own.coreRevision);
+  QVERIFY(first->getSourceEditor()->document()->isUndoAvailable());
+
+  QObject foreignOwner;
+  const auto foreignKey = reinterpret_cast<quintptr>(&foreignOwner);
+  const auto unregister =
+      qScopeGuard([&]() { m_buffers->unregisterActiveWriter(buffer.id(), foreignKey); });
+  if (registeredWriter) {
+    const auto workspace = m_area->getController()->getCurrentWorkspaceId();
+    m_area->getController()->splitViewSplit(workspace, Direction::Right, true);
+    auto *second = current();
+    QVERIFY(second && second != first);
+    QCOMPARE(second->getBuffer().id(), buffer.id());
+    focusTasks(second);
+    QVERIFY(second->save());
+  } else {
+    m_buffers->registerActiveWriter(buffer.id(), foreignKey, [expected]() { return expected; });
+    m_buffers->markDirty(buffer.id());
+    QVERIFY(m_buffers->syncNow(buffer.id()));
+  }
+  QCOMPARE(buffer.getRevision(), own.coreRevision);
+  QCOMPARE(buffer.getContentRaw(), expected.toUtf8());
+  QVERIFY(m_buffers->snapshotPublication(buffer.id()).writerToken != own.writerToken);
+  QString rejected;
+  QVERIFY(!first->tryGetLatestContent(&rejected));
+  QTRY_VERIFY(!first->getSourceEditor()->document()->isUndoAvailable());
+  QCOMPARE(first->getLatestContent(), expected);
+  first->undo();
+  first->redo();
+  QCOMPARE(first->getSourceEditor()->toPlainText(), expected);
+  QCOMPARE(store->snapshot(), expected.toUtf8());
+}
+
+void TestTodoViewWindow::ownMemoryCompletionKeepsNewerEdits() {
+  createArea();
+  auto store = std::make_shared<Store>();
+  struct CallbackBarrier {
+    QSemaphore once{1};
+    QSemaphore entered;
+    QSemaphore proceed;
+  };
+  auto barrier = std::make_shared<CallbackBarrier>();
+  auto source = storedSource(store);
+  source.save = [save = source.save, barrier](QByteArrayView p_bytes) {
+    if (barrier->once.tryAcquire()) {
+      barrier->entered.release();
+      barrier->proceed.acquire();
+    }
+    return save(p_bytes);
+  };
+  const auto cleanup = qScopeGuard([&]() {
+    barrier->proceed.release();
+    m_buffers->shutdown();
+  });
+  const auto buffer = m_buffers->openMemoryBuffer(source);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  QVERIFY(quickAdd(window, QStringLiteral("Published memory task")));
+  const auto published = window->getLatestContent();
+  QVERIFY(QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection));
+  QVERIFY(barrier->entered.tryAcquire(1, 5000));
+  const int base = buffer.getRevision();
+  QVERIFY(quickAdd(window, QStringLiteral("Newer local memory draft")));
+  const auto draft = window->getLatestContent();
+  barrier->proceed.release();
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(store->snapshot(), published.toUtf8());
+  QCOMPARE(buffer.getRevision(), base);
+  QCOMPARE(window->getLatestContent(), draft);
+  QVERIFY(window->isModified());
+  QVERIFY(window->getSourceEditor()->document()->isUndoAvailable());
+  window->undo();
+  QCOMPARE(window->getLatestContent(), published);
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+}
+
+} // namespace tests
+
+int main(int argc, char **argv) {
+  QStandardPaths::setTestModeEnabled(true);
+  vxcore_set_test_mode(1);
+  QApplication app(argc, argv);
+  tests::TestTodoViewWindow test;
+  return QTest::qExec(&test, argc, argv);
+}
+
+#include "test_todoviewwindow.moc"

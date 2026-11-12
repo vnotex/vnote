@@ -21,6 +21,7 @@ target_sources(vnote PRIVATE
     snippetcontroller.cpp snippetcontroller.h
     taskcontroller.cpp taskcontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
+    todoviewwindowcontroller.cpp todoviewwindowcontroller.h
     typstviewwindowcontroller.cpp typstviewwindowcontroller.h
     commentcontroller.cpp commentcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h

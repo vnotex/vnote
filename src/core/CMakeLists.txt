@@ -32,6 +32,7 @@ target_sources(vnote PRIVATE
     singleinstanceguard.cpp singleinstanceguard.h
     texteditorconfig.cpp texteditorconfig.h
     theme.cpp theme.h
+    tododocument.cpp tododocument.h
     versioncontroller/iversioncontroller.h
     # DEPRECATED: VxCore singleton wrapper removed - use services via ServiceLocator instead
     vxpdfscheme.h

@@ -10,6 +10,7 @@
 #include <QTextCodec>
 #include <QThread>
 #include <QThreadPool>
+#include <QTimer>
 #include <QtConcurrent/QtConcurrentRun>
 #include <QtTest>
 #include <core/services/notebookiogate.h>
@@ -30,8 +31,10 @@
 #include <temp_dir_fixture.h>
 #include <vxcore/vxcore.h>
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <new>
 #include <stdexcept>
 #include <thread>
 
@@ -199,7 +202,41 @@ private:
   bool m_released = false;
 };
 
-// Inject an actual filesystem write failure only at the established virtual save boundary,
+// Real service/queue with a deterministic worker boundary. No persistence is
+// replaced: the inherited operation installs and saves through vxcore.
+class SnapshotBarrierService : public BufferService {
+public:
+  using BufferService::BufferService;
+  QSemaphore entered;
+  QSemaphore proceed;
+  std::atomic_bool pauseInstall{false};
+  std::atomic_bool pauseAfterSave{false};
+  std::atomic_int workerSaves{0};
+  std::atomic_int guiSaves{0};
+
+  BufferSnapshotResult saveSnapshot(const QString &p_id, const QByteArray &p_bytes,
+                                    const BufferSnapshotContext &p_context) override {
+    if (pauseInstall.exchange(false)) {
+      entered.release();
+      proceed.acquire();
+    }
+    return BufferService::saveSnapshot(p_id, p_bytes, p_context);
+  }
+  bool saveBuffer(const QString &p_id) override {
+    if (QThread::currentThread() == asQObject()->thread())
+      ++guiSaves;
+    else
+      ++workerSaves;
+    const bool saved = BufferService::saveBuffer(p_id);
+    if (QThread::currentThread() != asQObject()->thread() && pauseAfterSave.exchange(false)) {
+      entered.release();
+      proceed.acquire();
+    }
+    return saved;
+  }
+};
+
+// Inject one transient filesystem write failure at the established virtual save boundary,
 // after the real queue has installed the transformed bytes. The original file remains intact.
 class ReplacementWriteFailureService : public BufferService {
 public:
@@ -211,6 +248,8 @@ public:
   bool writeFailed = false;
 
   bool saveBuffer(const QString &p_bufferId) override {
+    if (writeFailed && originalRestored)
+      return BufferService::saveBuffer(p_bufferId);
     const auto preservedPath = failurePath + QStringLiteral(".preserved");
     if (!QFile::rename(failurePath, preservedPath)) {
       return false;
@@ -383,6 +422,18 @@ private slots:
   void testNoteOperationsShutdownPendingNode();
   void testNoteOperationsCommentFailure();
   void testWriterCaptureAvailability();
+  void testSnapshotPublicationChains();
+  void testCoalescedSaveDoesNotAcknowledge();
+  void testSnapshotWorkerRejectsForeignStamp();
+  void testInstalledFailurePublishesOwnership();
+  void testManualSaveJoinsPriorAutosave_data();
+  void testManualSaveJoinsPriorAutosave();
+  void testBusySaveExcludesGuiMutators();
+  void testManualSaveRejectsNewerEdit();
+  void testSnapshotTokenLifetimeAndRetirement();
+  void testMemoryPublicationZeroDelta();
+  void testRawManualSavePreservesBinary();
+  void testManualSaveReportsActualFailure();
 
 private:
   SearchFileResult
@@ -3380,6 +3431,536 @@ void TestBuffer::testWriterCaptureAvailability() {
       buffer.id(), 1, []() -> QString { throw std::runtime_error("unavailable editor"); });
   QVERIFY(!fixture.buffers.captureActiveWriterContent(buffer.id(), &text, &hasWriter));
   QVERIFY(hasWriter);
+}
+
+void TestBuffer::testSnapshotPublicationChains() {
+  const auto target = createReplacementTarget(QStringLiteral("publication-chain.todo"), "base");
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QCOMPARE(note.getContentRaw(), QByteArray("base"));
+  QObject owner;
+  int base = note.getRevision();
+  const int loadedBase = base;
+  const auto token = buffers.registerSnapshotWriter(note.id(), &owner, 11, [&]() { return base; });
+  QVERIFY(token != 0);
+  QString text = QStringLiteral("first draft");
+  buffers.registerActiveWriter(note.id(), 11, [&]() { return text; });
+  QString observed;
+  QVERIFY(buffers.captureActiveWriterContent(note.id(), &observed));
+  QCOMPARE(buffers.snapshotPublication(note.id()).writerToken, quint64(0));
+  buffers.pauseInstall = true;
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  auto fact = buffers.snapshotPublication(note.id(), token);
+  QVERIFY(fact.busy && fact.ownPending && !fact.foreignPending);
+  QCOMPARE(fact.coreRevision, loadedBase);
+  const auto foreign = buffers.snapshotPublication(note.id(), token + 1);
+  QVERIFY(foreign.foreignPending && !foreign.ownPending);
+  // Undo is a newer editor revision even though its bytes are the loaded body.
+  text = QStringLiteral("base");
+  buffers.markDirty(note.id());
+  const auto undoRevision = buffers.currentRevision(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  buffers.proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QTRY_COMPARE(buffers.lastSavedRevision(note.id()), undoRevision);
+  fact = buffers.snapshotPublication(note.id(), token);
+  QCOMPARE(fact.writerToken, token);
+  QCOMPARE(fact.editorRevision, undoRevision);
+  QCOMPARE(fact.chainStartRevision, loadedBase);
+  QVERIFY(fact.durable);
+  QCOMPARE(note.getContentRaw(), QByteArray("base"));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("base"));
+
+  BufferSnapshotContext stale{token, fact.bufferEpoch, loadedBase, undoRevision - 1};
+  const auto rejected = QtConcurrent::run([&]() {
+                          return buffers.saveSnapshot(note.id(), QByteArray("stale"), stale);
+                        }).result();
+  QVERIFY(!rejected.installed && !rejected.saved);
+  QCOMPARE(note.getContentRaw(), QByteArray("base"));
+
+  // A token-zero same-text installation is foreign and breaks the entire chain.
+  QVERIFY(note.setContentRaw(QByteArray("base")));
+  const auto foreignRevision = note.getRevision();
+  QCOMPARE(buffers.snapshotPublication(note.id()).writerToken, quint64(0));
+  text = QStringLiteral("must not overwrite foreign stamp");
+  buffers.markDirty(note.id());
+  QVERIFY(!buffers.syncNow(note.id()));
+  QCOMPARE(note.getRevision(), foreignRevision);
+  QCOMPARE(note.getContentRaw(), QByteArray("base"));
+  // An actual reload/reconciliation, not text equality, can establish a new base.
+  base = foreignRevision;
+  QVERIFY(buffers.syncNow(note.id()));
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), text.toUtf8());
+  QObject otherOwner;
+  int otherBase = note.getRevision();
+  const auto otherToken =
+      buffers.registerSnapshotWriter(note.id(), &otherOwner, 12, [&]() { return otherBase; });
+  buffers.registerActiveWriter(note.id(), 12, [&]() { return text; });
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.pullActiveWriterContent(note.id()));
+  QCOMPARE(buffers.snapshotPublication(note.id()).writerToken, otherToken);
+  buffers.registerActiveWriter(note.id(), 11, [&]() { return text; });
+  buffers.markDirty(note.id());
+  QVERIFY(!buffers.syncNow(note.id())); // Same bytes from another live token are foreign.
+}
+
+void TestBuffer::testManualSaveJoinsPriorAutosave_data() {
+  QTest::addColumn<bool>("stringOverload");
+  QTest::newRow("buffer-handle") << false;
+  QTest::newRow("service-string") << true;
+}
+
+void TestBuffer::testManualSaveJoinsPriorAutosave() {
+  QFETCH(bool, stringOverload);
+  const auto target = createReplacementTarget(
+      QStringLiteral("manual-join-%1.todo").arg(stringOverload), "old bytes");
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QCOMPARE(note.getContentRaw(), QByteArray("old bytes"));
+  QObject owner;
+  int base = note.getRevision();
+  const auto token = buffers.registerSnapshotWriter(note.id(), &owner, 21, [&]() { return base; });
+  const QString text = QStringLiteral("actual editor snapshot");
+  buffers.registerActiveWriter(note.id(), 21, [&]() { return text; });
+  buffers.pauseInstall = true;
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  QVERIFY(!buffers.isDirty(note.id())); // Earlier autosave already cleared dirty.
+  QVERIFY(buffers.syncNow(note.id()));  // Duplicate Ctrl+S preparation joins as well.
+  bool eventLoopRan = false;
+  QTimer::singleShot(0, [&]() {
+    eventLoopRan = true;
+    buffers.proceed.release();
+  });
+  QVERIFY(stringOverload ? buffers.saveBuffer(note.id()) : note.save());
+  QVERIFY(eventLoopRan);
+  QCOMPARE(buffers.workerSaves.load(), 1);
+  QCOMPARE(buffers.guiSaves.load(), stringOverload ? 1 : 0);
+  const auto fact = buffers.snapshotPublication(note.id(), token);
+  QVERIFY(fact.durable);
+  QCOMPARE(fact.editorRevision, buffers.currentRevision(note.id()));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), text.toUtf8());
+  QCOMPARE(note.getContentRaw(), text.toUtf8());
+
+  // Saving the unchanged editor again must await this write, not reuse its old receipt.
+  base = note.getRevision();
+  buffers.pauseInstall = true;
+  bool repeatedWriteEntered = false;
+  QTimer releaseRepeatedWrite;
+  releaseRepeatedWrite.setSingleShot(true);
+  connect(&releaseRepeatedWrite, &QTimer::timeout, &releaseRepeatedWrite, [&]() {
+    repeatedWriteEntered = buffers.entered.tryAcquire(1, 5000);
+    buffers.proceed.release();
+  });
+  releaseRepeatedWrite.start(0);
+  QVERIFY(stringOverload ? buffers.saveBuffer(note.id()) : note.save());
+  QVERIFY(repeatedWriteEntered);
+  const auto repeatedFact = buffers.snapshotPublication(note.id(), token);
+  QVERIFY(repeatedFact.durable);
+  QVERIFY(repeatedFact.coreRevision > base);
+  QCOMPARE(repeatedFact.editorRevision, fact.editorRevision);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), text.toUtf8());
+}
+
+void TestBuffer::testBusySaveExcludesGuiMutators() {
+  const auto target = createReplacementTarget(QStringLiteral("busy-core-writes.todo"), "original");
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QCOMPARE(note.getContentRaw(), QByteArray("original"));
+  QObject owner;
+  int base = note.getRevision();
+  buffers.registerSnapshotWriter(note.id(), &owner, 31, [&]() { return base; });
+  buffers.registerActiveWriter(note.id(), 31, []() { return QStringLiteral("queued body"); });
+  buffers.markDirty(note.id());
+  buffers.pauseInstall = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  QVERIFY(!note.setContentRaw("GUI overwrite"));
+  QVERIFY(!buffers.setContentRaw(note.id(), "GUI overwrite"));
+  QVERIFY(!note.setContent(QStringLiteral("{}")));
+  QVERIFY(!note.reload());
+  QVERIFY(!buffers.pullActiveWriterContent(note.id()));
+  QString error;
+  QVERIFY(!buffers.saveForSnapshot(note.id(), 0, &error));
+  for (auto policy : {AutoSavePolicy::None, AutoSavePolicy::BackupFile}) {
+    buffers.setAutoSavePolicy(policy);
+    buffers.markDirty(note.id());
+    QVERIFY(!buffers.syncNow(note.id()));
+  }
+  QCOMPARE(note.getRevision(), base);
+  VxCoreError unavailable = VXCORE_OK;
+  QVERIFY(note.getContentRaw(&unavailable).isEmpty());
+  QCOMPARE(unavailable, VXCORE_ERR_INVALID_STATE);
+  buffers.proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QCOMPARE(note.getContentRaw(), QByteArray("queued body"));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("queued body"));
+  QCOMPARE(buffers.workerSaves.load(), 1);
+}
+
+void TestBuffer::testManualSaveRejectsNewerEdit() {
+  const auto target = createReplacementTarget(QStringLiteral("manual-newer.todo"), "original");
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  note.getContentRaw();
+  QObject owner;
+  int base = note.getRevision();
+  buffers.registerSnapshotWriter(note.id(), &owner, 41, [&]() { return base; });
+  QString text = QStringLiteral("requested");
+  buffers.registerActiveWriter(note.id(), 41, [&]() { return text; });
+  buffers.markDirty(note.id());
+  buffers.pauseInstall = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  QTimer::singleShot(0, [&]() {
+    text = QStringLiteral("newer edit during manual wait");
+    buffers.markDirty(note.id());
+    buffers.proceed.release();
+  });
+  QVERIFY(!note.save());
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QVERIFY(buffers.isDirty(note.id()));
+  QVERIFY(buffers.lastSavedRevision(note.id()) < buffers.currentRevision(note.id()));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("requested"));
+  // Saving the newer revision while the prior job is still admitted captures
+  // authoritative editor bytes, never the older raw core snapshot.
+  buffers.pauseInstall = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  text = QStringLiteral("newest manual snapshot");
+  buffers.markDirty(note.id());
+  QTimer::singleShot(0, [&]() { buffers.proceed.release(); });
+  QVERIFY(note.save());
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), text.toUtf8());
+}
+
+void TestBuffer::testSnapshotTokenLifetimeAndRetirement() {
+  const auto target = createReplacementTarget(QStringLiteral("token-lifetime.todo"), "original");
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  note.getContentRaw();
+  int base = note.getRevision();
+  alignas(QObject) unsigned char storage[sizeof(QObject)];
+  auto *owner = new (storage) QObject;
+  const auto destroyOwner = qScopeGuard([&]() { owner->~QObject(); });
+  const auto oldToken =
+      buffers.registerSnapshotWriter(note.id(), owner, 51, [&]() { return base; });
+  buffers.registerActiveWriter(note.id(), 51, []() { return QStringLiteral("old owner body"); });
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QCOMPARE(buffers.snapshotPublication(note.id()).writerToken, oldToken);
+  owner->~QObject();
+  owner = new (storage) QObject; // Deterministic address AND writer-key reuse.
+  const auto token = buffers.registerSnapshotWriter(note.id(), owner, 51, [&]() { return base; });
+  QVERIFY(token > oldToken);
+  buffers.registerActiveWriter(note.id(), 51, []() { return QStringLiteral("owned"); });
+  buffers.markDirty(note.id());
+  QVERIFY(!buffers.syncNow(note.id())); // Reused QObject address cannot claim old token's chain.
+  QCOMPARE(note.getContentRaw(), QByteArray("old owner body"));
+  base = note.getRevision(); // A real load establishes the replacement binding's base.
+  buffers.pauseAfterSave = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  // Actual IO is done but the worker has not published its result yet. Retiring
+  // this live epoch must prevent both late publication and GUI accounting.
+  const auto epoch = buffers.snapshotPublication(note.id()).bufferEpoch;
+  QVERIFY(buffers.closeBuffer(note.id()));
+  QVERIFY(!buffers.snapshotPublication(note.id(), token).live);
+  buffers.proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QVERIFY(buffers.shutdown());
+  QVERIFY(!buffers.snapshotPublication(note.id(), oldToken).live);
+  QCOMPARE(buffers.lastSavedRevision(note.id()), quint64(0));
+  auto reopened = buffers.openBufferByNodeId(target.m_id);
+  QVERIFY(reopened.isValid());
+  QVERIFY(buffers.snapshotPublication(reopened.id()).bufferEpoch > epoch);
+  QCOMPARE(buffers.snapshotPublication(reopened.id()).writerToken, quint64(0));
+  buffers.closeBuffer(reopened.id());
+}
+
+void TestBuffer::testMemoryPublicationZeroDelta() {
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  QSemaphore entered;
+  QSemaphore proceed;
+  std::atomic_bool pause{false};
+  QByteArray durable;
+  MemoryBufferSource source;
+  source.address = QStringLiteral("vx://publication-memory");
+  source.displayName = QStringLiteral("Publication memory");
+  source.editorType = QStringLiteral("todo");
+  source.content = "initial";
+  source.save = [&](QByteArrayView bytes) {
+    if (pause.exchange(false)) {
+      entered.release();
+      proceed.acquire();
+    }
+    durable = QByteArray(bytes.data(), bytes.size());
+    return VXCORE_OK;
+  };
+  auto note = buffers.openMemoryBuffer(std::move(source));
+  QVERIFY(note.isMemoryBacked());
+  const auto cleanup = qScopeGuard([&]() {
+    proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QObject owner;
+  int base = note.getRevision();
+  const auto token = buffers.registerSnapshotWriter(note.id(), &owner, 61, [&]() { return base; });
+  QString text = QStringLiteral("first");
+  buffers.registerActiveWriter(note.id(), 61, [&]() { return text; });
+  buffers.markDirty(note.id());
+  pause = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(entered.tryAcquire(1, 5000));
+  const auto installed = buffers.snapshotPublication(note.id(), token);
+  QVERIFY(!installed.durable);
+  proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  auto saved = buffers.snapshotPublication(note.id(), token);
+  QCOMPARE(saved.coreRevision, installed.coreRevision); // CompleteSave adds zero.
+  QVERIFY(saved.durable);
+  QCOMPARE(saved.writerToken, token);
+  QCOMPARE(durable, QByteArray("first"));
+
+  base = saved.coreRevision;
+  text = QStringLiteral("older callback");
+  buffers.markDirty(note.id());
+  pause = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(entered.tryAcquire(1, 5000));
+  const auto oldOrigin = buffers.snapshotPublication(note.id());
+  text = QStringLiteral("newer live source");
+  buffers.markDirty(note.id());
+  buffers.setAutoSavePolicy(AutoSavePolicy::None);
+  QVERIFY(buffers.syncNow(note.id()));
+  const auto newer = buffers.snapshotPublication(note.id(), token);
+  QVERIFY(newer.coreRevision > oldOrigin.coreRevision);
+  proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  saved = buffers.snapshotPublication(note.id(), token);
+  QCOMPARE(saved.coreRevision, newer.coreRevision);
+  QCOMPARE(saved.editorRevision, newer.editorRevision);
+  QVERIFY(!saved.durable);
+  QCOMPARE(note.getContentRaw(), text.toUtf8());
+  QCOMPARE(durable, QByteArray("older callback"));
+
+  // Even when a newer edit/undo has identical bytes and thus zero core delta,
+  // the old completion must not regress that newer editor origin.
+  base = saved.coreRevision;
+  buffers.setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  buffers.markDirty(note.id());
+  pause = true;
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(entered.tryAcquire(1, 5000));
+  const auto sameCore = note.getRevision();
+  buffers.markDirty(note.id());
+  buffers.setAutoSavePolicy(AutoSavePolicy::None);
+  QVERIFY(buffers.syncNow(note.id()));
+  const auto latest = buffers.snapshotPublication(note.id());
+  QCOMPARE(latest.coreRevision, sameCore);
+  proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  saved = buffers.snapshotPublication(note.id());
+  QCOMPARE(saved.coreRevision, sameCore);
+  QCOMPARE(saved.editorRevision, latest.editorRevision);
+  QVERIFY(!saved.durable);
+}
+
+void TestBuffer::testRawManualSavePreservesBinary() {
+  const auto target = createReplacementTarget(QStringLiteral("raw-manual.bin"), "old");
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  const QByteArray bytes = QByteArray::fromHex("00ff80fe0d0a01007f");
+  QVERIFY(note.setContentRaw(bytes));
+  // An unregistered editor must not broaden the binary save capture policy.
+  buffers.registerActiveWriter(note.id(), 71, []() { return QStringLiteral("not binary"); });
+  QVERIFY(note.save());
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), bytes);
+  QCOMPARE(note.getContentRaw(), bytes);
+}
+
+void TestBuffer::testSnapshotWorkerRejectsForeignStamp() {
+  const auto target = createReplacementTarget(QStringLiteral("worker-foreign.todo"), "same bytes");
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QCOMPARE(note.getContentRaw(), QByteArray("same bytes"));
+  QObject owner;
+  const int base = note.getRevision();
+  const auto token =
+      buffers.registerSnapshotWriter(note.id(), &owner, 81, [base]() { return base; });
+  buffers.registerActiveWriter(note.id(), 81, []() { return QStringLiteral("stale snapshot"); });
+  buffers.markDirty(note.id());
+  buffers.pauseInstall = true;
+  QSignalSpy failure(buffers.asQObject(), SIGNAL(bufferAutoSaveFailed(QString)));
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  // A separately owned backend path creates an unknown revision before worker
+  // admission. No raw read is performed while a core operation is running.
+  BufferCoreService foreign(m_context);
+  QVERIFY(foreign.setContentRaw(note.id(), QByteArray("same bytes")));
+  const int foreignRevision = foreign.getRevision(note.id());
+  buffers.proceed.release();
+  QTRY_COMPARE_WITH_TIMEOUT(failure.size(), 1, 5000);
+  QTRY_VERIFY(!buffers.isSaveQueueBusy(note.id()));
+  QCOMPARE(note.getRevision(), foreignRevision);
+  QCOMPARE(note.getContentRaw(), QByteArray("same bytes"));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("same bytes"));
+  const auto fact = buffers.snapshotPublication(note.id(), token);
+  QCOMPARE(fact.writerToken, quint64(0));
+  QVERIFY(!fact.durable);
+  QCOMPARE(buffers.workerSaves.load(), 0);
+  QCOMPARE(buffers.lastSavedRevision(note.id()), quint64(0));
+}
+
+void TestBuffer::testInstalledFailurePublishesOwnership() {
+  const auto target = createReplacementTarget(QStringLiteral("installed-failure.todo"), "original");
+  HookManager hooks;
+  ReplacementWriteFailureService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  QCOMPARE(note.getContentRaw(), QByteArray("original"));
+  buffers.failurePath = replacementFilePath(target);
+  QObject owner;
+  const int base = note.getRevision();
+  const auto token =
+      buffers.registerSnapshotWriter(note.id(), &owner, 91, [base]() { return base; });
+  buffers.registerActiveWriter(note.id(), 91,
+                               []() { return QStringLiteral("recoverable own body"); });
+  buffers.markDirty(note.id());
+  QSignalSpy failure(buffers.asQObject(), SIGNAL(bufferAutoSaveFailed(QString)));
+  QVERIFY(buffers.syncNow(note.id()));
+  QTRY_COMPARE_WITH_TIMEOUT(failure.size(), 1, 5000);
+  QTRY_VERIFY(!buffers.isSaveQueueBusy(note.id()));
+  const auto fact = buffers.snapshotPublication(note.id(), token);
+  QCOMPARE(fact.writerToken, token);
+  QCOMPARE(fact.editorRevision, buffers.currentRevision(note.id()));
+  QVERIFY(fact.coreRevision > base);
+  QVERIFY(!fact.durable);
+  QCOMPARE(note.getContentRaw(), QByteArray("recoverable own body"));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("original"));
+  QCOMPARE(buffers.lastSavedRevision(note.id()), quint64(0));
+}
+
+void TestBuffer::testManualSaveReportsActualFailure() {
+  const auto target = createReplacementTarget(QStringLiteral("manual-failure.bin"), "persisted");
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto path = replacementFilePath(target);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+    QDir().rmdir(path);
+    writeReplacementFile(path, QByteArray("persisted"));
+  });
+  QVERIFY(note.setContentRaw(QByteArray("unsaved binary")));
+  QVERIFY(QFile::remove(path));
+  QVERIFY(QDir().mkdir(path));
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!note.save(&error));
+  QVERIFY(error != VXCORE_OK);
+  QVERIFY(!buffers.saveBuffer(note.id()));
+  QVERIFY(!buffers.snapshotPublication(note.id()).durable);
+  QCOMPARE(note.getContentRaw(), QByteArray("unsaved binary"));
+  QVERIFY(note.isModified());
+}
+
+void TestBuffer::testCoalescedSaveDoesNotAcknowledge() {
+  const auto target = createReplacementTarget(QStringLiteral("coalesced-publication.todo"), "base");
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  SnapshotBarrierService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.proceed.release();
+    buffers.shutdown();
+    buffers.closeBuffer(note.id());
+  });
+  note.getContentRaw();
+  QObject owner;
+  const int base = note.getRevision();
+  const auto token =
+      buffers.registerSnapshotWriter(note.id(), &owner, 101, [base]() { return base; });
+  QString text = QStringLiteral("running");
+  buffers.registerActiveWriter(note.id(), 101, [&]() { return text; });
+  buffers.pauseInstall = true;
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  QVERIFY(buffers.entered.tryAcquire(1, 5000));
+  text = QStringLiteral("coalesced, never installed");
+  buffers.markDirty(note.id());
+  const auto supersededRevision = buffers.currentRevision(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  text = QStringLiteral("newest durable body");
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  // Deliver synthetic settlement while the first real attempt is still gated.
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  QCOMPARE(buffers.lastSavedRevision(note.id()), quint64(0));
+  QVERIFY(buffers.lastSavedRevision(note.id()) < supersededRevision);
+  QCOMPARE(buffers.snapshotPublication(note.id(), token).writerToken, quint64(0));
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("base"));
+  buffers.proceed.release();
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 5000);
+  QTRY_COMPARE(buffers.lastSavedRevision(note.id()), buffers.currentRevision(note.id()));
+  QCOMPARE(buffers.workerSaves.load(), 2);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), text.toUtf8());
+  QCOMPARE(buffers.snapshotPublication(note.id()).editorRevision,
+           buffers.currentRevision(note.id()));
 }
 
 } // namespace tests

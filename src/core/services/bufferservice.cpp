@@ -106,10 +106,32 @@ struct ProtectedBufferState {
 };
 } // namespace vnotex
 
+struct BufferService::SnapshotProvenance {
+  struct Record {
+    BufferPublication publication;
+    QString notebookId;
+    VxCoreError workerSaveError = VXCORE_ERR_INVALID_STATE;
+  };
+  struct Writer {
+    QString bufferId;
+    quintptr key = 0;
+    QPointer<QObject> owner;
+    std::function<int()> baseRevision;
+    QMetaObject::Connection destroyed;
+  };
+  // Only short metadata critical sections; never held during core IO/callbacks.
+  mutable QMutex mutex;
+  QHash<QString, Record> buffers;
+  QHash<quint64, Writer> writers; // GUI-only, never consulted by workers.
+  quint64 nextEpoch = 0;
+  quint64 nextWriter = 0;
+};
+
 struct BufferService::MemorySave {
   VxCoreBufferSaveHandle handle = nullptr;
   quint64 revision = 0;
   int coreRevision = 0;
+  BufferSnapshotContext origin;
   VxCoreError result = VXCORE_ERR_INVALID_STATE;
   bool done = false;
   QPointer<QEventLoop> waiter;
@@ -392,6 +414,7 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
                              QObject *p_parent)
     : BufferCoreService(p_context, p_parent), m_hookMgr(p_hookMgr), m_ioGate(p_ioGate),
       m_autoSavePolicy(p_autoSavePolicy) {
+  m_snapshotProvenance = std::make_unique<SnapshotProvenance>();
   Q_ASSERT(m_hookMgr);
   Q_ASSERT(m_ioGate);
 
@@ -402,12 +425,26 @@ BufferService::BufferService(VxCoreContextHandle p_context, HookManager *p_hookM
   // T7: BufferSaveQueue dispatches auto-save off the UI thread, serializing
   // per (notebookId, bufferId) and acquiring NotebookIoGate per notebook.
   m_saveQueue = new BufferSaveQueue(*this, *m_ioGate, this);
-  QObject::connect(
-      m_saveQueue, &BufferSaveQueue::saveFinished, asQObject(),
-      [this](const QString &p_bufferId, quint64 p_revision, bool p_ok, const QString &p_errorMsg) {
-        onSaveFinished(p_bufferId, p_revision, p_ok, p_errorMsg);
-      },
-      Qt::QueuedConnection);
+  QObject::connect(m_saveQueue, &BufferSaveQueue::snapshotFinished, asQObject(),
+                   [this](const QString &id, quint64 revision, quint64 token, quint64 epoch, int,
+                          bool installed, bool saved, const QString &error, int) {
+                     bool durable = installed && saved;
+                     {
+                       QMutexLocker lock(&m_snapshotProvenance->mutex);
+                       const auto it = m_snapshotProvenance->buffers.constFind(id);
+                       if (it == m_snapshotProvenance->buffers.constEnd() ||
+                           it->publication.bufferEpoch != epoch)
+                         return;
+                       // A refused duplicate cannot invalidate an actual durable publication.
+                       const auto &fact = it->publication;
+                       durable =
+                           durable || (!installed && fact.durable && fact.writerToken == token &&
+                                       fact.editorRevision == revision);
+                     }
+                     onSaveFinished(id, revision, durable, error);
+                   });
+  connect(m_saveQueue, &BufferSaveQueue::ordinaryStateChanged, asQObject(),
+          [this](const QString &id) { emit bufferPublicationChanged(id); });
   // T28: forward the read-only rejection signal to consumers via this
   // BufferService instance so UI listeners (ViewWindow2 modal warning) can
   // subscribe without reaching into the private m_saveQueue. The queue emits
@@ -1612,6 +1649,16 @@ bool BufferService::closeBuffer(const QString &p_bufferId) {
 void BufferService::discardBufferState(const QString &p_bufferId) {
   if (isContentReplacementActive(p_bufferId) || m_syncApplyReservedBuffers.contains(p_bufferId))
     return;
+  {
+    QMutexLocker lock(&m_snapshotProvenance->mutex);
+    m_snapshotProvenance->buffers.remove(p_bufferId);
+  }
+  const auto tokens = m_snapshotProvenance->writers.keys();
+  for (auto token : tokens) {
+    if (m_snapshotProvenance->writers.value(token).bufferId == p_bufferId)
+      revokeSnapshotWriter(token);
+  }
+  emit bufferPublicationChanged(p_bufferId);
   m_failedReplacements.remove(p_bufferId);
   // Clean up all per-buffer transient state.
   m_dirtyBuffers.remove(p_bufferId);
@@ -1801,6 +1848,8 @@ Buffer2 BufferService::getBufferHandle(const QString &p_bufferId, bool p_forcedR
 
 void BufferService::resolveBufferFacts(const QString &p_bufferId, bool p_forcedReadOnly,
                                        const QJsonObject &p_bufferInfo) {
+  trackPublication(p_bufferId,
+                   p_bufferInfo.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString());
   if (p_bufferInfo.value(QLatin1String(vxcore::kJsonKeyIsMemoryBacked)).toBool()) {
     if (!m_memoryBuffers)
       m_memoryBuffers = std::make_unique<MemoryBuffers>();
@@ -2094,6 +2143,11 @@ VxCoreError BufferService::exportResource(const Buffer2 &p_buffer, const QString
 }
 
 QJsonObject BufferService::getContent(const Buffer2 &p_buffer, VxCoreError *p_error) const {
+  if (!p_buffer.isEncrypted() && ordinarySaveBusy(p_buffer.id())) {
+    if (p_error)
+      *p_error = VXCORE_ERR_INVALID_STATE;
+    return {};
+  }
   if (!p_buffer.isEncrypted()) {
     return BufferCoreService::getContent(p_buffer.m_bufferId, p_error);
   }
@@ -2110,6 +2164,11 @@ QJsonObject BufferService::getContent(const Buffer2 &p_buffer, VxCoreError *p_er
 }
 
 QByteArray BufferService::getContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error) const {
+  if (!p_buffer.isEncrypted() && ordinarySaveBusy(p_buffer.id())) {
+    if (p_error)
+      *p_error = VXCORE_ERR_INVALID_STATE;
+    return {};
+  }
   if (!p_buffer.isEncrypted()) {
     return BufferCoreService::getContentRaw(p_buffer.m_bufferId, p_error);
   }
@@ -2126,6 +2185,11 @@ QByteArray BufferService::getContentRaw(const Buffer2 &p_buffer, VxCoreError *p_
 }
 
 QByteArrayView BufferService::peekContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error) const {
+  if (!p_buffer.isEncrypted() && ordinarySaveBusy(p_buffer.id())) {
+    if (p_error)
+      *p_error = VXCORE_ERR_INVALID_STATE;
+    return {};
+  }
   if (!p_buffer.isEncrypted()) {
     return BufferCoreService::peekContentRaw(p_buffer.m_bufferId, p_error);
   }
@@ -2147,18 +2211,22 @@ QByteArrayView BufferService::peekContentRaw(const Buffer2 &p_buffer, VxCoreErro
 }
 
 bool BufferService::setContent(const Buffer2 &p_buffer, const QString &p_contentJson) {
-  if (isContentReplacementActive(p_buffer.id()))
+  if (isContentReplacementActive(p_buffer.id()) || ordinarySaveBusy(p_buffer.id()))
     return false;
   if (p_buffer.isMemoryBacked()) {
     if (isBufferReadOnly(p_buffer.id()) ||
         !BufferCoreService::setContent(p_buffer.id(), p_contentJson))
       return false;
+    invalidatePublication(p_buffer.id());
     markDirty(p_buffer.id());
     emit bufferModifiedChanged(p_buffer.id());
     return true;
   }
   if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::setContent(p_buffer.m_bufferId, p_contentJson);
+    const bool ok = BufferCoreService::setContent(p_buffer.m_bufferId, p_contentJson);
+    if (ok)
+      invalidatePublication(p_buffer.id());
+    return ok;
   }
   if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
     return false;
@@ -2171,26 +2239,31 @@ bool BufferService::setContent(const Buffer2 &p_buffer, const QString &p_content
 }
 
 bool BufferService::setContentRaw(const QString &p_bufferId, const QByteArray &p_data) {
-  if (QThread::currentThread() == thread() && isContentReplacementActive(p_bufferId))
+  if (QThread::currentThread() == thread() &&
+      (isContentReplacementActive(p_bufferId) || ordinarySaveBusy(p_bufferId)))
     return false;
   if (QThread::currentThread() == thread() && memoryBufferState(p_bufferId)) {
     if (!syncMemoryContent(p_bufferId, p_data))
       return false;
+    invalidatePublication(p_bufferId);
     markDirty(p_bufferId);
     emit bufferContentSynced(p_bufferId);
     emit bufferModifiedChanged(p_bufferId);
     return true;
   }
-  return BufferCoreService::setContentRaw(p_bufferId, p_data);
+  const bool ok = BufferCoreService::setContentRaw(p_bufferId, p_data);
+  if (ok)
+    invalidatePublication(p_bufferId);
+  return ok;
 }
 
 bool BufferService::setContentRaw(const Buffer2 &p_buffer, const QByteArray &p_data) {
-  if (isContentReplacementActive(p_buffer.id()))
+  if (isContentReplacementActive(p_buffer.id()) || ordinarySaveBusy(p_buffer.id()))
     return false;
   if (p_buffer.isMemoryBacked())
     return setContentRaw(p_buffer.id(), p_data);
   if (!p_buffer.isEncrypted()) {
-    return BufferCoreService::setContentRaw(p_buffer.m_bufferId, p_data);
+    return setContentRaw(p_buffer.m_bufferId, p_data);
   }
   if (p_buffer.m_protectedState->readOnly.load(std::memory_order_acquire)) {
     return false;
@@ -2289,6 +2362,288 @@ bool BufferService::isBufferReadOnly(const QString &p_bufferId) const {
 
 // ============ BufferCoreService wrappers ============
 
+void BufferService::trackPublication(const QString &p_bufferId, const QString &p_notebookId) {
+  QMutexLocker lock(&m_snapshotProvenance->mutex);
+  if (m_snapshotProvenance->buffers.contains(p_bufferId))
+    return;
+  SnapshotProvenance::Record record;
+  record.notebookId = p_notebookId;
+  record.publication.live = true;
+  record.publication.bufferEpoch = ++m_snapshotProvenance->nextEpoch;
+  record.publication.coreRevision = BufferCoreService::getRevision(p_bufferId);
+  record.publication.chainStartRevision = record.publication.coreRevision;
+  m_snapshotProvenance->buffers.insert(p_bufferId, record);
+}
+
+bool BufferService::ordinarySaveBusy(const QString &p_bufferId) const {
+  return m_saveQueue && m_saveQueue->ordinaryState(p_bufferId).busy;
+}
+
+BufferPublication BufferService::snapshotPublication(const QString &p_bufferId,
+                                                     quint64 p_writerToken) const {
+  const auto pending = m_saveQueue->ordinaryState(p_bufferId);
+  QMutexLocker lock(&m_snapshotProvenance->mutex);
+  auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+  if (it == m_snapshotProvenance->buffers.end())
+    return {};
+  // GUI callers cannot admit another job during this non-callback turn. While
+  // busy, even getRevision must avoid the mutex-less backend buffer entirely.
+  if (!pending.busy) {
+    const int actual = BufferCoreService::getRevision(p_bufferId);
+    if (actual != it->publication.coreRevision) {
+      auto &fact = it->publication;
+      fact.coreRevision = actual;
+      fact.chainStartRevision = actual;
+      fact.writerToken = 0;
+      fact.editorRevision = 0;
+      fact.durable = false;
+    }
+  }
+  auto result = it->publication;
+  result.busy = pending.busy;
+  result.foreignPending = pending.replacement;
+  for (const auto &snapshot : pending.snapshots) {
+    if (p_writerToken != 0 && snapshot.writerToken == p_writerToken &&
+        snapshot.bufferEpoch == result.bufferEpoch)
+      result.ownPending = true;
+    else
+      result.foreignPending = true;
+  }
+  return result;
+}
+
+int BufferService::getRevision(const QString &p_bufferId) const {
+  return snapshotPublication(p_bufferId).coreRevision;
+}
+
+quint64 BufferService::registerSnapshotWriter(const QString &p_bufferId, QObject *p_owner,
+                                              quintptr p_writerKey,
+                                              std::function<int()> p_knownBaseRevision) {
+  if (QThread::currentThread() != thread() || !p_owner || !p_knownBaseRevision ||
+      !snapshotPublication(p_bufferId).live)
+    return 0;
+  // One descriptor per binding/key. QObject address reuse never reuses a token.
+  const auto tokens = m_snapshotProvenance->writers.keys();
+  for (auto token : tokens) {
+    const auto &writer = m_snapshotProvenance->writers[token];
+    if (writer.bufferId == p_bufferId && writer.key == p_writerKey)
+      revokeSnapshotWriter(token);
+  }
+  const quint64 token = ++m_snapshotProvenance->nextWriter;
+  SnapshotProvenance::Writer writer;
+  writer.bufferId = p_bufferId;
+  writer.key = p_writerKey;
+  writer.owner = p_owner;
+  writer.baseRevision = std::move(p_knownBaseRevision);
+  writer.destroyed = connect(p_owner, &QObject::destroyed, asQObject(),
+                             [this, token]() { revokeSnapshotWriter(token); });
+  m_snapshotProvenance->writers.insert(token, std::move(writer));
+  return token;
+}
+
+void BufferService::revokeSnapshotWriter(quint64 p_token) {
+  const auto it = m_snapshotProvenance->writers.find(p_token);
+  if (it == m_snapshotProvenance->writers.end())
+    return;
+  const auto id = it->bufferId;
+  disconnect(it->destroyed);
+  m_snapshotProvenance->writers.erase(it);
+  emit bufferPublicationChanged(id);
+}
+
+void BufferService::invalidatePublication(const QString &p_bufferId) {
+  const int revision = BufferCoreService::getRevision(p_bufferId);
+  {
+    QMutexLocker lock(&m_snapshotProvenance->mutex);
+    auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+    if (it == m_snapshotProvenance->buffers.end())
+      return;
+    auto &fact = it->publication;
+    fact.writerToken = 0;
+    fact.editorRevision = 0;
+    fact.coreRevision = revision;
+    fact.chainStartRevision = revision;
+    fact.durable = false;
+  }
+  if (QThread::currentThread() == thread())
+    emit bufferPublicationChanged(p_bufferId);
+}
+
+bool BufferService::admitSnapshot(const QString &p_bufferId, const BufferSnapshotContext &p_context,
+                                  int p_actualRevision) {
+  QMutexLocker lock(&m_snapshotProvenance->mutex);
+  auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+  if (it == m_snapshotProvenance->buffers.end() ||
+      it->publication.bufferEpoch != p_context.bufferEpoch)
+    return false;
+  auto &fact = it->publication;
+  if (fact.coreRevision != p_actualRevision) {
+    fact.coreRevision = p_actualRevision;
+    fact.chainStartRevision = p_actualRevision;
+    fact.writerToken = 0;
+    fact.editorRevision = 0;
+    fact.durable = false;
+  }
+  if (p_context.writerToken == 0)
+    return true;
+  if (fact.writerToken == p_context.writerToken && p_context.editorRevision < fact.editorRevision)
+    return false;
+  return p_context.expectedBaseRevision == p_actualRevision ||
+         (fact.writerToken == p_context.writerToken &&
+          fact.chainStartRevision <= p_context.expectedBaseRevision &&
+          p_context.expectedBaseRevision < p_actualRevision &&
+          p_context.editorRevision > fact.editorRevision);
+}
+
+void BufferService::publishSnapshot(const QString &p_bufferId,
+                                    const BufferSnapshotContext &p_context, int p_beforeRevision,
+                                    int p_afterRevision, bool p_saved) {
+  QMutexLocker lock(&m_snapshotProvenance->mutex);
+  auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+  if (it == m_snapshotProvenance->buffers.end() ||
+      it->publication.bufferEpoch != p_context.bufferEpoch)
+    return; // Closing/pruning retires the epoch; workers never insert records.
+  auto &fact = it->publication;
+  const bool continuation = p_context.writerToken != 0 &&
+                            fact.writerToken == p_context.writerToken &&
+                            fact.coreRevision == p_beforeRevision;
+  if (!continuation)
+    fact.chainStartRevision = p_beforeRevision;
+  fact.coreRevision = p_afterRevision;
+  fact.writerToken = p_context.writerToken;
+  fact.editorRevision = p_context.editorRevision;
+  fact.durable = p_saved;
+}
+
+BufferSnapshotResult BufferService::saveSnapshot(const QString &p_bufferId,
+                                                 const QByteArray &p_data,
+                                                 const BufferSnapshotContext &p_context) {
+  BufferSnapshotResult result;
+  // This operation is exclusively the ordinary queue worker's core path.
+  if (QThread::currentThread() == thread()) {
+    result.error = tr("Snapshot persistence requires the save worker.");
+    return result;
+  }
+  {
+    QMutexLocker lock(&m_snapshotProvenance->mutex);
+    const auto it = m_snapshotProvenance->buffers.constFind(p_bufferId);
+    if (it == m_snapshotProvenance->buffers.constEnd() ||
+        it->publication.bufferEpoch != p_context.bufferEpoch) {
+      result.error = tr("The buffer binding was retired.");
+      return result;
+    }
+  }
+  const int before = BufferCoreService::getRevision(p_bufferId);
+  result.coreRevision = before;
+  if (!admitSnapshot(p_bufferId, p_context, before)) {
+    result.error = tr("The editor snapshot is stale. Reload before saving.");
+    return result;
+  }
+  try {
+    VxCoreError error = VXCORE_ERR_INVALID_STATE;
+    result.installed = BufferCoreService::setContentRaw(p_bufferId, p_data, &error);
+    if (result.installed) {
+      {
+        QMutexLocker lock(&m_snapshotProvenance->mutex);
+        auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+        if (it != m_snapshotProvenance->buffers.end())
+          it->workerSaveError = VXCORE_ERR_INVALID_STATE;
+      }
+      result.saved = saveBuffer(p_bufferId); // Worker overload stays qualified/core-only.
+      QMutexLocker lock(&m_snapshotProvenance->mutex);
+      const auto it = m_snapshotProvenance->buffers.constFind(p_bufferId);
+      error = it == m_snapshotProvenance->buffers.constEnd() ? VXCORE_ERR_INVALID_STATE
+                                                             : it->workerSaveError;
+    }
+    result.errorCode = int(error);
+    if (!result.saved)
+      result.error = QString::fromUtf8(vxcore_error_message(error));
+  } catch (const std::exception &error) {
+    result.error = QString::fromUtf8(error.what());
+  } catch (...) {
+    result.error = tr("Saving the buffer failed.");
+  }
+  result.coreRevision = BufferCoreService::getRevision(p_bufferId);
+  if (result.installed)
+    publishSnapshot(p_bufferId, p_context, before, result.coreRevision, result.saved);
+  return result;
+}
+
+bool BufferService::captureWriterSnapshot(const QString &p_bufferId, QString *p_content,
+                                          BufferSnapshotContext *p_context) {
+  const auto writer = m_activeWriters.value(p_bufferId);
+  if (!writer.callback)
+    return false;
+  const auto publication = snapshotPublication(p_bufferId);
+  if (!publication.live)
+    return false;
+  BufferSnapshotContext context;
+  context.bufferEpoch = publication.bufferEpoch;
+  context.editorRevision = currentRevision(p_bufferId);
+  SnapshotProvenance::Writer descriptor;
+  for (auto it = m_snapshotProvenance->writers.constBegin();
+       it != m_snapshotProvenance->writers.constEnd(); ++it) {
+    if (it->bufferId == p_bufferId && it->key == writer.key && it->owner) {
+      context.writerToken = it.key();
+      descriptor = *it;
+      break;
+    }
+  }
+  QString error;
+  if (!fetchEditorContent(writer.callback, p_content, &error)) {
+    emit saveError(p_bufferId, error);
+    emit bufferPublicationChanged(p_bufferId);
+    return false;
+  }
+  if (context.writerToken) {
+    if (!descriptor.owner || !m_snapshotProvenance->writers.contains(context.writerToken))
+      return false;
+    try {
+      context.expectedBaseRevision = descriptor.baseRevision();
+    } catch (...) {
+      return false;
+    }
+  }
+  const auto now = snapshotPublication(p_bufferId, context.writerToken);
+  if (!now.live || now.bufferEpoch != context.bufferEpoch ||
+      currentRevision(p_bufferId) != context.editorRevision ||
+      (context.writerToken &&
+       (m_activeWriters.value(p_bufferId).key != writer.key || now.foreignPending)))
+    return false;
+  if (context.writerToken && context.expectedBaseRevision != now.coreRevision &&
+      !(now.writerToken == context.writerToken &&
+        now.chainStartRevision <= context.expectedBaseRevision &&
+        context.expectedBaseRevision < now.coreRevision &&
+        context.editorRevision > now.editorRevision)) {
+    emit saveError(p_bufferId, tr("The editor snapshot is stale. Reload before saving."));
+    emit bufferPublicationChanged(p_bufferId);
+    return false;
+  }
+  *p_context = context;
+  return true;
+}
+
+bool BufferService::installWriterSnapshot(const QString &p_bufferId, const QByteArray &p_content,
+                                          const BufferSnapshotContext &p_context, bool p_memory) {
+  if (ordinarySaveBusy(p_bufferId))
+    return false;
+  const int before = BufferCoreService::getRevision(p_bufferId);
+  if (!admitSnapshot(p_bufferId, p_context, before))
+    return false;
+  const auto previous = snapshotPublication(p_bufferId);
+  const bool installed = p_memory ? syncMemoryContent(p_bufferId, p_content)
+                                  : BufferCoreService::setContentRaw(p_bufferId, p_content);
+  if (installed) {
+    const int after = BufferCoreService::getRevision(p_bufferId);
+    const bool unchangedDurable = p_memory && before == after && previous.durable &&
+                                  previous.writerToken == p_context.writerToken &&
+                                  previous.editorRevision == p_context.editorRevision;
+    publishSnapshot(p_bufferId, p_context, before, after, unchangedDurable);
+    emit bufferPublicationChanged(p_bufferId);
+  }
+  return installed;
+}
+
 bool BufferService::syncMemoryContent(const QString &p_bufferId, const QByteArray &p_content) {
   if (QThread::currentThread() != thread() || isBufferReadOnly(p_bufferId))
     return false;
@@ -2313,6 +2668,9 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
   }
   const int coreRevision = BufferCoreService::getRevision(p_bufferId);
   const quint64 revision = currentRevision(p_bufferId);
+  const auto origin = snapshotPublication(p_bufferId);
+  if (origin.writerToken != 0 && origin.editorRevision != revision)
+    return {}; // A signal during the pull exposed a newer, not-yet-installed edit.
   // A staged destination has only one pending snapshot. Its next worker must
   // wait for GUI finalization, not merely for the previous worker to return.
   // A newer draft stays dirty and the normal autosave timer captures it later.
@@ -2328,6 +2686,10 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
     return {};
   save->revision = revision;
   save->coreRevision = coreRevision;
+  save->origin.bufferEpoch = origin.bufferEpoch;
+  save->origin.writerToken = origin.writerToken;
+  save->origin.editorRevision = origin.editorRevision;
+  save->origin.expectedBaseRevision = coreRevision;
   const bool accepted = m_saveQueue->enqueueContent(
       p_bufferId, [save]() { return int(vxcore_buffer_execute_save(save->handle)); },
       [this, state, save, p_bufferId, p_autoSave](int p_result) {
@@ -2358,6 +2720,17 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
           if (result != VXCORE_OK)
             save->result = result;
         }
+        if (current && save->result == VXCORE_OK) {
+          const int observed = BufferCoreService::getRevision(p_bufferId);
+          const auto origin = snapshotPublication(p_bufferId);
+          // Memory CompleteSave can have zero revision delta. It cannot stamp
+          // an older callback onto newer source (including a zero-delta edit).
+          if (observed == save->coreRevision && origin.bufferEpoch == save->origin.bufferEpoch &&
+              origin.writerToken == save->origin.writerToken &&
+              origin.editorRevision <= save->origin.editorRevision) {
+            publishSnapshot(p_bufferId, save->origin, save->coreRevision, observed, true);
+          }
+        }
         --state->pending;
         // Retain only the small completion record, not a second document body
         // until the next save or close. Execution has returned before delivery.
@@ -2386,6 +2759,7 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
           }
         }
         emit bufferModifiedChanged(p_bufferId);
+        emit bufferPublicationChanged(p_bufferId);
       });
   if (!accepted) {
     *p_error = VXCORE_ERR_INVALID_STATE;
@@ -2405,6 +2779,10 @@ bool BufferService::waitForMemorySave(const std::shared_ptr<MemorySave> &p_save)
   QPointer<QObject> alive(asQObject());
   p_save->waiter = &loop;
   connect(asQObject(), &QObject::destroyed, &loop, &QEventLoop::quit);
+  QTimer deadline;
+  deadline.setSingleShot(true);
+  connect(&deadline, &QTimer::timeout, &loop, &QEventLoop::quit);
+  deadline.start(5000);
   loop.exec(QEventLoop::ExcludeUserInputEvents);
   p_save->waiter.clear();
   return alive && p_save->done;
@@ -2424,17 +2802,36 @@ bool BufferService::saveMemoryBuffer(const Buffer2 &p_buffer, VxCoreError *p_err
     return false;
   }
   const auto state = m_memoryBuffers->buffers.value(p_buffer.id());
+  const auto requestedRevision = currentRevision(p_buffer.id());
+  const auto requestedKey = m_activeWriters.value(p_buffer.id()).key;
+  quint64 requestedToken = 0;
+  for (auto it = m_snapshotProvenance->writers.constBegin();
+       it != m_snapshotProvenance->writers.constEnd(); ++it) {
+    if (it->bufferId == p_buffer.id() && it->key == requestedKey && it->owner) {
+      requestedToken = it.key();
+      break;
+    }
+  }
+  const auto requestedEpoch = snapshotPublication(p_buffer.id()).bufferEpoch;
   state->manualSaving = true;
   const auto saving = qScopeGuard([&]() { state->manualSaving = false; });
   QPointer<QObject> alive(asQObject());
   const auto previous = state->lastSave;
   if (previous && !previous->done && !waitForMemorySave(previous))
     return false;
-  if (!alive || !state->current)
+  if (!alive || !state->current || currentRevision(p_buffer.id()) != requestedRevision ||
+      m_activeWriters.value(p_buffer.id()).key != requestedKey ||
+      (requestedToken && !m_snapshotProvenance->writers.contains(requestedToken)) ||
+      snapshotPublication(p_buffer.id()).bufferEpoch != requestedEpoch)
     return false;
   if (!pullActiveWriterContent(p_buffer.id()))
     return false;
-  const auto revision = currentRevision(p_buffer.id());
+  if (!alive || !state->current || currentRevision(p_buffer.id()) != requestedRevision ||
+      m_activeWriters.value(p_buffer.id()).key != requestedKey ||
+      (requestedToken && !m_snapshotProvenance->writers.contains(requestedToken)) ||
+      snapshotPublication(p_buffer.id()).bufferEpoch != requestedEpoch)
+    return false;
+  const auto revision = requestedRevision;
   if (previous && previous->done && previous->result == VXCORE_OK &&
       previous->revision == revision && !BufferCoreService::isModified(p_buffer.id())) {
     result = VXCORE_OK;
@@ -2448,16 +2845,170 @@ bool BufferService::saveMemoryBuffer(const Buffer2 &p_buffer, VxCoreError *p_err
     return false;
   }
   result = save->result;
-  if (result == VXCORE_OK && (currentRevision(p_buffer.id()) != save->revision ||
-                              BufferCoreService::isModified(p_buffer.id())))
+  if (result == VXCORE_OK &&
+      (currentRevision(p_buffer.id()) != requestedRevision ||
+       m_activeWriters.value(p_buffer.id()).key != requestedKey ||
+       (requestedToken && !m_snapshotProvenance->writers.contains(requestedToken)) ||
+       BufferCoreService::isModified(p_buffer.id())))
     result = VXCORE_ERR_FILE_CHANGED_OUTSIDE;
   return result == VXCORE_OK;
 }
 
+bool BufferService::saveOrdinaryBuffer(const QString &p_bufferId, VxCoreError *p_error) {
+  VxCoreError error = VXCORE_ERR_INVALID_STATE;
+  const auto report = qScopeGuard([&]() {
+    if (p_error)
+      *p_error = error;
+  });
+  if (QThread::currentThread() != thread())
+    return false;
+  const auto initial = snapshotPublication(p_bufferId);
+  if (!initial.live)
+    return false;
+  const quint64 revision = currentRevision(p_bufferId);
+  const auto activeKey = m_activeWriters.value(p_bufferId).key;
+  quint64 activeToken = 0;
+  for (auto it = m_snapshotProvenance->writers.constBegin();
+       it != m_snapshotProvenance->writers.constEnd(); ++it) {
+    if (it->bufferId == p_bufferId && it->key == activeKey && it->owner) {
+      activeToken = it.key();
+      break;
+    }
+  }
+  QPointer<QObject> alive(asQObject());
+  const auto pending = m_saveQueue->ordinaryState(p_bufferId);
+  BufferSnapshotContext requested;
+  requested.bufferEpoch = initial.bufferEpoch;
+  requested.editorRevision = revision;
+  requested.expectedBaseRevision = initial.coreRevision;
+  bool admitted = false;
+  quint64 newest = 0;
+  for (const auto &snapshot : pending.snapshots) {
+    newest = qMax(newest, snapshot.editorRevision);
+    if (snapshot.editorRevision == revision && snapshot.bufferEpoch == initial.bufferEpoch) {
+      requested = snapshot;
+      admitted = true;
+    }
+  }
+  if (pending.replacement || (pending.busy && !admitted && revision <= newest))
+    return false;
+  if (admitted && activeToken != 0 && activeToken != requested.writerToken)
+    return false;
+
+  QEventLoop loop;
+  bool failed = false;
+  auto bindingCurrent = [&]() {
+    if (!alive)
+      return false;
+    const auto now = snapshotPublication(p_bufferId);
+    return now.live && now.bufferEpoch == initial.bufferEpoch &&
+           currentRevision(p_bufferId) == revision &&
+           (activeToken == 0 || m_snapshotProvenance->writers.contains(activeToken)) &&
+           m_activeWriters.value(p_bufferId).key == activeKey;
+  };
+  const auto outcome = connect(m_saveQueue, &BufferSaveQueue::snapshotFinished, &loop,
+                               [&](const QString &id, quint64 edit, quint64 token, quint64 epoch,
+                                   int, bool, bool saved, const QString &, int code) {
+                                 if (id != p_bufferId || edit != revision ||
+                                     epoch != initial.bufferEpoch || token != requested.writerToken)
+                                   return;
+                                 failed = failed || !saved;
+                                 if (!saved && code != 0)
+                                   error = static_cast<VxCoreError>(code);
+                                 loop.quit();
+                               });
+  // BufferService privately inherits QObject; use its public QObject boundary.
+  // Every wake is filtered by the captured binding below, without polling core IO.
+  connect(asQObject(), SIGNAL(bufferPublicationChanged(QString)), &loop, SLOT(quit()));
+  connect(asQObject(), &QObject::destroyed, &loop, &QEventLoop::quit);
+
+  if (!admitted) {
+    QString notebookId;
+    {
+      QMutexLocker lock(&m_snapshotProvenance->mutex);
+      notebookId = m_snapshotProvenance->buffers.value(p_bufferId).notebookId;
+    }
+    if (pending.busy || activeToken != 0) {
+      QString text;
+      if (!captureWriterSnapshot(p_bufferId, &text, &requested))
+        return false;
+      admitted = m_saveQueue->enqueue(notebookId, p_bufferId, prepareTextForSave(p_bufferId, text),
+                                      revision, m_bufferEncodings.value(p_bufferId), requested);
+    } else {
+      // Idle unregistered/binary callers persist immutable bytes, never a
+      // decode/re-encode and never old core bytes behind an in-flight writer.
+      VxCoreError status;
+      const auto bytes = BufferCoreService::getContentRaw(p_bufferId, &status);
+      if (status != VXCORE_OK) {
+        error = status;
+        return false;
+      }
+      requested.expectedBaseRevision = getRevision(p_bufferId);
+      admitted = m_saveQueue->enqueueRaw(notebookId, p_bufferId, bytes, revision, requested);
+    }
+  }
+  if (!admitted)
+    return false;
+  auto alreadyDurable = [&]() {
+    if (!bindingCurrent())
+      return false;
+    const auto fact = snapshotPublication(p_bufferId);
+    // A prior save of the same editor revision cannot acknowledge a new write.
+    return fact.durable && fact.coreRevision > requested.expectedBaseRevision &&
+           fact.editorRevision == revision && fact.writerToken == requested.writerToken;
+  };
+  auto requestedPending = [&]() {
+    const auto state = m_saveQueue->ordinaryState(p_bufferId);
+    for (const auto &snapshot : state.snapshots) {
+      if (snapshot.bufferEpoch == requested.bufferEpoch &&
+          snapshot.writerToken == requested.writerToken && snapshot.editorRevision == revision)
+        return true;
+    }
+    return false;
+  };
+  QTimer deadline;
+  bool timedOut = false;
+  deadline.setSingleShot(true);
+  connect(&deadline, &QTimer::timeout, &loop, [&]() {
+    timedOut = true;
+    loop.quit();
+  });
+  deadline.start(5000);
+  while (!timedOut && bindingCurrent() && !alreadyDurable()) {
+    // An earlier attempt's queued failure must not end a newer admitted retry.
+    if (failed && !requestedPending())
+      break;
+    loop.exec(QEventLoop::ExcludeUserInputEvents);
+  }
+  disconnect(outcome);
+  // The actual durable result wins over any duplicate request identity. A newer
+  // edit, foreign publication, rebind or retirement can never be acknowledged.
+  if (alive && bindingCurrent() && alreadyDurable()) {
+    markRevisionSaved(p_bufferId, revision);
+    // Raw-only callers can have revision zero and no editor revision record.
+    m_dirtyBuffers.remove(p_bufferId);
+    if (m_dirtyBuffers.isEmpty())
+      m_autoSaveTimer->stop();
+    m_failedReplacements.remove(p_bufferId);
+    error = VXCORE_OK;
+    return true;
+  }
+  if (alive && !bindingCurrent())
+    error = VXCORE_ERR_FILE_CHANGED_OUTSIDE;
+  return false;
+}
+
 bool BufferService::saveBuffer(const QString &p_bufferId) {
   // Queue workers must not read GUI-owned state or notify editors before completion.
-  if (QThread::currentThread() != thread())
-    return BufferCoreService::saveBuffer(p_bufferId);
+  if (QThread::currentThread() != thread()) {
+    VxCoreError error;
+    const bool saved = BufferCoreService::saveBuffer(p_bufferId, &error);
+    QMutexLocker lock(&m_snapshotProvenance->mutex);
+    auto it = m_snapshotProvenance->buffers.find(p_bufferId);
+    if (it != m_snapshotProvenance->buffers.end())
+      it->workerSaveError = error;
+    return saved;
+  }
   if (memoryBufferState(p_bufferId))
     return saveMemoryBuffer(getBufferHandle(p_bufferId), nullptr);
   if (isContentReplacementActive(p_bufferId) || m_syncApplyReservedBuffers.contains(p_bufferId))
@@ -2475,15 +3026,12 @@ bool BufferService::saveBuffer(const QString &p_bufferId) {
     emit saveRejectedReadOnly(p_bufferId);
     return false;
   }
-  const auto revision = currentRevision(p_bufferId);
-  bool ok = BufferCoreService::saveBuffer(p_bufferId);
-  if (ok && m_failedReplacements.remove(p_bufferId))
-    markRevisionSaved(p_bufferId, revision);
-  emit bufferModifiedChanged(p_bufferId);
-  return ok;
+  return saveOrdinaryBuffer(p_bufferId, nullptr);
 }
 
 bool BufferService::saveBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) {
+  if (QThread::currentThread() != thread() && !p_buffer.isEncrypted())
+    return BufferCoreService::saveBuffer(p_buffer.m_bufferId, p_error);
   if (p_buffer.isMemoryBacked())
     return saveMemoryBuffer(p_buffer, p_error);
   if (isContentReplacementActive(p_buffer.id()) ||
@@ -2499,14 +3047,8 @@ bool BufferService::saveBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) {
     emit saveRejectedReadOnly(p_buffer.m_bufferId);
     return false;
   }
-  if (!p_buffer.isEncrypted()) {
-    const auto revision = currentRevision(p_buffer.m_bufferId);
-    const bool ok = BufferCoreService::saveBuffer(p_buffer.m_bufferId, p_error);
-    if (ok && m_failedReplacements.remove(p_buffer.m_bufferId))
-      markRevisionSaved(p_buffer.m_bufferId, revision);
-    emit bufferModifiedChanged(p_buffer.m_bufferId);
-    return ok;
-  }
+  if (!p_buffer.isEncrypted())
+    return saveOrdinaryBuffer(p_buffer.m_bufferId, p_error);
   VxCoreError error;
   if (QThread::currentThread() == thread()) {
     const auto revision = currentRevision(p_buffer.m_bufferId);
@@ -2541,6 +3083,11 @@ bool BufferService::saveBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) {
 }
 
 bool BufferService::reloadBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) {
+  if (!p_buffer.isEncrypted() && ordinarySaveBusy(p_buffer.id())) {
+    if (p_error)
+      *p_error = VXCORE_ERR_INVALID_STATE;
+    return false;
+  }
   if (p_buffer.isMemoryBacked()) {
     VxCoreError result = VXCORE_ERR_INVALID_STATE;
     const auto report = qScopeGuard([&]() {
@@ -2571,6 +3118,7 @@ bool BufferService::reloadBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) 
       return false;
     const bool ok = BufferCoreService::reloadBuffer(p_buffer.id(), &result);
     if (ok) {
+      invalidatePublication(p_buffer.id());
       const auto revision = ++m_revisions[p_buffer.id()].m_revision;
       markRevisionSaved(p_buffer.id(), revision);
       emit bufferContentSynced(p_buffer.id());
@@ -2610,7 +3158,14 @@ bool BufferService::reloadBuffer(const Buffer2 &p_buffer, VxCoreError *p_error) 
     }
     ok = error == VXCORE_OK;
   } else {
+    if (ordinarySaveBusy(p_bufferId)) {
+      if (p_error)
+        *p_error = VXCORE_ERR_INVALID_STATE;
+      return false;
+    }
     ok = BufferCoreService::reloadBuffer(p_bufferId, p_error);
+    if (ok)
+      invalidatePublication(p_bufferId);
   }
 
   if (ok) {
@@ -2970,6 +3525,7 @@ void BufferService::markDirty(const QString &p_bufferId) {
   if (!m_autoSaveTimer->isActive()) {
     m_autoSaveTimer->start();
   }
+  emit bufferPublicationChanged(p_bufferId);
 }
 
 // ============ Snapshot Revision Tracking (T6) ============
@@ -3018,13 +3574,9 @@ bool BufferService::isSaveQueueBusy(const QString &p_bufferId) const {
     return false;
   }
 
-  // Use protection from the same metadata fetch already needed for the gate key.
-  const auto info = getBuffer(p_bufferId);
-  if (info.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()) {
+  if ((m_bufferFlags.value(p_bufferId) & Encrypted) != 0)
     return m_saveQueue->isProtectedBusy(p_bufferId);
-  }
-  const QString notebookId = info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
-  return m_saveQueue->isBusy(notebookId, p_bufferId);
+  return ordinarySaveBusy(p_bufferId);
 }
 
 bool BufferService::syncNow(const QString &p_bufferId) {
@@ -3045,7 +3597,8 @@ bool BufferService::syncNow(const QString &p_bufferId) {
   }
 
   bool snapshotOk = true;
-  if (executeSyncForBuffer(p_bufferId, &snapshotOk)) {
+  const auto revision = currentRevision(p_bufferId);
+  if (executeSyncForBuffer(p_bufferId, &snapshotOk) && currentRevision(p_bufferId) == revision) {
     m_dirtyBuffers.remove(p_bufferId);
   }
 
@@ -3056,7 +3609,7 @@ bool BufferService::syncNow(const QString &p_bufferId) {
 }
 
 bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
-  if (isContentReplacementActive(p_bufferId))
+  if (isContentReplacementActive(p_bufferId) || ordinarySaveBusy(p_bufferId))
     return false;
   if (p_bufferId.isEmpty() || m_virtualBufferIds.contains(p_bufferId)) {
     return true;
@@ -3070,8 +3623,13 @@ bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
 
   QString content;
   QString errorMessage;
-  if (!fetchEditorContent(writer.callback, &content, &errorMessage)) {
-    emit saveError(p_bufferId, errorMessage);
+  BufferSnapshotContext snapshot;
+  const bool captured = writer.encrypted
+                            ? fetchEditorContent(writer.callback, &content, &errorMessage)
+                            : captureWriterSnapshot(p_bufferId, &content, &snapshot);
+  if (!captured) {
+    if (!errorMessage.isEmpty())
+      emit saveError(p_bufferId, errorMessage);
     return false;
   }
   if (writer.encrypted) {
@@ -3092,9 +3650,8 @@ bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
     return true;
   }
   const auto bytes = encodeContent(p_bufferId, content);
-  const bool synced = memoryBufferState(p_bufferId)
-                          ? syncMemoryContent(p_bufferId, bytes)
-                          : BufferCoreService::setContentRaw(p_bufferId, bytes);
+  const bool synced =
+      installWriterSnapshot(p_bufferId, bytes, snapshot, memoryBufferState(p_bufferId) != nullptr);
   if (!synced) {
     qWarning() << "BufferService::pullActiveWriterContent: setContentRaw failed for" << p_bufferId;
     return false;
@@ -3129,6 +3686,8 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
     return true; // Nothing on disk to make durable.
   }
 
+  if (ordinarySaveBusy(p_bufferId))
+    return fail(tr("An open note is still being saved. Try again in a moment."));
   const QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
   if (bufJson.isEmpty()) {
     // Closed underneath us (a nested event during the caller's drain). Treat
@@ -3205,6 +3764,8 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
     return fail(tr("Could not read the latest content of an open note."));
   }
 
+  if (ordinarySaveBusy(p_bufferId))
+    return fail(tr("An open note is still being saved. Try again in a moment."));
   if (!BufferCoreService::isModified(p_bufferId)) {
     return true; // Already durable.
   }
@@ -3244,10 +3805,19 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
     if (m_saveQueue && m_saveQueue->isBusy(notebookId, p_bufferId)) {
       return fail(tr("An open note is still being saved. Try again in a moment."));
     }
-    if (!BufferCoreService::saveBuffer(p_bufferId)) {
+    const auto origin = snapshotPublication(p_bufferId);
+    BufferSnapshotContext context;
+    context.bufferEpoch = origin.bufferEpoch;
+    context.writerToken = origin.writerToken;
+    context.editorRevision = origin.editorRevision;
+    context.expectedBaseRevision = origin.coreRevision;
+    const bool saved = BufferCoreService::saveBuffer(p_bufferId);
+    publishSnapshot(p_bufferId, context, origin.coreRevision,
+                    BufferCoreService::getRevision(p_bufferId), saved);
+    if (!saved)
       return fail(tr("Could not write an open note to disk."));
-    }
   }
+  emit bufferPublicationChanged(p_bufferId);
 
   if (m_hookMgr) {
     m_hookMgr->doAction(HookNames::FileAfterSave, event);
@@ -3525,26 +4095,38 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
     return true;
   }
 
-  // Skip auto-save disk write for externally changed/missing ordinary files.
-  // (Inline check before snapshot — cheap.)
-  if (!writer.encrypted) {
+  // None/Backup must never mutate core behind an admitted ordinary job.
+  const bool ordinaryBusy = !writer.encrypted && ordinarySaveBusy(p_bufferId);
+  if (ordinaryBusy && m_autoSavePolicy != AutoSavePolicy::AutoSave) {
+    m_dirtyBuffers.insert(p_bufferId);
+    if (p_snapshotOk)
+      *p_snapshotOk = false;
+    return false;
+  }
+  // No backend state read while an ordinary worker owns the buffer.
+  if (!writer.encrypted && !ordinaryBusy) {
     BufferState state = BufferCoreService::getState(p_bufferId);
     if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
       return true;
     }
   }
 
-  // Fetch latest editor content as a QString snapshot — UI thread only.
+  // Actual service capture, with immutable writer/base/revision admission context.
   QString content;
   QString errorMessage;
-  if (!fetchEditorContent(writer.callback, &content, &errorMessage)) {
+  BufferSnapshotContext snapshot;
+  const bool captured = writer.encrypted
+                            ? fetchEditorContent(writer.callback, &content, &errorMessage)
+                            : captureWriterSnapshot(p_bufferId, &content, &snapshot);
+  if (!captured) {
     if (p_snapshotOk)
       *p_snapshotOk = false;
     // Timer ticks remove their dirty IDs before capture, so restore this one.
     m_dirtyBuffers.insert(p_bufferId);
     if (!m_autoSaveTimer->isActive())
       m_autoSaveTimer->start();
-    emit saveError(p_bufferId, errorMessage);
+    if (!errorMessage.isEmpty())
+      emit saveError(p_bufferId, errorMessage);
     emit bufferAutoSaveFailed(p_bufferId);
     return false;
   }
@@ -3556,47 +4138,58 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
   // Capture the revision tied to this snapshot (T6). markRevisionSaved on
   // completion advances lastSavedRevision and clears dirty iff it catches up
   // to current.
-  const quint64 capturedRev = currentRevision(p_bufferId);
+  const quint64 capturedRev = snapshot.editorRevision;
 
   switch (m_autoSavePolicy) {
   case AutoSavePolicy::None: {
     // Sync to in-memory vxcore buffer only — no disk write, fast.
-    if (BufferCoreService::setContentRaw(p_bufferId, encodeContent(p_bufferId, content))) {
+    if (installWriterSnapshot(p_bufferId, encodeContent(p_bufferId, content), snapshot, false)) {
       emit bufferContentSynced(p_bufferId);
       emit bufferModifiedChanged(p_bufferId);
     } else {
-      qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
+      m_dirtyBuffers.insert(p_bufferId);
+      if (p_snapshotOk)
+        *p_snapshotOk = false;
+      return false;
     }
     break;
   }
 
   case AutoSavePolicy::AutoSave: {
-    // T7: dispatch off UI thread via BufferSaveQueue.
-    // Resolve notebookId for gate keying.
-    QJsonObject bufJson = BufferCoreService::getBuffer(p_bufferId);
-    QString notebookId = bufJson.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
-
-    // Emit content-synced eagerly: the snapshot is committed to the queue and
-    // the editor view can drop any "syncing" hint. The actual disk write
-    // completes asynchronously via onSaveFinished.
+    QString notebookId;
+    {
+      QMutexLocker lock(&m_snapshotProvenance->mutex);
+      notebookId = m_snapshotProvenance->buffers.value(p_bufferId).notebookId;
+    }
+    if (!m_saveQueue->enqueue(notebookId, p_bufferId, prepareTextForSave(p_bufferId, content),
+                              capturedRev, m_bufferEncodings.value(p_bufferId), snapshot)) {
+      m_dirtyBuffers.insert(p_bufferId);
+      if (p_snapshotOk)
+        *p_snapshotOk = false;
+      return false;
+    }
     emit bufferContentSynced(p_bufferId);
-    // Pass the raw override (empty when none) so the worker's UTF-8 fast path
-    // is used for buffers without an encoding override.
-    m_saveQueue->enqueue(notebookId, p_bufferId, prepareTextForSave(p_bufferId, content),
-                         capturedRev, m_bufferEncodings.value(p_bufferId));
     break;
   }
 
   case AutoSavePolicy::BackupFile: {
     // Backup file does NOT contend with libgit2 (writes to .vswp, not the working tree)
     // and so remains inline. Still cheap (in-memory + sibling-file write).
-    if (!BufferCoreService::setContentRaw(p_bufferId, encodeContent(p_bufferId, content))) {
-      qWarning() << "BufferService: failed to set content for buffer" << p_bufferId;
-      break;
+    if (!installWriterSnapshot(p_bufferId, encodeContent(p_bufferId, content), snapshot, false)) {
+      m_dirtyBuffers.insert(p_bufferId);
+      if (p_snapshotOk)
+        *p_snapshotOk = false;
+      return false;
     }
     emit bufferContentSynced(p_bufferId);
     emit bufferModifiedChanged(p_bufferId);
 
+    if (ordinarySaveBusy(p_bufferId)) {
+      m_dirtyBuffers.insert(p_bufferId);
+      if (p_snapshotOk)
+        *p_snapshotOk = false;
+      return false;
+    }
     bool backupOk = BufferCoreService::writeBackup(p_bufferId);
     if (backupOk) {
       qDebug() << "BufferService: backup written for buffer" << p_bufferId << "at"

@@ -1,8 +1,10 @@
 #include <QCryptographicHash>
+#include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QScopeGuard>
 #include <QSemaphore>
 #include <QSet>
 #include <QSignalSpy>
@@ -16,6 +18,7 @@
 #include <stdexcept>
 #include <thread>
 
+#include <core/services/buffercoreservice.h>
 #include <core/services/buffersavequeue.h>
 #include <core/services/ibuffercoreservice.h>
 #include <core/services/notebookiogate.h>
@@ -234,6 +237,8 @@ class TestBufferSaveQueue : public QObject {
   Q_OBJECT
 
 private slots:
+  void testActualAttemptsExcludeCoalescedSettlement();
+  void testActualAttemptFailureKeepsInstalledBytes();
   void testFifoOrderDistinctBuffers();
   void testCoalescingKeepsNewest();
   void testGateContentionSerializesSameNotebook();
@@ -885,6 +890,96 @@ void TestBufferSaveQueue::testReplacementRejectsInvalidIdentityGuard() {
   QCOMPARE(readFile(path), QByteArray("identical bytes"));
   QCOMPARE(readFile(otherPath), QByteArray("identical bytes"));
   QCOMPARE(fake.content("bufA"), QByteArray("identical bytes"));
+}
+
+void TestBufferSaveQueue::testActualAttemptsExcludeCoalescedSettlement() {
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  const auto destroy = qScopeGuard([&]() { vxcore_context_destroy(context); });
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto path = directory.filePath(QStringLiteral("actual-attempts.todo"));
+  QVERIFY(writeFile(path, QByteArray("original")));
+  vnotex::BufferCoreService core(context);
+  const auto id = core.openBuffer(QString(), path);
+  QVERIFY(!id.isEmpty());
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(core, gate);
+  // Occupy the sole worker so all admissions remain pending deterministically.
+  const int maximum = QThreadPool::globalInstance()->maxThreadCount();
+  QThreadPool::globalInstance()->setMaxThreadCount(1);
+  WorkerBarrier barrier;
+  QThreadPool::globalInstance()->start([&]() { barrier.arriveAndWait(); });
+  ScopedBarrierRelease release(barrier);
+  const auto restore = qScopeGuard([&]() {
+    barrier.release();
+    queue.shutdown();
+    QThreadPool::globalInstance()->setMaxThreadCount(maximum);
+  });
+  QVERIFY(barrier.waitUntilEntered());
+  QSignalSpy settlement(&queue, &vnotex::BufferSaveQueue::saveFinished);
+  QSignalSpy attempts(&queue, &vnotex::BufferSaveQueue::snapshotFinished);
+  vnotex::BufferSnapshotContext first{17, 9, 0, 1};
+  QVERIFY(queue.enqueue(QString(), id, QStringLiteral("superseded"), 1, QString(), first));
+  auto pending = queue.ordinaryState(id);
+  QVERIFY(pending.busy);
+  QCOMPARE(pending.snapshots.size(), 1);
+  QCOMPARE(pending.snapshots.front().writerToken, quint64(17));
+  // Same owner/revision is a join, not an attempt or a replacement payload.
+  QVERIFY(queue.enqueue(QString(), id, QStringLiteral("duplicate must not replace"), 1, QString(),
+                        first));
+  vnotex::BufferSnapshotContext newest{18, 9, 0, 2};
+  const QByteArray raw = QByteArray::fromHex("00ff800d0a01");
+  QVERIFY(queue.enqueueRaw(QString(), id, raw, 2, newest));
+  QVERIFY(waitForSignalCount(settlement, 1));
+  QCOMPARE(settlement.front().at(1).toULongLong(), quint64(1));
+  QVERIFY(settlement.front().at(2).toBool());
+  QCOMPARE(attempts.size(), 0);
+  QCOMPARE(readFile(path), QByteArray("original"));
+  pending = queue.ordinaryState(id);
+  QCOMPARE(pending.snapshots.size(), 1);
+  QCOMPARE(pending.snapshots.front().writerToken, quint64(18));
+  barrier.release();
+  QVERIFY(waitForSignalCount(attempts, 1));
+  QVERIFY(queue.shutdown());
+  QCOMPARE(attempts.size(), 1);
+  QCOMPARE(attempts.front().at(1).toULongLong(), quint64(2));
+  QCOMPARE(attempts.front().at(2).toULongLong(), quint64(18));
+  QVERIFY(attempts.front().at(5).toBool());
+  QVERIFY(attempts.front().at(6).toBool());
+  QCOMPARE(readFile(path), raw);
+  QCOMPARE(core.getContentRaw(id), raw);
+  QVERIFY(!queue.ordinaryState(id).busy);
+}
+
+void TestBufferSaveQueue::testActualAttemptFailureKeepsInstalledBytes() {
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  const auto destroy = qScopeGuard([&]() { vxcore_context_destroy(context); });
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto path = directory.filePath(QStringLiteral("failure.todo"));
+  QVERIFY(writeFile(path, QByteArray("original")));
+  vnotex::BufferCoreService core(context);
+  const auto id = core.openBuffer(QString(), path);
+  QVERIFY(!id.isEmpty());
+  QCOMPARE(core.getContentRaw(id), QByteArray("original"));
+  // A directory at the exact backing path is a real filesystem write failure.
+  QVERIFY(QFile::remove(path));
+  QVERIFY(QDir().mkdir(path));
+  vnotex::NotebookIoGate gate;
+  vnotex::BufferSaveQueue queue(core, gate);
+  QSignalSpy attempts(&queue, &vnotex::BufferSaveQueue::snapshotFinished);
+  QVERIFY(queue.enqueue(QString(), id, QStringLiteral("recoverable"), 4));
+  QVERIFY(waitForSignalCount(attempts, 1));
+  QVERIFY(queue.shutdown());
+  QCOMPARE(attempts.size(), 1);
+  QVERIFY(attempts.front().at(5).toBool());
+  QVERIFY(!attempts.front().at(6).toBool());
+  QVERIFY(!attempts.front().at(7).toString().isEmpty());
+  QCOMPARE(core.getContentRaw(id), QByteArray("recoverable"));
 }
 
 } // namespace tests

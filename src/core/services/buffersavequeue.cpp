@@ -95,74 +95,84 @@ QString BufferSaveQueue::compositeKey(const QString &p_notebookId, const QString
   return p_notebookId + QStringLiteral("::") + p_bufferId;
 }
 
-void BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_bufferId,
+bool BufferSaveQueue::enqueue(const QString &p_notebookId, const QString &p_bufferId,
                               const QString &p_content, quint64 p_revision,
-                              const QString &p_encoding) {
-  // Guard: refuse to write to a read-only buffer (T16).
-  // Checked BEFORE any mutex acquisition, queue insertion, or worker dispatch
-  // so the disk file is NEVER touched. isBufferReadOnly is a stable per-buffer
-  // fact resolved when the buffer was opened (BufferService), so the
-  // enqueue-time check is sufficient — no worker-thread re-check is needed.
-  // Emitted directly on the caller (UI) thread; listeners (T28) warn the user.
-  if (m_coreService.isBufferReadOnly(p_bufferId)) {
-    qCWarning(bufferSaveQueueLog) << "enqueue rejected: buffer is read-only" << p_bufferId
-                                  << "notebook" << p_notebookId << "revision" << p_revision;
-    emit saveRejectedReadOnly(p_bufferId);
-    return;
+                              const QString &p_encoding, BufferSnapshotContext p_context) {
+  SaveJob job;
+  job.notebookId = p_notebookId;
+  job.bufferId = p_bufferId;
+  job.content = p_content;
+  job.revision = p_revision;
+  job.encoding = p_encoding;
+  job.context = p_context;
+  job.context.editorRevision = p_revision;
+  return enqueueOrdinary(std::move(job));
+}
+
+bool BufferSaveQueue::enqueueRaw(const QString &p_notebookId, const QString &p_bufferId,
+                                 const QByteArray &p_content, quint64 p_revision,
+                                 BufferSnapshotContext p_context) {
+  SaveJob job;
+  job.notebookId = p_notebookId;
+  job.bufferId = p_bufferId;
+  job.rawContent = p_content;
+  job.raw = true;
+  job.revision = p_revision;
+  job.context = p_context;
+  job.context.editorRevision = p_revision;
+  return enqueueOrdinary(std::move(job));
+}
+
+bool BufferSaveQueue::enqueueOrdinary(SaveJob p_job) {
+  if (m_coreService.isBufferReadOnly(p_job.bufferId)) {
+    emit saveRejectedReadOnly(p_job.bufferId);
+    BufferSnapshotResult result;
+    result.error = QStringLiteral("Buffer is read-only.");
+    emitSnapshotFinishedQueued(p_job, result);
+    return false;
   }
-
-  const QString key = compositeKey(p_notebookId, p_bufferId);
-
+  const QString key = compositeKey(p_job.notebookId, p_job.bufferId);
   SaveJob superseded;
   bool hasSuperseded = false;
   bool needLaunch = false;
-
   {
     QMutexLocker locker(&m_mutex);
-    if (m_stopping) {
-      qCWarning(bufferSaveQueueLog) << "enqueue after shutdown ignored for" << key;
-      return;
+    if (m_stopping || m_running.value(key, JobType::Ordinary) == JobType::Replacement) {
+      BufferSnapshotResult result;
+      result.error = QStringLiteral("Save queue is unavailable.");
+      emitSnapshotFinishedQueued(p_job, result);
+      return false;
     }
-
-    if (m_running.value(key, JobType::Ordinary) == JobType::Replacement) {
-      qCWarning(bufferSaveQueueLog) << "enqueue rejected: replacement owns" << key;
-      return;
-    }
-
-    // Coalesce: an existing PENDING (not started) job for this key is dropped
-    // in favour of the newest snapshot. We must still notify the caller that
-    // its older save resolved, so capture it for an out-of-lock signal.
-    auto it = m_pending.find(key);
-    if (it != m_pending.end()) {
-      superseded = it.value();
+    auto sameSnapshot = [&](const BufferSnapshotContext &p_existing) {
+      return p_job.context.writerToken != 0 &&
+             p_existing.writerToken == p_job.context.writerToken &&
+             p_existing.bufferEpoch == p_job.context.bufferEpoch &&
+             p_existing.editorRevision == p_job.revision;
+    };
+    const auto running = m_runningSnapshots.constFind(key);
+    auto pending = m_pending.find(key);
+    if ((running != m_runningSnapshots.constEnd() && sameSnapshot(*running)) ||
+        (pending != m_pending.end() && sameSnapshot(pending->context)))
+      return true;
+    if (pending != m_pending.end()) {
+      superseded = std::move(pending.value());
       hasSuperseded = true;
     }
-
-    SaveJob job;
-    job.notebookId = p_notebookId;
-    job.bufferId = p_bufferId;
-    job.content = p_content;
-    job.revision = p_revision;
-    job.encoding = p_encoding;
-    m_pending.insert(key, job);
-
+    m_pending.insert(key, p_job);
     if (!m_running.contains(key)) {
       m_running.insert(key, JobType::Ordinary);
+      m_runningBufferIds.insert(key, p_job.bufferId);
       ++m_inFlightCount;
       needLaunch = true;
     }
   }
-
-  if (hasSuperseded) {
-    // Superseded jobs report success with their original revision so waiters
-    // resolve. The newer job (just inserted) carries the durable write.
+  if (hasSuperseded)
     emitFinishedQueued(superseded.bufferId, superseded.revision, true, QString());
-  }
-
-  if (needLaunch) {
-    const QString keyCopy = key;
-    QThreadPool::globalInstance()->start([this, keyCopy]() { runWorker(keyCopy); });
-  }
+  QMetaObject::invokeMethod(
+      this, [this, id = p_job.bufferId]() { emit ordinaryStateChanged(id); }, Qt::QueuedConnection);
+  if (needLaunch)
+    QThreadPool::globalInstance()->start([this, key]() { runWorker(key); });
+  return true;
 }
 
 bool BufferSaveQueue::enqueueReplacement(const QString &p_notebookId, const QString &p_bufferId,
@@ -195,6 +205,7 @@ bool BufferSaveQueue::enqueueReplacement(const QString &p_notebookId, const QStr
         p_canonicalPath.isEmpty() ? QFileInfo(p_resolvedPath).canonicalFilePath() : p_canonicalPath;
     m_pending.insert(key, std::move(job));
     m_running.insert(key, JobType::Replacement);
+    m_runningBufferIds.insert(key, p_bufferId);
     ++m_inFlightCount;
   }
   QThreadPool::globalInstance()->start([this, key]() { runWorker(key); });
@@ -209,6 +220,8 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       auto it = m_pending.find(p_key);
       if (it == m_pending.end()) {
         m_running.remove(p_key);
+        m_runningSnapshots.remove(p_key);
+        m_runningBufferIds.remove(p_key);
         if (m_inFlightCount > 0) {
           --m_inFlightCount;
         }
@@ -219,8 +232,11 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       }
       job = std::move(it.value());
       m_pending.erase(it);
+      if (job.type == JobType::Ordinary)
+        m_runningSnapshots.insert(p_key, job.context);
     }
 
+    BufferSnapshotResult result;
     QString errMsg;
     bool ok = false;
     bool contentChanged = false;
@@ -269,7 +285,12 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
           persist(job.rawContent);
         }
       } else {
-        persist(encodeWith(job.encoding, job.content));
+        result = m_coreService.saveSnapshot(
+            job.bufferId, job.raw ? job.rawContent : encodeWith(job.encoding, job.content),
+            job.context);
+        contentChanged = result.installed;
+        ok = result.saved;
+        errMsg = result.error;
       }
     } catch (const std::exception &e) {
       errMsg = QStringLiteral("exception: ") + QString::fromUtf8(e.what());
@@ -280,6 +301,7 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
     if (job.type == JobType::Replacement) {
       QMutexLocker locker(&m_mutex);
       m_running.remove(p_key);
+      m_runningBufferIds.remove(p_key);
       // Post before dropping worker accounting, so shutdown cannot destroy this
       // object between releasing the key and posting its terminal notification.
       QMetaObject::invokeMethod(
@@ -294,8 +316,58 @@ void BufferSaveQueue::runWorker(const QString &p_key) {
       }
       return;
     }
-    emitFinishedQueued(job.bufferId, job.revision, ok, errMsg);
+    {
+      QMutexLocker locker(&m_mutex);
+      m_runningSnapshots.remove(p_key);
+      const bool finished = !m_pending.contains(p_key);
+      if (finished) {
+        m_running.remove(p_key);
+        m_runningBufferIds.remove(p_key);
+      }
+      result.installed = contentChanged;
+      result.saved = ok;
+      result.error = errMsg;
+      emitSnapshotFinishedQueued(job, result);
+      emitFinishedQueued(job.bufferId, job.revision, ok, errMsg);
+      if (finished) {
+        --m_inFlightCount;
+        if (m_inFlightCount == 0)
+          m_drained.wakeAll();
+        return;
+      }
+    }
   }
+}
+
+void BufferSaveQueue::emitSnapshotFinishedQueued(const SaveJob &p_job,
+                                                 const BufferSnapshotResult &p_result) {
+  QMetaObject::invokeMethod(
+      this,
+      [this, id = p_job.bufferId, context = p_job.context, p_result]() {
+        emit snapshotFinished(id, context.editorRevision, context.writerToken, context.bufferEpoch,
+                              p_result.coreRevision, p_result.installed, p_result.saved,
+                              p_result.error, p_result.errorCode);
+        emit ordinaryStateChanged(id);
+      },
+      Qt::QueuedConnection);
+}
+
+BufferSaveQueue::OrdinaryState BufferSaveQueue::ordinaryState(const QString &p_bufferId) const {
+  OrdinaryState state;
+  QMutexLocker locker(&m_mutex);
+  for (auto it = m_runningBufferIds.constBegin(); it != m_runningBufferIds.constEnd(); ++it) {
+    if (it.value() != p_bufferId)
+      continue;
+    state.busy = true;
+    state.replacement = m_running.value(it.key()) == JobType::Replacement;
+    const auto running = m_runningSnapshots.constFind(it.key());
+    if (running != m_runningSnapshots.constEnd())
+      state.snapshots.append(*running);
+    const auto pending = m_pending.constFind(it.key());
+    if (pending != m_pending.constEnd() && pending->type == JobType::Ordinary)
+      state.snapshots.append(pending->context);
+  }
+  return state;
 }
 
 void BufferSaveQueue::emitFinishedQueued(const QString &p_bufferId, quint64 p_revision, bool p_ok,

@@ -1,6 +1,19 @@
 find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
+add_qt_test(test_todoviewwindowcontroller
+  SOURCES
+    test_todoviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/todoviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/tododocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/todomodels.cpp
+  LINKS
+    core_services
+    vxcore
+    cmark
+  ARGS -nocrashhandler
+)
+
 add_qt_test(test_duplicate_open_guard
   SOURCES
     test_duplicate_open_guard.cpp

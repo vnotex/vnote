@@ -233,7 +233,7 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for document viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
 
-Full Text, Markdown, Typst, MindMap, PDF and Image windows also accept memory documents.
+Full Text, Markdown, Typst, TODO, MindMap, PDF and Image windows also accept memory documents.
 Use `Buffer2::displayName()`, explicit memory `editorType()`, and `canSave()` / `canReload()`;
 `resolvedPath()` is empty without a backing file. File menus, external programs, attachments
 and sidecar comments require file capabilities, not a suffix in a `vx://` identity. PDF memory
@@ -586,6 +586,70 @@ after installing the validated incoming project and source; its native compiler 
 Coverage: `test_viewarea_tab_reuse` uses production services, windows, real explorer gestures,
 dialogs and separate test-mode session contexts; `test_configmgr2` covers preference persistence
 and `test_pdfvieweradapter_viewer` covers new-document versus same-document replay.
+
+#### Markdown-backed TODO planner
+
+`TodoViewWindow` handles newable/searchable `TODO` files (`.todo`) and memory buffers with
+`editorType="todo"`. Ordinary opens default to Edit; forced Read and an existing tab's mode
+remain authoritative. Tasks/Source are independent surfaces, not Read/Edit modes. Printing
+and encrypted-note support are not advertised or extended.
+
+One `SimpleMarkdownEditor` owns the LF-normalized `QTextDocument` and its undo history.
+`TodoEditor` renders `TodoListModel` / `TodoTaskModel`; `TodoViewWindowController` validates
+and applies source commands without widgets or storage writes. Projected notes/descriptions
+use separate `SimpleMarkdownEditor` inputs with local undo disabled and source-history routing.
+Typing coalesces by field until focus, selection, mode or another command ends the group.
+
+`core/tododocument` uses public cmark AST/source APIs, never vtextedit private headers. Each
+document-child H1 is a list; direct unordered checkbox items are tasks. One blockquote owns
+a list description or task Markdown note; direct nested checkbox items are steps. Checklists,
+headings and fences inside notes are not planner structure. Ordinary comments stay opaque;
+unsupported root/body blocks and malformed owned metadata produce line-numbered diagnostics,
+disable Tasks mutation and remain editable/saveable in Source when the buffer permits it.
+
+Whole-line adjacent `todo`, `todo-list` and `todo-item` HTML comments contain per-owner JSON.
+Format 1 is optional on input; structured changes add its header. Owners without IDs get
+UUIDs on their first mutation, not on open/filter/save. Runtime `id:` / `source:` keys are
+never serialized. Metadata writes preserve unknown keys and escape `<`, `>` and `-` only
+inside JSON string tokens; numeric signs/exponents remain JSON numbers. Source edits retain
+untouched blocks, validate expected UTF-16 ranges and the live document revision, and reparse
+the tentative result before one undo transaction. Formatting-only revisions do not replace
+published task rows; source changes and foreign loads invalidate pending owner gestures.
+
+My Day is explicit `myDay == today`, independent of due dates. Important and Planned are
+current-file projections; search and exact-tag filters compose across this file and ignore
+owned comment JSON. Normal notebook content search still reads raw `.todo` source, including
+metadata. Sort/filter/Completed expansion never reorder or dirty source. The visible window
+refreshes today's date on activation and each minute, without reminders or persisted UI state.
+Quick-add due controls appear and apply only in unfiltered Planned; a remembered choice never
+leaks into another view or filtered result. Details show the stored My Day date even when it is
+not today, before a user replaces it. Step actions fit the 320px details pane without outer
+horizontal scrolling.
+Below 840 logical pixels, navigation uses a combo and details use a Back-enabled stacked page.
+Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
+not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
+
+Only the base writer/save/reload/close lifecycle persists content. Foreign buffer revisions
+reject the captured gesture before reloading; autosave notifications alone do not establish
+that an inactive view loaded the new source. The window registers a binding-scoped opaque writer
+token and uses BufferService's actual publication/queue-owner facts, never text-equality or
+observational snapshot history, to recognize its own writes. Own pending saves retain newer local
+edits/undo; a foreign pending writer blocks capture/mutation until a generation-guarded completion
+wake can load the final source. An already-active stale Save rejects and schedules that refresh,
+without needing a new focus-gain event. See the
+[service publication contract](../core/services/AGENTS.md#snapshot-provenance-and-ordinary-manual-saves).
+
+A matching core revision alone is insufficient for memory buffers: also retain the last
+accepted publication token. Own zero-delta writes update that token without clearing newer
+edits; a foreign token change (including token zero) requires a real source load and history
+reset, even when the bytes did not change.
+
+Snapshots return original decoded text only when
+the current normalized text still equals it; otherwise serialize to the detected file ending,
+independently of the modified flag. Uniform LF/CRLF and EOF survive edits; mixed endings follow
+the text editor's normalization convention. Actual loads/rebinding clear undo, not mode switches.
+
+Coverage: `test_tododocument`, `test_todoviewwindowcontroller` and native `test_todoviewwindow`.
 
 #### Native Typst editor
 

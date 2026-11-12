@@ -2032,7 +2032,9 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   }
 
   auto settings = p_settings;
-  if (fileType.compare(QLatin1String("Typst"), Qt::CaseInsensitive) == 0 && !settings.m_forceMode) {
+  if (!settings.m_forceMode &&
+      (fileType.compare(QLatin1String("Typst"), Qt::CaseInsensitive) == 0 ||
+       fileType.compare(QLatin1String("TODO"), Qt::CaseInsensitive) == 0)) {
     settings.m_mode = ViewWindowMode::Edit;
   }
 

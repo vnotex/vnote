@@ -269,6 +269,57 @@ Save workers and sync preparation share `NotebookIoGate` per notebook. Git relea
 
 Performance instrumentation: the Qt logging category `vnote.perf.save` covers UI-thread enqueue + worker save latency, and vxcore emits `VXCORE_LOG_DEBUG` lines tagged `[perf.mark_dirty]` / `[perf.maybe_enqueue]` for the synchronous tail that still runs on the caller thread. Both are off by default; enable them when chasing UI-thread regressions.
 
+### Snapshot provenance and ordinary manual saves
+
+`registerSnapshotWriter(bufferId, owner, writerKey, knownBaseRevision)` gives a view a
+monotonic opaque token for that QObject lifetime **and buffer binding**. Revoke it on
+replacement with `revokeSnapshotWriter()`. Focus changes still use the existing active-writer
+registration; they do not retire this descriptor. The GUI-only base getter is sampled only
+for actual service captures. Observational `getLatestContent()` / `captureActiveWriterContent()`
+calls do not create provenance, and matching text never authorizes a foreign revision.
+
+Ordinary queue jobs carry `BufferSnapshotContext` (token, live buffer epoch, expected core
+base, editor revision). Pending/running ownership is published before worker dispatch.
+`IBufferCoreService::saveSnapshot()` is the single ordinary worker attempt; its unowned default
+retains raw install/save behavior for core-only consumers. BufferService admits a registered
+capture only at its exact expected base, or through an unbroken same-token chain ending at the
+actual current core revision with a **strictly newer** editor revision. Unknown/foreign/token-zero
+changes break the chain, including same-text installs. Newer edits and undo can continue an own
+chain without loading an older worker body. A failed disk write still publishes installed-byte
+ownership, but never durability. Records retain only bounded metadata, not editor strings.
+Close/prune retires the epoch, and a late worker cannot recreate its publication entry.
+
+`snapshotPublication(id, token)` returns `live`, the last safely published `coreRevision`,
+`writerToken`, `editorRevision`, `chainStartRevision`, `durable`, and ordinary queue
+`busy`/`ownPending`/`foreignPending` facts. Query this **before** reading raw core content.
+`getRevision()` uses these published facts while ordinary work is active; idle revision gaps
+are reconciled as foreign. `bufferPublicationChanged(id)` wakes generation-guarded GUI refresh
+or save waiters after publication/queue-state changes. It is not a durability receipt itself.
+
+`saveFinished` remains request settlement: a coalesced request may settle successfully without
+any write. The separate `snapshotFinished` reports only real attempts/admission failures;
+BufferService's saved-revision accounting uses actual results, never coalesced settlement.
+Both GUI `saveBuffer` overloads join an already admitted snapshot of the requested revision,
+including an earlier autosave after dirty was cleared. A same-owner/revision duplicate joins
+that snapshot. If a newer revision is requested while busy, capture the active writer, never
+old raw bytes. Idle unregistered/binary saves queue immutable raw bytes without text conversion.
+The bounded event-driven wait acknowledges only actual durability with the same editor revision
+and binding. An ordinary re-save requires a receipt newer than its captured core base; a prior
+durable receipt cannot acknowledge a new write. An earlier queued failure does not settle a
+still-pending retry of that snapshot. Newer edits, retirement, actual failure or timeout return
+false. Workers never enter this GUI capture/wait path.
+
+Memory backing callbacks use immutable save handles. A successful completion may have no core
+revision delta: publish durability only for its captured core revision, and never attach that
+older completion to a newer current origin. Newer memory edits remain available during the callback.
+
+Ordinary raw/JSON replacement, reload, active-writer pull, None/Backup sync and `saveForSnapshot`
+refuse while an ordinary job is pending/running; manual saves use the join path above. Raw getters fail
+rather than expose concurrently changing storage. No GUI mutex wait spans disk IO. Protected
+leases/encryption and memory's immutable callback executor keep their separate existing paths.
+Coverage: real service and worker-gated cases in `test_buffer`, plus real-core queue
+coalescing/attempt/raw-byte cases in `test_buffer_save_queue`.
+
 ### External-change detection gate (false-positive defense)
 
 VNote detects files modified on disk by external tools via polling, NOT a `QFileSystemWatcher` (no watcher observes open buffers; the only `QFileSystemWatcher` instances watch the theme dir and the notebook tree). `ViewAreaController` runs a 2 s `QTimer` that checks the ACTIVE buffer (`checkSingleExternalChange`) plus a full sweep of ALL buffers on app re-focus (`checkAllExternalChanges`). The check chain is `BufferService` → `BufferCoreService::checkExternalChanges` → `vxcore_buffer_check_external_changes` → `vxcore::Buffer::CheckExternalChanges`.
@@ -997,8 +1048,12 @@ incompatible metadata or widget-address collisions fail without replacing the ex
 core buffer on the worker. Owner-thread completion checks the original provider/revision;
 `BufferService` also tracks edits not yet pulled from the active editor. An older successful
 save never clears a newer draft. Manual save waits for actual completion with lifecycle guards;
-queue shutdown drains accepted work before releasing the context. None/BackupFile policies
-only synchronize memory for these sources: no implicit disk backup or false backup-success event.
+queue shutdown drains accepted work before releasing the context. The wait is bounded and
+cannot acknowledge a newer edit or replacement binding. Memory completion may have **zero**
+core-revision delta: a durable provenance receipt requires the actual post-completion revision
+to equal that operation's captured revision and no newer current origin. An older callback never
+copies a newer observed revision onto its receipt. None/BackupFile policies only synchronize
+memory for these sources: no implicit disk backup or false backup-success event.
 
 Memory documents are non-file-backed but are **not** members of the widget-only
 `m_virtualBufferIds` sync-skip set. `isVirtualBuffer()` includes both kinds for filesystem and

@@ -1,12 +1,14 @@
 #ifndef BUFFERSAVEQUEUE_H
 #define BUFFERSAVEQUEUE_H
 
+#include "ibuffercoreservice.h"
 #include <QByteArray>
 #include <QHash>
 #include <QMutex>
 #include <QObject>
 #include <QQueue>
 #include <QString>
+#include <QVarLengthArray>
 #include <QWaitCondition>
 #include <atomic>
 #include <functional>
@@ -32,7 +34,7 @@ class BufferService;
 // Threading contract:
 //   - enqueue() is non-blocking; safe to call from the UI thread.
 //   - The worker body acquires NotebookIoGate, then calls
-//     IBufferCoreService::setContentRaw + saveBuffer (NEVER on the UI thread).
+//     IBufferCoreService::saveSnapshot (NEVER on the UI thread).
 //   - saveFinished is emitted via QMetaObject::invokeMethod with
 //     Qt::QueuedConnection so receivers observe it on this object's owning
 //     thread.
@@ -51,12 +53,24 @@ public:
                   QObject *p_parent = nullptr);
   ~BufferSaveQueue() override;
 
-  // Schedule an async save. Returns immediately. Result delivered via
-  // queued saveFinished signal.
+  // Schedule an async save or join an admitted owned duplicate. Returns false
+  // on refusal. saveFinished settles requests; snapshotFinished reports actual IO.
   // @p_encoding: codec name captured on the UI thread; the worker encodes
   //   p_content with it (falling back to UTF-8 when empty/unknown).
-  void enqueue(const QString &p_notebookId, const QString &p_bufferId, const QString &p_content,
-               quint64 p_revision, const QString &p_encoding = QString());
+  bool enqueue(const QString &p_notebookId, const QString &p_bufferId, const QString &p_content,
+               quint64 p_revision, const QString &p_encoding = QString(),
+               BufferSnapshotContext p_context = {});
+  bool enqueueRaw(const QString &p_notebookId, const QString &p_bufferId,
+                  const QByteArray &p_content, quint64 p_revision,
+                  BufferSnapshotContext p_context = {});
+
+  struct OrdinaryState {
+    bool busy = false;
+    bool replacement = false;
+    QVarLengthArray<BufferSnapshotContext, 2>
+        snapshots; // Running and pending, without heap allocation.
+  };
+  OrdinaryState ordinaryState(const QString &p_bufferId) const;
 
   // Accept only an idle, writable key. The raw payload is installed and saved
   // only if the backing file still has the expected SHA-256 digest. Cancellation
@@ -69,8 +83,8 @@ public:
                           std::function<bool()> p_authorized = {},
                           const QString &p_canonicalPath = {});
 
-  // Separate protected FIFO: no lease, generation, or backup flag is added
-  // to ordinary SaveJob. Every accepted revision reports its actual result.
+  // Separate protected FIFO: no protected lease or backup flag is added to
+  // ordinary SaveJob. Every accepted protected revision reports its actual result.
   bool enqueueProtected(BufferCoreService &p_coreService, const QString &p_notebookId,
                         const std::shared_ptr<ProtectedBufferLease> &p_lease,
                         const QString &p_content, quint64 p_revision, const QString &p_encoding,
@@ -99,6 +113,12 @@ public:
   bool isBusy(const QString &p_notebookId, const QString &p_bufferId) const;
 
 signals:
+  // Real attempts/admission failures only. Unlike saveFinished, coalescing
+  // never emits this signal and cannot establish durability.
+  void snapshotFinished(const QString &p_bufferId, quint64 p_revision, quint64 p_writerToken,
+                        quint64 p_bufferEpoch, int p_coreRevision, bool p_installed, bool p_saved,
+                        const QString &p_error, int p_errorCode);
+  void ordinaryStateChanged(const QString &p_bufferId);
   void protectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,
                              bool p_backup, int p_error);
   // Emitted on this object's owning thread (queued from worker).
@@ -129,6 +149,8 @@ private:
     QString content;
     quint64 revision = 0;
     QString encoding;
+    BufferSnapshotContext context;
+    bool raw = false;
     QByteArray rawContent;
     QString resolvedPath;
     QByteArray expectedFileSha256;
@@ -136,6 +158,9 @@ private:
     std::function<bool()> authorized;
     QString canonicalPath;
   };
+
+  bool enqueueOrdinary(SaveJob p_job);
+  void emitSnapshotFinishedQueued(const SaveJob &p_job, const BufferSnapshotResult &p_result);
 
   // Composite key "notebookId::bufferId" — pin buffer-level serialisation
   // while the gate still acquires per notebookId for cross-process semantics.
@@ -158,7 +183,7 @@ private:
   IBufferCoreService &m_coreService;
   NotebookIoGate &m_gate;
 
-  // m_mutex protects: m_pending, m_running, m_inFlightCount, m_stopping.
+  // m_mutex protects pending/running jobs and ownership, worker count and stop state.
   mutable QMutex m_mutex;
   QWaitCondition m_drained; // Signalled when m_inFlightCount hits 0.
 
@@ -166,6 +191,8 @@ private:
   QHash<QString, SaveJob> m_pending;
   // Dispatched worker ownership; exact jobs exclude every later enqueue.
   QHash<QString, JobType> m_running;
+  QHash<QString, BufferSnapshotContext> m_runningSnapshots;
+  QHash<QString, QString> m_runningBufferIds;
 
   int m_inFlightCount = 0;
   bool m_stopping = false;
