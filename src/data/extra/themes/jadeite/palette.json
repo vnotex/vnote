@@ -71,9 +71,7 @@
         "bg_alert_warning" : "#eee1b8",
         "bg_alert_info" : "#dce8ed",
         "bg_alert_success" : "#dce8d8",
-        "bg_alert_danger" : "#efdcd5",
-        "bg_spelling_hover" : "#306d55",
-        "bg_spelling_pressed" : "#1c513e"
+        "bg_alert_danger" : "#efdcd5"
     },
     "base" : {
         "normal" : {
@@ -559,24 +557,24 @@
             "bg" : "@base#footer#bg"
         },
         "statusbarcolumn" : {
-            "fg" : "@base#content#bg",
+            "fg" : "@base#selected#fg",
             "cursor" : {
-                "bg" : "@palette#fg12"
+                "bg" : "@base#content#bg"
             },
             "spelling" : {
-                "bg" : "@palette#fg_success",
+                "bg" : "@base#content#bg",
                 "hover" : {
-                    "bg" : "@palette#bg_spelling_hover"
+                    "bg" : "@base#hover#bg"
                 },
                 "pressed" : {
-                    "bg" : "@palette#bg_spelling_pressed"
+                    "bg" : "@base#pressed#bg"
                 }
             },
             "syntax" : {
-                "bg" : "@palette#fg_heading"
+                "bg" : "@base#content#bg"
             },
             "mode" : {
-                "bg" : "@palette#fg11"
+                "bg" : "@base#selected#bg"
             }
         },
         "qscrollbar" : {

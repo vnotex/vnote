@@ -518,24 +518,24 @@
             "bg" : "@base#footer#bg"
         },
         "statusbarcolumn" : {
-            "fg" : "@base#master#fg",
+            "fg" : "@base#selected#fg",
             "cursor" : {
-                "bg" : "@palette#bg2_5"
+                "bg" : "@base#content#bg"
             },
             "spelling" : {
-                "bg" : "@palette#bg2_4",
+                "bg" : "@base#content#bg",
                 "hover" : {
-                    "bg" : "@palette#bg2_5"
+                    "bg" : "@base#hover#bg"
                 },
                 "pressed" : {
-                    "bg" : "#79243D"
+                    "bg" : "@base#pressed#bg"
                 }
             },
             "syntax" : {
-                "bg" : "@palette#bg2_4"
+                "bg" : "@base#content#bg"
             },
             "mode" : {
-                "bg" : "#9C4545"
+                "bg" : "@base#selected#bg"
             }
         },
         "qscrollbar" : {

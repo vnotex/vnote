@@ -556,24 +556,24 @@
             "bg": "@base#footer#bg"
         },
         "statusbarcolumn": {
-            "fg": "@palette#bg3_6",
+            "fg": "@base#selected#fg",
             "cursor": {
-                "bg": "@base#master#bg"
+                "bg": "@base#content#bg"
             },
             "spelling": {
-                "bg": "#005f00",
+                "bg": "@base#content#bg",
                 "hover": {
-                    "bg": "#008700"
+                    "bg": "@base#hover#bg"
                 },
                 "pressed": {
-                    "bg": "#005f00"
+                    "bg": "@base#pressed#bg"
                 }
             },
             "syntax": {
-                "bg": "#870087"
+                "bg": "@base#content#bg"
             },
             "mode": {
-                "bg": "#875f00"
+                "bg": "@base#selected#bg"
             }
         },
         "qscrollbar": {

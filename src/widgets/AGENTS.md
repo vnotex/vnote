@@ -270,6 +270,16 @@ Plain text always reserves its controls; message-only MindMap status remains an 
 Regression coverage: `test_statusbar`, `test_statuswidget`, `test_markdownviewwindow_lazy`,
 and `test_typstviewwindow_insertion`.
 
+Editor status chips (`StatusBarCol` 1/3/4/5) use each non-Native theme's
+`widgets.statusbarcolumn` roles, backed by its existing base palette rather than a shared
+rainbow palette. Cursor, spelling and syntax use the content surface; mode uses the selected
+surface. The selected foreground keeps text readable across those fills, including Moonlight.
+Spelling keeps themed hover/pressed fills and the normal button keyboard-focus edge. Encoding
+and Vi widget mounts retain their own inherited theme rules; Native retains system styling.
+Keep these styles in the theme resources so already-open editors follow theme switches.
+Bundled style-only changes need no app/session configuration migration and follow the normal
+versioned theme-resource refresh described under Inline Notification Banners below.
+
 `LinkPreviewOverlay` uses the same native-child-only ancestry policy, but keeps normal hit
 testing. Its QWidget parent remains the source view; its native parent may be the containing
 main or detached window. Rebinding a preview must not promote the source/tab stack or steal
