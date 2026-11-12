@@ -40,6 +40,7 @@
 #include <controllers/todoviewwindowcontroller.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
 
@@ -109,31 +110,191 @@ QString taskName(const TodoItem &p_item) {
 
 class ListDelegate : public QStyledItemDelegate {
 public:
-  using QStyledItemDelegate::QStyledItemDelegate;
+  ListDelegate(ThemeService *p_theme, QListView *p_view) : QStyledItemDelegate(p_view) {
+    // Reusable 24px outline glyphs, scaled to the current font in paint().
+    auto &list = m_icons[static_cast<int>(TodoViewKind::List)];
+    for (int y : {5, 12, 19}) {
+      list.moveTo(2, y);
+      list.lineTo(22, y);
+    }
+    auto &sun = m_icons[static_cast<int>(TodoViewKind::MyDay)];
+    sun.addEllipse(QRectF(7, 7, 10, 10));
+    constexpr double pi = 3.14159265358979323846;
+    for (int i = 0; i < 8; ++i) {
+      const double angle = i * pi / 4;
+      sun.moveTo(12 + 9 * std::cos(angle), 12 + 9 * std::sin(angle));
+      sun.lineTo(12 + 12 * std::cos(angle), 12 + 12 * std::sin(angle));
+    }
+    auto &star = m_icons[static_cast<int>(TodoViewKind::Important)];
+    for (int i = 0; i < 10; ++i) {
+      const double angle = -pi / 2 + i * pi / 5;
+      const double radius = i % 2 ? 5 : 11;
+      const QPointF point(12 + std::cos(angle) * radius, 12 + std::sin(angle) * radius);
+      if (i == 0) {
+        star.moveTo(point);
+      } else {
+        star.lineTo(point);
+      }
+    }
+    star.closeSubpath();
+    auto &planned = m_icons[static_cast<int>(TodoViewKind::Planned)];
+    planned.addRoundedRect(QRectF(3, 3, 18, 18), 2, 2);
+    for (int x : {7, 12, 17}) {
+      planned.moveTo(x, 7);
+      planned.lineTo(x, 17);
+    }
+    auto &home = m_icons[static_cast<int>(TodoViewKind::All)];
+    home.moveTo(3, 11);
+    home.lineTo(12, 2);
+    home.lineTo(21, 11);
+    home.lineTo(21, 22);
+    home.lineTo(15, 22);
+    home.lineTo(15, 15);
+    home.lineTo(9, 15);
+    home.lineTo(9, 22);
+    home.lineTo(3, 22);
+    home.closeSubpath();
+    m_groupIcon.addRoundedRect(QRectF(3, 3, 18, 18), 2, 2);
+    m_groupIcon.moveTo(8, 7);
+    m_groupIcon.lineTo(8, 17);
+    const auto refreshColors = [this, p_theme, p_view]() {
+      m_foreground = QColor(p_theme->paletteColor(QStringLiteral("widgets#qlistview#fg")));
+      m_activeForeground = QColor(
+          p_theme->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#fg")));
+      m_activeBackground = QColor(
+          p_theme->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#bg")));
+      m_disabled = QColor(p_theme->paletteColor(QStringLiteral("base#disabled#fg")));
+      m_accent = QColor(p_theme->paletteColor(QStringLiteral("base#master#bg")));
+      m_border = QColor(p_theme->paletteColor(QStringLiteral("base#normal#border")));
+      m_iconColors[static_cast<int>(TodoViewKind::List)] =
+          QColor(p_theme->paletteColor(QStringLiteral("base#info#fg")));
+      m_iconColors[static_cast<int>(TodoViewKind::MyDay)] =
+          QColor(p_theme->paletteColor(QStringLiteral("base#warning#fg")));
+      m_iconColors[static_cast<int>(TodoViewKind::Important)] =
+          QColor(p_theme->paletteColor(QStringLiteral("base#error#fg")));
+      m_iconColors[static_cast<int>(TodoViewKind::Planned)] =
+          QColor(p_theme->paletteColor(QStringLiteral("base#success#fg")));
+      m_iconColors[static_cast<int>(TodoViewKind::All)] = m_foreground;
+      p_view->viewport()->update();
+    };
+    refreshColors();
+    connect(p_theme, &ThemeService::themeChanged, this, refreshColors);
+  }
+
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
              const QModelIndex &p_index) const override {
     QStyleOptionViewItem option(p_option);
     initStyleOption(&option, p_index);
-    option.text = QStringLiteral("%1 (%2)")
-                      .arg(p_index.data(TodoListModel::TitleRole).toString())
-                      .arg(p_index.data(TodoListModel::IncompleteCountRole).toInt());
-    if (p_index.data(TodoListModel::GroupRole).toBool()) {
-      option.font.setBold(true);
-      option.text.prepend(p_index.data(TodoListModel::ExpandedRole).toBool()
-                              ? QStringLiteral("- ")
-                              : QStringLiteral("+ "));
-    } else if (!p_index.data(TodoListModel::GroupIdRole).toString().isEmpty()) {
-      option.rect.adjust(12, 0, 0, 0);
+    const bool group = p_index.data(TodoListModel::GroupRole).toBool();
+    const auto view = p_index.data(TodoListModel::ViewKindRole).value<TodoViewKind>();
+    const bool separator = !group && view == TodoViewKind::All;
+    const bool selected = option.state & QStyle::State_Selected;
+    const bool hovered = option.state & QStyle::State_MouseOver;
+    const bool enabled = option.state & QStyle::State_Enabled;
+    // Navigation keeps its selected color pair when focus moves to the tasks.
+    const QColor foreground = !enabled ? m_disabled : selected ? m_activeForeground : m_foreground;
+    QRect row = option.rect.adjusted(4, 2, -4, separator ? -18 : -2);
+    const auto visual = [&](const QRect &p_rect) {
+      return QStyle::visualRect(option.direction, row, p_rect);
+    };
+    p_painter->save();
+    p_painter->setClipRect(option.rect);
+    p_painter->setRenderHint(QPainter::Antialiasing);
+    p_painter->setPen(Qt::NoPen);
+    if (selected || hovered) {
+      auto hoverBackground = m_foreground;
+      hoverBackground.setAlpha(18);
+      p_painter->setBrush(selected ? m_activeBackground : hoverBackground);
+      p_painter->drawRoundedRect(row, 4, 4);
     }
-    const auto *widget = option.widget;
-    (widget ? widget->style() : QApplication::style())
-        ->drawControl(QStyle::CE_ItemViewItem, &option, p_painter, widget);
+    const int side = qMax(20, option.fontMetrics.height());
+    const int indent =
+        !group && !p_index.data(TodoListModel::GroupIdRole).toString().isEmpty() ? side + 8 : 0;
+    if (selected) {
+      p_painter->setBrush(qAbs(m_accent.lightnessF() - m_activeBackground.lightnessF()) < 0.15
+                              ? foreground
+                              : m_accent);
+      p_painter->drawRoundedRect(
+          visual(QRect(row.left() + indent + 4, row.center().y() - 9, 3, 18)), 1.5, 1.5);
+    }
+    const QRect icon =
+        visual(QRect(row.left() + indent + 16, row.center().y() - side / 2, side, side));
+    p_painter->save();
+    p_painter->translate(icon.topLeft());
+    p_painter->scale(side / 24.0, side / 24.0);
+    p_painter->setBrush(Qt::NoBrush);
+    p_painter->setPen(
+        QPen(selected || !enabled || group ? foreground : m_iconColors[static_cast<int>(view)], 1.5,
+             Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p_painter->drawPath(group ? m_groupIcon : m_icons[static_cast<int>(view)]);
+    p_painter->restore();
+
+    int trailing = row.right() - 12;
+    p_painter->setFont(option.font);
+    if (group) {
+      const QRect chevron = visual(QRect(trailing - 12, row.center().y() - 6, 12, 12));
+      const bool expanded = p_index.data(TodoListModel::ExpandedRole).toBool();
+      const int edgeY = chevron.center().y() + (expanded ? 2 : -2);
+      const int middleY = chevron.center().y() + (expanded ? -3 : 3);
+      p_painter->setPen(QPen(foreground, 1.3, Qt::SolidLine, Qt::RoundCap));
+      p_painter->drawLine(chevron.left(), edgeY, chevron.center().x(), middleY);
+      p_painter->drawLine(chevron.center().x(), middleY, chevron.right(), edgeY);
+      trailing -= 24;
+    } else {
+      const int count = p_index.data(TodoListModel::IncompleteCountRole).toInt();
+      if (count > 0) {
+        const auto text = QString::number(count);
+        const int height = option.fontMetrics.height() + 4;
+        const int width = qMax(height, option.fontMetrics.horizontalAdvance(text) + 10);
+        const QRect badge =
+            visual(QRect(trailing - width, row.center().y() - height / 2, width, height));
+        auto background = foreground;
+        background.setAlpha(24);
+        p_painter->setPen(Qt::NoPen);
+        p_painter->setBrush(background);
+        p_painter->drawRoundedRect(badge, height / 2.0, height / 2.0);
+        p_painter->setPen(foreground);
+        p_painter->drawText(badge, Qt::AlignCenter, text);
+        trailing -= width + 10;
+      }
+    }
+    const int textLeft = row.left() + indent + 16 + side + 14;
+    const QRect textRect =
+        visual(QRect(textLeft, row.top(), qMax(0, trailing - textLeft), row.height()));
+    p_painter->setPen(foreground);
+    p_painter->drawText(
+        textRect, Qt::AlignVCenter | Qt::AlignLeading,
+        option.fontMetrics.elidedText(option.text, Qt::ElideRight, textRect.width()));
+    if (option.state & QStyle::State_HasFocus) {
+      p_painter->setPen(QPen(foreground, 1, Qt::DotLine));
+      p_painter->setBrush(Qt::NoBrush);
+      p_painter->drawRoundedRect(row.adjusted(1, 1, -1, -1), 4, 4);
+    }
+    if (separator) {
+      p_painter->setPen(m_border);
+      const int y = option.rect.bottom() - 7;
+      p_painter->drawLine(option.rect.left() + 4, y, option.rect.right() - 4, y);
+    }
+    p_painter->restore();
   }
+
   QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const override {
-    auto size = QStyledItemDelegate::sizeHint(p_option, p_index);
-    size.setHeight(qMax(size.height(), p_option.fontMetrics.height() + 16));
-    return size;
+    const bool separator =
+        !p_index.data(TodoListModel::GroupRole).toBool() &&
+        p_index.data(TodoListModel::ViewKindRole).value<TodoViewKind>() == TodoViewKind::All;
+    return QSize(0, qMax(44, p_option.fontMetrics.height() + 24) + (separator ? 16 : 0));
   }
+
+private:
+  QPainterPath m_icons[5];
+  QPainterPath m_groupIcon;
+  QColor m_iconColors[5];
+  QColor m_foreground;
+  QColor m_activeForeground;
+  QColor m_activeBackground;
+  QColor m_disabled;
+  QColor m_accent;
+  QColor m_border;
 };
 
 class TaskDelegate : public QStyledItemDelegate {
@@ -349,20 +510,17 @@ void TodoEditor::createUi() {
   spacing(sidebar);
   m_searchArea = new QWidget(m_sidebar);
   auto *searchArea = new QVBoxLayout(m_searchArea);
-  searchArea->setContentsMargins(0, 0, 0, 0);
+  searchArea->setContentsMargins(8, 4, 8, 4);
   searchArea->setSpacing(4);
   m_search = named(new QLineEdit(m_searchArea), "todoSearch", tr("Search tasks in this file"));
   m_search->setPlaceholderText(tr("Search tasks"));
   m_search->setClearButtonEnabled(true);
+  auto *searchAction = m_search->addAction(QIcon(), QLineEdit::TrailingPosition);
+  searchAction->setText(tr("Search tasks"));
+  connect(searchAction, &QAction::triggered, this, &TodoEditor::focusSearch);
+  connect(m_search, &QLineEdit::textChanged, searchAction,
+          [searchAction](const QString &p_text) { searchAction->setVisible(p_text.isEmpty()); });
   searchArea->addWidget(m_search);
-  m_newList = named(new QPushButton(tr("New List"), m_searchArea), "todoNewList", tr("New list"));
-  auto *creation = new QHBoxLayout;
-  creation->setSpacing(4);
-  creation->addWidget(m_newList);
-  m_newGroup =
-      named(new QPushButton(tr("New Group"), m_searchArea), "todoNewGroup", tr("New group"));
-  creation->addWidget(m_newGroup);
-  searchArea->addLayout(creation);
   m_groupCombo = named(new QComboBox(m_searchArea), "todoGroupCombo", tr("Organizational group"));
   m_groupCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
   m_groupCombo->setMinimumContentsLength(8);
@@ -370,12 +528,51 @@ void TodoEditor::createUi() {
   m_groupMore = named(new QPushButton(tr("Group actions"), m_searchArea), "todoGroupMore",
                       tr("Group actions"));
   searchArea->addWidget(m_groupMore);
+  m_groupCombo->hide();
+  m_groupMore->hide();
   sidebar->addWidget(m_searchArea);
+  auto *theme = m_services.get<ThemeService>();
+  Q_ASSERT(theme);
   m_lists = named(new QListView(m_sidebar), "todoLists", tr("Lists and smart views"));
-  m_lists->setItemDelegate(new ListDelegate(m_lists));
+  m_lists->setItemDelegate(new ListDelegate(theme, m_lists));
   m_lists->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_lists->setContextMenuPolicy(Qt::CustomContextMenu);
+  m_lists->setMouseTracking(true);
+  m_lists->setFrameShape(QFrame::NoFrame);
+  m_lists->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_lists->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+  m_lists->setStyleSheet(
+      QStringLiteral("QListView#todoLists { background: transparent; border: none; }"));
   sidebar->addWidget(m_lists, 1);
+  m_creationArea = named(new QWidget(m_sidebar), "todoCreationArea", tr("Create lists and groups"));
+  auto *creation = new QHBoxLayout(m_creationArea);
+  creation->setContentsMargins(8, 4, 8, 4);
+  creation->setSpacing(4);
+  m_newList = named(new QPushButton(tr("New List"), m_creationArea), "todoNewList", tr("New list"));
+  m_newGroup = named(new QPushButton(m_creationArea), "todoNewGroup", tr("New group"));
+  m_newGroup->setToolTip(tr("New group"));
+  m_newGroup->setFixedWidth(40);
+  for (auto *button : {m_newList, m_newGroup}) {
+    button->setFlat(true);
+    button->setIconSize(QSize(20, 20));
+    button->setStyleSheet(
+        QStringLiteral("QPushButton { min-width: 0; text-align: left; padding: 8px; border: "
+                       "1px solid transparent; background: transparent; }"
+                       "QPushButton:hover { background: palette(midlight); }"
+                       "QPushButton:focus { border-color: palette(mid); }"));
+  }
+  creation->addWidget(m_newList, 1);
+  creation->addWidget(m_newGroup);
+  sidebar->addWidget(m_creationArea);
+  const auto refreshIcons = [this, theme, searchAction]() {
+    searchAction->setIcon(IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("search.svg"))));
+    m_newList->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
+    m_newGroup->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_note.svg"))));
+  };
+  refreshIcons();
+  connect(theme, &ThemeService::themeChanged, this, refreshIcons);
 
   m_pages = named(new QStackedWidget(m_splitter), "todoNativePages", tr("Tasks or details"));
   m_taskPane = named(new QWidget(m_pages), "todoTaskPane", tr("Tasks"));
@@ -454,7 +651,7 @@ void TodoEditor::createUi() {
   m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
   m_splitter->setStretchFactor(2, 0);
-  m_splitter->setSizes({200, 480, 320});
+  m_splitter->setSizes({260, 480, 320});
   m_navigation->hide();
 
   connect(m_search, &QLineEdit::textChanged, this, [this](const QString &p_text) {
@@ -481,9 +678,14 @@ void TodoEditor::createUi() {
   });
   connect(m_lists, &QListView::clicked, this, [this](const QModelIndex &p_index) {
     if (p_index.data(TodoListModel::GroupRole).toBool()) {
-      toggleGroup(p_index.data(TodoListModel::GroupIdRole).toString());
+      focusGroup(p_index.data(TodoListModel::GroupIdRole).toString());
     } else {
       selectView(p_index.row());
+    }
+  });
+  connect(m_lists, &QListView::doubleClicked, this, [this](const QModelIndex &p_index) {
+    if (p_index.data(TodoListModel::GroupRole).toBool()) {
+      toggleGroup(p_index.data(TodoListModel::GroupIdRole).toString());
     }
   });
   connect(m_lists, &QListView::activated, this, [this](const QModelIndex &p_index) {
@@ -1060,19 +1262,23 @@ void TodoEditor::updateLayout() {
     m_narrow = narrow;
     if (narrow) {
       m_navigation->layout()->addWidget(m_searchArea);
+      m_navigation->layout()->addWidget(m_creationArea);
       m_pages->addWidget(m_detailsScroll);
       m_sidebar->hide();
       m_navigation->show();
     } else {
       static_cast<QVBoxLayout *>(m_sidebar->layout())->insertWidget(0, m_searchArea);
+      m_sidebar->layout()->addWidget(m_creationArea);
       m_pages->removeWidget(m_detailsScroll);
       m_splitter->addWidget(m_detailsScroll);
       m_sidebar->show();
       m_navigation->hide();
       m_pages->setCurrentWidget(m_taskPane);
-      m_splitter->setSizes({200, qMax(1, width() - 536), 320});
+      m_splitter->setSizes({260, qMax(1, width() - 596), 320});
     }
   }
+  m_groupCombo->setVisible(narrow);
+  m_groupMore->setVisible(narrow);
   m_back->setText(narrow ? tr("Back to tasks") : tr("Close details"));
   if (narrow) {
     m_pages->setCurrentWidget(m_detailsOpen ? static_cast<QWidget *>(m_detailsScroll) : m_taskPane);

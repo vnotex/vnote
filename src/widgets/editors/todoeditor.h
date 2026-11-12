@@ -112,6 +112,7 @@ private:
   QSplitter *m_splitter = nullptr;
   QWidget *m_sidebar = nullptr;
   QWidget *m_searchArea = nullptr;
+  QWidget *m_creationArea = nullptr;
   QWidget *m_navigation = nullptr;
   QWidget *m_taskPane = nullptr;
   QWidget *m_details = nullptr;

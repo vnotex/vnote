@@ -648,10 +648,17 @@ deletion asks confirmation before removing its owned lists/tasks, and remains un
 
 Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
 The model retains all rows; the sidebar hides collapsed children and the task-view combo's
-proxy excludes group headers. New Group, a separate group selector and Group actions stay in
-the shared search area at both widths, including for empty groups. Collapse and group selection
-do not change task projection/history or invalidate task drags; group-title search ignores
-collapse state. New Group/New List use post-commit output keys, never a guessed last list.
+proxy excludes group headers. The wide sidebar places search above icon-leading smart views,
+a separator, group rows and indented lists; nonzero incomplete counts occupy trailing badges.
+New List and the accessible icon-only New Group control stay below the scrolling list. Group
+rows select on single click (including the chevron); only a group-row double click toggles
+mouse expansion. Child-list double clicks never toggle their parent. Keyboard Enter/Space,
+Left/Right and explicit context-menu expansion remain available, including in Read mode.
+Wide group actions use the row context menu; narrow mode retains the group selector and Group
+actions beside the shared search/creation controls, including for empty groups. Collapse and
+group selection do not change task projection/history or invalidate task drags; group-title
+search ignores collapse state. New Group/New List use post-commit output keys, never a guessed
+last list. This is presentation/transient state only; no document or config migration is needed.
 
 My Day is explicit `myDay == today`, independent of due dates. Important and Planned are
 current-file projections; search and exact-tag filters compose across this file and ignore
@@ -665,6 +672,11 @@ horizontal scrolling.
 Below 840 logical pixels, navigation uses a combo and details use a Back-enabled stacked page.
 Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
 not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
+The sidebar paints its own rounded selection with the theme's active list-item foreground and
+background pair, retaining it when focus moves to tasks. Hover uses a translucent foreground
+tint; do not use Native's inactive/hover alternate-base tokens here, since an alpha-zero system
+color can resolve to opaque black through palette backfill. Cached colors/icons refresh on
+theme changes; title elision reserves room for badges/chevrons and mirrors geometry in RTL.
 
 Only the base writer/save/reload/close lifecycle persists content. Foreign buffer revisions
 reject the captured gesture before reloading; autosave notifications alone do not establish
