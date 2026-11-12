@@ -1729,11 +1729,12 @@ foreach(_source IN LISTS _markdown_window_sources)
 endforeach()
 get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
 find_package(Qt6 REQUIRED COMPONENTS Pdf)
-# Reload and read-only actions must execute ViewWindow2, not test-local copies.
+# Dock and window regressions execute the production presentation dependencies.
 foreach(_view_window_test
     test_viewsplit2_reload_menu
     test_view_window2_readonly_toolbar
-    test_view_window2_readonly_save_warning)
+    test_view_window2_readonly_save_warning
+    test_tagexplorer2)
   add_qt_test(${_view_window_test}
     SOURCES ${_view_window_test}.cpp ${_markdown_window_test_sources}
     LINKS ${_markdown_window_links} Qt6::Pdf

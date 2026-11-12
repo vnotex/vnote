@@ -49,12 +49,19 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
 
   // Inject notebookId into each match object — vxcore doesn't include it.
   m_matchingNodes = QJsonArray();
+  QSet<QString> compatibleTags;
   for (const QJsonValue &val : rawNodes) {
     QJsonObject obj = val.toObject();
     if (!obj.contains(QLatin1String(vxcore::kJsonKeyNotebookId))) {
       obj.insert(QLatin1String(vxcore::kJsonKeyNotebookId), notebookId);
     }
     m_matchingNodes.append(obj);
+    // Each match contains its complete tag set. A tag can extend this AND selection
+    // exactly when it occurs on one of the notes already matching the selection.
+    const auto tags = obj.value(QStringLiteral("tags")).toArray();
+    for (const auto &tag : tags) {
+      compatibleTags.insert(tag.toString());
+    }
   }
   emit matchingNodesChanged(m_matchingNodes);
 
@@ -67,12 +74,9 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   const QJsonArray allTags = tagCoreService->listTags(notebookId);
   for (const auto &tagValue : allTags) {
     const QString tagName = extractTagName(tagValue);
-    if (!tagName.isEmpty() && !selectedTagSet.contains(tagName)) {
-      QStringList queryTags = p_selectedTags;
-      queryTags.append(tagName);
-      if (tagCoreService->findFilesByTags(notebookId, queryTags).isEmpty()) {
-        incompatibleTags.append(tagName);
-      }
+    if (!tagName.isEmpty() && !selectedTagSet.contains(tagName) &&
+        !compatibleTags.contains(tagName)) {
+      incompatibleTags.append(tagName);
     }
   }
 

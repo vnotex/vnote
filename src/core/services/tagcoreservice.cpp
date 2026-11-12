@@ -6,19 +6,17 @@
 using namespace vnotex;
 
 TagCoreService::TagCoreService(VxCoreContextHandle p_context, QObject *p_parent)
-    : QObject(p_parent), m_context(p_context) {
-}
+    : QObject(p_parent), m_context(p_context) {}
 
-TagCoreService::~TagCoreService() {
-}
+TagCoreService::~TagCoreService() {}
 
 bool TagCoreService::createTag(const QString &p_notebookId, const QString &p_tagName) {
   if (!checkContext()) {
     return false;
   }
 
-  VxCoreError err =
-      vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(), p_tagName.toUtf8().constData());
+  VxCoreError err = vxcore_tag_create(m_context, p_notebookId.toUtf8().constData(),
+                                      p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "createTag failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -45,8 +43,8 @@ bool TagCoreService::deleteTag(const QString &p_notebookId, const QString &p_tag
     return false;
   }
 
-  VxCoreError err =
-      vxcore_tag_delete(m_context, p_notebookId.toUtf8().constData(), p_tagName.toUtf8().constData());
+  VxCoreError err = vxcore_tag_delete(m_context, p_notebookId.toUtf8().constData(),
+                                      p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "deleteTag failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -68,14 +66,30 @@ QJsonArray TagCoreService::listTags(const QString &p_notebookId) const {
   return parseJsonArrayFromCStr(json);
 }
 
+QJsonArray TagCoreService::countFilesByTag(const QString &p_notebookId) const {
+  if (!checkContext()) {
+    return QJsonArray();
+  }
+
+  char *json = nullptr;
+  const auto error =
+      vxcore_tag_count_files_by_tag(m_context, p_notebookId.toUtf8().constData(), &json);
+  if (error != VXCORE_OK) {
+    qWarning() << "countFilesByTag failed:" << QString::fromUtf8(vxcore_error_message(error));
+    return QJsonArray();
+  }
+  return parseJsonArrayFromCStr(json);
+}
+
 bool TagCoreService::moveTag(const QString &p_notebookId, const QString &p_tagName,
-                            const QString &p_parentTag) {
+                             const QString &p_parentTag) {
   if (!checkContext()) {
     return false;
   }
 
-  VxCoreError err = vxcore_tag_move(m_context, p_notebookId.toUtf8().constData(),
-                                    p_tagName.toUtf8().constData(), p_parentTag.toUtf8().constData());
+  VxCoreError err =
+      vxcore_tag_move(m_context, p_notebookId.toUtf8().constData(), p_tagName.toUtf8().constData(),
+                      p_parentTag.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "moveTag failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -89,9 +103,9 @@ bool TagCoreService::updateFileTags(const QString &p_notebookId, const QString &
     return false;
   }
 
-  VxCoreError err = vxcore_file_update_tags(m_context, p_notebookId.toUtf8().constData(),
-                                            p_filePath.toUtf8().constData(),
-                                            p_tagsJson.toUtf8().constData());
+  VxCoreError err =
+      vxcore_file_update_tags(m_context, p_notebookId.toUtf8().constData(),
+                              p_filePath.toUtf8().constData(), p_tagsJson.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "updateFileTags failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -100,13 +114,14 @@ bool TagCoreService::updateFileTags(const QString &p_notebookId, const QString &
 }
 
 bool TagCoreService::tagFile(const QString &p_notebookId, const QString &p_filePath,
-                            const QString &p_tagName) {
+                             const QString &p_tagName) {
   if (!checkContext()) {
     return false;
   }
 
-  VxCoreError err = vxcore_file_tag(m_context, p_notebookId.toUtf8().constData(),
-                                    p_filePath.toUtf8().constData(), p_tagName.toUtf8().constData());
+  VxCoreError err =
+      vxcore_file_tag(m_context, p_notebookId.toUtf8().constData(), p_filePath.toUtf8().constData(),
+                      p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "tagFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -115,13 +130,14 @@ bool TagCoreService::tagFile(const QString &p_notebookId, const QString &p_fileP
 }
 
 bool TagCoreService::untagFile(const QString &p_notebookId, const QString &p_filePath,
-                              const QString &p_tagName) {
+                               const QString &p_tagName) {
   if (!checkContext()) {
     return false;
   }
 
-  VxCoreError err = vxcore_file_untag(m_context, p_notebookId.toUtf8().constData(),
-                                      p_filePath.toUtf8().constData(), p_tagName.toUtf8().constData());
+  VxCoreError err =
+      vxcore_file_untag(m_context, p_notebookId.toUtf8().constData(),
+                        p_filePath.toUtf8().constData(), p_tagName.toUtf8().constData());
   if (err != VXCORE_OK) {
     qWarning() << "untagFile failed:" << QString::fromUtf8(vxcore_error_message(err));
     return false;
@@ -144,11 +160,8 @@ QJsonArray TagCoreService::searchByTags(const QString &p_notebookId, const QStri
   const QByteArray queryJson = QJsonDocument(queryObj).toJson(QJsonDocument::Compact);
 
   char *resultsJson = nullptr;
-  VxCoreError err = vxcore_search_by_tags(m_context,
-                                          p_notebookId.toUtf8().constData(),
-                                          queryJson.constData(),
-                                          nullptr,
-                                          &resultsJson);
+  VxCoreError err = vxcore_search_by_tags(m_context, p_notebookId.toUtf8().constData(),
+                                          queryJson.constData(), nullptr, &resultsJson);
   if (err != VXCORE_OK) {
     qWarning() << "searchByTags failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonArray();
@@ -161,7 +174,7 @@ QJsonArray TagCoreService::searchByTags(const QString &p_notebookId, const QStri
 }
 
 QJsonArray TagCoreService::findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
-                                            const QString &p_op) {
+                                           const QString &p_op) {
   if (!checkContext()) {
     return QJsonArray();
   }
@@ -174,11 +187,8 @@ QJsonArray TagCoreService::findFilesByTags(const QString &p_notebookId, const QS
   const QByteArray opBytes = p_op.toUtf8();
 
   char *resultsJson = nullptr;
-  VxCoreError err = vxcore_tag_find_files(m_context,
-                                          p_notebookId.toUtf8().constData(),
-                                          tagsJson.constData(),
-                                          opBytes.constData(),
-                                          &resultsJson);
+  VxCoreError err = vxcore_tag_find_files(m_context, p_notebookId.toUtf8().constData(),
+                                          tagsJson.constData(), opBytes.constData(), &resultsJson);
   if (err != VXCORE_OK) {
     qWarning() << "findFilesByTags failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QJsonArray();

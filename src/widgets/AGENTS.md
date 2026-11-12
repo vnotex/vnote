@@ -200,6 +200,31 @@ and restores them at `folderRenameFinished`, rebasing descendants only on succes
 These signals bracket the synchronous backend call after cancellable hooks; do not
 pause for the inline-edit session or restore through the success-only rename hook.
 
+### Tags Explorer
+
+`TagExplorer2` starts with tag loading disabled. `MainWindow2::setupDocks()` connects
+its `setPanelVisible()` to the Tags dock's `visibilityChanged` before restoring window
+state; QWidget visibility alone does not distinguish an inactive tabified dock.
+Notebook selection updates context immediately but hidden list/count/selection queries
+are deferred. Hidden mutations mark the model dirty; activation consumes one coalesced
+refresh, and an unchanged hide/show reuses cached rows and matching files.
+
+Each tag badge is its directly associated note count, not a child-tag or descendant
+sum. `TagModel` loads one tag list and one batched `countFilesByTag()` result, keeps
+unknown counts on query failure, and updates count/metadata roles in place when the
+hierarchy is unchanged. Structural resets snapshot selection and the current keyboard
+row before proxy reset, restoring both without querying until the model is ready;
+notebook switches clear both.
+`TagController` derives compatible tags from the complete tag sets of already-matching
+notes, preserving AND semantics without one query per other tag.
+
+Invalidations come from `TagService::tagsChanged`, queued `EventBridge` membership and
+folder/notebook-config events, and `SyncService::workingTreeChanged` after metadata
+publication. Plain `file.saved` is not a tag invalidation. Do not query from vxcore's
+synchronous event callback: config publication can precede its SQLite update.
+No configuration/schema changes or migration are needed. Coverage:
+`tests/widgets/test_tagexplorer2.cpp` and `tests/gui/test_treechildcountdelegate.cpp`.
+
 ### ViewArea Framework
 
 The split-pane editor area, designed around vxcore workspaces:

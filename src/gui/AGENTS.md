@@ -189,16 +189,21 @@ installing it: the horizontal scrollbar connection repaints viewport-fixed badge
 after Qt scroll-copies the row contents. No per-row widgets or model writes.
 
 The default count is the displayed model's immediate `rowCount(index)`, including
-proxy filtering, not the number of descendants or matching notes. Tags, Outline,
-and Tasks use this delegate directly. `NotebookNodeDelegate` derives from it and
-passes cached folder totals to the protected layout/paint/width helpers, so lazy
-loading and the folder-only proxy do not change notebook count semantics. Never
-fetch children from a paint or size-hint path. Zero/unknown counts are hidden.
+proxy filtering, as used by Outline and Tasks. Tags supplies `TagModel::NoteCountRole`
+through the delegate's optional count-role constructor argument: direct note counts
+are cached and do not change with filtering or child-tag expansion.
+`NotebookNodeDelegate` derives from it and passes cached folder totals to the protected
+layout/paint/width helpers, so lazy loading and the folder-only proxy do not change
+notebook count semantics. Never query services or fetch children from a paint or
+size-hint path. Zero/unknown counts are hidden.
 
 Badges use the initialized font, theme spacing and foreground; single digits are
 circular and longer counts widen into pills without increasing row height. Anchor
 X to the viewport, not the column or indented row. Preserve name clearance in both
 painting and width hints, including fractional text advances at maximum scroll.
+The standard delegate also reserves the difference between text chrome's right inset
+and the badge's viewport inset. `TreeHorizontalScrollHelper` already coalesces
+`dataChanged` into column remeasurement, including count digit-boundary changes.
 Keep badge painting active when indentation moves the label outside the viewport.
 Selection, input and inline editing remain owned by Qt. No settings/schema changed;
 no configuration migration is needed.

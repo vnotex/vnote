@@ -14,12 +14,14 @@ class TestTreeChildCountDelegate : public QObject {
 private slots:
   void viewportAnchorSurvivesScrollingAndResize();
   void countsFollowImmediateFilteredChildren();
+  void roleCountsIgnoreFilteredChildren();
+  void maximumScrollRevealsNameWithRoleCount();
   void deepRowsAndLargeCountsKeepTheirBadge();
 
 private:
-  static void prepare(QTreeView &p_view, QAbstractItemModel &p_model) {
+  static void prepare(QTreeView &p_view, QAbstractItemModel &p_model, int p_countRole = -1) {
     p_view.setModel(&p_model);
-    p_view.setItemDelegate(new vnotex::TreeChildCountDelegate(&p_view));
+    p_view.setItemDelegate(new vnotex::TreeChildCountDelegate(&p_view, p_countRole));
     p_view.setHeaderHidden(true);
     p_view.header()->setStretchLastSection(false);
     p_view.setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -102,6 +104,88 @@ void TestTreeChildCountDelegate::countsFollowImmediateFilteredChildren() {
   folder->removeRows(0, folder->rowCount());
   QCoreApplication::processEvents();
   QCOMPARE(badgeStrip(view, proxy.index(0, 0)), empty);
+}
+
+void TestTreeChildCountDelegate::roleCountsIgnoreFilteredChildren() {
+  constexpr int countRole = Qt::UserRole + 1;
+  QStandardItemModel model;
+  auto *tag = new QStandardItem(QStringLiteral("Tag"));
+  tag->setData(7, countRole);
+  tag->appendRow(new QStandardItem(QStringLiteral("match")));
+  tag->appendRow(new QStandardItem(QStringLiteral("other")));
+  model.appendRow(tag);
+  QSortFilterProxyModel proxy;
+  proxy.setRecursiveFilteringEnabled(true);
+  proxy.setSourceModel(&model);
+  QTreeView view;
+  prepare(view, proxy, countRole);
+  QVERIFY(QTest::qWaitForWindowExposed(&view));
+  const auto initial = badgeStrip(view, proxy.index(0, 0), 64);
+  proxy.setFilterFixedString(QStringLiteral("match"));
+  QCoreApplication::processEvents();
+  QCOMPARE(badgeStrip(view, proxy.index(0, 0), 64), initial);
+  proxy.setFilterFixedString(QString());
+  tag->removeRows(0, tag->rowCount());
+  QCoreApplication::processEvents();
+  QCOMPARE(badgeStrip(view, proxy.index(0, 0), 64), initial);
+
+  QStyleOptionViewItem option;
+  option.initFrom(&view);
+  option.widget = &view;
+  const auto small = view.itemDelegate()->sizeHint(option, proxy.index(0, 0));
+  tag->setData(12345, countRole);
+  QCoreApplication::processEvents();
+  const auto large = view.itemDelegate()->sizeHint(option, proxy.index(0, 0));
+  QVERIFY(large.width() > small.width());
+  QCOMPARE(large.height(), small.height());
+  QVERIFY(badgeStrip(view, proxy.index(0, 0), 64) != initial);
+  tag->setData(0, countRole);
+  QCoreApplication::processEvents();
+  const auto empty = badgeStrip(view, proxy.index(0, 0), 64);
+  QVERIFY(empty != initial);
+  tag->setData(-1, countRole);
+  QCoreApplication::processEvents();
+  QCOMPARE(badgeStrip(view, proxy.index(0, 0), 64), empty);
+}
+
+void TestTreeChildCountDelegate::maximumScrollRevealsNameWithRoleCount() {
+  struct Delegate : vnotex::TreeChildCountDelegate {
+    using TreeChildCountDelegate::childCountBadge;
+    using TreeChildCountDelegate::initStyleOption;
+    using TreeChildCountDelegate::TreeChildCountDelegate;
+  };
+  constexpr int countRole = Qt::UserRole + 1;
+  QStandardItemModel model;
+  const auto name = QStringLiteral("Long_") + QString(100, QLatin1Char('w'));
+  auto *tag = new QStandardItem(name);
+  model.appendRow(tag);
+  QTreeView view;
+  view.setHeaderHidden(true);
+  view.header()->setStretchLastSection(false);
+  view.setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+  view.setModel(&model);
+  auto *delegate = new Delegate(&view, countRole);
+  view.setItemDelegate(delegate);
+  view.resize(440, 160);
+  view.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&view));
+  for (const int count : {9, 10, 100}) {
+    tag->setData(count, countRole);
+    view.resizeColumnToContents(0);
+    QCoreApplication::processEvents();
+    view.horizontalScrollBar()->setValue(view.horizontalScrollBar()->maximum());
+    QCoreApplication::processEvents();
+    const auto index = model.index(0, 0);
+    QStyleOptionViewItem option;
+    option.initFrom(&view);
+    option.widget = &view;
+    option.rect = view.visualRect(index);
+    delegate->initStyleOption(&option, index);
+    const auto badge = delegate->childCountBadge(option, count);
+    const auto textRect = vnotex::ItemViewUtils::textRect(option, view.style());
+    const int available = badge.m_rect.left() - badge.m_gap - textRect.left();
+    QCOMPARE(option.fontMetrics.elidedText(name, option.textElideMode, available), name);
+  }
 }
 
 void TestTreeChildCountDelegate::deepRowsAndLargeCountsKeepTheirBadge() {

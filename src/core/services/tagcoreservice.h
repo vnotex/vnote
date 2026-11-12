@@ -27,6 +27,8 @@ public:
   bool createTagPath(const QString &p_notebookId, const QString &p_tagPath);
   bool deleteTag(const QString &p_notebookId, const QString &p_tagName);
   QJsonArray listTags(const QString &p_notebookId) const;
+  // Direct note associations for every indexed tag: [{"tag":"...","count":N}, ...].
+  QJsonArray countFilesByTag(const QString &p_notebookId) const;
   bool moveTag(const QString &p_notebookId, const QString &p_tagName, const QString &p_parentTag);
   bool updateFileTags(const QString &p_notebookId, const QString &p_filePath,
                       const QString &p_tagsJson);

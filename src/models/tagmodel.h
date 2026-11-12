@@ -19,11 +19,11 @@ public:
   struct TagNodeInfo {
     QString name;
     QString parent;
-    int childCount = 0;
+    int noteCount = -1;
     QJsonValue metadata;
   };
 
-  enum Roles { TagNameRole = Qt::UserRole + 1, TagParentRole, TagMetadataRole };
+  enum Roles { TagNameRole = Qt::UserRole + 1, TagParentRole, TagMetadataRole, NoteCountRole };
 
   explicit TagModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~TagModel() override;
@@ -38,16 +38,17 @@ public:
   Qt::DropActions supportedDropActions() const override;
   QStringList mimeTypes() const override;
   QMimeData *mimeData(const QModelIndexList &p_indexes) const override;
-  bool canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
-                       int p_column, const QModelIndex &p_parent) const override;
-  bool dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
-                    int p_column, const QModelIndex &p_parent) override;
+  bool canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row, int p_column,
+                       const QModelIndex &p_parent) const override;
+  bool dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row, int p_column,
+                    const QModelIndex &p_parent) override;
 
   void setNotebookId(const QString &p_notebookId);
   QString getNotebookId() const;
 
+  void setReloadEnabled(bool p_enabled);
+  void requestReload();
   void reload();
-  void reloadTag(const QString &p_tagName);
   void setIncompatibleTags(const QStringList &p_tags);
 
   QString tagNameFromIndex(const QModelIndex &p_index) const;
@@ -59,6 +60,7 @@ public:
 
 signals:
   void notebookChanged();
+  void tagsReloaded();
   void moveTagRequested(const QString &p_notebookId, const QString &p_tagName,
                         const QString &p_newParent);
 
@@ -66,6 +68,8 @@ private slots:
   void onTagsChanged(const QString &p_notebookId);
 
 private:
+  void clearCache();
+  void scheduleReload();
   bool decodeTagMimeData(const QMimeData *p_data, QString &p_tagName) const;
   int childRow(const QString &p_parentTagName, const QString &p_childTagName) const;
   quintptr indexIdForTagName(const QString &p_tagName) const;
@@ -73,9 +77,9 @@ private:
   ServiceLocator &m_services;
   QString m_notebookId;
   quint64 m_hierarchyRevision = 0;
-  // Set when a tagsChanged for this notebook arrived and the coalescing reload
-  // has not run yet. Batch tag edits fire one tagsChanged per file per tag, and
-  // each reload is a full beginResetModel + listTags + cache rebuild.
+  QString m_loadedNotebookId;
+  bool m_reloadEnabled = true;
+  bool m_dirty = false;
   bool m_reloadPending = false;
   mutable QMap<QString, TagNodeInfo> m_nodeCache;
   mutable QMap<QString, QVector<QString>> m_childrenCache;

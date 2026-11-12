@@ -33,8 +33,9 @@ The matching-file list does not accept drags or drops.
 `TagModel` validates the notebook/reload revision and cached ancestor chain, then emits
 `moveTagRequested`; it never mutates rows optimistically. `TagController` persists through
 the cancellable `TagService` move path. Drop acceptance acknowledges dispatch, not storage
-success. `TagExplorer2` reveals successful moves by name after both model resets, with a
-notebook guard on queued delivery; it leaves search text unchanged.
+success. `TagExplorer2` reveals successful moves by name after the coalesced reload,
+with notebook and active-dock guards on queued delivery; it leaves search text unchanged.
+Count-only refreshes update model roles without resetting selection or expansion.
 
 Keep the custom `TagView::startDrag()`: Qt's base Move implementation can clear the source
 after the controller has already moved it. Native Qt handlers own target feedback, auto-expand

@@ -27,7 +27,7 @@ void TagView::setupView() {
   setContextMenuPolicy(Qt::CustomContextMenu);
 
   setHeaderHidden(true);
-  setItemDelegate(new TreeChildCountDelegate(this));
+  setItemDelegate(new TreeChildCountDelegate(this, TagModel::NoteCountRole));
   TreeViewUtils::applyIndentation(this);
   setUniformRowHeights(true);
   setAnimated(true);

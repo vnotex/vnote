@@ -17,8 +17,9 @@ namespace {
 
 const char *c_syncEvents[] = {"sync.started", "sync.finished", "sync.conflict", "sync.should_run"};
 
-const char *c_fileEvents[] = {"file.created", "file.saved",     "file.deleted",
-                              "file.moved",   "folder.created", "folder.deleted"};
+const char *c_fileEvents[] = {
+    "file.created",   "file.saved",     "file.deleted",          "file.moved",
+    "folder.created", "folder.deleted", "folder.config_changed", "notebook.config_changed"};
 
 } // namespace
 

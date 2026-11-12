@@ -17,8 +17,8 @@
 #include <QVBoxLayout>
 
 #include <controllers/tagcontroller.h>
-#include <core/services/notebookcoreservice.h>
 #include <core/servicelocator.h>
+#include <core/services/notebookcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <models/inodelistmodel.h>
 #include <models/tagfilemodel.h>
@@ -50,6 +50,13 @@ void TagExplorer2::setupUI() {
 
   // MVC components
   m_tagModel = new TagModel(m_services, this);
+  m_tagModel->setReloadEnabled(false);
+  // Subscribe before the proxy: its reset clears the view's selection synchronously.
+  connect(m_tagModel, &QAbstractItemModel::modelAboutToBeReset, this, [this]() {
+    m_selectionBeforeReset = m_tagView->selectedTagNames();
+    m_currentTagBeforeReset = m_tagView->tagNameFromIndex(m_tagView->currentIndex());
+    m_restoringSelection = true;
+  });
   m_tagProxyModel = new TreeFilterProxyModel(this);
   m_tagProxyModel->setSourceModel(m_tagModel);
   m_tagView = new TagView(this);
@@ -80,26 +87,54 @@ void TagExplorer2::setupUI() {
 
   mainLayout->addWidget(m_splitter, 1);
 
-  connect(m_tagModel, &TagModel::moveTagRequested,
-          m_tagController, &TagController::onMoveTagAction);
+  connect(m_tagModel, &TagModel::moveTagRequested, m_tagController,
+          &TagController::onMoveTagAction);
 
   // Wire signals
 
-  // 1. TagView selection → TagController
-  connect(m_tagView, &TagView::tagsSelectionChanged,
-          m_tagController, &TagController::onTagsSelected);
+  // Selection may change during hidden resets or queued tag reveals. Neither
+  // may start matching/compatibility queries while the dock is inactive.
+  connect(m_tagView, &TagView::tagsSelectionChanged, this, [this]() {
+    if (!m_restoringSelection) {
+      m_selectionDirty = true;
+      refreshSelection();
+    }
+  });
+  connect(m_tagModel, &QAbstractItemModel::modelReset, this, [this]() {
+    for (const auto &name : m_selectionBeforeReset) {
+      const auto index = m_tagProxyModel->mapFromSource(m_tagModel->indexFromTagName(name));
+      if (!index.isValid()) {
+        continue;
+      }
+      m_tagView->selectionModel()->select(index,
+                                          QItemSelectionModel::Select | QItemSelectionModel::Rows);
+      for (auto parent = index.parent(); parent.isValid(); parent = parent.parent()) {
+        m_tagView->expand(parent);
+      }
+    }
+    const auto current =
+        m_tagProxyModel->mapFromSource(m_tagModel->indexFromTagName(m_currentTagBeforeReset));
+    if (current.isValid()) {
+      m_tagView->selectionModel()->setCurrentIndex(current, QItemSelectionModel::NoUpdate);
+    }
+    m_selectionBeforeReset.clear();
+    m_currentTagBeforeReset.clear();
+    m_restoringSelection = false;
+  });
+  connect(m_tagModel, &TagModel::tagsReloaded, this, [this]() {
+    m_selectionDirty = true;
+    refreshSelection();
+  });
 
   // 2. TagController matching nodes → file model
-  connect(m_tagController, &TagController::matchingNodesChanged,
-          this, &TagExplorer2::onMatchingNodesChanged);
+  connect(m_tagController, &TagController::matchingNodesChanged, this,
+          &TagExplorer2::onMatchingNodesChanged);
 
   // 3. TagController GUI requests → TagExplorer2 dialog handlers
-  connect(m_tagController, &TagController::newTagRequested,
-          this, &TagExplorer2::onNewTagRequested);
-  connect(m_tagController, &TagController::deleteTagRequested,
-          this, &TagExplorer2::onDeleteTagRequested);
-  connect(m_tagController, &TagController::errorOccurred,
-          this, &TagExplorer2::onErrorOccurred);
+  connect(m_tagController, &TagController::newTagRequested, this, &TagExplorer2::onNewTagRequested);
+  connect(m_tagController, &TagController::deleteTagRequested, this,
+          &TagExplorer2::onDeleteTagRequested);
+  connect(m_tagController, &TagController::errorOccurred, this, &TagExplorer2::onErrorOccurred);
 
   // 4. FileListView activation
   connect(m_fileView, &QListView::activated, this, [this](const QModelIndex &idx) {
@@ -121,9 +156,7 @@ void TagExplorer2::setupUI() {
 
             QMenu menu(this);
 
-            menu.addAction(tr("Open"), this, [this, nodeId]() {
-              emit openNodeRequested(nodeId);
-            });
+            menu.addAction(tr("Open"), this, [this, nodeId]() { emit openNodeRequested(nodeId); });
 
             menu.addAction(tr("Open Location"), this, [this, nodeId]() {
               auto *notebookSvc = m_services.get<NotebookCoreService>();
@@ -166,37 +199,45 @@ void TagExplorer2::setupUI() {
             menu.exec(globalPos);
           });
 
-  connect(m_tagController, &TagController::openNodeRequested,
-          this, &TagExplorer2::openNodeRequested);
+  connect(m_tagController, &TagController::openNodeRequested, this,
+          &TagExplorer2::openNodeRequested);
 
-  // 5. Tag operation completed → reload model
-  connect(m_tagController, &TagController::tagOperationCompleted,
-          m_tagModel, &TagModel::reload);
+  // Coalesce completion with the service/backend invalidations.
+  connect(m_tagController, &TagController::tagOperationCompleted, m_tagModel,
+          &TagModel::requestReload);
 
-  // 6. After tag creation, locate the new tag in the tree.
-  connect(m_tagController, &TagController::tagCreated,
-          m_tagView, &TagView::selectAndScrollToTag);
+  connect(m_tagController, &TagController::tagCreated, this, [this](const QString &p_tagName) {
+    const auto notebookId = m_notebookId;
+    QMetaObject::invokeMethod(
+        this,
+        [this, notebookId, p_tagName]() {
+          if (m_panelVisible && notebookId == m_notebookId) {
+            m_tagView->selectAndScrollToTag(p_tagName);
+          }
+        },
+        Qt::QueuedConnection);
+  });
 
-  // Resolve the tag after both the service's queued reload and synchronous completion reload.
-  connect(m_tagController, &TagController::tagMoved, this,
-          [this](const QString &p_notebookId, const QString &p_tagName) {
-            if (p_notebookId == m_notebookId) {
-              m_tagView->selectAndScrollToTag(p_tagName);
-            }
-          },
-          Qt::QueuedConnection);
+  // Resolve the tag after the coalesced reload, never in another notebook or hidden dock.
+  connect(
+      m_tagController, &TagController::tagMoved, this,
+      [this](const QString &p_notebookId, const QString &p_tagName) {
+        if (m_panelVisible && p_notebookId == m_notebookId) {
+          m_tagView->selectAndScrollToTag(p_tagName);
+        }
+      },
+      Qt::QueuedConnection);
 
   // 7. Tag compatibility changed -> model state update (MVC)
-  connect(m_tagController, &TagController::tagCompatibilityChanged,
-          m_tagModel, &TagModel::setIncompatibleTags);
+  connect(m_tagController, &TagController::tagCompatibilityChanged, m_tagModel,
+          &TagModel::setIncompatibleTags);
 
   // 8. Context menu on tag tree
-  connect(m_tagView, &TagView::contextMenuRequested,
-          this, &TagExplorer2::onContextMenuRequested);
+  connect(m_tagView, &TagView::contextMenuRequested, this, &TagExplorer2::onContextMenuRequested);
 
   // 9. Search filtering on tag tree
-  connect(m_titleBar, &TitleBar::searchTextChanged,
-          m_tagProxyModel, &TreeFilterProxyModel::setFilterText);
+  connect(m_titleBar, &TitleBar::searchTextChanged, m_tagProxyModel,
+          &TreeFilterProxyModel::setFilterText);
 
   // 10. Auto-expand/collapse on filter activation
   connect(m_tagProxyModel, &TreeFilterProxyModel::filterActiveChanged, this, [this](bool p_active) {
@@ -208,26 +249,22 @@ void TagExplorer2::setupUI() {
 }
 
 void TagExplorer2::setupTitleBar() {
-  m_titleBar =
-      new TitleBar(m_services.get<ThemeService>(), QString(), false, TitleBar::Action::Menu | TitleBar::Action::Search, this);
+  m_titleBar = new TitleBar(m_services.get<ThemeService>(), QString(), false,
+                            TitleBar::Action::Menu | TitleBar::Action::Search, this);
   m_titleBar->setActionButtonsAlwaysShown(true);
   m_titleBar->setSearchPlaceholder(tr("Search tags"));
 
   // + button for New Tag
-  auto *newTagBtn =
-      m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Tag"));
-  connect(newTagBtn, &QToolButton::clicked, this, [this]() {
-    m_tagController->onNewTagAction(m_notebookId);
-  });
+  auto *newTagBtn = m_titleBar->addActionButton(QStringLiteral("add.svg"), tr("New Tag"));
+  connect(newTagBtn, &QToolButton::clicked, this,
+          [this]() { m_tagController->onNewTagAction(m_notebookId); });
 
   // Clear selection button
   const QString clearSelText = QStringLiteral("%1\t%2").arg(
       tr("Clear Selection"), QKeySequence(Qt::Key_Escape).toString(QKeySequence::NativeText));
   auto *clearSelBtn =
       m_titleBar->addActionButton(QStringLiteral("clear_selection.svg"), clearSelText);
-  connect(clearSelBtn, &QToolButton::clicked, this, [this]() {
-    m_tagView->clearSelection();
-  });
+  connect(clearSelBtn, &QToolButton::clicked, this, [this]() { m_tagView->clearSelection(); });
 
   setupTitleBarMenu();
 }
@@ -242,9 +279,44 @@ void TagExplorer2::setupTitleBarMenu() {
 }
 
 void TagExplorer2::setNotebookId(const QString &p_notebookId) {
+  if (m_notebookId == p_notebookId) {
+    return;
+  }
+  m_selectionBeforeReset.clear();
+  m_currentTagBeforeReset.clear();
+  m_restoringSelection = true;
+  m_tagView->clearSelection();
+  m_tagView->setCurrentIndex({});
+  m_restoringSelection = false;
+  m_selectionDirty = false;
   m_notebookId = p_notebookId;
-  m_tagModel->setNotebookId(p_notebookId);
   m_tagController->setNotebookId(p_notebookId);
+  m_tagController->onTagsSelected({});
+  m_tagModel->setNotebookId(p_notebookId);
+}
+
+void TagExplorer2::setPanelVisible(bool p_visible) {
+  m_panelVisible = p_visible;
+  m_tagModel->setReloadEnabled(p_visible);
+  if (p_visible && m_selectionDirty) {
+    // Any pending model reload goes first and consumes this selection refresh.
+    QMetaObject::invokeMethod(
+        this,
+        [this]() {
+          if (m_selectionDirty) {
+            refreshSelection();
+          }
+        },
+        Qt::QueuedConnection);
+  }
+}
+
+void TagExplorer2::refreshSelection() {
+  if (!m_panelVisible || m_restoringSelection) {
+    return;
+  }
+  m_selectionDirty = false;
+  m_tagController->onTagsSelected(m_tagView->selectedTagNames());
 }
 
 QByteArray TagExplorer2::saveState() const {
@@ -273,13 +345,9 @@ void TagExplorer2::restoreState(const QByteArray &p_data) {
   }
 }
 
-NavigationMode *TagExplorer2::getTagNavigationWrapper() const {
-  return m_tagNavWrapper.data();
-}
+NavigationMode *TagExplorer2::getTagNavigationWrapper() const { return m_tagNavWrapper.data(); }
 
-NavigationMode *TagExplorer2::getFileNavigationWrapper() const {
-  return m_fileNavWrapper.data();
-}
+NavigationMode *TagExplorer2::getFileNavigationWrapper() const { return m_fileNavWrapper.data(); }
 
 void TagExplorer2::onMatchingNodesChanged(const QJsonArray &p_nodes) {
   m_fileModel->setNodes(p_nodes, m_notebookId);
@@ -292,12 +360,12 @@ void TagExplorer2::onNewTagRequested(const QString &p_notebookId) {
   const QString parentPath = parentTag.isEmpty() ? QString() : m_tagModel->fullTagPath(parentTag);
 
   const QString label = parentPath.isEmpty()
-      ? tr("Tag path (e.g. tag1/tag2/tag3):")
-      : tr("Tag path under \"%1\" (e.g. child1/child2):").arg(parentPath);
+                            ? tr("Tag path (e.g. tag1/tag2/tag3):")
+                            : tr("Tag path under \"%1\" (e.g. child1/child2):").arg(parentPath);
 
   bool ok = false;
-  QString tagPath = QInputDialog::getText(window(), tr("New Tag"), label,
-                                          QLineEdit::Normal, QString(), &ok);
+  QString tagPath =
+      QInputDialog::getText(window(), tr("New Tag"), label, QLineEdit::Normal, QString(), &ok);
   if (ok && !tagPath.isEmpty()) {
     QString fullPath = tagPath.trimmed();
     if (!parentPath.isEmpty()) {
@@ -308,10 +376,9 @@ void TagExplorer2::onNewTagRequested(const QString &p_notebookId) {
 }
 
 void TagExplorer2::onDeleteTagRequested(const QString &p_notebookId, const QString &p_tagName) {
-  int ret = QMessageBox::question(
-      window(), tr("Delete"),
-      tr("Are you sure you want to delete tag \"%1\"?").arg(p_tagName),
-      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  int ret = QMessageBox::question(window(), tr("Delete"),
+                                  tr("Are you sure you want to delete tag \"%1\"?").arg(p_tagName),
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
   if (ret == QMessageBox::Yes) {
     m_tagController->handleDeleteTagConfirmed(p_notebookId, p_tagName);
   }
@@ -324,9 +391,7 @@ void TagExplorer2::onErrorOccurred(const QString &p_title, const QString &p_mess
 void TagExplorer2::onContextMenuRequested(const QString &p_tagName, const QPoint &p_globalPos) {
   QMenu menu(this);
 
-  menu.addAction(tr("New Tag"), this, [this]() {
-    m_tagController->onNewTagAction(m_notebookId);
-  });
+  menu.addAction(tr("New Tag"), this, [this]() { m_tagController->onNewTagAction(m_notebookId); });
 
   if (!p_tagName.isEmpty()) {
     menu.addAction(tr("Delete"), this, [this, p_tagName]() {
@@ -335,10 +400,9 @@ void TagExplorer2::onContextMenuRequested(const QString &p_tagName, const QPoint
 
     menu.addAction(tr("Move"), this, [this, p_tagName]() {
       bool ok = false;
-      QString newParent = QInputDialog::getText(
-          window(), tr("Move Tag"),
-          tr("Enter new parent tag (empty for root):"),
-          QLineEdit::Normal, QString(), &ok);
+      QString newParent = QInputDialog::getText(window(), tr("Move Tag"),
+                                                tr("Enter new parent tag (empty for root):"),
+                                                QLineEdit::Normal, QString(), &ok);
       if (ok) {
         m_tagController->onMoveTagAction(m_notebookId, p_tagName, newParent.trimmed());
       }

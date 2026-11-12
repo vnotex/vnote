@@ -9,6 +9,8 @@
 #include <QPalette>
 #include <QSet>
 
+#include <core/services/eventbridge.h>
+#include <core/services/syncservice.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 
@@ -24,6 +26,17 @@ TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
   if (tagService) {
     connect(tagService->asQObject(), SIGNAL(tagsChanged(QString)), this,
             SLOT(onTagsChanged(QString)));
+  }
+  if (auto *bridge = m_services.get<EventBridge>()) {
+    connect(bridge, &EventBridge::fileChanged, this,
+            [this](const QString &p_event, const QString &p_notebookId) {
+              if (p_event != QStringLiteral("file.saved")) {
+                onTagsChanged(p_notebookId);
+              }
+            });
+  }
+  if (auto *sync = m_services.get<SyncService>()) {
+    connect(sync, &SyncService::workingTreeChanged, this, &TagModel::onTagsChanged);
   }
 }
 
@@ -127,6 +140,9 @@ QVariant TagModel::data(const QModelIndex &p_index, int p_role) const {
   case TagMetadataRole:
     return info.metadata.toVariant();
 
+  case NoteCountRole:
+    return info.noteCount;
+
   case Qt::ForegroundRole:
     if (m_incompatibleTags.contains(tagName)) {
       return QApplication::palette().color(QPalette::Disabled, QPalette::Text);
@@ -154,8 +170,7 @@ Qt::ItemFlags TagModel::flags(const QModelIndex &p_index) const {
     return Qt::ItemIsSelectable | Qt::ItemIsDropEnabled;
   }
 
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
-         Qt::ItemIsDropEnabled;
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
 }
 
 Qt::DropActions TagModel::supportedDropActions() const { return Qt::MoveAction; }
@@ -163,8 +178,8 @@ Qt::DropActions TagModel::supportedDropActions() const { return Qt::MoveAction; 
 QStringList TagModel::mimeTypes() const { return {c_tagMimeType}; }
 
 QMimeData *TagModel::mimeData(const QModelIndexList &p_indexes) const {
-  if (m_notebookId.isEmpty() || p_indexes.size() != 1 ||
-      !p_indexes.first().isValid() || !(flags(p_indexes.first()) & Qt::ItemIsDragEnabled)) {
+  if (m_notebookId.isEmpty() || p_indexes.size() != 1 || !p_indexes.first().isValid() ||
+      !(flags(p_indexes.first()) & Qt::ItemIsDragEnabled)) {
     return nullptr;
   }
 
@@ -186,12 +201,12 @@ bool TagModel::decodeTagMimeData(const QMimeData *p_data, QString &p_tagName) co
   quint64 revision = 0;
   stream >> notebookId >> p_tagName >> revision;
   return stream.status() == QDataStream::Ok && stream.atEnd() && !notebookId.isEmpty() &&
-         notebookId == m_notebookId && revision == m_hierarchyRevision &&
-         !p_tagName.isEmpty() && m_nodeCache.contains(p_tagName);
+         notebookId == m_notebookId && revision == m_hierarchyRevision && !p_tagName.isEmpty() &&
+         m_nodeCache.contains(p_tagName);
 }
 
 bool TagModel::canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
-                              int p_column, const QModelIndex &p_parent) const {
+                               int p_column, const QModelIndex &p_parent) const {
   if (p_action != Qt::MoveAction || p_row != -1 || (p_column != -1 && p_column != 0)) {
     return false;
   }
@@ -226,7 +241,7 @@ bool TagModel::canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action,
 }
 
 bool TagModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
-                           int p_column, const QModelIndex &p_parent) {
+                            int p_column, const QModelIndex &p_parent) {
   if (!canDropMimeData(p_data, p_action, p_row, p_column, p_parent)) {
     return false;
   }
@@ -243,73 +258,141 @@ bool TagModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, in
 }
 
 void TagModel::setNotebookId(const QString &p_notebookId) {
+  if (m_notebookId == p_notebookId) {
+    return;
+  }
   m_notebookId = p_notebookId;
-  reload();
+  if (m_reloadEnabled) {
+    reload();
+  } else {
+    ++m_hierarchyRevision;
+    beginResetModel();
+    clearCache();
+    endResetModel();
+    m_dirty = true;
+  }
   emit notebookChanged();
 }
 
 QString TagModel::getNotebookId() const { return m_notebookId; }
 
-void TagModel::reload() {
-  ++m_hierarchyRevision;
-  beginResetModel();
+void TagModel::setReloadEnabled(bool p_enabled) {
+  m_reloadEnabled = p_enabled;
+  if (m_dirty) {
+    scheduleReload();
+  }
+}
 
+void TagModel::clearCache() {
   m_nodeCache.clear();
   m_childrenCache.clear();
   m_indexIdCache.clear();
   m_indexIdLookup.clear();
   m_nextIndexId = 1;
   m_incompatibleTags.clear();
+}
 
+void TagModel::reload() {
+  m_dirty = true;
+  if (!m_reloadEnabled) {
+    return;
+  }
+  m_dirty = false;
+  ++m_hierarchyRevision;
+
+  QJsonArray tags;
+  QHash<QString, int> counts;
   if (!m_notebookId.isEmpty()) {
-    auto *tagService = m_services.get<TagCoreService>();
-    if (tagService) {
-      const QJsonArray tags = tagService->listTags(m_notebookId);
-      for (const auto &tagVal : tags) {
-        const QJsonObject tagObj = tagVal.toObject();
-        const QString name = tagObj.value(QStringLiteral("name")).toString();
-        if (name.isEmpty()) {
-          continue;
+    if (auto *service = m_services.get<TagCoreService>()) {
+      tags = service->listTags(m_notebookId);
+      if (!tags.isEmpty()) {
+        const auto countRecords = service->countFilesByTag(m_notebookId);
+        counts.reserve(countRecords.size());
+        for (const auto &value : countRecords) {
+          const auto record = value.toObject();
+          counts.insert(record.value(QStringLiteral("tag")).toString(),
+                        record.value(QStringLiteral("count")).toInt(-1));
         }
-
-        TagNodeInfo info;
-        info.name = name;
-        info.parent = tagObj.value(QStringLiteral("parent")).toString();
-        info.metadata = tagObj.value(QStringLiteral("metadata"));
-        m_nodeCache.insert(name, info);
-      }
-
-      for (auto it = m_nodeCache.constBegin(); it != m_nodeCache.constEnd(); ++it) {
-        const QString &name = it.key();
-        const QString &parent = it.value().parent;
-
-        if (parent.isEmpty() || !m_nodeCache.contains(parent)) {
-          m_childrenCache[QString()].append(name);
-        } else {
-          m_childrenCache[parent].append(name);
-        }
-      }
-
-      for (auto it = m_nodeCache.begin(); it != m_nodeCache.end(); ++it) {
-        it.value().childCount = m_childrenCache.value(it.key()).size();
       }
     }
   }
 
-  endResetModel();
+  bool hierarchyChanged = m_loadedNotebookId != m_notebookId;
+  int tagCount = 0;
+  for (const auto &value : tags) {
+    const auto tag = value.toObject();
+    const auto name = tag.value(QStringLiteral("name")).toString();
+    if (name.isEmpty()) {
+      continue;
+    }
+    ++tagCount;
+    const auto it = m_nodeCache.constFind(name);
+    if (it == m_nodeCache.cend() || it->parent != tag.value(QStringLiteral("parent")).toString()) {
+      hierarchyChanged = true;
+    }
+  }
+  hierarchyChanged = hierarchyChanged || tagCount != m_nodeCache.size();
+
+  if (hierarchyChanged) {
+    beginResetModel();
+    clearCache();
+    for (const auto &value : tags) {
+      const auto tag = value.toObject();
+      const auto name = tag.value(QStringLiteral("name")).toString();
+      if (name.isEmpty()) {
+        continue;
+      }
+      TagNodeInfo info;
+      info.name = name;
+      info.parent = tag.value(QStringLiteral("parent")).toString();
+      info.metadata = tag.value(QStringLiteral("metadata"));
+      info.noteCount = counts.value(name, -1);
+      m_nodeCache.insert(name, info);
+    }
+    for (auto it = m_nodeCache.cbegin(); it != m_nodeCache.cend(); ++it) {
+      const auto &parent = it->parent;
+      m_childrenCache[parent.isEmpty() || !m_nodeCache.contains(parent) ? QString() : parent]
+          .append(it.key());
+    }
+    m_loadedNotebookId = m_notebookId;
+    endResetModel();
+  } else {
+    // Membership changes do not disturb selection, expansion or persistent indexes.
+    for (const auto &value : tags) {
+      const auto tag = value.toObject();
+      const auto name = tag.value(QStringLiteral("name")).toString();
+      auto it = m_nodeCache.find(name);
+      if (it == m_nodeCache.end()) {
+        continue;
+      }
+      const int count = counts.value(name, -1);
+      const auto metadata = tag.value(QStringLiteral("metadata"));
+      if (it->noteCount != count || it->metadata != metadata) {
+        it->noteCount = count;
+        it->metadata = metadata;
+        const auto idx = indexFromTagName(name);
+        if (idx.isValid()) {
+          emit dataChanged(idx, idx, {NoteCountRole, TagMetadataRole});
+        }
+      }
+    }
+  }
+  emit tagsReloaded();
 }
 
 void TagModel::onTagsChanged(const QString &p_notebookId) {
-  if (p_notebookId != m_notebookId) {
-    return;
+  if (p_notebookId == m_notebookId) {
+    requestReload();
   }
+}
 
-  // Coalesce: a batch tag edit emits one tagsChanged per file per tag (all
-  // synchronous on the GUI thread), and each reload() is a full
-  // beginResetModel + listTags + cache rebuild. Collapse the whole burst into a
-  // single reload posted to the event loop, which still runs before the next
-  // repaint so the tag tree is never visibly stale.
-  if (m_reloadPending) {
+void TagModel::requestReload() {
+  m_dirty = true;
+  scheduleReload();
+}
+
+void TagModel::scheduleReload() {
+  if (!m_reloadEnabled || m_reloadPending) {
     return;
   }
   m_reloadPending = true;
@@ -317,48 +400,13 @@ void TagModel::onTagsChanged(const QString &p_notebookId) {
       this,
       [this]() {
         m_reloadPending = false;
-        reload();
+        // Hiding after scheduling must defer work; an explicit reload may have
+        // already consumed this invalidation before the queued callback ran.
+        if (m_reloadEnabled && m_dirty) {
+          reload();
+        }
       },
       Qt::QueuedConnection);
-}
-
-void TagModel::reloadTag(const QString &p_tagName) {
-  if (p_tagName.isEmpty() || m_notebookId.isEmpty()) {
-    return;
-  }
-
-  auto *tagService = m_services.get<TagCoreService>();
-  if (!tagService) {
-    return;
-  }
-
-  const QJsonArray tags = tagService->listTags(m_notebookId);
-  QJsonObject targetTagObj;
-  for (const auto &tagVal : tags) {
-    const QJsonObject tagObj = tagVal.toObject();
-    if (tagObj.value(QStringLiteral("name")).toString() == p_tagName) {
-      targetTagObj = tagObj;
-      break;
-    }
-  }
-
-  if (targetTagObj.isEmpty() || !m_nodeCache.contains(p_tagName)) {
-    reload();
-    return;
-  }
-
-  auto nodeIt = m_nodeCache.find(p_tagName);
-  const QString newParent = targetTagObj.value(QStringLiteral("parent")).toString();
-  if (nodeIt.value().parent != newParent) {
-    reload();
-    return;
-  }
-
-  nodeIt.value().metadata = targetTagObj.value(QStringLiteral("metadata"));
-  QModelIndex idx = indexFromTagName(p_tagName);
-  if (idx.isValid()) {
-    emit dataChanged(idx, idx, {Qt::DisplayRole, TagNameRole, TagParentRole, TagMetadataRole});
-  }
 }
 
 void TagModel::setIncompatibleTags(const QStringList &p_tags) {

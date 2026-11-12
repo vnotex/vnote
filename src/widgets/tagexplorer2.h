@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QScopedPointer>
+#include <QStringList>
 
 #include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
@@ -34,6 +35,7 @@ public:
   ~TagExplorer2() override;
 
   void setNotebookId(const QString &p_notebookId);
+  void setPanelVisible(bool p_visible);
 
   QByteArray saveState() const;
   void restoreState(const QByteArray &p_data);
@@ -55,6 +57,7 @@ private:
   void setupUI();
   void setupTitleBar();
   void setupTitleBarMenu();
+  void refreshSelection();
 
   ServiceLocator &m_services;
 
@@ -73,6 +76,11 @@ private:
   FileNodeDelegate *m_fileDelegate = nullptr;
 
   QString m_notebookId;
+  QStringList m_selectionBeforeReset;
+  QString m_currentTagBeforeReset;
+  bool m_panelVisible = false;
+  bool m_restoringSelection = false;
+  bool m_selectionDirty = false;
 };
 
 } // namespace vnotex

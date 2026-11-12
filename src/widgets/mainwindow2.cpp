@@ -1078,6 +1078,8 @@ void MainWindow2::setupDocks() {
   setupLocationList();
 
   m_dockWidgetHelper.setupDocks();
+  connect(m_dockWidgetHelper.getDock(DockWidgetHelper::TagDock), &QDockWidget::visibilityChanged,
+          m_tagExplorer, &TagExplorer2::setPanelVisible);
   m_dockWidgetHelper.postSetup();
   m_commentDockSize =
       new DockSizeMemory(this, m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock));

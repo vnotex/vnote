@@ -16,7 +16,8 @@ namespace vnotex {
 class TreeChildCountDelegate : public QStyledItemDelegate {
 public:
   // Parent to the view so horizontal scroll-copying invalidates the fixed badges.
-  explicit TreeChildCountDelegate(QObject *p_parent = nullptr) : QStyledItemDelegate(p_parent) {
+  explicit TreeChildCountDelegate(QObject *p_parent = nullptr, int p_countRole = -1)
+      : QStyledItemDelegate(p_parent), m_countRole(p_countRole) {
     if (auto *view = qobject_cast<QTreeView *>(p_parent)) {
       connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, this,
               [view]() { view->viewport()->update(); });
@@ -38,7 +39,7 @@ public:
 
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
              const QModelIndex &p_index) const override {
-    const int count = p_index.isValid() ? p_index.model()->rowCount(p_index) : 0;
+    const int count = countForIndex(p_index);
     if (!m_showChildCount || count <= 0) {
       QStyledItemDelegate::paint(p_painter, p_option, p_index);
       return;
@@ -81,8 +82,15 @@ public:
     QStyleOptionViewItem opt(p_option);
     initStyleOption(&opt, p_index);
     QSize size = QStyledItemDelegate::sizeHint(p_option, p_index);
-    if (p_index.isValid()) {
-      size.rwidth() += childCountWidth(opt, p_index.model()->rowCount(p_index));
+    const int count = countForIndex(p_index);
+    if (m_showChildCount && count > 0) {
+      // Standard text chrome and the viewport-fixed badge can have different
+      // right insets. Reserve the difference as well as the badge and its gap.
+      opt.rect = QRect(QPoint(), size);
+      auto *style = opt.widget ? opt.widget->style() : QApplication::style();
+      const int textRightInset = opt.rect.right() - ItemViewUtils::textRect(opt, style).right();
+      const auto spacing = TreeViewUtils::horizontalSpacing(opt, 8);
+      size.rwidth() += childCountWidth(opt, count) + qMax(0, spacing.m_right - textRightInset);
     }
     return size;
   }
@@ -152,6 +160,13 @@ protected:
   }
 
 private:
+  int countForIndex(const QModelIndex &p_index) const {
+    if (!p_index.isValid()) {
+      return 0;
+    }
+    return m_countRole < 0 ? p_index.model()->rowCount(p_index) : p_index.data(m_countRole).toInt();
+  }
+
   static QRect viewportRow(const QStyleOptionViewItem &p_option) {
     QRect row(p_option.rect);
     if (const auto *view = qobject_cast<const QTreeView *>(p_option.widget)) {
@@ -170,6 +185,7 @@ private:
     return p_font;
   }
 
+  const int m_countRole;
   bool m_showChildCount = true;
 };
 
