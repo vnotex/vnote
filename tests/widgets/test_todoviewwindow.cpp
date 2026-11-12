@@ -21,6 +21,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
+#include <QInputMethodEvent>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -379,24 +380,34 @@ bool chooseButtonMenu(QPushButton *p_button, const char *p_actionName) {
   return chooseOpenMenu(p_actionName);
 }
 
-bool openGroupMenu(TodoViewWindow *p_window) {
-  auto *button = control<QPushButton>(p_window, "todoGroupMore");
-  if (button && button->isVisible()) {
-    if (!button->isEnabled() || !activate(button))
+bool showLists(TodoViewWindow *p_window) {
+  auto *lists = control<QListView>(p_window, "todoLists");
+  auto *button = control<QPushButton>(p_window, "todoListsButton");
+  if (!lists || !button)
+    return false;
+  if (!QTest::qWaitFor([=] { return lists->isVisible() || button->isVisible(); }))
+    return false;
+  if (!lists->isVisible()) {
+    if (!activate(button))
       return false;
     QTest::mouseClick(button, Qt::LeftButton);
-  } else {
-    auto *lists = control<QListView>(p_window, "todoLists");
-    const auto key = p_window->getTodoEditor()->selectedGroupKey();
-    const auto index = p_window->getController()->getListModel()->index(
-        p_window->getController()->getListModel()->rowForGroup(key));
-    if (!lists || !index.isValid() || !activate(lists))
-      return false;
-    lists->scrollTo(index);
-    const auto point = lists->visualRect(index).center();
-    QContextMenuEvent event(QContextMenuEvent::Mouse, point, lists->viewport()->mapToGlobal(point));
-    QCoreApplication::sendEvent(lists->viewport(), &event);
   }
+  return QTest::qWaitFor([=] { return lists->isVisible(); });
+}
+
+bool openGroupMenu(TodoViewWindow *p_window) {
+  if (!showLists(p_window))
+    return false;
+  auto *lists = control<QListView>(p_window, "todoLists");
+  const auto key = p_window->getTodoEditor()->selectedGroupKey();
+  const auto index = p_window->getController()->getListModel()->index(
+      p_window->getController()->getListModel()->rowForGroup(key));
+  if (!index.isValid() || !activate(lists))
+    return false;
+  lists->scrollTo(index);
+  const auto point = lists->visualRect(index).center();
+  QContextMenuEvent event(QContextMenuEvent::Mouse, point, lists->viewport()->mapToGlobal(point));
+  QCoreApplication::sendEvent(lists->viewport(), &event);
   return QTest::qWaitFor([] { return qobject_cast<QMenu *>(QApplication::activePopupWidget()); });
 }
 
@@ -735,40 +746,21 @@ bool TestTodoViewWindow::selectView(TodoViewWindow *p_window, TodoViewKind p_kin
   auto *controller = p_window->getController();
   const int row = controller->getListModel()->rowForView(p_kind, p_listKey);
   auto *lists = control<QListView>(p_window, "todoLists");
-  auto *combo = control<QComboBox>(p_window, "todoViewCombo");
-  if (row < 0 || !lists || !combo)
+  if (row < 0 || !showLists(p_window))
     return false;
-  if (!QTest::qWaitFor([&] { return lists->isVisible() || combo->isVisible(); }))
-    return false;
-  if (lists->isVisible()) {
-    if (lists->isRowHidden(row)) {
-      const auto *group = controller->getListModel()->groupAt(row);
-      if (!group)
-        return false;
-      p_window->getTodoEditor()->focusGroup(group->m_key);
-      QTest::keyClick(lists, Qt::Key_Right);
-    }
-    if (!activate(lists))
+  if (lists->isRowHidden(row)) {
+    const auto *group = controller->getListModel()->groupAt(row);
+    if (!group)
       return false;
-    const auto index = lists->model()->index(row, 0);
-    lists->scrollTo(index);
-    QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      lists->visualRect(index).center());
-  } else {
-    if (!activate(combo))
-      return false;
-    combo->showPopup();
-    const int comboRow =
-        p_kind == TodoViewKind::List
-            ? combo->findData(p_listKey, TodoListModel::IdRole)
-            : combo->findData(QVariant::fromValue(p_kind), TodoListModel::ViewKindRole);
-    const auto index = combo->model()->index(comboRow, 0);
-    if (!index.isValid())
-      return false;
-    combo->view()->scrollTo(index);
-    QTest::mouseClick(combo->view()->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      combo->view()->visualRect(index).center());
+    p_window->getTodoEditor()->focusGroup(group->m_key);
+    QTest::keyClick(lists, Qt::Key_Right);
   }
+  if (!activate(lists))
+    return false;
+  const auto index = lists->model()->index(row, 0);
+  lists->scrollTo(index);
+  QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    lists->visualRect(index).center());
   return controller->getProjection().m_view == p_kind &&
          (p_kind != TodoViewKind::List || controller->getProjection().m_listKey == p_listKey);
 }
@@ -1425,15 +1417,11 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   auto *model = controller->getListModel();
   auto *taskModel = controller->getTaskModel();
   auto *lists = control<QListView>(window, "todoLists");
-  auto *viewCombo = control<QComboBox>(window, "todoViewCombo");
-  auto *groups = control<QComboBox>(window, "todoGroupCombo");
-  auto *groupMore = control<QPushButton>(window, "todoGroupMore");
   auto *newGroup = control<QPushButton>(window, "todoNewGroup");
   auto *newList = control<QPushButton>(window, "todoNewList");
-  QVERIFY(lists && viewCombo && groups && groupMore && newGroup && newList);
+  QVERIFY(lists && newGroup && newList);
   QTRY_COMPARE(editor->width() < 840, width < 840);
-  QTRY_COMPARE(groups->isVisible(), width < 840);
-  QTRY_COMPARE(groupMore->isVisible(), width < 840);
+  QVERIFY(showLists(window));
   QTRY_VERIFY(newGroup->isVisible() && newList->isVisible());
   const auto defaultKey = QStringLiteral("id:default");
   const int defaultRow = model->rowForGroup(defaultKey);
@@ -1537,6 +1525,8 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   }
 
   const auto createGroup = [&](const QString &p_title) {
+    if (!showLists(window))
+      return false;
     return answerDialog(
         "todoNewGroupDialog",
         [&](QDialog *p_dialog) {
@@ -1556,8 +1546,6 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QCOMPARE(controller->getDocument().findGroup(projectKey)->m_listCount, 0);
   QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:work"));
   QCOMPARE(taskTitles(window), originalItems);
-  QCOMPARE(groups->currentData().toString(), projectKey);
-  QCOMPARE(viewCombo->findData(projectKey, TodoListModel::IdRole), -1);
   QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
   QVERIFY(controller->getProjection().m_collapsedGroups.contains(projectKey));
   QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
@@ -1576,7 +1564,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   const auto archiveKey = editor->selectedGroupKey();
   QVERIFY(archiveKey != projectKey);
   editor->focusGroup(archiveKey);
-  QWidget *groupFocus = width < 840 ? static_cast<QWidget *>(groups) : lists;
+  QWidget *groupFocus = lists;
   QVERIFY(activate(groupFocus));
   QTest::keyClick(groupFocus, Qt::Key_Up, Qt::AltModifier);
   QCOMPARE(controller->getDocument().m_groups.at(1).m_key, archiveKey);
@@ -1619,6 +1607,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
            archiveKey);
   QVERIFY(quickAdd(window, QStringLiteral("Reference task")));
   const auto referenceTask = controller->getSelectedItemKey();
+  QVERIFY(showLists(window));
   QVERIFY(answerNewList(QStringLiteral("Inbox"), [&] { newList->click(); }));
   const auto inbox = controller->getProjection().m_listKey;
   QCOMPARE(
@@ -1712,16 +1701,12 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
 
   window->setMode(ViewWindowMode::Read);
   QVERIFY(!newGroup->isEnabled() && !newList->isEnabled());
-  QVERIFY(groups->isEnabled() && groupMore->isEnabled());
-  if (width < 840) {
-    QVERIFY(chooseCombo(groups, groups->findData(archiveKey)));
-  } else {
-    const auto index = model->index(model->rowForGroup(archiveKey));
-    QVERIFY(activate(lists));
-    lists->scrollTo(index);
-    QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      lists->visualRect(index).center());
-  }
+  QVERIFY(showLists(window));
+  const auto archiveIndex = model->index(model->rowForGroup(archiveKey));
+  QVERIFY(activate(lists));
+  lists->scrollTo(archiveIndex);
+  QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    lists->visualRect(archiveIndex).center());
   QCOMPARE(editor->selectedGroupKey(), archiveKey);
   QVERIFY(openGroupMenu(window));
   auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
@@ -1762,10 +1747,8 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   QVERIFY(window);
   auto *controller = window->getController();
   auto *editor = window->getTodoEditor();
-  auto *groups = control<QComboBox>(window, "todoGroupCombo");
-  auto *more = control<QPushButton>(window, "todoGroupMore");
   auto *newList = control<QPushButton>(window, "todoNewList");
-  QVERIFY(groups && more && newList);
+  QVERIFY(newList);
   QVERIFY(controller->getDocument().defaultGroup());
   QCOMPARE(controller->getDocument().defaultGroup()->m_key, QStringLiteral("default:"));
   editor->focusGroup(QStringLiteral("default:"));
@@ -2179,12 +2162,8 @@ void TestTodoViewWindow::readOnlyNavigation() {
   QVERIFY(add->isReadOnly() || !add->isEnabled());
   QVERIFY(!important->isEnabled());
   QVERIFY(note->isReadOnly());
-  auto *groupMore = control<QPushButton>(window, "todoGroupMore");
   auto *newGroup = control<QPushButton>(window, "todoNewGroup");
-  auto *groups = control<QComboBox>(window, "todoGroupCombo");
-  QVERIFY(groupMore && newGroup && groups);
-  QVERIFY(!newGroup->isEnabled());
-  QVERIFY(groups->isEnabled());
+  QVERIFY(newGroup && !newGroup->isEnabled());
   window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
   QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
   QVERIFY(window->getController()->getProjection().m_collapsedGroups.contains(
@@ -2347,21 +2326,17 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   auto *window = current();
   QVERIFY(window);
   auto *sidebar = control<QWidget>(window, "todoSidebar");
-  auto *combo = control<QComboBox>(window, "todoViewCombo");
+  auto *listsButton = control<QPushButton>(window, "todoListsButton");
   auto *tasks = control<QListView>(window, "todoTasks");
   auto *splitter = control<QSplitter>(window, "todoSplitter");
   auto *back = control<QPushButton>(window, "todoBack");
-  QVERIFY(sidebar && combo && tasks && splitter && back);
+  QVERIFY(sidebar && listsButton && tasks && splitter && back);
   QTRY_VERIFY(sidebar->isVisible());
   QVERIFY(window->getTodoEditor()->width() >= 840);
-  QVERIFY(!combo->isVisible());
+  QVERIFY(!listsButton->isVisible());
   auto *taskPane = control<QWidget>(window, "todoTaskPane");
-  QVERIFY(taskPane && taskPane->layout());
-  QCOMPARE(taskPane->layout()->spacing(), 4);
-  QVERIFY(tasks->itemDelegate());
+  QVERIFY(taskPane);
   auto *model = window->getController()->getTaskModel();
-  for (int row = 0; row < model->rowCount(); ++row)
-    QVERIFY(!tasks->indexWidget(model->index(row)));
   QVERIFY(openTask(window, QStringLiteral("id:alpha")));
   QTRY_VERIFY(
       selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
@@ -2382,7 +2357,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   m_area->resize(600, 760);
   QTRY_VERIFY(!sidebar->isVisible());
   QVERIFY(window->getTodoEditor()->width() < 840);
-  QTRY_VERIFY(combo->isVisible());
+  QTRY_VERIFY(listsButton->isVisible());
   QVERIFY(back->isVisible());
   QVERIFY(!tasks->isVisible());
   QVERIFY(activate(back));
@@ -2393,6 +2368,31 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   QTest::keyClick(tasks, Qt::Key_F, Qt::ControlModifier);
   auto *search = control<QLineEdit>(window, "todoSearch");
   QVERIFY(search);
+  QTRY_VERIFY(search->hasFocus() && sidebar->isVisible());
+  QInputMethodEvent preedit(QStringLiteral("compose"), {});
+  QCoreApplication::sendEvent(search, &preedit);
+  QTest::keyClick(search, Qt::Key_Escape);
+  QVERIFY(sidebar->isVisible());
+  QInputMethodEvent clearPreedit;
+  QCoreApplication::sendEvent(search, &clearPreedit);
+  QTest::keyClick(search, Qt::Key_Escape);
+  QTRY_VERIFY(!sidebar->isVisible() && listsButton->hasFocus());
+  const auto paneGeometry = taskPane->geometry();
+  const auto panePosition = taskPane->mapTo(window->getTodoEditor(), QPoint());
+  QTest::mouseClick(listsButton, Qt::LeftButton);
+  QTRY_VERIFY(sidebar->isVisible());
+  QCOMPARE(taskPane->geometry(), paneGeometry);
+  QCOMPARE(taskPane->mapTo(window->getTodoEditor(), QPoint()), panePosition);
+  QTest::mouseClick(listsButton, Qt::LeftButton);
+  QTRY_VERIFY(!sidebar->isVisible());
+  QVERIFY(!listsButton->isChecked());
+  QTest::mouseClick(listsButton, Qt::LeftButton);
+  QTRY_VERIFY(sidebar->isVisible());
+  const QPoint outside(tasks->viewport()->width() - 5, tasks->viewport()->height() - 5);
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, outside);
+  QTRY_VERIFY(!sidebar->isVisible());
+  QVERIFY(!listsButton->isChecked());
+  window->getTodoEditor()->focusSearch();
   QTRY_VERIFY(search->hasFocus());
   QTest::keyClick(search, Qt::Key_Tab);
   QVERIFY(QApplication::focusWidget());
@@ -2405,14 +2405,26 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   QTRY_VERIFY(back->isVisible());
   auto *title = control<QLineEdit>(window, "todoTitle");
   QVERIFY(title && activate(title));
+  QTest::keyClick(title, Qt::Key_F, Qt::ControlModifier);
+  QTRY_VERIFY(tasks->isVisible() && !detailsScroll->isVisible());
+  QTRY_VERIFY(sidebar->isVisible() && search->hasFocus());
+  QTest::keyClick(search, Qt::Key_Return);
+  QTRY_VERIFY(!sidebar->isVisible() && tasks->hasFocus());
+  QVERIFY(openTask(window, selection));
   QTest::keyClick(title, Qt::Key_Escape);
   QTRY_VERIFY(tasks->isVisible() && tasks->hasFocus());
+  window->getTodoEditor()->focusSearch();
+  QTRY_VERIFY(sidebar->isVisible());
   const auto light = window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text);
   m_theme->switchTheme(QStringLiteral("everforest-dark"));
   QTRY_VERIFY(window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text) != light);
   m_theme->refreshCurrentTheme();
   m_area->resize(1000, 760);
-  QTRY_VERIFY(sidebar->isVisible());
+  QTRY_VERIFY(sidebar->isVisible() && !listsButton->isVisible());
+  QVERIFY(!listsButton->isChecked());
+  QCOMPARE(splitter->widget(0), sidebar);
+  window->getTodoEditor()->focusTasks();
+  QVERIFY(sidebar->isVisible());
   QTRY_VERIFY(
       selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
   m_theme->switchTheme(QStringLiteral("pure"));
@@ -2433,7 +2445,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   window->undo();
   QCOMPARE(window->getLatestContent(), source);
   m_area->resize(600, 760);
-  QTRY_VERIFY(combo->isVisible());
+  QTRY_VERIFY(listsButton->isVisible());
   QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
   QVERIFY(quickAdd(window, QStringLiteral("Added in a narrow split")));
   const auto narrowKey = window->getController()->getSelectedItemKey();
@@ -2501,18 +2513,11 @@ void TestTodoViewWindow::groupSourceNavigation() {
   QCOMPARE(controller->getProjection().m_collapsedGroups, before.m_collapsedGroups);
   QCOMPARE(taskTitles(window), items);
   QVERIFY(controller->getSelectedItemKey().isEmpty());
-  if (width < 840) {
-    auto *groups = control<QComboBox>(window, "todoGroupCombo");
-    // Qt shows reparented shared controls on the next event turn.
-    QTRY_VERIFY(groups && groups->isVisible() && groups->hasFocus());
-    QCOMPARE(groups->currentData().toString(), QStringLiteral("id:empty"));
-  } else {
-    auto *lists = control<QListView>(window, "todoLists");
-    QVERIFY(lists && lists->hasFocus());
-    QVERIFY(lists->currentIndex().data(TodoListModel::GroupRole).toBool());
-    QCOMPARE(lists->currentIndex().data(TodoListModel::GroupIdRole).toString(),
-             QStringLiteral("id:empty"));
-  }
+  auto *lists = control<QListView>(window, "todoLists");
+  QTRY_VERIFY(lists && lists->isVisible() && lists->hasFocus());
+  QVERIFY(lists->currentIndex().data(TodoListModel::GroupRole).toBool());
+  QCOMPARE(lists->currentIndex().data(TodoListModel::GroupIdRole).toString(),
+           QStringLiteral("id:empty"));
   settings.m_lineNumber =
       text.left(text.indexOf(QStringLiteral("- [ ] Gamma"))).count(QLatin1Char('\n'));
   window->applyFileOpenSettings(settings);

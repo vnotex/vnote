@@ -647,8 +647,8 @@ payloads. List Up/Down stays inside its group; Move to group changes ownership. 
 deletion asks confirmation before removing its owned lists/tasks, and remains undoable.
 
 Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
-The model retains all rows; the sidebar hides collapsed children and the task-view combo's
-proxy excludes group headers. The wide sidebar places search above icon-leading smart views,
+The model retains all rows; the sidebar hides collapsed children. The same sidebar at every
+width places search above icon-leading smart views,
 a separator, group rows and indented lists; nonzero incomplete counts occupy trailing badges.
 New List and the accessible icon-only New Group control stay below the scrolling list. New Group
 uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`
@@ -656,8 +656,7 @@ for normal and disabled states. Group rows select on single click (including the
 only a group-row double click toggles mouse expansion. Child-list double clicks never toggle
 their parent. Keyboard Enter/Space,
 Left/Right and explicit context-menu expansion remain available, including in Read mode.
-Wide group actions use the row context menu; narrow mode retains the group selector and Group
-actions beside the shared search/creation controls, including for empty groups. Collapse and
+Group actions use the row context menu at every width, including for empty groups. Collapse and
 group selection do not change task projection/history or invalidate task drags; group-title
 search ignores collapse state. New Group/New List use post-commit output keys, never a guessed
 last list. This is presentation/transient state only; no document or config migration is needed.
@@ -671,7 +670,15 @@ Quick-add due controls appear and apply only in unfiltered Planned; a remembered
 leaks into another view or filtered result. Details show the stored My Day date even when it is
 not today, before a user replaces it. Step actions fit the 320px details pane without outer
 horizontal scrolling.
-Below 840 logical pixels, navigation uses a combo and details use a Back-enabled stacked page.
+Below 840 logical pixels, a top-leading Lists button opens the existing sidebar over the task
+area without resizing it. Search, smart views, groups, lists and creation controls stay together;
+there are no separate compact-navigation combos. List selection, Escape, another Lists click,
+or a click/focus outside the panel dismisses it; owned menus/dialogs remain interactive.
+Ctrl+F first leaves narrow details, then opens and focuses sidebar search; Enter exposes the
+filtered tasks. Escape leaves active search IME composition to the input. Hiding/rebinding the
+editor clears the overlay, and widening docks the same sidebar again. The overlay follows the
+splitter's leading edge in RTL and uses the theme's normal base background, including Native.
+Task details still use a Back-enabled stacked page at narrow widths.
 Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
 not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
 The sidebar paints its own rounded selection with the theme's active list-item foreground and

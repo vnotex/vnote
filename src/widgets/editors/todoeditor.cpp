@@ -9,6 +9,7 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QInputDialog>
+#include <QInputMethodEvent>
 #include <QItemSelectionModel>
 #include <QKeyEvent>
 #include <QKeySequence>
@@ -27,7 +28,6 @@
 #include <QScopedValueRollback>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStyledItemDelegate>
@@ -83,25 +83,6 @@ void addGroupChoices(QComboBox *p_combo, const TodoDocument &p_document) {
     }
   }
 }
-
-class TaskViewProxy : public QSortFilterProxyModel {
-public:
-  using QSortFilterProxyModel::QSortFilterProxyModel;
-  QVariant data(const QModelIndex &p_index, int p_role = Qt::DisplayRole) const override {
-    if (p_role == Qt::DisplayRole &&
-        !QSortFilterProxyModel::data(p_index, TodoListModel::GroupIdRole).toString().isEmpty()) {
-      return TodoEditor::tr("%1 / %2").arg(
-          QSortFilterProxyModel::data(p_index, TodoListModel::GroupTitleRole).toString(),
-          QSortFilterProxyModel::data(p_index, TodoListModel::TitleRole).toString());
-    }
-    return QSortFilterProxyModel::data(p_index, p_role);
-  }
-
-protected:
-  bool filterAcceptsRow(int p_row, const QModelIndex &p_parent) const override {
-    return !sourceModel()->index(p_row, 0, p_parent).data(TodoListModel::GroupRole).toBool();
-  }
-};
 
 QString taskName(const TodoItem &p_item) {
   return p_item.m_fields.m_title.trimmed().isEmpty() ? TodoEditor::tr("Untitled task")
@@ -491,14 +472,15 @@ void TodoEditor::createUi() {
   spacing(root);
   root->setContentsMargins(4, 4, 4, 4);
   m_navigation = named(new QWidget(this), "todoNarrowNavigation", tr("List navigation"));
-  auto *navigation = new QVBoxLayout(m_navigation);
-  spacing(navigation);
-  m_viewCombo = named(new QComboBox(m_navigation), "todoViewCombo", tr("List or smart view"));
-  m_viewCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-  m_viewCombo->setMinimumContentsLength(8);
-  m_viewProxy = new TaskViewProxy(this);
-  m_viewCombo->setModel(m_viewProxy);
-  navigation->addWidget(m_viewCombo);
+  auto *navigation = new QHBoxLayout(m_navigation);
+  navigation->setContentsMargins(8, 0, 8, 0);
+  m_listsButton = named(new QPushButton(tr("Lists"), m_navigation), "todoListsButton",
+                        tr("Show lists and search"));
+  m_listsButton->setCheckable(true);
+  m_listsButton->setToolTip(tr("Show lists and search"));
+  navigation->addWidget(m_listsButton);
+  navigation->addStretch();
+  connect(m_listsButton, &QPushButton::clicked, this, &TodoEditor::setSidebarOpen);
   root->addWidget(m_navigation);
 
   m_splitter = named(new QSplitter(Qt::Horizontal, this), "todoSplitter", tr("Planner panes"));
@@ -506,13 +488,15 @@ void TodoEditor::createUi() {
   m_splitter->setHandleWidth(4);
   root->addWidget(m_splitter, 1);
   m_sidebar = named(new QWidget(m_splitter), "todoSidebar", tr("Lists and search"));
+  m_sidebar->setAttribute(Qt::WA_StyledBackground);
+  m_sidebar->setStyleSheet(QStringLiteral("QWidget#todoSidebar { background: palette(base); }"));
   auto *sidebar = new QVBoxLayout(m_sidebar);
   spacing(sidebar);
-  m_searchArea = new QWidget(m_sidebar);
-  auto *searchArea = new QVBoxLayout(m_searchArea);
+  auto *searchWidget = new QWidget(m_sidebar);
+  auto *searchArea = new QVBoxLayout(searchWidget);
   searchArea->setContentsMargins(8, 4, 8, 4);
   searchArea->setSpacing(4);
-  m_search = named(new QLineEdit(m_searchArea), "todoSearch", tr("Search tasks in this file"));
+  m_search = named(new QLineEdit(searchWidget), "todoSearch", tr("Search tasks in this file"));
   m_search->setPlaceholderText(tr("Search tasks"));
   m_search->setClearButtonEnabled(true);
   auto *searchAction = m_search->addAction(QIcon(), QLineEdit::TrailingPosition);
@@ -521,16 +505,7 @@ void TodoEditor::createUi() {
   connect(m_search, &QLineEdit::textChanged, searchAction,
           [searchAction](const QString &p_text) { searchAction->setVisible(p_text.isEmpty()); });
   searchArea->addWidget(m_search);
-  m_groupCombo = named(new QComboBox(m_searchArea), "todoGroupCombo", tr("Organizational group"));
-  m_groupCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-  m_groupCombo->setMinimumContentsLength(8);
-  searchArea->addWidget(m_groupCombo);
-  m_groupMore = named(new QPushButton(tr("Group actions"), m_searchArea), "todoGroupMore",
-                      tr("Group actions"));
-  searchArea->addWidget(m_groupMore);
-  m_groupCombo->hide();
-  m_groupMore->hide();
-  sidebar->addWidget(m_searchArea);
+  sidebar->addWidget(searchWidget);
   auto *theme = m_services.get<ThemeService>();
   Q_ASSERT(theme);
   m_lists = named(new QListView(m_sidebar), "todoLists", tr("Lists and smart views"));
@@ -544,12 +519,13 @@ void TodoEditor::createUi() {
   m_lists->setStyleSheet(
       QStringLiteral("QListView#todoLists { background: transparent; border: none; }"));
   sidebar->addWidget(m_lists, 1);
-  m_creationArea = named(new QWidget(m_sidebar), "todoCreationArea", tr("Create lists and groups"));
-  auto *creation = new QHBoxLayout(m_creationArea);
+  auto *creationWidget =
+      named(new QWidget(m_sidebar), "todoCreationArea", tr("Create lists and groups"));
+  auto *creation = new QHBoxLayout(creationWidget);
   creation->setContentsMargins(8, 4, 8, 4);
   creation->setSpacing(4);
-  m_newList = named(new QPushButton(tr("New List"), m_creationArea), "todoNewList", tr("New list"));
-  m_newGroup = named(new QPushButton(m_creationArea), "todoNewGroup", tr("New group"));
+  m_newList = named(new QPushButton(tr("New List"), creationWidget), "todoNewList", tr("New list"));
+  m_newGroup = named(new QPushButton(creationWidget), "todoNewGroup", tr("New group"));
   m_newGroup->setToolTip(tr("New group"));
   m_newGroup->setFixedWidth(40);
   for (auto *button : {m_newList, m_newGroup}) {
@@ -563,8 +539,12 @@ void TodoEditor::createUi() {
   }
   creation->addWidget(m_newList, 1);
   creation->addWidget(m_newGroup);
-  sidebar->addWidget(m_creationArea);
+  sidebar->addWidget(creationWidget);
   const auto refreshIcons = [this, theme, searchAction]() {
+    auto sidebarPalette = m_sidebar->palette();
+    sidebarPalette.setColor(QPalette::Base,
+                            QColor(theme->paletteColor(QStringLiteral("base#normal#bg"))));
+    m_sidebar->setPalette(sidebarPalette);
     searchAction->setIcon(IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("search.svg"))));
     m_newList->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
@@ -662,20 +642,6 @@ void TodoEditor::createUi() {
   });
   connect(m_newList, &QPushButton::clicked, this, [this]() { addList(); });
   connect(m_newGroup, &QPushButton::clicked, this, &TodoEditor::addGroup);
-  connect(m_groupCombo, &QComboBox::activated, this, [this](int p_row) {
-    if (!m_updating && m_controller && p_row >= 0) {
-      endTyping();
-      m_groupFocused = true;
-      m_controller->setSelectedGroupKey(m_groupCombo->itemData(p_row).toString());
-      refresh();
-    }
-  });
-  connect(m_groupMore, &QPushButton::clicked, this, [this]() {
-    showGroupMenu(selectedGroupKey(), m_groupMore->mapToGlobal(QPoint(0, m_groupMore->height())));
-  });
-  connect(m_viewCombo, &QComboBox::activated, this, [this](int p_row) {
-    selectView(m_viewProxy->mapToSource(m_viewProxy->index(p_row, 0)).row());
-  });
   connect(m_lists, &QListView::clicked, this, [this](const QModelIndex &p_index) {
     if (p_index.data(TodoListModel::GroupRole).toBool()) {
       focusGroup(p_index.data(TodoListModel::GroupIdRole).toString());
@@ -965,7 +931,6 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   m_controller = p_controller;
   ++m_generation;
   m_lists->setModel(p_controller ? p_controller->getListModel() : nullptr);
-  m_viewProxy->setSourceModel(p_controller ? p_controller->getListModel() : nullptr);
   m_tasks->setModel(p_controller ? p_controller->getTaskModel() : nullptr);
   if (p_controller) {
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
@@ -1022,8 +987,6 @@ void TodoEditor::refresh() {
   const bool writable = canMutate();
   m_newList->setEnabled(writable);
   m_newGroup->setEnabled(writable);
-  m_groupCombo->clear();
-  m_groupMore->setEnabled(false);
   m_listTitle->setReadOnly(!writable);
   m_description->setReadOnly(!writable);
   if (!m_controller) {
@@ -1039,7 +1002,6 @@ void TodoEditor::refresh() {
   const auto &projection = m_controller->getProjection();
   const int row = m_controller->getListModel()->rowForView(projection.m_view, projection.m_listKey);
   auto *listModel = m_controller->getListModel();
-  m_viewCombo->setCurrentIndex(m_viewProxy->mapFromSource(listModel->index(row, 0)).row());
   for (int i = 0; i < listModel->rowCount(); ++i) {
     const auto index = listModel->index(i, 0);
     m_lists->setRowHidden(i, listModel->listAt(i) &&
@@ -1049,12 +1011,6 @@ void TodoEditor::refresh() {
   const int selectedRow =
       (m_groupFocused || (row >= 0 && m_lists->isRowHidden(row))) && groupRow >= 0 ? groupRow : row;
   m_lists->setCurrentIndex(listModel->index(selectedRow, 0));
-  for (const auto &group : m_controller->getDocument().m_groups) {
-    m_groupCombo->addItem(groupName(group), group.m_key);
-  }
-  m_groupCombo->setCurrentIndex(m_groupCombo->findData(projection.m_groupKey));
-  m_groupCombo->setEnabled(m_groupCombo->count() > 0);
-  m_groupMore->setEnabled(groupRow >= 0);
   if (m_search->text() != projection.m_search) {
     m_search->setText(projection.m_search);
   }
@@ -1259,31 +1215,70 @@ void TodoEditor::refreshQuickAdd() {
 void TodoEditor::updateLayout() {
   const bool narrow = width() < 840;
   if (narrow != m_narrow) {
+    const QPointer<QWidget> focused = QApplication::focusWidget();
+    const bool sidebarFocused = focused && m_sidebar->isAncestorOf(focused);
     m_narrow = narrow;
+    m_listsButton->setChecked(false);
     if (narrow) {
-      m_navigation->layout()->addWidget(m_searchArea);
-      m_navigation->layout()->addWidget(m_creationArea);
-      m_pages->addWidget(m_detailsScroll);
+      m_sidebar->setParent(this);
       m_sidebar->hide();
+      m_pages->addWidget(m_detailsScroll);
       m_navigation->show();
+      if (sidebarFocused) {
+        m_listsButton->setFocus(Qt::OtherFocusReason);
+      }
     } else {
-      static_cast<QVBoxLayout *>(m_sidebar->layout())->insertWidget(0, m_searchArea);
-      m_sidebar->layout()->addWidget(m_creationArea);
+      m_splitter->insertWidget(0, m_sidebar);
       m_pages->removeWidget(m_detailsScroll);
       m_splitter->addWidget(m_detailsScroll);
       m_sidebar->show();
       m_navigation->hide();
       m_pages->setCurrentWidget(m_taskPane);
       m_splitter->setSizes({260, qMax(1, width() - 596), 320});
+      if (sidebarFocused && focused) {
+        focused->setFocus(Qt::OtherFocusReason);
+      }
     }
   }
-  m_groupCombo->setVisible(narrow);
-  m_groupMore->setVisible(narrow);
   m_back->setText(narrow ? tr("Back to tasks") : tr("Close details"));
   if (narrow) {
     m_pages->setCurrentWidget(m_detailsOpen ? static_cast<QWidget *>(m_detailsScroll) : m_taskPane);
+    updateSidebarGeometry();
   } else {
     m_detailsScroll->setVisible(m_detailsOpen);
+  }
+}
+
+void TodoEditor::updateSidebarGeometry() {
+  if (!m_narrow || !m_listsButton->isChecked()) {
+    return;
+  }
+  const auto bounds = m_splitter->geometry();
+  const int panelWidth = qMin(qMax(260, m_sidebar->minimumSizeHint().width()), bounds.width());
+  const int left = isRightToLeft() ? bounds.right() - panelWidth + 1 : bounds.left();
+  m_sidebar->setGeometry(left, bounds.top(), panelWidth, bounds.height());
+  m_sidebar->raise();
+}
+
+void TodoEditor::setSidebarOpen(bool p_open) {
+  if (!m_narrow) {
+    return;
+  }
+  m_listsButton->setChecked(p_open);
+  if (p_open) {
+    endTyping();
+    updateSidebarGeometry();
+    m_sidebar->show();
+    m_lists->setFocus(Qt::OtherFocusReason);
+    m_lists->scrollTo(m_lists->currentIndex());
+  } else {
+    const auto *focused = QApplication::focusWidget();
+    const bool sidebarFocused = focused && m_sidebar->isAncestorOf(focused);
+    m_sidebar->hide();
+    m_searchComposing = false;
+    if (sidebarFocused && isVisible()) {
+      m_listsButton->setFocus(Qt::OtherFocusReason);
+    }
   }
 }
 
@@ -1353,6 +1348,7 @@ void TodoEditor::focusSearch() {
   if (m_narrow && m_detailsOpen) {
     closeDetails();
   }
+  setSidebarOpen(true);
   m_search->setFocus(Qt::ShortcutFocusReason);
   m_search->selectAll();
 }
@@ -1369,12 +1365,9 @@ void TodoEditor::focusGroup(const QString &p_key) {
   m_groupFocused = true;
   m_controller->setSelectedGroupKey(p_key);
   refresh();
-  if (m_narrow) {
-    m_groupCombo->setFocus(Qt::OtherFocusReason);
-  } else {
-    m_lists->setFocus(Qt::OtherFocusReason);
-    m_lists->scrollTo(m_lists->currentIndex());
-  }
+  setSidebarOpen(true);
+  m_lists->setFocus(Qt::OtherFocusReason);
+  m_lists->scrollTo(m_lists->currentIndex());
 }
 
 void TodoEditor::toggleGroup(const QString &p_key) {
@@ -1397,6 +1390,7 @@ void TodoEditor::focusCurrent() {
 }
 
 void TodoEditor::focusTasks() {
+  setSidebarOpen(false);
   m_groupFocused = false;
   if (m_controller) {
     auto *model = m_controller->getListModel();
@@ -1640,6 +1634,9 @@ void TodoEditor::addList(const QString &p_groupKey) {
         controller->setGroupExpanded(owner->m_key, true);
       }
       controller->setView(TodoViewKind::List, createdKey);
+      if (m_narrow) {
+        closeDetails();
+      }
     }
   }
 }
@@ -2163,6 +2160,18 @@ void TodoEditor::showTextMenu(QWidget *p_widget, const QPoint &p_position) {
 
 bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   auto *widget = qobject_cast<QWidget *>(p_object);
+  if (m_narrow && m_listsButton->isChecked()) {
+    if (widget == m_splitter &&
+        (p_event->type() == QEvent::Resize || p_event->type() == QEvent::Move)) {
+      updateSidebarGeometry();
+    }
+    // Host controls dismiss the overlay; owned popup/dialog windows retain their input.
+    if (widget && widget->window() == window() && widget != m_listsButton && widget != m_sidebar &&
+        !m_sidebar->isAncestorOf(widget) &&
+        (p_event->type() == QEvent::MouseButtonPress || p_event->type() == QEvent::FocusIn)) {
+      setSidebarOpen(false);
+    }
+  }
   if (!widget || (widget != this && !isAncestorOf(widget)) || widget->window() != window()) {
     return QWidget::eventFilter(p_object, p_event);
   }
@@ -2170,7 +2179,15 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
     endTyping();
   }
   if (p_event->type() == QEvent::Hide && widget == this) {
+    setSidebarOpen(false);
     endTyping();
+  }
+  if (widget == m_search) {
+    if (p_event->type() == QEvent::InputMethod) {
+      m_searchComposing = !static_cast<QInputMethodEvent *>(p_event)->preeditString().isEmpty();
+    } else if (p_event->type() == QEvent::FocusOut) {
+      m_searchComposing = false;
+    }
   }
   if (p_event->type() == QEvent::MouseButtonPress && m_typingField &&
       (widget == m_typingField || m_typingField->isAncestorOf(widget))) {
@@ -2191,6 +2208,22 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
     return QWidget::eventFilter(p_object, p_event);
   }
   auto *key = static_cast<QKeyEvent *>(p_event);
+  if (m_narrow && m_listsButton->isChecked() &&
+      (key->key() == Qt::Key_Escape ||
+       (widget == m_search && (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter)))) {
+    if (m_searchComposing) {
+      return QWidget::eventFilter(p_object, p_event);
+    }
+    key->accept();
+    if (p_event->type() == QEvent::KeyPress) {
+      if (key->key() == Qt::Key_Escape) {
+        setSidebarOpen(false);
+      } else {
+        focusTasks();
+      }
+    }
+    return true;
+  }
   const bool undo = key->matches(QKeySequence::Undo);
   const bool redo = key->matches(QKeySequence::Redo);
   const bool find = key->matches(QKeySequence::Find);
@@ -2255,12 +2288,9 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
       return true;
     }
   }
-  if (m_controller && (widget == m_lists || widget == m_groupCombo || widget == m_groupMore)) {
-    const bool groupRow =
-        widget != m_lists || m_lists->currentIndex().data(TodoListModel::GroupRole).toBool();
-    const auto groupKey = widget == m_lists
-                              ? m_lists->currentIndex().data(TodoListModel::GroupIdRole).toString()
-                              : selectedGroupKey();
+  if (m_controller && widget == m_lists) {
+    const bool groupRow = m_lists->currentIndex().data(TodoListModel::GroupRole).toBool();
+    const auto groupKey = m_lists->currentIndex().data(TodoListModel::GroupIdRole).toString();
     if (key->modifiers() == Qt::AltModifier &&
         (key->key() == Qt::Key_Up || key->key() == Qt::Key_Down)) {
       if (groupRow) {
@@ -2271,8 +2301,7 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
       }
       return true;
     }
-    if (widget == m_lists && groupRow && !groupKey.isEmpty() &&
-        key->modifiers() == Qt::NoModifier) {
+    if (groupRow && !groupKey.isEmpty() && key->modifiers() == Qt::NoModifier) {
       if (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter ||
           key->key() == Qt::Key_Space) {
         toggleGroup(groupKey);
@@ -2347,6 +2376,7 @@ void TodoEditor::invalidateGestures() {
 }
 
 void TodoEditor::resetForBuffer() {
+  setSidebarOpen(false);
   invalidateGestures();
   m_detailsOpen = false;
   m_groupFocused = false;

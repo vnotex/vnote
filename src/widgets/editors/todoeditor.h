@@ -17,7 +17,6 @@ class QListWidget;
 class QModelIndex;
 class QPushButton;
 class QScrollArea;
-class QSortFilterProxyModel;
 class QSplitter;
 class QStackedWidget;
 
@@ -72,6 +71,8 @@ private:
   void refreshTags(const TodoItem *p_item);
   void refreshQuickAdd();
   void updateLayout();
+  void updateSidebarGeometry();
+  void setSidebarOpen(bool p_open);
   void selectView(int p_row);
   void openTask(const QModelIndex &p_index);
   void addTask();
@@ -111,8 +112,6 @@ private:
   QPointer<TodoViewWindowController> m_controller;
   QSplitter *m_splitter = nullptr;
   QWidget *m_sidebar = nullptr;
-  QWidget *m_searchArea = nullptr;
-  QWidget *m_creationArea = nullptr;
   QWidget *m_navigation = nullptr;
   QWidget *m_taskPane = nullptr;
   QWidget *m_details = nullptr;
@@ -120,10 +119,7 @@ private:
   QScrollArea *m_detailsScroll = nullptr;
   QLineEdit *m_search = nullptr;
   QListView *m_lists = nullptr;
-  QComboBox *m_viewCombo = nullptr;
-  QSortFilterProxyModel *m_viewProxy = nullptr;
-  QComboBox *m_groupCombo = nullptr;
-  QPushButton *m_groupMore = nullptr;
+  QPushButton *m_listsButton = nullptr;
   QPushButton *m_newGroup = nullptr;
   QPushButton *m_newList = nullptr;
   QLineEdit *m_listTitle = nullptr;
@@ -174,6 +170,7 @@ private:
   bool m_narrow = false;
   bool m_detailsOpen = false;
   bool m_groupFocused = false;
+  bool m_searchComposing = false;
 };
 } // namespace vnotex
 
