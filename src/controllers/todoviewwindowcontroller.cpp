@@ -1,5 +1,6 @@
 #include "todoviewwindowcontroller.h"
 
+#include <QCoreApplication>
 #include <QHash>
 #include <QJsonArray>
 #include <QTextCursor>
@@ -15,6 +16,22 @@ using namespace vnotex;
 namespace {
 QString newId() { return QUuid::createUuid().toString(QUuid::WithoutBraces); }
 QString runtimeKey(const QString &p_id) { return QStringLiteral("id:") + p_id; }
+
+QString groupBlock(const QString &p_title, const QString &p_id, bool p_default = false) {
+  QJsonObject properties{{QStringLiteral("id"), p_id}};
+  if (p_default) {
+    properties.insert(QStringLiteral("default"), true);
+  }
+  return QStringLiteral("# ") + TodoDocument::escapeTitle(p_title) + QLatin1Char('\n') +
+         TodoDocument::encodeMetadata(QStringLiteral("todo-group"), properties) + QLatin1Char('\n');
+}
+
+QString listBlock(const QString &p_title, const QString &p_id) {
+  return QStringLiteral("## ") + TodoDocument::escapeTitle(p_title) + QLatin1Char('\n') +
+         TodoDocument::encodeMetadata(QStringLiteral("todo-list"),
+                                      QJsonObject{{QStringLiteral("id"), p_id}}) +
+         QLatin1Char('\n');
+}
 
 bool singleLine(const QString &p_text) {
   return !p_text.contains(QLatin1Char('\n')) && !p_text.contains(QLatin1Char('\r')) &&
@@ -345,6 +362,17 @@ void TodoViewWindowController::refreshFromSource() {
   if (listKey.startsWith(QLatin1String("source:"))) {
     listKey.clear();
   }
+  if (m_projection.m_groupKey.startsWith(QLatin1String("source:"))) {
+    m_projection.m_groupKey.clear();
+  }
+  for (auto it = m_projection.m_collapsedGroups.begin();
+       it != m_projection.m_collapsedGroups.end();) {
+    if (it->startsWith(QLatin1String("source:"))) {
+      it = m_projection.m_collapsedGroups.erase(it);
+    } else {
+      ++it;
+    }
+  }
   m_revision = m_document->revision();
   if (!m_initialized) {
     m_projection.m_view = document.m_lists.isEmpty() ? TodoViewKind::All : TodoViewKind::List;
@@ -366,6 +394,22 @@ void TodoViewWindowController::publishSnapshot(TodoDocument p_document, const QS
       m_projection.m_listKey.clear();
     } else {
       m_projection.m_listKey = m_snapshot.m_lists.first().m_key;
+    }
+  }
+  if (!m_snapshot.findGroup(m_projection.m_groupKey)) {
+    const auto *list = m_snapshot.findList(m_projection.m_listKey);
+    const auto *group = list ? m_snapshot.groupForList(*list) : m_snapshot.defaultGroup();
+    if (!group && !m_snapshot.m_groups.isEmpty()) {
+      group = &m_snapshot.m_groups.first();
+    }
+    m_projection.m_groupKey = group ? group->m_key : QString();
+  }
+  for (auto it = m_projection.m_collapsedGroups.begin();
+       it != m_projection.m_collapsedGroups.end();) {
+    if (!m_snapshot.findGroup(*it)) {
+      it = m_projection.m_collapsedGroups.erase(it);
+    } else {
+      ++it;
     }
   }
   refreshModels(p_nearestRow, true);
@@ -412,18 +456,60 @@ void TodoViewWindowController::setSelectedItemKey(const QString &p_key) {
 
 void TodoViewWindowController::setView(TodoViewKind p_view, const QString &p_listKey) {
   const QString listKey = p_view == TodoViewKind::List ? p_listKey : QString();
-  if ((p_view == TodoViewKind::List && !m_snapshot.findList(p_listKey)) ||
-      (m_projection.m_view == p_view && m_projection.m_listKey == listKey)) {
+  const auto *list = p_view == TodoViewKind::List ? m_snapshot.findList(p_listKey) : nullptr;
+  if (p_view == TodoViewKind::List && !list) {
+    return;
+  }
+  const auto *group = list ? m_snapshot.groupForList(*list) : nullptr;
+  const bool sameView = m_projection.m_view == p_view && m_projection.m_listKey == listKey;
+  const bool groupChanged = group && m_projection.m_groupKey != group->m_key;
+  const bool expandGroup = group && m_projection.m_collapsedGroups.contains(group->m_key);
+  if (sameView && !groupChanged && !expandGroup) {
     return;
   }
   endCoalescing();
   m_projection.m_view = p_view;
   m_projection.m_listKey = listKey;
+  if (group) {
+    m_projection.m_groupKey = group->m_key;
+    m_projection.m_collapsedGroups.remove(group->m_key);
+  }
+  if (sameView) {
+    if (expandGroup) {
+      m_listModel->setGroupExpanded(group->m_key, true);
+    }
+    emit projectionChanged();
+    return;
+  }
   const auto oldSelection = m_selectedItemKey;
   refreshModels();
   if (oldSelection != m_selectedItemKey) {
     emit selectionChanged();
   }
+}
+
+void TodoViewWindowController::setSelectedGroupKey(const QString &p_key) {
+  if (p_key == m_projection.m_groupKey || (!p_key.isEmpty() && !m_snapshot.findGroup(p_key))) {
+    return;
+  }
+  endCoalescing();
+  m_projection.m_groupKey = p_key;
+  emit projectionChanged();
+}
+
+void TodoViewWindowController::setGroupExpanded(const QString &p_key, bool p_expanded) {
+  if (!m_snapshot.findGroup(p_key) ||
+      m_projection.m_collapsedGroups.contains(p_key) != p_expanded) {
+    return;
+  }
+  endCoalescing();
+  if (p_expanded) {
+    m_projection.m_collapsedGroups.remove(p_key);
+  } else {
+    m_projection.m_collapsedGroups.insert(p_key);
+  }
+  m_listModel->setGroupExpanded(p_key, p_expanded);
+  emit projectionChanged();
 }
 
 void TodoViewWindowController::setSearch(const QString &p_search) {
@@ -535,6 +621,50 @@ void TodoViewWindowController::appendMetadata(Change &p_change, const QString &p
   }
 }
 
+QString TodoViewWindowController::ensureGroupIdentity(Change &p_change,
+                                                      const TodoGroup &p_group) const {
+  if (!p_group.m_id.isEmpty()) {
+    return p_group.m_key;
+  }
+  if (p_change.m_keys.contains(p_group.m_key)) {
+    return p_change.m_keys.value(p_group.m_key);
+  }
+  const auto id = newId();
+  if (p_group.m_implicit) {
+    const int position = p_group.m_range.m_start;
+    p_change.m_edits.append(m_snapshot.edit(
+        {position, position},
+        separatedBlock(m_snapshot.m_source, position, groupBlock(p_group.m_title, id, true))));
+  } else {
+    auto properties = p_group.m_properties;
+    properties.insert(QStringLiteral("id"), id);
+    appendMetadata(p_change, QStringLiteral("todo-group"), properties, p_group.m_metadataRange,
+                   p_group.m_metadataInsertion);
+  }
+  const auto key = runtimeKey(id);
+  p_change.m_keys.insert(p_group.m_key, key);
+  return key;
+}
+
+QString TodoViewWindowController::ensureDefaultGroup(Change &p_change, int *p_insertion) const {
+  if (const auto *group = m_snapshot.defaultGroup()) {
+    *p_insertion = group->m_listInsertion;
+    return ensureGroupIdentity(p_change, *group);
+  }
+  *p_insertion = int(m_snapshot.m_source.size());
+  const auto id = newId();
+  const auto title = QCoreApplication::translate("TodoDocument", "Default");
+  p_change.m_edits.append(m_snapshot.edit(
+      {*p_insertion, *p_insertion},
+      separatedBlock(m_snapshot.m_source, *p_insertion, groupBlock(title, id, true))));
+  return runtimeKey(id);
+}
+
+void TodoViewWindowController::ensureListOwners(Change &p_change, const TodoList &p_list) const {
+  ensureGroupIdentity(p_change, *m_snapshot.groupForList(p_list));
+  ensureListIdentity(p_change, p_list);
+}
+
 QString TodoViewWindowController::ensureListIdentity(Change &p_change,
                                                      const TodoList &p_list) const {
   if (!p_list.m_id.isEmpty()) {
@@ -591,19 +721,22 @@ bool TodoViewWindowController::commit(Change &p_change, bool p_typing) {
   if (!parsed.isValid()) {
     return reject(diagnosticMessage(parsed));
   }
-  const auto remap = [&](const QString &p_key, bool p_list) -> QString {
+  enum class OwnerKind { Group, List, Item };
+  const auto remap = [&](const QString &p_key, OwnerKind p_kind) -> QString {
     if (p_change.m_keys.contains(p_key)) {
       return p_change.m_keys.value(p_key);
     }
     if (!p_key.startsWith(QLatin1String("source:"))) {
       return p_key;
     }
-    const auto *oldList = p_list ? m_snapshot.findList(p_key) : nullptr;
-    const auto *oldItem = p_list ? nullptr : m_snapshot.findItem(p_key);
-    if (!oldList && !oldItem) {
+    const auto *oldGroup = p_kind == OwnerKind::Group ? m_snapshot.findGroup(p_key) : nullptr;
+    const auto *oldList = p_kind == OwnerKind::List ? m_snapshot.findList(p_key) : nullptr;
+    const auto *oldItem = p_kind == OwnerKind::Item ? m_snapshot.findItem(p_key) : nullptr;
+    if (!oldGroup && !oldList && !oldItem) {
       return {};
     }
-    const int original = oldList ? oldList->m_range.m_start : oldItem->m_range.m_start;
+    const int original = oldGroup ? oldGroup->m_range.m_start
+                                  : (oldList ? oldList->m_range.m_start : oldItem->m_range.m_start);
     int position = mappedPosition(p_change.m_edits, original);
     for (const auto &relocation : p_change.m_relocations) {
       if (original >= relocation.m_range.m_start && original < relocation.m_range.m_end) {
@@ -627,14 +760,25 @@ bool TodoViewWindowController::commit(Change &p_change, bool p_typing) {
       return {};
     }
     const auto key = QStringLiteral("source:") + QString::number(position);
-    return (p_list ? parsed.findList(key) != nullptr : parsed.findItem(key) != nullptr) ? key
-                                                                                        : QString();
+    const bool found = p_kind == OwnerKind::Group  ? parsed.findGroup(key) != nullptr
+                       : p_kind == OwnerKind::List ? parsed.findList(key) != nullptr
+                                                   : parsed.findItem(key) != nullptr;
+    return found ? key : QString();
   };
   const int nearest = m_taskModel->rowForKey(m_selectedItemKey);
-  const auto selection =
-      p_change.m_selectKey.isEmpty() ? remap(m_selectedItemKey, false) : p_change.m_selectKey;
-  const auto listKey = remap(m_projection.m_listKey, true);
-  m_unfilteredSelection = remap(m_unfilteredSelection, false);
+  const auto selection = p_change.m_selectKey.isEmpty() ? remap(m_selectedItemKey, OwnerKind::Item)
+                                                        : p_change.m_selectKey;
+  const auto listKey = remap(m_projection.m_listKey, OwnerKind::List);
+  m_unfilteredSelection = remap(m_unfilteredSelection, OwnerKind::Item);
+  m_projection.m_groupKey = remap(m_projection.m_groupKey, OwnerKind::Group);
+  QSet<QString> collapsed;
+  for (const auto &key : std::as_const(m_projection.m_collapsedGroups)) {
+    const auto mapped = remap(key, OwnerKind::Group);
+    if (parsed.findGroup(mapped)) {
+      collapsed.insert(mapped);
+    }
+  }
+  m_projection.m_collapsedGroups = std::move(collapsed);
   if (!p_typing) {
     endCoalescing();
   }
@@ -660,24 +804,140 @@ bool TodoViewWindowController::commit(Change &p_change, bool p_typing) {
   return true;
 }
 
-bool TodoViewWindowController::addList(const QString &p_title) {
+bool TodoViewWindowController::addGroup(const QString &p_title, QString *p_createdGroupKey) {
+  if (p_createdGroupKey) {
+    p_createdGroupKey->clear();
+  }
+  if (!admit()) {
+    return false;
+  }
+  if (p_title.trimmed().isEmpty() || !singleLine(p_title)) {
+    return reject(tr("A new group needs a nonempty, single-line title."));
+  }
+  Change change;
+  ensureHeader(change);
+  const auto id = newId();
+  const int position = int(m_snapshot.m_source.size());
+  change.m_edits.append(
+      m_snapshot.edit({position, position},
+                      separatedBlock(m_snapshot.m_source, position, groupBlock(p_title, id))));
+  const bool added = commit(change);
+  if (added && p_createdGroupKey) {
+    *p_createdGroupKey = runtimeKey(id);
+  }
+  return added;
+}
+
+bool TodoViewWindowController::renameGroup(const QString &p_groupKey, const QString &p_title) {
+  if (!admit()) {
+    return false;
+  }
+  const auto *group = m_snapshot.findGroup(p_groupKey);
+  if (!group || !singleLine(p_title)) {
+    return reject(tr("The group is missing or its title contains a line break."));
+  }
+  if (group->m_title == p_title) {
+    return true;
+  }
+  Change change;
+  ensureHeader(change);
+  if (group->m_implicit) {
+    const auto id = newId();
+    const int position = group->m_range.m_start;
+    change.m_edits.append(
+        m_snapshot.edit({position, position}, separatedBlock(m_snapshot.m_source, position,
+                                                             groupBlock(p_title, id, true))));
+    change.m_keys.insert(group->m_key, runtimeKey(id));
+  } else {
+    change.m_edits.append(m_snapshot.titleEdit(*group, p_title));
+    ensureGroupIdentity(change, *group);
+  }
+  return commit(change, true);
+}
+
+bool TodoViewWindowController::removeGroup(const QString &p_groupKey) {
+  if (!admit()) {
+    return false;
+  }
+  const auto *group = m_snapshot.findGroup(p_groupKey);
+  if (!group) {
+    return reject(tr("The group no longer exists."));
+  }
+  Change change;
+  ensureHeader(change);
+  change.m_edits.append(m_snapshot.edit(group->m_range, {}));
+  return commit(change);
+}
+
+bool TodoViewWindowController::moveGroup(const QString &p_groupKey,
+                                         const QString &p_beforeGroupKey) {
+  if (!admit()) {
+    return false;
+  }
+  const auto *group = m_snapshot.findGroup(p_groupKey);
+  const auto *before =
+      p_beforeGroupKey.isEmpty() ? nullptr : m_snapshot.findGroup(p_beforeGroupKey);
+  if (!group || (!p_beforeGroupKey.isEmpty() && !before)) {
+    return reject(tr("The source or destination group no longer exists."));
+  }
+  const int destination = before ? before->m_range.m_start : int(m_snapshot.m_source.size());
+  if (before == group || destination == group->m_range.m_end) {
+    return true;
+  }
+  Change change;
+  Change owned;
+  ensureHeader(change);
+  ensureGroupIdentity(owned, *group);
+  change.m_keys = owned.m_keys;
+  for (auto &edit : owned.m_edits) {
+    edit.m_range.m_start -= group->m_range.m_start;
+    edit.m_range.m_end -= group->m_range.m_start;
+  }
+  mergeEdits(owned.m_edits);
+  QString block;
+  QString error;
+  if (!TodoDocument::applyEdits(m_snapshot.text(group->m_range), owned.m_edits, &block, &error)) {
+    return reject(error);
+  }
+  change.m_relocations.append({group->m_range, destination, block, owned.m_edits});
+  change.m_edits.append(m_snapshot.edit(group->m_range, {}));
+  change.m_edits.append(m_snapshot.edit({destination, destination},
+                                        separatedBlock(m_snapshot.m_source, destination, block)));
+  return commit(change);
+}
+
+bool TodoViewWindowController::addList(const QString &p_title, const QString &p_groupKey,
+                                       QString *p_createdListKey) {
+  if (p_createdListKey) {
+    p_createdListKey->clear();
+  }
   if (!admit()) {
     return false;
   }
   if (p_title.trimmed().isEmpty() || !singleLine(p_title)) {
     return reject(tr("A new list needs a nonempty, single-line title."));
   }
+  const auto *group = p_groupKey.isEmpty() ? nullptr : m_snapshot.findGroup(p_groupKey);
+  if (!p_groupKey.isEmpty() && !group) {
+    return reject(tr("Choose an existing destination group."));
+  }
   Change change;
   ensureHeader(change);
-  const QString block = QStringLiteral("# ") + TodoDocument::escapeTitle(p_title) +
-                        QLatin1Char('\n') +
-                        TodoDocument::encodeMetadata(QStringLiteral("todo-list"),
-                                                     QJsonObject{{QStringLiteral("id"), newId()}}) +
-                        QLatin1Char('\n');
-  const int position = int(m_snapshot.m_source.size());
-  change.m_edits.append(
-      m_snapshot.edit({position, position}, separatedBlock(m_snapshot.m_source, position, block)));
-  return commit(change);
+  int position;
+  if (group) {
+    ensureGroupIdentity(change, *group);
+    position = group->m_listInsertion;
+  } else {
+    ensureDefaultGroup(change, &position);
+  }
+  const auto id = newId();
+  change.m_edits.append(m_snapshot.edit(
+      {position, position}, separatedBlock(m_snapshot.m_source, position, listBlock(p_title, id))));
+  const bool added = commit(change);
+  if (added && p_createdListKey) {
+    *p_createdListKey = runtimeKey(id);
+  }
+  return added;
 }
 
 bool TodoViewWindowController::renameList(const QString &p_listId, const QString &p_title) {
@@ -693,6 +953,8 @@ bool TodoViewWindowController::renameList(const QString &p_listId, const QString
   }
   Change change;
   ensureHeader(change);
+  // Parent headings precede the title; metadata follows even at an empty-title EOF.
+  ensureGroupIdentity(change, *m_snapshot.groupForList(*list));
   change.m_edits.append(m_snapshot.titleEdit(*list, p_title));
   ensureListIdentity(change, *list);
   return commit(change, true);
@@ -713,7 +975,7 @@ bool TodoViewWindowController::setListDescription(const QString &p_listId,
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   QString quote = TodoDocument::quoteMarkdown(markdown);
   if (list->m_descriptionRange.isValid()) {
     if (!m_snapshot.text(list->m_descriptionRange).endsWith(QLatin1Char('\n')) &&
@@ -739,28 +1001,43 @@ bool TodoViewWindowController::removeList(const QString &p_listId) {
   }
   Change change;
   ensureHeader(change);
+  ensureGroupIdentity(change, *m_snapshot.groupForList(*list));
   change.m_edits.append(m_snapshot.edit(list->m_range, {}));
   return commit(change);
 }
 
-bool TodoViewWindowController::moveList(const QString &p_listId, const QString &p_beforeListId) {
+bool TodoViewWindowController::moveList(const QString &p_listId, const QString &p_groupKey,
+                                        const QString &p_beforeListId) {
   if (!admit()) {
     return false;
   }
   const auto *list = m_snapshot.findList(p_listId);
+  const auto *group =
+      p_groupKey.isEmpty() ? m_snapshot.defaultGroup() : m_snapshot.findGroup(p_groupKey);
   const auto *before = p_beforeListId.isEmpty() ? nullptr : m_snapshot.findList(p_beforeListId);
-  if (!list || (!p_beforeListId.isEmpty() && !before)) {
-    return reject(tr("The source or destination list no longer exists."));
+  if (!list || (!p_groupKey.isEmpty() && !group) ||
+      (!p_beforeListId.isEmpty() && (!before || m_snapshot.groupForList(*before) != group))) {
+    return reject(tr("The source or destination list/group no longer exists."));
   }
-  const int destination = before ? before->m_range.m_start : int(m_snapshot.m_source.size());
-  if (before == list || destination == list->m_range.m_end) {
+  const auto *sourceGroup = m_snapshot.groupForList(*list);
+  int destination = before ? before->m_range.m_start
+                           : (group ? group->m_listInsertion : int(m_snapshot.m_source.size()));
+  if (sourceGroup == group && (before == list || destination == list->m_range.m_end)) {
     return true;
   }
   Change change;
   Change owned;
   ensureHeader(change);
+  ensureGroupIdentity(change, *sourceGroup);
+  if (group) {
+    ensureGroupIdentity(change, *group);
+  } else {
+    ensureDefaultGroup(change, &destination);
+  }
   ensureListIdentity(owned, *list);
-  change.m_keys = owned.m_keys;
+  for (auto it = owned.m_keys.cbegin(); it != owned.m_keys.cend(); ++it) {
+    change.m_keys.insert(it.key(), it.value());
+  }
   for (auto &edit : owned.m_edits) {
     edit.m_range.m_start -= list->m_range.m_start;
     edit.m_range.m_end -= list->m_range.m_start;
@@ -795,15 +1072,11 @@ bool TodoViewWindowController::addTask(const QString &p_listId, const TodoTaskFi
   QString block = taskBlock(p_fields, id);
   int position;
   if (list) {
-    ensureListIdentity(change, *list);
+    ensureListOwners(change, *list);
     position = list->m_taskInsertion;
   } else {
-    position = int(m_snapshot.m_source.size());
-    block.prepend(QStringLiteral("# ") + TodoDocument::escapeTitle(tr("Tasks")) +
-                  QLatin1Char('\n') +
-                  TodoDocument::encodeMetadata(QStringLiteral("todo-list"),
-                                               QJsonObject{{QStringLiteral("id"), newId()}}) +
-                  QStringLiteral("\n\n"));
+    ensureDefaultGroup(change, &position);
+    block.prepend(listBlock(tr("Tasks"), newId()) + QLatin1Char('\n'));
   }
   change.m_selectKey = runtimeKey(id);
   change.m_edits.append(
@@ -837,7 +1110,7 @@ bool TodoViewWindowController::updateTask(const QString &p_itemId, const TodoTas
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   if (titleChanged) {
     change.m_edits.append(m_snapshot.titleEdit(*item, p_fields.m_title));
   }
@@ -900,7 +1173,7 @@ bool TodoViewWindowController::removeTask(const QString &p_itemId) {
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   change.m_edits.append(m_snapshot.edit(item->m_range, {}));
   return commit(change);
 }
@@ -929,8 +1202,8 @@ bool TodoViewWindowController::moveTask(const QString &p_itemId, const QString &
   Change change;
   Change owned;
   ensureHeader(change);
-  ensureListIdentity(change, *sourceList);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *sourceList);
+  ensureListOwners(change, *list);
   ensureItemIdentity(owned, *item);
   for (auto it = owned.m_keys.cbegin(); it != owned.m_keys.cend(); ++it) {
     change.m_keys.insert(it.key(), it.value());
@@ -962,7 +1235,7 @@ bool TodoViewWindowController::addStep(const QString &p_itemId, const QString &p
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   ensureItemIdentity(change, *item);
   const QString block = item->m_continuationIndent + QStringLiteral("- [ ] ") +
                         TodoDocument::escapeTitle(p_title) + QLatin1Char('\n');
@@ -988,7 +1261,7 @@ bool TodoViewWindowController::updateStep(const QString &p_itemId, int p_index,
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   ensureItemIdentity(change, *item);
   if (step.m_title != p_title) {
     change.m_edits.append(m_snapshot.titleEdit(step, p_title));
@@ -1011,7 +1284,7 @@ bool TodoViewWindowController::removeStep(const QString &p_itemId, int p_index) 
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   ensureItemIdentity(change, *item);
   change.m_edits.append(m_snapshot.edit(item->m_steps[p_index].m_range, {}));
   return commit(change);
@@ -1032,7 +1305,7 @@ bool TodoViewWindowController::moveStep(const QString &p_itemId, int p_from, int
   }
   Change change;
   ensureHeader(change);
-  ensureListIdentity(change, *list);
+  ensureListOwners(change, *list);
   ensureItemIdentity(change, *item);
   const auto &step = item->m_steps[p_from];
   const int destination =

@@ -27,9 +27,9 @@
 #include <QScopedValueRollback>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QTextDocument>
 #include <QToolButton>
@@ -59,9 +59,48 @@ void spacing(QLayout *p_layout) {
   p_layout->setSpacing(4);
 }
 
+QString groupName(const TodoGroup &p_group) {
+  return p_group.m_title.trimmed().isEmpty() ? TodoEditor::tr("Untitled group") : p_group.m_title;
+}
+
 QString listName(const TodoList &p_list) {
   return p_list.m_title.trimmed().isEmpty() ? TodoEditor::tr("Untitled list") : p_list.m_title;
 }
+
+QString qualifiedListName(const TodoDocument &p_document, const TodoList &p_list) {
+  const auto *group = p_document.groupForList(p_list);
+  return group ? TodoEditor::tr("%1 / %2").arg(groupName(*group), listName(p_list))
+               : listName(p_list);
+}
+
+void addGroupChoices(QComboBox *p_combo, const TodoDocument &p_document) {
+  const auto *defaultGroup = p_document.defaultGroup();
+  p_combo->addItem(defaultGroup ? groupName(*defaultGroup) : TodoEditor::tr("Default"), QString());
+  for (const auto &group : p_document.m_groups) {
+    if (!group.m_isDefault) {
+      p_combo->addItem(groupName(group), group.m_key);
+    }
+  }
+}
+
+class TaskViewProxy : public QSortFilterProxyModel {
+public:
+  using QSortFilterProxyModel::QSortFilterProxyModel;
+  QVariant data(const QModelIndex &p_index, int p_role = Qt::DisplayRole) const override {
+    if (p_role == Qt::DisplayRole &&
+        !QSortFilterProxyModel::data(p_index, TodoListModel::GroupIdRole).toString().isEmpty()) {
+      return TodoEditor::tr("%1 / %2").arg(
+          QSortFilterProxyModel::data(p_index, TodoListModel::GroupTitleRole).toString(),
+          QSortFilterProxyModel::data(p_index, TodoListModel::TitleRole).toString());
+    }
+    return QSortFilterProxyModel::data(p_index, p_role);
+  }
+
+protected:
+  bool filterAcceptsRow(int p_row, const QModelIndex &p_parent) const override {
+    return !sourceModel()->index(p_row, 0, p_parent).data(TodoListModel::GroupRole).toBool();
+  }
+};
 
 QString taskName(const TodoItem &p_item) {
   return p_item.m_fields.m_title.trimmed().isEmpty() ? TodoEditor::tr("Untitled task")
@@ -78,6 +117,14 @@ public:
     option.text = QStringLiteral("%1 (%2)")
                       .arg(p_index.data(TodoListModel::TitleRole).toString())
                       .arg(p_index.data(TodoListModel::IncompleteCountRole).toInt());
+    if (p_index.data(TodoListModel::GroupRole).toBool()) {
+      option.font.setBold(true);
+      option.text.prepend(p_index.data(TodoListModel::ExpandedRole).toBool()
+                              ? QStringLiteral("- ")
+                              : QStringLiteral("+ "));
+    } else if (!p_index.data(TodoListModel::GroupIdRole).toString().isEmpty()) {
+      option.rect.adjust(12, 0, 0, 0);
+    }
     const auto *widget = option.widget;
     (widget ? widget->style() : QApplication::style())
         ->drawControl(QStyle::CE_ItemViewItem, &option, p_painter, widget);
@@ -194,7 +241,9 @@ public:
                         QFontMetrics(titleFont).elidedText(p_index.data().toString(),
                                                            Qt::ElideRight, textRect.width()));
     QStringList summaries;
-    summaries.append(p_index.data(TodoTaskModel::SourceListNameRole).toString());
+    summaries.append(
+        TodoEditor::tr("%1 / %2").arg(p_index.data(TodoTaskModel::SourceGroupNameRole).toString(),
+                                      p_index.data(TodoTaskModel::SourceListNameRole).toString()));
     const auto due = p_index.data(TodoTaskModel::DueRole).toDate();
     if (due.isValid()) {
       summaries.append(TodoEditor::tr("Due %1").arg(QLocale().toString(due, QLocale::ShortFormat)));
@@ -286,7 +335,8 @@ void TodoEditor::createUi() {
   m_viewCombo = named(new QComboBox(m_navigation), "todoViewCombo", tr("List or smart view"));
   m_viewCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
   m_viewCombo->setMinimumContentsLength(8);
-  m_viewCombo->setItemDelegate(new ListDelegate(m_viewCombo));
+  m_viewProxy = new TaskViewProxy(this);
+  m_viewCombo->setModel(m_viewProxy);
   navigation->addWidget(m_viewCombo);
   root->addWidget(m_navigation);
 
@@ -306,7 +356,20 @@ void TodoEditor::createUi() {
   m_search->setClearButtonEnabled(true);
   searchArea->addWidget(m_search);
   m_newList = named(new QPushButton(tr("New List"), m_searchArea), "todoNewList", tr("New list"));
-  searchArea->addWidget(m_newList);
+  auto *creation = new QHBoxLayout;
+  creation->setSpacing(4);
+  creation->addWidget(m_newList);
+  m_newGroup =
+      named(new QPushButton(tr("New Group"), m_searchArea), "todoNewGroup", tr("New group"));
+  creation->addWidget(m_newGroup);
+  searchArea->addLayout(creation);
+  m_groupCombo = named(new QComboBox(m_searchArea), "todoGroupCombo", tr("Organizational group"));
+  m_groupCombo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+  m_groupCombo->setMinimumContentsLength(8);
+  searchArea->addWidget(m_groupCombo);
+  m_groupMore = named(new QPushButton(tr("Group actions"), m_searchArea), "todoGroupMore",
+                      tr("Group actions"));
+  searchArea->addWidget(m_groupMore);
   sidebar->addWidget(m_searchArea);
   m_lists = named(new QListView(m_sidebar), "todoLists", tr("Lists and smart views"));
   m_lists->setItemDelegate(new ListDelegate(m_lists));
@@ -400,19 +463,46 @@ void TodoEditor::createUi() {
       m_controller->setSearch(p_text);
     }
   });
-  connect(m_newList, &QPushButton::clicked, this, &TodoEditor::addList);
-  connect(m_viewCombo, &QComboBox::activated, this, &TodoEditor::selectView);
-  connect(m_lists, &QListView::clicked, this,
-          [this](const QModelIndex &p_index) { selectView(p_index.row()); });
-  connect(m_lists, &QListView::activated, this,
-          [this](const QModelIndex &p_index) { selectView(p_index.row()); });
+  connect(m_newList, &QPushButton::clicked, this, [this]() { addList(); });
+  connect(m_newGroup, &QPushButton::clicked, this, &TodoEditor::addGroup);
+  connect(m_groupCombo, &QComboBox::activated, this, [this](int p_row) {
+    if (!m_updating && m_controller && p_row >= 0) {
+      endTyping();
+      m_groupFocused = true;
+      m_controller->setSelectedGroupKey(m_groupCombo->itemData(p_row).toString());
+      refresh();
+    }
+  });
+  connect(m_groupMore, &QPushButton::clicked, this, [this]() {
+    showGroupMenu(selectedGroupKey(), m_groupMore->mapToGlobal(QPoint(0, m_groupMore->height())));
+  });
+  connect(m_viewCombo, &QComboBox::activated, this, [this](int p_row) {
+    selectView(m_viewProxy->mapToSource(m_viewProxy->index(p_row, 0)).row());
+  });
+  connect(m_lists, &QListView::clicked, this, [this](const QModelIndex &p_index) {
+    if (p_index.data(TodoListModel::GroupRole).toBool()) {
+      toggleGroup(p_index.data(TodoListModel::GroupIdRole).toString());
+    } else {
+      selectView(p_index.row());
+    }
+  });
+  connect(m_lists, &QListView::activated, this, [this](const QModelIndex &p_index) {
+    if (!p_index.data(TodoListModel::GroupRole).toBool()) {
+      selectView(p_index.row());
+    }
+  });
   connect(m_lists, &QWidget::customContextMenuRequested, this, [this](const QPoint &p_position) {
     auto index = m_lists->indexAt(p_position);
     if (!index.isValid()) {
       index = m_lists->currentIndex();
     }
-    showListMenu(index.data(TodoListModel::IdRole).toString(),
-                 m_lists->viewport()->mapToGlobal(p_position));
+    if (index.data(TodoListModel::GroupRole).toBool()) {
+      showGroupMenu(index.data(TodoListModel::GroupIdRole).toString(),
+                    m_lists->viewport()->mapToGlobal(p_position));
+    } else {
+      showListMenu(index.data(TodoListModel::IdRole).toString(),
+                   m_lists->viewport()->mapToGlobal(p_position));
+    }
   });
   connect(m_tasks, &QListView::clicked, this, &TodoEditor::openTask);
   connect(m_tasks, &QListView::activated, this, &TodoEditor::openTask);
@@ -673,9 +763,7 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   m_controller = p_controller;
   ++m_generation;
   m_lists->setModel(p_controller ? p_controller->getListModel() : nullptr);
-  m_viewCombo->setModel(p_controller
-                            ? static_cast<QAbstractItemModel *>(p_controller->getListModel())
-                            : new QStandardItemModel(m_viewCombo));
+  m_viewProxy->setSourceModel(p_controller ? p_controller->getListModel() : nullptr);
   m_tasks->setModel(p_controller ? p_controller->getTaskModel() : nullptr);
   if (p_controller) {
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
@@ -731,6 +819,9 @@ void TodoEditor::refresh() {
   QScopedValueRollback<bool> updating(m_updating, true);
   const bool writable = canMutate();
   m_newList->setEnabled(writable);
+  m_newGroup->setEnabled(writable);
+  m_groupCombo->clear();
+  m_groupMore->setEnabled(false);
   m_listTitle->setReadOnly(!writable);
   m_description->setReadOnly(!writable);
   if (!m_controller) {
@@ -745,8 +836,23 @@ void TodoEditor::refresh() {
   }
   const auto &projection = m_controller->getProjection();
   const int row = m_controller->getListModel()->rowForView(projection.m_view, projection.m_listKey);
-  m_viewCombo->setCurrentIndex(row);
-  m_lists->setCurrentIndex(m_controller->getListModel()->index(row, 0));
+  auto *listModel = m_controller->getListModel();
+  m_viewCombo->setCurrentIndex(m_viewProxy->mapFromSource(listModel->index(row, 0)).row());
+  for (int i = 0; i < listModel->rowCount(); ++i) {
+    const auto index = listModel->index(i, 0);
+    m_lists->setRowHidden(i, listModel->listAt(i) &&
+                                 !index.data(TodoListModel::ExpandedRole).toBool());
+  }
+  const int groupRow = listModel->rowForGroup(projection.m_groupKey);
+  const int selectedRow =
+      (m_groupFocused || (row >= 0 && m_lists->isRowHidden(row))) && groupRow >= 0 ? groupRow : row;
+  m_lists->setCurrentIndex(listModel->index(selectedRow, 0));
+  for (const auto &group : m_controller->getDocument().m_groups) {
+    m_groupCombo->addItem(groupName(group), group.m_key);
+  }
+  m_groupCombo->setCurrentIndex(m_groupCombo->findData(projection.m_groupKey));
+  m_groupCombo->setEnabled(m_groupCombo->count() > 0);
+  m_groupMore->setEnabled(groupRow >= 0);
   if (m_search->text() != projection.m_search) {
     m_search->setText(projection.m_search);
   }
@@ -784,7 +890,7 @@ void TodoEditor::refresh() {
   const QString destination = m_destination->currentData().toString();
   m_destination->clear();
   for (const auto &entry : m_controller->getDocument().m_lists) {
-    m_destination->addItem(listName(entry), entry.m_key);
+    m_destination->addItem(qualifiedListName(m_controller->getDocument(), entry), entry.m_key);
   }
   int destinationIndex = m_destination->findData(m_lastDestination);
   if (destinationIndex < 0) {
@@ -985,13 +1091,19 @@ void TodoEditor::selectView(int p_row) {
     return;
   }
   const auto index = m_controller->getListModel()->index(p_row, 0);
-  if (!index.isValid()) {
+  if (!index.isValid() || index.data(TodoListModel::GroupRole).toBool()) {
     return;
   }
   const auto view = index.data(TodoListModel::ViewKindRole).value<TodoViewKind>();
   const auto key = index.data(TodoListModel::IdRole).toString();
+  const auto groupKey = index.data(TodoListModel::GroupIdRole).toString();
   endTyping();
+  m_groupFocused = false;
+  if (!groupKey.isEmpty()) {
+    m_controller->setGroupExpanded(groupKey, true);
+  }
   m_controller->setView(view, key);
+  refresh();
   if (m_narrow) {
     closeDetails();
   }
@@ -1005,7 +1117,11 @@ void TodoEditor::openTask(const QModelIndex &p_index) {
   if (key.isEmpty() || !m_controller->getDocument().findItem(key)) {
     return;
   }
+  const auto groupKey = p_index.data(TodoTaskModel::SourceGroupIdRole).toString();
   endTyping();
+  m_groupFocused = false;
+  m_controller->setGroupExpanded(groupKey, true);
+  m_controller->setSelectedGroupKey(groupKey);
   m_controller->setSelectedItemKey(key);
   m_detailsOpen = true;
   updateLayout();
@@ -1035,6 +1151,37 @@ void TodoEditor::focusSearch() {
   m_search->selectAll();
 }
 
+QString TodoEditor::selectedGroupKey() const {
+  return m_controller ? m_controller->getProjection().m_groupKey : QString();
+}
+
+void TodoEditor::focusGroup(const QString &p_key) {
+  if (!m_controller || !m_controller->getDocument().findGroup(p_key)) {
+    return;
+  }
+  endTyping();
+  m_groupFocused = true;
+  m_controller->setSelectedGroupKey(p_key);
+  refresh();
+  if (m_narrow) {
+    m_groupCombo->setFocus(Qt::OtherFocusReason);
+  } else {
+    m_lists->setFocus(Qt::OtherFocusReason);
+    m_lists->scrollTo(m_lists->currentIndex());
+  }
+}
+
+void TodoEditor::toggleGroup(const QString &p_key) {
+  if (!m_controller || !m_controller->getDocument().findGroup(p_key)) {
+    return;
+  }
+  endTyping();
+  m_groupFocused = true;
+  m_controller->setSelectedGroupKey(p_key);
+  m_controller->setGroupExpanded(p_key,
+                                 m_controller->getProjection().m_collapsedGroups.contains(p_key));
+}
+
 void TodoEditor::focusCurrent() {
   if (m_narrow && m_detailsOpen) {
     m_title->setFocus(Qt::OtherFocusReason);
@@ -1044,6 +1191,15 @@ void TodoEditor::focusCurrent() {
 }
 
 void TodoEditor::focusTasks() {
+  m_groupFocused = false;
+  if (m_controller) {
+    auto *model = m_controller->getListModel();
+    const auto &projection = m_controller->getProjection();
+    const int row = model->rowForView(projection.m_view, projection.m_listKey);
+    if (row >= 0 && !m_lists->isRowHidden(row)) {
+      m_lists->setCurrentIndex(model->index(row, 0));
+    }
+  }
   if (m_narrow && m_detailsOpen) {
     m_detailsOpen = false;
     updateLayout();
@@ -1132,6 +1288,14 @@ void TodoEditor::addTask() {
       self) {
     if (const auto *added = selectedItem()) {
       m_lastDestination = added->m_listKey;
+      const auto *list = m_controller->getDocument().findList(m_lastDestination);
+      const auto *group = list ? m_controller->getDocument().groupForList(*list) : nullptr;
+      if (group) {
+        const auto groupKey = group->m_key;
+        m_groupFocused = false;
+        m_controller->setSelectedGroupKey(groupKey);
+        m_controller->setGroupExpanded(groupKey, true);
+      }
       m_destination->setCurrentIndex(m_destination->findData(m_lastDestination));
     }
     m_addTask->clear();
@@ -1202,17 +1366,79 @@ void TodoEditor::editTags(const QString &p_add, int p_remove) {
 TodoEditor::Gesture TodoEditor::gesture() const {
   return {m_controller, m_generation,
           m_controller ? m_controller->getDocument().m_source : QString(),
-          m_controller ? m_controller->getSelectedItemKey() : QString()};
+          m_controller ? m_controller->getSelectedItemKey() : QString(), selectedGroupKey()};
 }
 
 bool TodoEditor::accepts(const Gesture &p_gesture) const {
-  return canMutate() && p_gesture.m_controller == m_controller &&
-         p_gesture.m_generation == m_generation &&
-         p_gesture.m_source == m_controller->getDocument().m_source &&
-         p_gesture.m_selection == m_controller->getSelectedItemKey();
+  return canMutate() && acceptsNavigation(p_gesture);
 }
 
-void TodoEditor::addList() {
+bool TodoEditor::acceptsNavigation(const Gesture &p_gesture) const {
+  return isEnabled() && m_controller && p_gesture.m_controller == m_controller &&
+         p_gesture.m_generation == m_generation &&
+         p_gesture.m_source == m_controller->getDocument().m_source &&
+         p_gesture.m_selection == m_controller->getSelectedItemKey() &&
+         p_gesture.m_groupSelection == selectedGroupKey();
+}
+
+void TodoEditor::addList(const QString &p_groupKey) {
+  if (!canMutate()) {
+    return;
+  }
+  endTyping();
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  QPointer<QDialog> dialog = named(new QDialog(this), "todoNewListDialog", tr("New list"));
+  dialog->setWindowTitle(tr("New List"));
+  auto *layout = new QVBoxLayout(dialog);
+  spacing(layout);
+  auto *titleInput = named(new QLineEdit(dialog), "todoNewListName", tr("List name"));
+  titleInput->setPlaceholderText(tr("List name"));
+  layout->addWidget(titleInput);
+  auto *groups = named(new QComboBox(dialog), "todoNewListGroup", tr("Group for the new list"));
+  addGroupChoices(groups, m_controller->getDocument());
+  const auto *group = m_controller->getDocument().findGroup(p_groupKey);
+  groups->setCurrentIndex(group && !group->m_isDefault ? groups->findData(p_groupKey) : 0);
+  layout->addWidget(groups);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+  named(buttons->button(QDialogButtonBox::Ok), "todoNewListAccept", tr("Create list"));
+  named(buttons->button(QDialogButtonBox::Cancel), "todoNewListCancel", tr("Cancel new list"));
+  buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
+  connect(titleInput, &QLineEdit::textChanged, buttons, [buttons](const QString &p_text) {
+    buttons->button(QDialogButtonBox::Ok)->setEnabled(!p_text.trimmed().isEmpty());
+  });
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+  const int result = dialog->exec();
+  if (!dialog) {
+    return;
+  }
+  const auto title = titleInput->text().trimmed();
+  const auto groupKey = groups->currentData().toString();
+  delete dialog;
+  if (!self || result != QDialog::Accepted || !accepts(token) || title.isEmpty()) {
+    return;
+  }
+  const QPointer<TodoViewWindowController> controller(m_controller);
+  QString createdKey;
+  if (command([controller, title, groupKey, &createdKey]() {
+        return controller->addList(title, groupKey, &createdKey);
+      }) &&
+      self && m_controller == controller) {
+    m_groupFocused = false;
+    const auto *list = controller->getDocument().findList(createdKey);
+    if (list) {
+      const auto *owner = controller->getDocument().groupForList(*list);
+      if (owner) {
+        controller->setGroupExpanded(owner->m_key, true);
+      }
+      controller->setView(TodoViewKind::List, createdKey);
+    }
+  }
+}
+
+void TodoEditor::addGroup() {
   if (!canMutate()) {
     return;
   }
@@ -1220,30 +1446,140 @@ void TodoEditor::addList() {
   const auto token = gesture();
   const QPointer<TodoEditor> self(this);
   QPointer<QInputDialog> dialog =
-      named(new QInputDialog(this), "todoNewListDialog", tr("New list"));
+      named(new QInputDialog(this), "todoNewGroupDialog", tr("New group"));
   dialog->setInputMode(QInputDialog::TextInput);
-  dialog->setWindowTitle(tr("New List"));
-  dialog->setLabelText(tr("List name"));
+  dialog->setWindowTitle(tr("New Group"));
+  dialog->setLabelText(tr("Group name"));
   if (auto *input = dialog->findChild<QLineEdit *>()) {
-    named(input, "todoNewListName", tr("List name"));
+    named(input, "todoNewGroupName", tr("Group name"));
   }
   const int result = dialog->exec();
   if (!dialog) {
     return;
   }
-  const QString title = dialog->textValue();
+  const auto title = dialog->textValue().trimmed();
   delete dialog;
-  if (!self || result != QDialog::Accepted || !accepts(token) || title.trimmed().isEmpty()) {
+  if (!self || result != QDialog::Accepted || !accepts(token) || title.isEmpty()) {
     return;
   }
   const QPointer<TodoViewWindowController> controller(m_controller);
-  if (command([controller, title]() { return controller->addList(title.trimmed()); }) && self &&
-      m_controller == controller) {
-    const auto &lists = controller->getDocument().m_lists;
-    if (!lists.isEmpty()) {
-      controller->setView(TodoViewKind::List, lists.last().m_key);
+  QString createdKey;
+  if (command([controller, title, &createdKey]() {
+        return controller->addGroup(title, &createdKey);
+      }) &&
+      self && m_controller == controller) {
+    focusGroup(createdKey);
+  }
+}
+
+void TodoEditor::renameGroup(const QString &p_key) {
+  if (!canMutate()) {
+    return;
+  }
+  const auto *group = m_controller->getDocument().findGroup(p_key);
+  if (!group) {
+    return;
+  }
+  endTyping();
+  const auto title = group->m_title;
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  QPointer<QInputDialog> dialog =
+      named(new QInputDialog(this), "todoRenameGroupDialog", tr("Rename group"));
+  dialog->setInputMode(QInputDialog::TextInput);
+  dialog->setWindowTitle(tr("Rename group"));
+  dialog->setLabelText(tr("Group name"));
+  dialog->setTextValue(title);
+  if (auto *input = dialog->findChild<QLineEdit *>()) {
+    named(input, "todoRenameGroupName", tr("Group name"));
+  }
+  const int result = dialog->exec();
+  if (!dialog) {
+    return;
+  }
+  const auto renamed = dialog->textValue();
+  delete dialog;
+  if (self && result == QDialog::Accepted && accepts(token)) {
+    command([this, p_key, renamed]() { return m_controller->renameGroup(p_key, renamed); });
+  }
+}
+
+void TodoEditor::deleteGroup(const QString &p_key) {
+  if (!canMutate()) {
+    return;
+  }
+  const auto *group = m_controller->getDocument().findGroup(p_key);
+  if (!group) {
+    return;
+  }
+  endTyping();
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  if (group->m_listCount > 0) {
+    const auto answer = QMessageBox::question(
+        this, tr("Delete group"),
+        tr("Delete group \"%1\" and all its lists and tasks?").arg(groupName(*group)),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (!self || answer != QMessageBox::Yes || !accepts(token)) {
+      return;
     }
   }
+  command([this, p_key]() { return m_controller->removeGroup(p_key); });
+}
+
+void TodoEditor::moveGroup(const QString &p_key, int p_direction) {
+  if (!canMutate()) {
+    return;
+  }
+  const auto &groups = m_controller->getDocument().m_groups;
+  int position = -1;
+  for (int i = 0; i < groups.size(); ++i) {
+    if (groups[i].m_key == p_key) {
+      position = i;
+      break;
+    }
+  }
+  const int target = position + p_direction;
+  if (position < 0 || target < 0 || target >= groups.size()) {
+    return;
+  }
+  const int before = p_direction < 0 ? target : target + 1;
+  const QString beforeKey = before < groups.size() ? groups[before].m_key : QString();
+  command([this, p_key, beforeKey]() { return m_controller->moveGroup(p_key, beforeKey); });
+}
+
+void TodoEditor::showGroupMenu(const QString &p_key, const QPoint &p_globalPosition) {
+  if (!m_controller || !m_controller->getDocument().findGroup(p_key)) {
+    return;
+  }
+  endTyping();
+  m_groupFocused = true;
+  m_controller->setSelectedGroupKey(p_key);
+  const auto token = gesture();
+  auto *menu = named(new QMenu(this), "todoGroupMenu", tr("Group actions"));
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+  auto add = [&](const QString &p_label, const char *p_name, const std::function<void()> &p_action,
+                 bool p_mutation = true) {
+    auto *action = menu->addAction(p_label);
+    action->setObjectName(QString::fromLatin1(p_name));
+    action->setEnabled(!p_mutation || canMutate());
+    connect(action, &QAction::triggered, this, [this, token, p_action, p_mutation]() {
+      if (p_mutation ? accepts(token) : acceptsNavigation(token)) {
+        p_action();
+      }
+    });
+  };
+  add(tr("New List"), "todoGroupNewListAction", [this, p_key]() { addList(p_key); });
+  add(tr("Rename"), "todoRenameGroupAction", [this, p_key]() { renameGroup(p_key); });
+  add(tr("Move Up"), "todoGroupUpAction", [this, p_key]() { moveGroup(p_key, -1); });
+  add(tr("Move Down"), "todoGroupDownAction", [this, p_key]() { moveGroup(p_key, 1); });
+  const bool collapsed = m_controller->getProjection().m_collapsedGroups.contains(p_key);
+  add(
+      collapsed ? tr("Expand") : tr("Collapse"), "todoToggleGroupAction",
+      [this, p_key]() { toggleGroup(p_key); }, false);
+  menu->addSeparator();
+  add(tr("Delete"), "todoDeleteGroupAction", [this, p_key]() { deleteGroup(p_key); });
+  menu->popup(p_globalPosition);
 }
 
 void TodoEditor::renameList(const QString &p_key) {
@@ -1321,7 +1657,7 @@ void TodoEditor::moveTaskToList(const QString &p_key) {
   spacing(layout);
   auto *destination = named(new QComboBox(dialog), "todoMoveDestination", tr("Destination list"));
   for (const auto &list : m_controller->getDocument().m_lists) {
-    destination->addItem(listName(list), list.m_key);
+    destination->addItem(qualifiedListName(m_controller->getDocument(), list), list.m_key);
   }
   const auto *item = m_controller->getDocument().findItem(p_key);
   destination->setCurrentIndex(destination->findData(item->m_listKey));
@@ -1377,21 +1713,82 @@ void TodoEditor::moveList(const QString &p_key, int p_direction) {
   if (!canMutate()) {
     return;
   }
-  const auto &lists = m_controller->getDocument().m_lists;
+  const auto &document = m_controller->getDocument();
+  const auto *list = document.findList(p_key);
+  const auto *group = list ? document.groupForList(*list) : nullptr;
+  if (!group) {
+    return;
+  }
+  const auto &lists = document.m_lists;
   int position = -1;
-  for (int i = 0; i < lists.size(); ++i) {
+  const int end = group->m_firstList + group->m_listCount;
+  for (int i = group->m_firstList; i < end; ++i) {
     if (lists[i].m_key == p_key) {
       position = i;
       break;
     }
   }
   const int target = position + p_direction;
-  if (position < 0 || target < 0 || target >= lists.size()) {
+  if (position < 0 || target < group->m_firstList || target >= end) {
     return;
   }
   const int before = p_direction < 0 ? target : target + 1;
-  const QString beforeKey = before < lists.size() ? lists[before].m_key : QString();
-  command([this, p_key, beforeKey]() { return m_controller->moveList(p_key, beforeKey); });
+  const QString beforeKey = before < end ? lists[before].m_key : QString();
+  const auto groupKey = group->m_key;
+  command([this, p_key, groupKey, beforeKey]() {
+    return m_controller->moveList(p_key, groupKey, beforeKey);
+  });
+}
+
+void TodoEditor::moveListToGroup(const QString &p_key) {
+  if (!canMutate()) {
+    return;
+  }
+  const auto *list = m_controller->getDocument().findList(p_key);
+  const auto *group = list ? m_controller->getDocument().groupForList(*list) : nullptr;
+  if (!group) {
+    return;
+  }
+  endTyping();
+  m_groupFocused = false;
+  m_controller->setView(TodoViewKind::List, p_key);
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  QPointer<QDialog> dialog =
+      named(new QDialog(this), "todoMoveListDialog", tr("Move list to group"));
+  dialog->setWindowTitle(tr("Move list to group"));
+  auto *layout = new QVBoxLayout(dialog);
+  spacing(layout);
+  auto *destination = named(new QComboBox(dialog), "todoMoveListGroup", tr("Destination group"));
+  addGroupChoices(destination, m_controller->getDocument());
+  destination->setCurrentIndex(group->m_isDefault ? 0 : destination->findData(group->m_key));
+  layout->addWidget(destination);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+  named(buttons->button(QDialogButtonBox::Ok), "todoMoveListAccept", tr("Move list"));
+  named(buttons->button(QDialogButtonBox::Cancel), "todoMoveListCancel", tr("Cancel move"));
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+  const int result = dialog->exec();
+  if (!dialog) {
+    return;
+  }
+  const auto groupKey = destination->currentData().toString();
+  delete dialog;
+  if (self && result == QDialog::Accepted && accepts(token)) {
+    const QPointer<TodoViewWindowController> controller(m_controller);
+    if (command([controller, p_key, groupKey]() {
+          return controller->moveList(p_key, groupKey, {});
+        }) &&
+        self && m_controller == controller) {
+      const auto &projection = controller->getProjection();
+      const auto *moved = controller->getDocument().findList(projection.m_listKey);
+      const auto *owner = moved ? controller->getDocument().groupForList(*moved) : nullptr;
+      if (owner) {
+        controller->setGroupExpanded(owner->m_key, true);
+      }
+    }
+  }
 }
 
 void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPosition) {
@@ -1424,6 +1821,7 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
     }
     m_description->getTextEdit()->setFocus(Qt::OtherFocusReason);
   });
+  add(tr("Move to group"), "todoMoveListGroupAction", [this, p_key]() { moveListToGroup(p_key); });
   add(tr("Move Up"), "todoListUpAction", [this, p_key]() { moveList(p_key, -1); });
   add(tr("Move Down"), "todoListDownAction", [this, p_key]() { moveList(p_key, 1); });
   menu->addSeparator();
@@ -1651,11 +2049,37 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
       return true;
     }
   }
-  if (widget == m_lists && m_controller && key->modifiers() == Qt::AltModifier &&
-      (key->key() == Qt::Key_Up || key->key() == Qt::Key_Down)) {
-    moveList(m_lists->currentIndex().data(TodoListModel::IdRole).toString(),
-             key->key() == Qt::Key_Up ? -1 : 1);
-    return true;
+  if (m_controller && (widget == m_lists || widget == m_groupCombo || widget == m_groupMore)) {
+    const bool groupRow =
+        widget != m_lists || m_lists->currentIndex().data(TodoListModel::GroupRole).toBool();
+    const auto groupKey = widget == m_lists
+                              ? m_lists->currentIndex().data(TodoListModel::GroupIdRole).toString()
+                              : selectedGroupKey();
+    if (key->modifiers() == Qt::AltModifier &&
+        (key->key() == Qt::Key_Up || key->key() == Qt::Key_Down)) {
+      if (groupRow) {
+        moveGroup(groupKey, key->key() == Qt::Key_Up ? -1 : 1);
+      } else {
+        moveList(m_lists->currentIndex().data(TodoListModel::IdRole).toString(),
+                 key->key() == Qt::Key_Up ? -1 : 1);
+      }
+      return true;
+    }
+    if (widget == m_lists && groupRow && !groupKey.isEmpty() &&
+        key->modifiers() == Qt::NoModifier) {
+      if (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter ||
+          key->key() == Qt::Key_Space) {
+        toggleGroup(groupKey);
+        return true;
+      }
+      if (key->key() == Qt::Key_Left || key->key() == Qt::Key_Right) {
+        endTyping();
+        m_groupFocused = true;
+        m_controller->setSelectedGroupKey(groupKey);
+        m_controller->setGroupExpanded(groupKey, key->key() == Qt::Key_Right);
+        return true;
+      }
+    }
   }
   if (widget == m_steps && key->modifiers() == Qt::AltModifier &&
       (key->key() == Qt::Key_Up || key->key() == Qt::Key_Down)) {
@@ -1719,6 +2143,7 @@ void TodoEditor::invalidateGestures() {
 void TodoEditor::resetForBuffer() {
   invalidateGestures();
   m_detailsOpen = false;
+  m_groupFocused = false;
   m_detailsKey.clear();
   m_lastDestination.clear();
   m_stepIndex = -1;

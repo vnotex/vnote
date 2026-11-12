@@ -644,6 +644,14 @@ void TodoViewWindow::applyFileOpenSettings(const FileOpenSettings &p_settings) {
     m_todoEditor->focusTasks();
     return;
   }
+  for (const auto &group : document.m_groups) {
+    if (position >= group.m_range.m_start && position < group.m_range.m_end) {
+      const auto key = group.m_key;
+      m_controller->setSelectedItemKey(QString());
+      m_todoEditor->focusGroup(key);
+      return;
+    }
+  }
 }
 
 void TodoViewWindow::scrollUp() { m_todoEditor->scroll(true); }

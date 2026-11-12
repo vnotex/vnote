@@ -33,7 +33,7 @@ bool matchesView(const TodoItem &p_item, const TodoList &p_list, TodoViewKind p_
   return false;
 }
 
-bool matchesFilters(const TodoItem &p_item, const TodoList &p_list,
+bool matchesFilters(const TodoItem &p_item, const TodoList &p_list, bool p_groupMatches,
                     const TodoProjection &p_projection) {
   const auto &fields = p_item.m_fields;
   if (!p_projection.m_tag.isEmpty() &&
@@ -42,7 +42,7 @@ bool matchesFilters(const TodoItem &p_item, const TodoList &p_list,
   }
 
   const auto &search = p_projection.m_search;
-  if (search.isEmpty() || p_list.m_title.contains(search, Qt::CaseInsensitive) ||
+  if (search.isEmpty() || p_groupMatches || p_list.m_title.contains(search, Qt::CaseInsensitive) ||
       fields.m_title.contains(search, Qt::CaseInsensitive) ||
       fields.m_note.contains(search, Qt::CaseInsensitive)) {
     return true;
@@ -62,6 +62,11 @@ bool matchesFilters(const TodoItem &p_item, const TodoList &p_list,
 
 bool hasFilters(const TodoProjection &p_projection) {
   return !p_projection.m_search.isEmpty() || !p_projection.m_tag.isEmpty();
+}
+
+QString groupTitle(const TodoGroup &p_group) {
+  return QStringView(p_group.m_title).trimmed().isEmpty() ? TodoListModel::tr("Untitled group")
+                                                          : p_group.m_title;
 }
 
 QString listTitle(const TodoList &p_list) {
@@ -103,11 +108,27 @@ QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
 
   const auto &row = m_rows.at(p_index.row());
   const auto *list = listAt(p_index.row());
+  const auto *group = groupAt(p_index.row());
+  const bool groupHeader = group && !list;
+  switch (p_role) {
+  case GroupRole:
+    return groupHeader;
+  case GroupIdRole:
+    return group ? group->m_key : QString();
+  case GroupTitleRole:
+    return group ? groupTitle(*group) : QString();
+  case ExpandedRole:
+    return group ? QVariant(row.m_expanded) : QVariant();
+  case ListCountRole:
+    return groupHeader ? QVariant(group->m_listCount) : QVariant();
+  default:
+    break;
+  }
   if (p_role == IdRole) {
-    return list ? list->m_key : QString();
+    return list ? list->m_key : groupHeader ? group->m_key : QString();
   }
   if (p_role == ViewKindRole) {
-    return QVariant::fromValue(row.m_view);
+    return groupHeader ? QVariant() : QVariant::fromValue(row.m_view);
   }
   if (p_role == IncompleteCountRole) {
     return row.m_incompleteCount;
@@ -117,6 +138,17 @@ QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
     return {};
   }
 
+  if (groupHeader) {
+    const auto title = groupTitle(*group);
+    if (p_role == Qt::AccessibleTextRole || p_role == Qt::ToolTipRole) {
+      return (row.m_expanded ? tr("%1, %2 lists, %3 incomplete tasks, expanded")
+                             : tr("%1, %2 lists, %3 incomplete tasks, collapsed"))
+          .arg(title)
+          .arg(group->m_listCount)
+          .arg(row.m_incompleteCount);
+    }
+    return title;
+  }
   QString title;
   switch (row.m_view) {
   case TodoViewKind::List:
@@ -155,6 +187,11 @@ QHash<int, QByteArray> TodoListModel::roleNames() const {
   roles.insert(TitleRole, "title");
   roles.insert(ViewKindRole, "viewKind");
   roles.insert(IncompleteCountRole, "incompleteCount");
+  roles.insert(GroupRole, "group");
+  roles.insert(GroupIdRole, "groupId");
+  roles.insert(GroupTitleRole, "groupTitle");
+  roles.insert(ExpandedRole, "expanded");
+  roles.insert(ListCountRole, "listCount");
   return roles;
 }
 
@@ -163,7 +200,8 @@ void TodoListModel::setSnapshot(const TodoDocument &p_document,
   beginResetModel();
   m_document = p_document;
   m_rows.clear();
-  m_rows.reserve(4 + (m_document.isValid() ? m_document.m_lists.size() : 0));
+  m_rows.reserve(
+      4 + (m_document.isValid() ? m_document.m_lists.size() + m_document.m_groups.size() : 0));
   m_rows.append({TodoViewKind::MyDay});
   m_rows.append({TodoViewKind::Important});
   m_rows.append({TodoViewKind::Planned});
@@ -171,29 +209,53 @@ void TodoListModel::setSnapshot(const TodoDocument &p_document,
 
   if (m_document.isValid()) {
     const auto &lists = std::as_const(m_document.m_lists);
-    for (int listIndex = 0; listIndex < lists.size(); ++listIndex) {
-      const auto &list = lists.at(listIndex);
-      Row row{TodoViewKind::List, listIndex};
-      for (const auto &item : list.m_items) {
-        if (item.m_fields.m_checked || !matchesFilters(item, list, p_projection)) {
-          continue;
+    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
+      const auto &group = m_document.m_groups.at(groupIndex);
+      const bool expanded = !p_projection.m_collapsedGroups.contains(group.m_key);
+      const bool groupMatches =
+          !p_projection.m_search.isEmpty() &&
+          groupTitle(group).contains(p_projection.m_search, Qt::CaseInsensitive);
+      const int groupRow = m_rows.size();
+      m_rows.append({TodoViewKind::List, -1, groupIndex, 0, expanded});
+      for (int listIndex = group.m_firstList; listIndex < group.m_firstList + group.m_listCount;
+           ++listIndex) {
+        const auto &list = lists.at(listIndex);
+        Row row{TodoViewKind::List, listIndex, groupIndex, 0, expanded};
+        for (const auto &item : list.m_items) {
+          if (item.m_fields.m_checked || !matchesFilters(item, list, groupMatches, p_projection)) {
+            continue;
+          }
+          ++row.m_incompleteCount;
+          ++m_rows[groupRow].m_incompleteCount;
+          ++m_rows[3].m_incompleteCount;
+          if (matchesView(item, list, TodoViewKind::MyDay, {}, p_projection.m_today)) {
+            ++m_rows[0].m_incompleteCount;
+          }
+          if (item.m_fields.m_important) {
+            ++m_rows[1].m_incompleteCount;
+          }
+          if (item.m_fields.m_due.isValid()) {
+            ++m_rows[2].m_incompleteCount;
+          }
         }
-        ++row.m_incompleteCount;
-        ++m_rows[3].m_incompleteCount;
-        if (matchesView(item, list, TodoViewKind::MyDay, {}, p_projection.m_today)) {
-          ++m_rows[0].m_incompleteCount;
-        }
-        if (item.m_fields.m_important) {
-          ++m_rows[1].m_incompleteCount;
-        }
-        if (item.m_fields.m_due.isValid()) {
-          ++m_rows[2].m_incompleteCount;
-        }
+        m_rows.append(row);
       }
-      m_rows.append(row);
     }
   }
   endResetModel();
+}
+
+void TodoListModel::setGroupExpanded(const QString &p_key, bool p_expanded) {
+  const int first = rowForGroup(p_key);
+  if (first < 0 || m_rows.at(first).m_expanded == p_expanded) {
+    return;
+  }
+  const int last = first + groupAt(first)->m_listCount;
+  for (int row = first; row <= last; ++row) {
+    m_rows[row].m_expanded = p_expanded;
+  }
+  emit dataChanged(index(first), index(last),
+                   {ExpandedRole, Qt::AccessibleTextRole, Qt::ToolTipRole});
 }
 
 int TodoListModel::rowForKey(const QString &p_key) const {
@@ -202,7 +264,8 @@ int TodoListModel::rowForKey(const QString &p_key) const {
 
 int TodoListModel::rowForView(TodoViewKind p_view, const QString &p_listKey) const {
   for (int row = 0; row < m_rows.size(); ++row) {
-    if (m_rows.at(row).m_view != p_view) {
+    if (m_rows.at(row).m_view != p_view ||
+        (m_rows.at(row).m_group >= 0 && m_rows.at(row).m_list < 0)) {
       continue;
     }
     if (p_view != TodoViewKind::List || listAt(row)->m_key == p_listKey) {
@@ -210,6 +273,22 @@ int TodoListModel::rowForView(TodoViewKind p_view, const QString &p_listKey) con
     }
   }
   return -1;
+}
+
+int TodoListModel::rowForGroup(const QString &p_key) const {
+  for (int row = 0; row < m_rows.size(); ++row) {
+    if (m_rows.at(row).m_group >= 0 && m_rows.at(row).m_list < 0 && groupAt(row)->m_key == p_key) {
+      return row;
+    }
+  }
+  return -1;
+}
+
+const TodoGroup *TodoListModel::groupAt(int p_row) const {
+  if (p_row < 0 || p_row >= m_rows.size() || m_rows.at(p_row).m_group < 0) {
+    return nullptr;
+  }
+  return &m_document.m_groups.at(m_rows.at(p_row).m_group);
 }
 
 const TodoList *TodoListModel::listAt(int p_row) const {
@@ -302,9 +381,14 @@ QVariant TodoTaskModel::data(const QModelIndex &p_index, int p_role) const {
     return list.m_key;
   case SourceListNameRole:
     return listTitle(list);
+  case SourceGroupIdRole:
+    return m_document.m_groups.at(list.m_groupIndex).m_key;
+  case SourceGroupNameRole:
+    return groupTitle(m_document.m_groups.at(list.m_groupIndex));
   case Qt::AccessibleTextRole:
   case Qt::ToolTipRole: {
     QStringList parts{itemTitle(*item), fields.m_checked ? tr("Completed") : tr("Not completed"),
+                      tr("Group: %1").arg(groupTitle(m_document.m_groups.at(list.m_groupIndex))),
                       tr("List: %1").arg(listTitle(list))};
     if (fields.m_important) {
       parts.append(tr("Important"));
@@ -408,6 +492,8 @@ QHash<int, QByteArray> TodoTaskModel::roleNames() const {
   roles.insert(StepsTotalRole, "stepsTotal");
   roles.insert(SourceListIdRole, "sourceListId");
   roles.insert(SourceListNameRole, "sourceListName");
+  roles.insert(SourceGroupIdRole, "sourceGroupId");
+  roles.insert(SourceGroupNameRole, "sourceGroupName");
   roles.insert(SectionRole, "section");
   roles.insert(ExpandedRole, "expanded");
   roles.insert(CompletedCountRole, "completedCount");
@@ -437,11 +523,14 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
     const bool filtered = hasFilters(m_projection);
     for (int listIndex = 0; listIndex < lists.size(); ++listIndex) {
       const auto &list = lists.at(listIndex);
+      const bool groupMatches = !m_projection.m_search.isEmpty() &&
+                                groupTitle(m_document.m_groups.at(list.m_groupIndex))
+                                    .contains(m_projection.m_search, Qt::CaseInsensitive);
       for (int itemIndex = 0; itemIndex < list.m_items.size(); ++itemIndex) {
         const auto &item = list.m_items.at(itemIndex);
         if ((!filtered && !matchesView(item, list, m_projection.m_view, m_projection.m_listKey,
                                        m_projection.m_today)) ||
-            !matchesFilters(item, list, m_projection)) {
+            !matchesFilters(item, list, groupMatches, m_projection)) {
           continue;
         }
         if (item.m_fields.m_checked) {

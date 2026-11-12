@@ -37,6 +37,8 @@ public:
   const TodoProjection &getProjection() const { return m_projection; }
   int getSnapshotRevision() const { return m_revision; }
   void setView(TodoViewKind p_view, const QString &p_listKey = {});
+  void setSelectedGroupKey(const QString &p_key);
+  void setGroupExpanded(const QString &p_key, bool p_expanded);
   void setSearch(const QString &p_search);
   void setTagFilter(const QString &p_tag);
   void setSortOrder(TodoSortOrder p_order);
@@ -49,11 +51,16 @@ public:
   void setCoalescingKey(const QString &p_key);
   void endCoalescing();
 
-  bool addList(const QString &p_title);
+  bool addGroup(const QString &p_title, QString *p_createdGroupKey = nullptr);
+  bool renameGroup(const QString &p_groupKey, const QString &p_title);
+  bool removeGroup(const QString &p_groupKey);
+  bool moveGroup(const QString &p_groupKey, const QString &p_beforeGroupKey);
+  bool addList(const QString &p_title, const QString &p_groupKey = {},
+               QString *p_createdListKey = nullptr);
   bool renameList(const QString &p_listId, const QString &p_title);
   bool setListDescription(const QString &p_listId, const QString &p_markdown);
   bool removeList(const QString &p_listId);
-  bool moveList(const QString &p_listId, const QString &p_beforeListId);
+  bool moveList(const QString &p_listId, const QString &p_groupKey, const QString &p_beforeListId);
   bool addTask(const QString &p_listId, const TodoTaskFields &p_fields);
   bool updateTask(const QString &p_itemId, const TodoTaskFields &p_fields);
   bool removeTask(const QString &p_itemId);
@@ -80,6 +87,9 @@ private:
                        const QString &p_listKey, int p_nearestRow);
   void refreshModels(int p_nearestRow = -1, bool p_preserveHiddenSelection = false);
   void ensureHeader(Change &p_change) const;
+  QString ensureGroupIdentity(Change &p_change, const TodoGroup &p_group) const;
+  QString ensureDefaultGroup(Change &p_change, int *p_insertion) const;
+  void ensureListOwners(Change &p_change, const TodoList &p_list) const;
   QString ensureListIdentity(Change &p_change, const TodoList &p_list) const;
   QString ensureItemIdentity(Change &p_change, const TodoItem &p_item) const;
   void appendMetadata(Change &p_change, const QString &p_kind, const QJsonObject &p_properties,

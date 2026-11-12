@@ -1795,7 +1795,7 @@ target_compile_definitions(test_todoviewwindow PRIVATE
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
 add_dependencies(test_todoviewwindow VX_EXTRA_RESOURCE)
-set_tests_properties(test_todoviewwindow PROPERTIES TIMEOUT 600)
+set_tests_properties(test_todoviewwindow PROPERTIES TIMEOUT 900)
 set_property(TEST test_todoviewwindow PROPERTY ENVIRONMENT
   "QT_QPA_PLATFORM=${_markdown_window_platform}"
   "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"

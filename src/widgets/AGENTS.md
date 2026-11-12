@@ -602,8 +602,9 @@ use separate `SimpleMarkdownEditor` inputs with local undo disabled and source-h
 Typing coalesces by field until focus, selection, mode or another command ends the group.
 
 `core/tododocument` uses public cmark AST/source APIs, never vtextedit private headers. Each
-document-child H1 is a list; direct unordered checkbox items are tasks. One blockquote owns
-a list description or task Markdown note; direct nested checkbox items are steps. Checklists,
+document-child H1 is a group and each H2 is a list; direct unordered checkbox items under an
+H2 are tasks. ATX and Setext headings are accepted at both levels. One blockquote owns a list
+description or task Markdown note; direct nested checkbox items are steps. Checklists,
 headings and fences inside notes are not planner structure. Ordinary comments stay opaque;
 unsupported root/body blocks and malformed owned metadata produce line-numbered diagnostics,
 disable Tasks mutation and keep Tasks visible. Invalid source remains saveable unchanged;
@@ -615,17 +616,42 @@ File-open navigation uses an absolute UTF-16 cursor offset first, otherwise a ze
 match line, otherwise a zero-based explicit line. Lines are converted through the LF document's
 block positions. A task range includes its steps, note and comments; other owned positions
 select the containing list. Navigation switches to that real list, clears search/tag filters,
-expands Completed when needed and selects/focuses the native row, including in Read mode.
+expands its group and Completed when needed, and selects/focuses the native row, including in Read.
+Group-heading/group-comment hits select the organizational group control without changing the
+task view, filters or collapse state, and clear task selection rather than invent a task hit.
 Invalid/unavailable source or positions with no owner leave the native selection unchanged.
 
-Whole-line adjacent `todo`, `todo-list` and `todo-item` HTML comments contain per-owner JSON.
-Format 1 is optional on input; structured changes add its header. Owners without IDs get
-UUIDs on their first mutation, not on open/filter/save. Runtime `id:` / `source:` keys are
-never serialized. Metadata writes preserve unknown keys and escape `<`, `>` and `-` only
+Whole-line adjacent `todo`, `todo-group`, `todo-list` and `todo-item` comments contain per-owner
+JSON. This unreleased format remains version 1, with no legacy H1-list grammar or conversion.
+The version header is optional on input; structured changes add it. Group/list/task IDs share
+one unique namespace. Owners without IDs get UUIDs on their first mutation, not on open/filter/save.
+Runtime `id:` / `source:` / implicit `default:` keys are never serialized. Metadata writes preserve
+unknown keys and escape `<`, `>` and `-` only
 inside JSON string tokens; numeric signs/exponents remain JSON numbers. Source edits retain
 untouched blocks, validate expected UTF-16 ranges and the live document revision, and reparse
 the tentative result before one undo transaction. Formatting-only revisions do not replace
 published task rows; source changes and foreign loads invalidate pending owner gestures.
+
+`default:true` in group metadata identifies Default independently of its translated/edited title.
+Leading H2 lists without H1 belong to one implicit Default, excluding the file preamble. When a
+command materializes that parent, insert its H1/metadata at the first leading H2, never EOF.
+An absent Default is created at EOF when New List has no chosen group; empty-file quick-add
+creates Default / Tasks / task atomically. Multiple default owners, including implicit plus
+explicit, diagnose instead of merging. Header insertion precedes the group; parent identity
+precedes a renamed list title, but list metadata follows that title even at unterminated EOF.
+
+Groups own contiguous spans of the flat list snapshot; list `m_groupIndex` is snapshot-local.
+Group ranges end at the next H1; list ranges end at the next H1/H2. Group/list moves preserve
+owned blocks and remap synthetic child selections. Parent-group edits stay outside moved list
+payloads. List Up/Down stays inside its group; Move to group changes ownership. Nonempty group
+deletion asks confirmation before removing its owned lists/tasks, and remains undoable.
+
+Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
+The model retains all rows; the sidebar hides collapsed children and the task-view combo's
+proxy excludes group headers. New Group, a separate group selector and Group actions stay in
+the shared search area at both widths, including for empty groups. Collapse and group selection
+do not change task projection/history or invalidate task drags; group-title search ignores
+collapse state. New Group/New List use post-commit output keys, never a guessed last list.
 
 My Day is explicit `myDay == today`, independent of due dates. Important and Planned are
 current-file projections; search and exact-tag filters compose across this file and ignore

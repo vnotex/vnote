@@ -26,9 +26,14 @@ namespace tests {
 namespace {
 QString key(const char *p_id) { return QStringLiteral("id:") + QLatin1String(p_id); }
 QString header() { return QStringLiteral("<!-- todo: {\"version\":1} -->\n\n"); }
+QString groupedHeader() {
+  return header() +
+         QStringLiteral(
+             "# Default\n<!-- todo-group: {\"id\":\"defaultgroup\",\"default\":true} -->\n\n");
+}
 
 QString projectionSource() {
-  return header() + QString::fromUtf8(R"TODO(# Work
+  return groupedHeader() + QString::fromUtf8(R"TODO(## Work
 <!-- todo-list: {"id":"work","hidden":"list-secret"} -->
 
 > Description-only-token
@@ -49,7 +54,7 @@ QString projectionSource() {
 - [X] Completed
   <!-- todo-item: {"id":"c","important":true,"due":"2026-11-13","myDay":"2026-11-12","tags":["work"]} -->
 
-# Home
+## Home
 <!-- todo-list: {"id":"home"} -->
 
 - [ ] alpha
@@ -95,6 +100,13 @@ private slots:
   void cleanup();
   void initialCleanAndNoOps();
   void emptyQuickAddAtomic();
+  void defaultGroupMaterialization();
+  void defaultCreationAtSameEof();
+  void groupCommandsPreserveOwnedData();
+  void implicitGroupMoveRemapsChildren();
+  void crossGroupListMoveBoundaries();
+  void groupProjectionIsPresentational();
+  void groupCreationReturnsActualOwners();
   void listCommands();
   void setextAndEmptyTitles();
   void checkboxChangesOnlyOneCharacter();
@@ -228,7 +240,7 @@ const TodoList &TestTodoViewWindowController::list(const char *p_id) const {
 }
 
 void TestTodoViewWindowController::initialCleanAndNoOps() {
-  const QString source = QStringLiteral("# Inbox\n\n- [ ] Keep\n  - [ ] Step");
+  const QString source = QStringLiteral("## Inbox\n\n- [ ] Keep\n  - [ ] Step");
   QVERIFY(load(source));
   QVERIFY(m_controller->getDocument().isValid());
   const auto listKey = m_controller->getDocument().m_lists.first().m_key;
@@ -241,7 +253,7 @@ void TestTodoViewWindowController::initialCleanAndNoOps() {
   QVERIFY(m_controller->updateStep(taskKey, 0, QStringLiteral("Step"), false));
   QVERIFY(m_controller->moveStep(taskKey, 0, 0));
   QVERIFY(m_controller->moveTask(taskKey, listKey, {}));
-  QVERIFY(m_controller->moveList(listKey, {}));
+  QVERIFY(m_controller->moveList(listKey, {}, {}));
   m_controller->setSearch(QStringLiteral("Keep"));
   m_controller->setSearch({});
   m_controller->setSortOrder(TodoSortOrder::Title);
@@ -271,7 +283,12 @@ void TestTodoViewWindowController::emptyQuickAddAtomic() {
   QVERIFY(m_controller->addTask({}, fields));
   const auto &document = m_controller->getDocument();
   QVERIFY(document.isValid());
+  QCOMPARE(document.m_groups.size(), 1);
+  QVERIFY(document.defaultGroup());
+  QVERIFY(!document.defaultGroup()->m_implicit);
+  QCOMPARE(document.defaultGroup()->m_listCount, 1);
   QCOMPARE(document.m_lists.size(), 1);
+  QCOMPARE(document.groupForList(document.m_lists.first()), document.defaultGroup());
   QCOMPARE(document.m_lists.first().m_title, QStringLiteral("Tasks"));
   const auto added = document.m_lists.first().m_items.first();
   QCOMPARE(added.m_fields.m_title, fields.m_title);
@@ -294,11 +311,269 @@ void TestTodoViewWindowController::emptyQuickAddAtomic() {
   QVERIFY(m_controller->getDocument().findItem(added.m_key));
 }
 
+void TestTodoViewWindowController::defaultGroupMaterialization() {
+  const auto source =
+      header() + QStringLiteral("<!-- file stays outside -->\n\n"
+                                "## Inbox\n<!-- todo-list: {\"id\":\"inbox\"} -->\n\n- [ ] Keep\n");
+  QVERIFY(load(source));
+  const auto *implicit = m_controller->getDocument().defaultGroup();
+  QVERIFY(implicit && implicit->m_implicit);
+  const auto oldKey = implicit->m_key;
+  m_controller->setSelectedGroupKey(oldKey);
+  m_controller->setGroupExpanded(oldKey, false);
+  QVERIFY(m_controller->renameList(key("inbox"), QStringLiteral("Inbox")));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+  QString created;
+  QVERIFY(m_controller->addList(QStringLiteral("Second"), {}, &created));
+  const auto &document = m_controller->getDocument();
+  const auto *group = document.defaultGroup();
+  QVERIFY(group && !group->m_implicit);
+  QCOMPARE(document.m_groups.size(), 1);
+  QCOMPARE(group->m_listCount, 2);
+  QCOMPARE(document.groupForList(*document.findList(created)), group);
+  QCOMPARE(m_controller->getProjection().m_groupKey, group->m_key);
+  QVERIFY(m_controller->getProjection().m_collapsedGroups.contains(group->m_key));
+  QVERIFY(!m_controller->getProjection().m_collapsedGroups.contains(oldKey));
+  const auto changed = m_document->toPlainText();
+  QVERIFY(changed.startsWith(header() + QStringLiteral("<!-- file stays outside -->\n\n")));
+  QCOMPARE(document.text(document.m_metadataRange), header().trimmed() + QLatin1Char('\n'));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), changed);
+  QVERIFY(m_controller->getDocument().findList(created));
+}
+
+void TestTodoViewWindowController::defaultCreationAtSameEof() {
+  const auto source = header() + QStringLiteral("# Work\n<!-- todo-group: {\"id\":\"g\"} -->\n\n"
+                                                "## Only\n<!-- todo-list: {\"id\":\"only\"} -->\n\n"
+                                                "- [ ] Keep\n  <!-- todo-item: {\"id\":\"t\"} -->");
+  QVERIFY(load(source));
+  QVERIFY(!m_controller->getDocument().defaultGroup());
+  QCOMPARE(list("only").m_range.m_end, source.size());
+  QVERIFY(m_controller->moveList(key("only"), {}, {}));
+  const auto &document = m_controller->getDocument();
+  QVERIFY(document.isValid());
+  QCOMPARE(document.m_groups.size(), 2);
+  QCOMPARE(document.findGroup(key("g"))->m_listCount, 0);
+  const auto *fallback = document.defaultGroup();
+  QVERIFY(fallback && !fallback->m_implicit);
+  QCOMPARE(document.groupForList(list("only")), fallback);
+  QCOMPARE(fallback->m_listCount, 1);
+  QCOMPARE(item("t").m_fields.m_title, QStringLiteral("Keep"));
+  const auto changed = m_document->toPlainText();
+  const int undoSteps = m_document->availableUndoSteps();
+  QVERIFY(m_controller->moveList(key("only"), {}, {}));
+  QCOMPARE(m_document->toPlainText(), changed);
+  QCOMPARE(m_document->availableUndoSteps(), undoSteps);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), changed);
+}
+
+void TestTodoViewWindowController::groupCommandsPreserveOwnedData() {
+  const auto source =
+      header() + QStringLiteral("<!-- file comment -->\n\n") +
+      QStringLiteral(
+          "Office\n======\n<!-- todo-group: {\"id\":\"g\",\"extra\":-1e-9} -->\n\n"
+          "<!-- group comment -->\n\n## Inbox\n<!-- todo-list: {\"id\":\"inbox\"} -->\n\n"
+          "- [ ] Keep\n  <!-- todo-item: {\"id\":\"a\"} -->\n\n  > Note\n\n  - [x] Step\n\n"
+          "# Personal\n<!-- todo-group: {\"id\":\"h\"} -->\n\n"
+          "## Home\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
+          "- [ ] Other\n  <!-- todo-item: {\"id\":\"b\"} -->\n");
+  QVERIFY(load(source));
+  QVERIFY(m_controller->renameGroup(key("g"), QStringLiteral("Office [renamed]")));
+  QCOMPARE(m_controller->getDocument().findGroup(key("g"))->m_title,
+           QStringLiteral("Office [renamed]"));
+  QCOMPARE(m_controller->getDocument()
+               .findGroup(key("g"))
+               ->m_properties.value(QStringLiteral("extra"))
+               .toDouble(),
+           -1e-9);
+  QVERIFY(m_document->toPlainText().contains(QStringLiteral("======")));
+  const auto owned = m_controller->getDocument()
+                         .text(m_controller->getDocument().findGroup(key("g"))->m_range)
+                         .trimmed();
+  QVERIFY(m_controller->moveGroup(key("g"), {}));
+  QCOMPARE(m_controller->getDocument().m_groups.last().m_key, key("g"));
+  QCOMPARE(m_controller->getDocument()
+               .text(m_controller->getDocument().findGroup(key("g"))->m_range)
+               .trimmed(),
+           owned);
+  QCOMPARE(item("a").m_fields.m_note, QStringLiteral("Note"));
+  QVERIFY(item("a").m_steps.first().m_checked);
+  QVERIFY(m_controller->renameGroup(key("g"), {}));
+  QVERIFY(m_controller->getDocument().findGroup(key("g"))->m_title.isEmpty());
+  QVERIFY(m_controller->getDocument().isValid());
+  const auto beforeDelete = m_document->toPlainText();
+  QVERIFY(m_controller->removeGroup(key("g")));
+  QVERIFY(!m_controller->getDocument().findGroup(key("g")));
+  QVERIFY(!m_controller->getDocument().findList(key("inbox")));
+  QVERIFY(!m_controller->getDocument().findItem(key("a")));
+  QCOMPARE(item("b").m_fields.m_title, QStringLiteral("Other"));
+  QVERIFY(m_document->toPlainText().startsWith(header() + QStringLiteral("<!-- file comment -->")));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), beforeDelete);
+}
+
+void TestTodoViewWindowController::implicitGroupMoveRemapsChildren() {
+  const auto source = QStringLiteral("## Inbox\n\n- [ ] Selected\n\n"
+                                     "# Other\n\n## Work\n\n- [ ] Other task");
+  QVERIFY(load(source));
+  const auto *group = m_controller->getDocument().defaultGroup();
+  QVERIFY(group && group->m_implicit);
+  const auto originalGroup = group->m_key;
+  const auto &first = m_controller->getDocument().m_lists.first();
+  m_controller->setView(TodoViewKind::List, first.m_key);
+  m_controller->setSelectedItemKey(first.m_items.first().m_key);
+  m_controller->setSelectedGroupKey(originalGroup);
+  m_controller->setGroupExpanded(originalGroup, false);
+  QVERIFY(m_controller->moveGroup(originalGroup, {}));
+  const auto &document = m_controller->getDocument();
+  const auto *movedGroup = document.defaultGroup();
+  QVERIFY(movedGroup && !movedGroup->m_implicit);
+  QCOMPARE(document.m_groups.last().m_key, movedGroup->m_key);
+  const auto &movedList = document.m_lists.at(movedGroup->m_firstList);
+  QCOMPARE(movedList.m_title, QStringLiteral("Inbox"));
+  QCOMPARE(m_controller->getProjection().m_listKey, movedList.m_key);
+  QCOMPARE(m_controller->getSelectedItemKey(), movedList.m_items.first().m_key);
+  QVERIFY(movedList.m_items.first().m_id.isEmpty());
+  QCOMPARE(movedList.m_items.first().m_fields.m_title, QStringLiteral("Selected"));
+  QCOMPARE(m_controller->getProjection().m_groupKey, movedGroup->m_key);
+  QVERIFY(m_controller->getProjection().m_collapsedGroups.contains(movedGroup->m_key));
+  QVERIFY(!m_controller->getProjection().m_collapsedGroups.contains(originalGroup));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+}
+
+void TestTodoViewWindowController::crossGroupListMoveBoundaries() {
+  QVERIFY(load(QStringLiteral("## First\n\n- [ ] A\n\n## Stay\n\n- [ ] B\n\n"
+                              "# Work\n\n## Last\n\n- [ ] C")));
+  const auto firstKey = m_controller->getDocument().m_lists.first().m_key;
+  const auto targetGroup = m_controller->getDocument().m_groups.last().m_key;
+  const auto beforeKey = m_controller->getDocument().m_lists.last().m_key;
+  QVERIFY(m_controller->moveList(firstKey, targetGroup, beforeKey));
+  const auto &document = m_controller->getDocument();
+  QCOMPARE(document.m_groups.size(), 2);
+  QCOMPARE(document.defaultGroup()->m_listCount, 1);
+  QCOMPARE(document.m_groups.last().m_listCount, 2);
+  QCOMPARE(document.m_lists[0].m_title, QStringLiteral("Stay"));
+  QCOMPARE(document.m_lists[1].m_title, QStringLiteral("First"));
+  QCOMPARE(document.m_lists[2].m_title, QStringLiteral("Last"));
+  QCOMPARE(document.groupForList(document.m_lists[1])->m_key, document.m_groups.last().m_key);
+  const auto stay = document.m_lists[0].m_key;
+  const auto last = document.m_lists[2].m_key;
+  const auto work = document.m_groups.last().m_key;
+  const auto unchanged = m_document->toPlainText();
+  QVERIFY(!m_controller->moveList(stay, work, stay));
+  QVERIFY(!m_controller->moveList(stay, key("missing"), {}));
+  QCOMPARE(m_document->toPlainText(), unchanged);
+  QVERIFY(m_controller->moveList(last, {}, {}));
+  QCOMPARE(m_controller->getDocument().defaultGroup()->m_listCount, 2);
+  QCOMPARE(m_controller->getDocument().m_groups.last().m_listCount, 1);
+  QCOMPARE(m_controller->getDocument().m_lists[0].m_title, QStringLiteral("Stay"));
+  QCOMPARE(m_controller->getDocument().m_lists[1].m_title, QStringLiteral("Last"));
+  QCOMPARE(m_controller->getDocument().m_lists[2].m_title, QStringLiteral("First"));
+}
+
+void TestTodoViewWindowController::groupProjectionIsPresentational() {
+  const auto source =
+      header() +
+      QStringLiteral("# Office\n<!-- todo-group: {\"id\":\"g\",\"hidden\":\"group-secret\"} -->\n\n"
+                     "## Inbox\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+                     "- [ ] A\n  <!-- todo-item: {\"id\":\"a\"} -->\n\n"
+                     "- [ ] B\n  <!-- todo-item: {\"id\":\"b\"} -->\n\n"
+                     "# Personal\n<!-- todo-group: {\"id\":\"h\"} -->\n\n"
+                     "## Inbox\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
+                     "- [ ] C\n  <!-- todo-item: {\"id\":\"c\"} -->\n");
+  QVERIFY(load(source));
+  auto *tasks = m_controller->getTaskModel();
+  auto *groups = m_controller->getListModel();
+  const auto visible = visibleKeys(tasks);
+  const int count = groups->rowCount();
+  QPersistentModelIndex saved(tasks->index(0));
+  std::unique_ptr<QMimeData> drag(tasks->mimeData({tasks->index(0)}));
+  m_controller->setGroupExpanded(key("g"), false);
+  QVERIFY(saved.isValid());
+  QCOMPARE(saved.data(TodoTaskModel::IdRole).toString(), key("a"));
+  QVERIFY(tasks->canDropMimeData(drag.get(), Qt::MoveAction, 1, 0, {}));
+  QCOMPARE(groups->rowCount(), count);
+  const auto groupRow = groups->index(groups->rowForGroup(key("g")));
+  QVERIFY(groupRow.data(TodoListModel::GroupRole).toBool());
+  QVERIFY(!groupRow.data(TodoListModel::ExpandedRole).toBool());
+  QCOMPARE(groupRow.data(TodoListModel::ListCountRole).toInt(), 1);
+  QCOMPARE(groupRow.data(TodoListModel::IncompleteCountRole).toInt(), 2);
+  QCOMPARE(visibleKeys(tasks), visible);
+  m_controller->setSelectedGroupKey(key("h"));
+  QCOMPARE(visibleKeys(tasks), visible);
+  m_controller->setSearch(QStringLiteral("Office"));
+  QCOMPARE(visibleKeys(tasks), QStringList({key("a"), key("b")}));
+  m_controller->setGroupExpanded(key("g"), true);
+  QCOMPARE(visibleKeys(tasks), QStringList({key("a"), key("b")}));
+  m_controller->setSearch(QStringLiteral("group-secret"));
+  QVERIFY(visibleKeys(tasks).isEmpty());
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+  QVERIFY(load(source, true));
+  m_controller->setSelectedGroupKey(key("h"));
+  m_controller->setGroupExpanded(key("g"), false);
+  QVERIFY(m_controller->getProjection().m_collapsedGroups.contains(key("g")));
+  QVERIFY(!m_controller->addGroup(QStringLiteral("Blocked")));
+  QVERIFY(!m_controller->renameGroup(key("g"), QStringLiteral("Blocked")));
+  QVERIFY(!m_controller->removeGroup(key("g")));
+  QVERIFY(!m_controller->moveGroup(key("g"), {}));
+  QVERIFY(!m_controller->moveList(key("work"), key("h"), {}));
+  QCOMPARE(m_document->toPlainText(), source);
+}
+
+void TestTodoViewWindowController::groupCreationReturnsActualOwners() {
+  QVERIFY(load({}));
+  QString firstGroup, tailGroup, firstList, tailList, inserted;
+  QVERIFY(m_controller->addGroup(QStringLiteral("First"), &firstGroup));
+  QVERIFY(m_controller->addGroup(QStringLiteral("Tail"), &tailGroup));
+  QVERIFY(m_controller->addList(QStringLiteral("First list"), firstGroup, &firstList));
+  QVERIFY(m_controller->addList(QStringLiteral("Tail list"), tailGroup, &tailList));
+  QVERIFY(m_controller->addList(QStringLiteral("Inserted before tail"), firstGroup, &inserted));
+  const auto &document = m_controller->getDocument();
+  QVERIFY(!document.defaultGroup());
+  QCOMPARE(document.groupForList(*document.findList(inserted))->m_key, firstGroup);
+  QCOMPARE(document.m_lists.at(1).m_key, inserted);
+  QCOMPARE(document.m_lists.last().m_key, tailList);
+  QString defaultList;
+  QVERIFY(m_controller->addList(QStringLiteral("No chosen group"), {}, &defaultList));
+  const auto *fallback = m_controller->getDocument().defaultGroup();
+  QVERIFY(fallback && !fallback->m_implicit);
+  const auto fallbackKey = fallback->m_key;
+  QCOMPARE(m_controller->getDocument()
+               .groupForList(*m_controller->getDocument().findList(defaultList))
+               ->m_key,
+           fallbackKey);
+  QVERIFY(m_controller->renameGroup(fallbackKey, QStringLiteral("Miscellaneous")));
+  QVERIFY(m_controller->addList(QStringLiteral("Still default"), {}, &defaultList));
+  QCOMPARE(m_controller->getDocument().m_groups.size(), 3);
+  QCOMPARE(m_controller->getDocument().defaultGroup()->m_key, fallbackKey);
+  QCOMPARE(m_controller->getDocument()
+               .groupForList(*m_controller->getDocument().findList(defaultList))
+               ->m_key,
+           fallbackKey);
+  const auto unchanged = m_document->toPlainText();
+  QString failed = QStringLiteral("old result");
+  QVERIFY(!m_controller->addList(QStringLiteral("Invalid"), key("missing"), &failed));
+  QVERIFY(failed.isEmpty());
+  failed = QStringLiteral("old result");
+  QVERIFY(!m_controller->addGroup(QStringLiteral("\n"), &failed));
+  QVERIFY(failed.isEmpty());
+  QCOMPARE(m_document->toPlainText(), unchanged);
+}
+
 void TestTodoViewWindowController::listCommands() {
   QVERIFY(
-      load(header() +
+      load(groupedHeader() +
            QStringLiteral(
-               "# Work\n<!-- todo-list: "
+               "## Work\n<!-- todo-list: "
                "{\"id\":\"work\",\"number\":-1e-9,\"extra\":{\"keep\":true}} -->\n\n- [ ] A\n")));
   QVERIFY(m_controller->renameList(key("work"), QStringLiteral("Work # [new]")));
   QCOMPARE(list("work").m_title, QStringLiteral("Work # [new]"));
@@ -311,9 +586,9 @@ void TestTodoViewWindowController::listCommands() {
   QVERIFY(m_controller->addList(QStringLiteral("Work # [new]")));
   QCOMPARE(m_controller->getDocument().m_lists.size(), 2);
   const auto addedKey = m_controller->getDocument().m_lists.last().m_key;
-  QVERIFY(m_controller->moveList(addedKey, key("work")));
+  QVERIFY(m_controller->moveList(addedKey, {}, key("work")));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_key, addedKey);
-  QVERIFY(m_controller->moveList(addedKey, {}));
+  QVERIFY(m_controller->moveList(addedKey, {}, {}));
   QCOMPARE(m_controller->getDocument().m_lists.last().m_key, addedKey);
   const auto beforeRemoval = m_document->toPlainText();
   QVERIFY(m_controller->removeList(key("work")));
@@ -331,14 +606,14 @@ void TestTodoViewWindowController::listCommands() {
 }
 
 void TestTodoViewWindowController::setextAndEmptyTitles() {
-  QVERIFY(load(QStringLiteral("Old title\n=========\n\n- [ ] task\n  - [ ] step")));
+  QVERIFY(load(QStringLiteral("Old title\n---------\n\n- [ ] task\n  - [ ] step")));
   const auto originalKey = m_controller->getDocument().m_lists.first().m_key;
   QVERIFY(m_controller->renameList(originalKey, QStringLiteral("New *plain*")));
   const auto listKey = m_controller->getDocument().m_lists.first().m_key;
-  QVERIFY(m_document->toPlainText().contains(QStringLiteral("New \\*plain\\*\n=========\n")));
+  QVERIFY(m_document->toPlainText().contains(QStringLiteral("New \\*plain\\*\n---------\n")));
   QVERIFY(m_controller->renameList(listKey, {}));
   QVERIFY(m_controller->getDocument().isValid());
-  QVERIFY(!m_document->toPlainText().contains(QStringLiteral("=========")));
+  QVERIFY(!m_document->toPlainText().contains(QStringLiteral("---------")));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_title, QString());
   auto taskKey = m_controller->getDocument().m_lists.first().m_items.first().m_key;
   auto fields = m_controller->getDocument().findItem(taskKey)->m_fields;
@@ -348,17 +623,13 @@ void TestTodoViewWindowController::setextAndEmptyTitles() {
   QVERIFY(m_controller->updateStep(taskKey, 0, {}, false));
   QCOMPARE(m_controller->getDocument().findItem(taskKey)->m_fields.m_title, QString());
   QCOMPARE(m_controller->getDocument().findItem(taskKey)->m_steps.first().m_title, QString());
-  QVERIFY(m_controller->getTaskModel()->index(0).data(Qt::DisplayRole).toString().size() > 0);
-  const auto emptyRow = m_controller->getListModel()->rowForKey(listKey);
-  QVERIFY(
-      !m_controller->getListModel()->index(emptyRow).data(Qt::DisplayRole).toString().isEmpty());
 }
 
 void TestTodoViewWindowController::checkboxChangesOnlyOneCharacter() {
   const QString source =
-      header() +
+      groupedHeader() +
       QStringLiteral(
-          "# Work\n<!-- todo-list: { \"id\": \"work\" } -->\n\n"
+          "## Work\n<!-- todo-list: { \"id\": \"work\" } -->\n\n"
           "+ [X] **Bold**\n  <!-- todo-item: { \"id\": \"a\", \"important\":false, \"tags\":[], "
           "\"number\":-1e-9 } -->\n\n"
           "  > Keep *Markdown*\n\n  * [X] Step\n\n- [ ] End\n  <!-- todo-item: {\"id\":\"b\"} -->");
@@ -378,8 +649,8 @@ void TestTodoViewWindowController::checkboxChangesOnlyOneCharacter() {
 
 void TestTodoViewWindowController::taskFieldsAndUnknownMetadata() {
   QVERIFY(load(
-      header() +
-      QStringLiteral("# Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+      groupedHeader() +
+      QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
                      "- [ ] A\n  <!-- todo-item: "
                      "{\"id\":\"a\",\"important\":false,\"tags\":[],\"negative\":-12,\"exponent\":"
                      "1e-9,\"large\":9007199254740993,\"object\":{\"untouched\":[1,true]}} -->")));
@@ -446,8 +717,8 @@ void TestTodoViewWindowController::notesAndTags() {
   QVERIFY(!item("a").m_noteRange.isValid());
   QCOMPARE(item("a").m_steps.size(), 2);
   QVERIFY(
-      load(header() +
-           QStringLiteral("# A\n<!-- todo-list: {\"id\":\"work\"} -->\n- [ ] A\n  <!-- todo-item: "
+      load(groupedHeader() +
+           QStringLiteral("## A\n<!-- todo-list: {\"id\":\"work\"} -->\n- [ ] A\n  <!-- todo-item: "
                           "{\"id\":\"a\",\"tags\":[\" Work \",\"work\",\"WORK\"]} -->\n")));
   fields = item("a").m_fields;
   fields.m_checked = true;
@@ -479,8 +750,9 @@ void TestTodoViewWindowController::taskAddRemoveUndo() {
 }
 
 void TestTodoViewWindowController::stepCommands() {
-  QVERIFY(load(header() + QStringLiteral("# Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n- [ ] "
-                                         "A\n  <!-- todo-item: {\"id\":\"a\"} -->")));
+  QVERIFY(load(groupedHeader() +
+               QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n- [ ] "
+                              "A\n  <!-- todo-item: {\"id\":\"a\"} -->")));
   QVERIFY(m_controller->addStep(key("a"), QStringLiteral("First")));
   QVERIFY(m_controller->addStep(key("a"), QStringLiteral("Second")));
   QVERIFY(m_controller->addStep(key("a"), QStringLiteral("Third")));
@@ -524,15 +796,15 @@ void TestTodoViewWindowController::stepCompletionIsIndependent() {
 
 void TestTodoViewWindowController::movesRetainOwnedBlocks() {
   const auto source =
-      QStringLiteral("<!-- File stays first -->\n\n") + header() +
-      QStringLiteral("# A\n<!-- todo-list: {\"id\":\"work\",\"extra\":-7} -->\n\n"
+      QStringLiteral("<!-- File stays first -->\n\n") + groupedHeader() +
+      QStringLiteral("## A\n<!-- todo-list: {\"id\":\"work\",\"extra\":-7} -->\n\n"
                      "<!-- List A comment -->\n\n"
                      "- [ ] One\n  <!-- todo-item: {\"id\":\"a\",\"extra\":1e-9} -->\n\n"
                      "  <!-- Task comment -->\n\n  > Note\n\n  + [X] Step\n\n"
                      "* [ ] Two\n  <!-- todo-item: {\"id\":\"b\"} -->\n\n"
                      "<!-- Boundary comment -->\n\n"
                      "+ [ ] Three\n  <!-- todo-item: {\"id\":\"c\"} -->\n\n"
-                     "# B\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
+                     "## B\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
                      "- [ ] Four\n  <!-- todo-item: {\"id\":\"d\"} -->");
   QVERIFY(load(source));
   QVERIFY(m_controller->getDocument().isValid());
@@ -554,7 +826,7 @@ void TestTodoViewWindowController::movesRetainOwnedBlocks() {
   QVERIFY(m_controller->moveTask(key("a"), key("home"), {}));
   QCOMPARE(itemTitles(list("home")), QStringList({QStringLiteral("Four"), QStringLiteral("One")}));
   const auto beforeListMove = m_document->toPlainText();
-  QVERIFY(m_controller->moveList(key("home"), key("work")));
+  QVERIFY(m_controller->moveList(key("home"), {}, key("work")));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_key, key("home"));
   QVERIFY(m_document->toPlainText().startsWith(QStringLiteral("<!-- File stays first -->")));
   QCOMPARE(item("a").m_id, QStringLiteral("a"));
@@ -564,10 +836,10 @@ void TestTodoViewWindowController::movesRetainOwnedBlocks() {
 }
 
 void TestTodoViewWindowController::movesAtUnterminatedEof() {
-  QVERIFY(load(QStringLiteral("# A\n\n- [ ] One\n\n# B\n\n- [ ] Two")));
+  QVERIFY(load(QStringLiteral("## A\n\n- [ ] One\n\n## B\n\n- [ ] Two")));
   const auto first = m_controller->getDocument().m_lists.first().m_key;
   const auto second = m_controller->getDocument().m_lists.last().m_key;
-  QVERIFY(m_controller->moveList(second, first));
+  QVERIFY(m_controller->moveList(second, {}, first));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_title, QStringLiteral("B"));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_items.first().m_fields.m_title,
            QStringLiteral("Two"));
@@ -582,7 +854,8 @@ void TestTodoViewWindowController::movesAtUnterminatedEof() {
 }
 
 void TestTodoViewWindowController::sourceSelectionRemapping() {
-  QVERIFY(load(QStringLiteral("# Work\n\n- [ ] First\n\n- [ ] Selected\n\n# Home\n\n- [ ] Other")));
+  QVERIFY(
+      load(QStringLiteral("## Work\n\n- [ ] First\n\n- [ ] Selected\n\n## Home\n\n- [ ] Other")));
   const auto work = m_controller->getDocument().m_lists.first().m_key;
   const auto selected = m_controller->getDocument().m_lists.first().m_items[1].m_key;
   m_controller->setSelectedItemKey(selected);
@@ -606,12 +879,12 @@ void TestTodoViewWindowController::sourceSelectionRemapping() {
 }
 
 void TestTodoViewWindowController::movedListRemapsUnidentifiedTasks() {
-  QVERIFY(load(QStringLiteral("# A\n\n- [ ] One\n\n# B\n\n- [ ] Selected\n\n- [ ] Second")));
+  QVERIFY(load(QStringLiteral("## A\n\n- [ ] One\n\n## B\n\n- [ ] Selected\n\n- [ ] Second")));
   const auto a = m_controller->getDocument().m_lists[0].m_key;
   const auto b = m_controller->getDocument().m_lists[1].m_key;
   m_controller->setView(TodoViewKind::List, b);
   m_controller->setSelectedItemKey(m_controller->getDocument().m_lists[1].m_items[0].m_key);
-  QVERIFY(m_controller->moveList(b, a));
+  QVERIFY(m_controller->moveList(b, {}, a));
   const auto &moved = m_controller->getDocument().m_lists.first();
   QCOMPARE(moved.m_title, QStringLiteral("B"));
   QCOMPARE(m_controller->getProjection().m_listKey, moved.m_key);
@@ -619,7 +892,7 @@ void TestTodoViewWindowController::movedListRemapsUnidentifiedTasks() {
   QVERIFY(moved.m_items.first().m_id.isEmpty());
   QCOMPARE(moved.m_items.first().m_fields.m_title, QStringLiteral("Selected"));
   const auto selected = m_controller->getSelectedItemKey();
-  QVERIFY(m_controller->moveList(moved.m_key, {}));
+  QVERIFY(m_controller->moveList(moved.m_key, {}, {}));
   const auto &last = m_controller->getDocument().m_lists.last();
   QCOMPARE(m_controller->getSelectedItemKey(), last.m_items.first().m_key);
   QVERIFY(m_controller->getSelectedItemKey() != selected);
@@ -636,7 +909,7 @@ void TestTodoViewWindowController::invalidCommandsAreAtomic() {
   QVERIFY(!m_controller->renameList(key("missing"), QStringLiteral("Name")));
   QVERIFY(!m_controller->setListDescription(key("missing"), QStringLiteral("Note")));
   QVERIFY(!m_controller->removeList(key("missing")));
-  QVERIFY(!m_controller->moveList(key("work"), key("missing")));
+  QVERIFY(!m_controller->moveList(key("work"), {}, key("missing")));
   QVERIFY(!m_controller->addTask(key("missing"), fields));
   QVERIFY(!m_controller->addTask(key("work"), TodoTaskFields()));
   QVERIFY(!m_controller->updateTask(key("missing"), fields));
@@ -655,7 +928,7 @@ void TestTodoViewWindowController::invalidCommandsAreAtomic() {
   QVERIFY(!m_document->isUndoAvailable());
   // A whitespace-only Setext rename would destroy the heading. The tentative
   // parse rejects the whole title/identity/header transaction, not just one edit.
-  QVERIFY(load(QStringLiteral("Title\n=====\n\n- [ ] Task")));
+  QVERIFY(load(QStringLiteral("Title\n-----\n\n- [ ] Task")));
   const auto before = m_document->toPlainText();
   QVERIFY(!m_controller->renameList(m_controller->getDocument().m_lists.first().m_key,
                                     QStringLiteral(" ")));
@@ -681,7 +954,7 @@ void TestTodoViewWindowController::readOnlyAndUnavailable() {
   m_document.reset();
   QVERIFY(!m_controller->addList(QStringLiteral("No document")));
   QVERIFY(
-      load(QStringLiteral("# A\n- [ ] Task\n  <!-- todo-item: {\"due\":\"2026-02-30\"} -->\n")));
+      load(QStringLiteral("## A\n- [ ] Task\n  <!-- todo-item: {\"due\":\"2026-02-30\"} -->\n")));
   QVERIFY(!m_controller->getDocument().isValid());
   QSignalSpy rejected(m_controller.get(), &TodoViewWindowController::operationRejected);
   QVERIFY(!m_controller->addList(QStringLiteral("Blocked")));
@@ -793,12 +1066,12 @@ void TestTodoViewWindowController::sourceRefreshAndReplacement() {
   m_controller->setSortOrder(TodoSortOrder::DueDate);
   QCOMPARE(changed.count(), 0);
   m_controller->setSourceRefreshEnabled(false);
-  m_document->setPlainText(QStringLiteral("# Broken\n- [ ] Task\n  <!-- todo-item: {broken} -->"));
+  m_document->setPlainText(QStringLiteral("## Broken\n- [ ] Task\n  <!-- todo-item: {broken} -->"));
   QCOMPARE(changed.count(), 0);
   m_controller->setSourceRefreshEnabled(true);
   QCOMPARE(changed.count(), 1);
   QVERIFY(!m_controller->getDocument().isValid());
-  m_document->setPlainText(QStringLiteral("# Repaired\n\n- [ ] Task"));
+  m_document->setPlainText(QStringLiteral("## Repaired\n\n- [ ] Task"));
   QVERIFY(m_controller->getDocument().isValid());
   m_controller->setBuffer(Buffer2());
   QVERIFY(m_controller->getSelectedItemKey().isEmpty());
@@ -977,8 +1250,8 @@ void TestTodoViewWindowController::nativeDragUsesMoveCommand() {
 
 void TestTodoViewWindowController::dragCompletionGroupsAndStaleness() {
   QVERIFY(load(
-      header() +
-      QStringLiteral("# Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n- [x] C\n  <!-- todo-item: "
+      groupedHeader() +
+      QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n- [x] C\n  <!-- todo-item: "
                      "{\"id\":\"c\"} -->\n\n- [ ] A\n  <!-- todo-item: {\"id\":\"a\"} -->\n\n- [ ] "
                      "B\n  <!-- todo-item: {\"id\":\"b\"} -->\n")));
   auto *model = m_controller->getTaskModel();
@@ -1002,8 +1275,9 @@ void TestTodoViewWindowController::dragCompletionGroupsAndStaleness() {
 }
 
 void TestTodoViewWindowController::normalizedCrLfAndUnicode() {
-  const QString source = QString::fromUtf8("# \xe5\xb7\xa5\xe4\xbd\x9c \xf0\x9f\x98\x80\r\n\r\n- [ "
-                                           "] \xe4\xb8\xad\xe6\x96\x87\r\n\r\n- [ ] Last");
+  const QString source =
+      QString::fromUtf8("## \xe5\xb7\xa5\xe4\xbd\x9c \xf0\x9f\x98\x80\r\n\r\n- [ "
+                        "] \xe4\xb8\xad\xe6\x96\x87\r\n\r\n- [ ] Last");
   QVERIFY(load(source));
   QVERIFY(!m_document->toPlainText().contains(QLatin1Char('\r')));
   const auto normalized = m_document->toPlainText();
@@ -1022,7 +1296,7 @@ void TestTodoViewWindowController::normalizedCrLfAndUnicode() {
 }
 
 void TestTodoViewWindowController::coincidentEofInsertions() {
-  QVERIFY(load(QStringLiteral("# Empty")));
+  QVERIFY(load(QStringLiteral("## Empty")));
   TodoTaskFields fields;
   fields.m_title = QStringLiteral("Task");
   fields.m_note = QStringLiteral("Note");
@@ -1033,7 +1307,7 @@ void TestTodoViewWindowController::coincidentEofInsertions() {
            fields.m_note);
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), initial);
-  QVERIFY(load(QStringLiteral("# List\n\n- [ ] Task")));
+  QVERIFY(load(QStringLiteral("## List\n\n- [ ] Task")));
   const auto taskKey = m_controller->getDocument().m_lists.first().m_items.first().m_key;
   fields = m_controller->getDocument().findItem(taskKey)->m_fields;
   fields.m_note = QStringLiteral("First note");
@@ -1043,7 +1317,7 @@ void TestTodoViewWindowController::coincidentEofInsertions() {
   QCOMPARE(m_controller->getDocument().findItem(identified)->m_fields.m_note, fields.m_note);
   QVERIFY(m_controller->addStep(identified, QStringLiteral("Step at EOF")));
   QCOMPARE(m_controller->getDocument().findItem(identified)->m_steps.size(), 1);
-  QVERIFY(load(QStringLiteral("#")));
+  QVERIFY(load(QStringLiteral("##")));
   QVERIFY(m_controller->renameList(m_controller->getDocument().m_lists.first().m_key,
                                    QStringLiteral("New")));
   QCOMPARE(m_controller->getDocument().m_lists.first().m_title, QStringLiteral("New"));

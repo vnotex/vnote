@@ -21,7 +21,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -106,7 +105,9 @@ namespace {
 const QByteArray c_source =
     "<!-- todo: {\"version\":1} -->\n\n"
     "<!-- File-scoped author comment -->\n\n"
-    "# Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+    "# Default\n<!-- todo-group: {\"id\":\"default\",\"default\":true} -->\n\n"
+    "<!-- Default group comment -->\n\n"
+    "## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
     "> Team commitments\n\n"
     "- [ ] Alpha\n  <!-- todo-item: "
     "{\"id\":\"alpha\",\"tags\":[\"work\"],\"private\":\"opaque-metadata-only\"} -->\n\n"
@@ -115,7 +116,7 @@ const QByteArray c_source =
     "<!-- Work-scoped separator between root task lists -->\n\n"
     "+ [ ] Beta\n  <!-- todo-item: {\"id\":\"beta\",\"important\":true} -->\n\n"
     "- [x] Done\n  <!-- todo-item: {\"id\":\"done\"} -->\n\n"
-    "# Personal\n<!-- todo-list: {\"id\":\"personal\"} -->\n\n"
+    "## Personal\n<!-- todo-list: {\"id\":\"personal\"} -->\n\n"
     "- [ ] Gamma\n  <!-- todo-item: {\"id\":\"gamma\",\"tags\":[\"home\"]} -->\n";
 
 QByteArray readBytes(const QString &p_path) {
@@ -315,29 +316,63 @@ private:
   bool m_timedOut = false;
 };
 
-bool answerInput(const QString &p_text, const std::function<void()> &p_open) {
+bool answerDialog(const char *p_name, const std::function<bool(QDialog *)> &p_fill,
+                  const std::function<void()> &p_open) {
   bool answered = false;
   QElapsedTimer elapsed;
   elapsed.start();
   QTimer timer;
   timer.setInterval(10);
   QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
-    if (auto *dialog = qobject_cast<QInputDialog *>(QApplication::activeModalWidget())) {
-      dialog->setTextValue(p_text);
-      dialog->accept();
-      answered = true;
+    auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+    if (dialog && dialog->objectName() == QLatin1String(p_name)) {
       timer.stop();
+      answered = p_fill(dialog);
+      if (!answered)
+        dialog->reject();
     } else if (elapsed.elapsed() > 5000) {
-      for (auto *widget : QApplication::topLevelWidgets()) {
-        if (auto *dialog = qobject_cast<QDialog *>(widget); dialog && dialog->isVisible())
-          dialog->reject();
-      }
+      if (dialog)
+        dialog->reject();
       timer.stop();
     }
   });
   timer.start();
   p_open();
   return answered;
+}
+
+bool answerNewList(const QString &p_title, const std::function<void()> &p_open) {
+  return answerDialog(
+      "todoNewListDialog",
+      [&](QDialog *p_dialog) {
+        auto *name = control<QLineEdit>(p_dialog, "todoNewListName");
+        auto *group = control<QComboBox>(p_dialog, "todoNewListGroup");
+        auto *accept = control<QPushButton>(p_dialog, "todoNewListAccept");
+        if (!name || !group || !accept || !group->currentData().toString().isEmpty())
+          return false;
+        name->setText(p_title);
+        accept->click();
+        return true;
+      },
+      p_open);
+}
+
+bool chooseButtonMenu(QPushButton *p_button, const char *p_actionName) {
+  if (!p_button || !p_button->isEnabled() || !activate(p_button))
+    return false;
+  QTest::mouseClick(p_button, Qt::LeftButton);
+  if (!QTest::qWaitFor([] { return qobject_cast<QMenu *>(QApplication::activePopupWidget()); }))
+    return false;
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  for (auto *action : menu->actions()) {
+    if (action->objectName() == QLatin1String(p_actionName) && action->isEnabled()) {
+      QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                        menu->actionGeometry(action).center());
+      return true;
+    }
+  }
+  menu->close();
+  return false;
 }
 
 bool chooseMenu(QWidget *p_widget, const QPoint &p_point, const QString &p_label) {
@@ -431,6 +466,10 @@ private slots:
   void filteringSortingAndDayRollover();
   void nativeMoveReorderAndDeletion();
   void nativeListActions();
+  void nativeGroupsWideAndNarrow_data();
+  void nativeGroupsWideAndNarrow();
+  void implicitDefaultAndGroupRecreation();
+  void groupDialogsRejectForeignReload();
   void deletionConfirmationRejectsForeignReload();
   void invalidSourceRecovery_data();
   void invalidSourceRecovery();
@@ -446,6 +485,8 @@ private slots:
   void sharedBufferRejectsStaleGestures();
   void foreignReloadAndSameTypeReplacement();
   void nativeLayoutsKeyboardAndTheme();
+  void groupSourceNavigation_data();
+  void groupSourceNavigation();
   void tasksOnlyNavigation_data();
   void tasksOnlyNavigation();
   void tasksOnlyFindAndReplace();
@@ -671,6 +712,13 @@ bool TestTodoViewWindow::selectView(TodoViewWindow *p_window, TodoViewKind p_kin
   if (!QTest::qWaitFor([&] { return lists->isVisible() || combo->isVisible(); }))
     return false;
   if (lists->isVisible()) {
+    if (lists->isRowHidden(row)) {
+      const auto *group = controller->getListModel()->groupAt(row);
+      if (!group)
+        return false;
+      p_window->getTodoEditor()->focusGroup(group->m_key);
+      QTest::keyClick(lists, Qt::Key_Right);
+    }
     if (!activate(lists))
       return false;
     const auto index = lists->model()->index(row, 0);
@@ -681,7 +729,13 @@ bool TestTodoViewWindow::selectView(TodoViewWindow *p_window, TodoViewKind p_kin
     if (!activate(combo))
       return false;
     combo->showPopup();
-    const auto index = combo->model()->index(row, 0);
+    const int comboRow =
+        p_kind == TodoViewKind::List
+            ? combo->findData(p_listKey, TodoListModel::IdRole)
+            : combo->findData(QVariant::fromValue(p_kind), TodoListModel::ViewKindRole);
+    const auto index = combo->model()->index(comboRow, 0);
+    if (!index.isValid())
+      return false;
     combo->view()->scrollTo(index);
     QTest::mouseClick(combo->view()->viewport(), Qt::LeftButton, Qt::NoModifier,
                       combo->view()->visualRect(index).center());
@@ -835,6 +889,11 @@ void TestTodoViewWindow::emptyAndAllTasksQuickAdd() {
   QVERIFY(quickAdd(window, QStringLiteral("First task")));
   auto *controller = window->getController();
   QCOMPARE(controller->getDocument().m_lists.size(), 1);
+  QCOMPARE(controller->getDocument().m_groups.size(), 1);
+  QVERIFY(controller->getDocument().m_groups.first().m_isDefault);
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("# Default\n")));
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("## Tasks\n")));
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("todo-group:")));
   QCOMPARE(controller->getDocument().m_lists.first().m_title, QStringLiteral("Tasks"));
   QCOMPARE(controller->getDocument().m_lists.first().m_items.first().m_fields.m_title,
            QStringLiteral("First task"));
@@ -843,9 +902,9 @@ void TestTodoViewWindow::emptyAndAllTasksQuickAdd() {
   window->redo();
   auto *newList = control<QPushButton>(window, "todoNewList");
   QVERIFY(newList);
-  QVERIFY(answerInput(QStringLiteral("Other"), [&] { newList->click(); }));
+  QVERIFY(answerNewList(QStringLiteral("Other"), [&] { newList->click(); }));
   QCOMPARE(controller->getDocument().m_lists.size(), 2);
-  const auto destinationKey = controller->getDocument().m_lists.last().m_key;
+  const auto destinationKey = controller->getProjection().m_listKey;
   QVERIFY(selectView(window, TodoViewKind::All));
   auto *destination = control<QComboBox>(window, "todoDestination");
   QVERIFY(destination && destination->isVisible());
@@ -914,7 +973,7 @@ void TestTodoViewWindow::smartQuickAdd() {
 
 void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
   createArea();
-  const QByteArray source = "# Tasks\n\n- [ ] Original\n";
+  const QByteArray source = "# Default\n\n## Tasks\n\n- [ ] Original\n";
   QVERIFY(openNote(QStringLiteral("history.todo"), source).isValid());
   auto *window = current();
   QVERIFY(window);
@@ -1179,6 +1238,8 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
     auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
     auto *destination = dialog ? control<QComboBox>(dialog, "todoMoveDestination") : nullptr;
     if (destination) {
+      QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:personal"))),
+               QStringLiteral("Default / Personal"));
       destination->setCurrentIndex(destination->findData(QStringLiteral("id:personal")));
       auto *buttons = dialog->findChild<QDialogButtonBox *>();
       if (buttons) {
@@ -1305,8 +1366,8 @@ void TestTodoViewWindow::nativeListActions() {
   QCOMPARE(window->getLatestContent(), beforeDelete);
   auto *newList = control<QPushButton>(window, "todoNewList");
   QVERIFY(newList);
-  QVERIFY(answerInput(QStringLiteral("Empty"), [&] { newList->click(); }));
-  const auto emptyKey = controller->getDocument().m_lists.last().m_key;
+  QVERIFY(answerNewList(QStringLiteral("Empty"), [&] { newList->click(); }));
+  const auto emptyKey = controller->getProjection().m_listKey;
   QVERIFY(controller->getDocument().findList(emptyKey)->m_items.isEmpty());
   // An empty-list removal needs no modal confirmation but remains one undo step.
   QVERIFY(listMenu(emptyKey, QStringLiteral("Delete")));
@@ -1314,6 +1375,426 @@ void TestTodoViewWindow::nativeListActions() {
   QVERIFY(!controller->getDocument().findList(emptyKey));
   window->undo();
   QVERIFY(controller->getDocument().findList(emptyKey));
+}
+
+void TestTodoViewWindow::nativeGroupsWideAndNarrow_data() {
+  QTest::addColumn<int>("width");
+  QTest::newRow("wide") << 1000;
+  QTest::newRow("narrow") << 600;
+}
+
+void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
+  QFETCH(int, width);
+  createArea();
+  const auto buffer = openNote(QStringLiteral("groups.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  auto *editor = window->getTodoEditor();
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  auto *taskModel = controller->getTaskModel();
+  auto *lists = control<QListView>(window, "todoLists");
+  auto *viewCombo = control<QComboBox>(window, "todoViewCombo");
+  auto *groups = control<QComboBox>(window, "todoGroupCombo");
+  auto *groupMore = control<QPushButton>(window, "todoGroupMore");
+  auto *newGroup = control<QPushButton>(window, "todoNewGroup");
+  auto *newList = control<QPushButton>(window, "todoNewList");
+  QVERIFY(lists && viewCombo && groups && groupMore && newGroup && newList);
+  QTRY_COMPARE(editor->width() < 840, width < 840);
+  QTRY_VERIFY(groups->isVisible() && groupMore->isVisible() && newGroup->isVisible());
+  QCOMPARE(model->rowCount(), 7); // Four smart views, Default, Work, Personal.
+  QCOMPARE(viewCombo->count(), 6);
+  const auto defaultKey = QStringLiteral("id:default");
+  const int defaultRow = model->rowForGroup(defaultKey);
+  const int workRow = model->rowForKey(QStringLiteral("id:work"));
+  QVERIFY(defaultRow >= 0 && workRow >= 0);
+  QVERIFY(model->groupAt(defaultRow));
+  QCOMPARE(model->groupAt(workRow)->m_key, defaultKey);
+  QVERIFY(!model->groupAt(0));
+  QVERIFY(model->index(defaultRow).data(TodoListModel::GroupRole).toBool());
+  QVERIFY(!model->index(defaultRow).data(TodoListModel::ViewKindRole).isValid());
+  QCOMPARE(model->index(defaultRow).data(TodoListModel::ListCountRole).toInt(), 2);
+  QCOMPARE(model->index(defaultRow).data(TodoListModel::IncompleteCountRole).toInt(), 3);
+  const auto original = window->getLatestContent();
+  const auto originalView = controller->getProjection().m_view;
+  const auto originalList = controller->getProjection().m_listKey;
+  const auto originalItems = taskTitles(window);
+  const auto originalSelection = controller->getSelectedItemKey();
+  editor->focusGroup(defaultKey);
+  QSignalSpy taskReset(taskModel, &QAbstractItemModel::modelReset);
+  if (width >= 840) {
+    QVERIFY(activate(lists));
+    const auto index = model->index(defaultRow);
+    lists->scrollTo(index);
+    QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      lists->visualRect(index).center());
+  } else {
+    QVERIFY(chooseButtonMenu(groupMore, "todoToggleGroupAction"));
+  }
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  QVERIFY(lists->isRowHidden(workRow));
+  QCOMPARE(model->rowCount(), 7);
+  QCOMPARE(model->rowForKey(QStringLiteral("id:work")), workRow);
+  QCOMPARE(viewCombo->count(), 6);
+  QCOMPARE(taskReset.size(), 0);
+  QCOMPARE(taskTitles(window), originalItems);
+  QCOMPARE(controller->getSelectedItemKey(), originalSelection);
+  QCOMPARE(controller->getProjection().m_view, originalView);
+  QCOMPARE(controller->getProjection().m_listKey, originalList);
+  QVERIFY(model->index(defaultRow)
+              .data(Qt::AccessibleTextRole)
+              .toString()
+              .contains(QStringLiteral("collapsed")));
+  QVERIFY(model->index(defaultRow)
+              .data(Qt::AccessibleTextRole)
+              .toString()
+              .contains(QStringLiteral("2 lists")));
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(!window->isModified());
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  QVERIFY(typeText(search, QStringLiteral("Default")));
+  QCOMPARE(taskModel->getActiveCount(), 3);
+  QCOMPARE(taskModel->getCompletedCount(), 1);
+  for (int row = 0; row < taskModel->rowCount(); ++row) {
+    const auto index = taskModel->index(row);
+    if (!index.data(TodoTaskModel::SectionRole).toBool()) {
+      QCOMPARE(index.data(TodoTaskModel::SourceGroupIdRole).toString(), defaultKey);
+      QCOMPARE(index.data(TodoTaskModel::SourceGroupNameRole).toString(),
+               QStringLiteral("Default"));
+    }
+  }
+  search->clear();
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  QVERIFY(!lists->isRowHidden(workRow));
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(viewCombo->itemText(viewCombo->findData(QStringLiteral("id:work"), TodoListModel::IdRole))
+              .contains(QStringLiteral("Default / Work")));
+
+  const auto createGroup = [&](const QString &p_title) {
+    return answerDialog(
+        "todoNewGroupDialog",
+        [&](QDialog *p_dialog) {
+          auto *name = control<QLineEdit>(p_dialog, "todoNewGroupName");
+          if (!name)
+            return false;
+          name->setText(p_title);
+          p_dialog->accept();
+          return true;
+        },
+        [&] { newGroup->click(); });
+  };
+  QVERIFY(createGroup(QStringLiteral("Projects")));
+  const auto projectKey = editor->selectedGroupKey();
+  QVERIFY(!projectKey.isEmpty() && projectKey != defaultKey);
+  QCOMPARE(controller->getDocument().findGroup(projectKey)->m_title, QStringLiteral("Projects"));
+  QCOMPARE(controller->getDocument().findGroup(projectKey)->m_listCount, 0);
+  QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:work"));
+  QCOMPARE(taskTitles(window), originalItems);
+  QCOMPARE(groups->currentData().toString(), projectKey);
+  QCOMPARE(viewCombo->findData(projectKey, TodoListModel::IdRole), -1);
+  QVERIFY(chooseButtonMenu(groupMore, "todoToggleGroupAction"));
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(projectKey));
+  QVERIFY(chooseButtonMenu(groupMore, "todoToggleGroupAction"));
+  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(projectKey));
+  QVERIFY(createGroup(QStringLiteral("Scratch")));
+  const auto scratchKey = editor->selectedGroupKey();
+  const auto withScratch = window->getLatestContent();
+  QVERIFY(chooseButtonMenu(groupMore, "todoDeleteGroupAction"));
+  QVERIFY(!QApplication::activeModalWidget());
+  QVERIFY(!controller->getDocument().findGroup(scratchKey));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), withScratch);
+  window->redo();
+  QVERIFY(!controller->getDocument().findGroup(scratchKey));
+  QVERIFY(createGroup(QStringLiteral("Archive")));
+  const auto archiveKey = editor->selectedGroupKey();
+  QVERIFY(archiveKey != projectKey);
+  editor->focusGroup(archiveKey);
+  QWidget *groupFocus = width < 840 ? static_cast<QWidget *>(groups) : lists;
+  QVERIFY(activate(groupFocus));
+  QTest::keyClick(groupFocus, Qt::Key_Up, Qt::AltModifier);
+  QCOMPARE(controller->getDocument().m_groups.at(1).m_key, archiveKey);
+  QTest::keyClick(groupFocus, Qt::Key_Down, Qt::AltModifier);
+  QCOMPARE(controller->getDocument().m_groups.last().m_key, archiveKey);
+  bool renamedAction = false;
+  QVERIFY(answerDialog(
+      "todoRenameGroupDialog",
+      [&](QDialog *p_dialog) {
+        auto *name = control<QLineEdit>(p_dialog, "todoRenameGroupName");
+        if (!name || name->text() != QLatin1String("Archive"))
+          return false;
+        name->setText(QStringLiteral("Reference"));
+        p_dialog->accept();
+        return true;
+      },
+      [&] { renamedAction = chooseButtonMenu(groupMore, "todoRenameGroupAction"); }));
+  QVERIFY(renamedAction);
+  QCOMPARE(controller->getDocument().findGroup(archiveKey)->m_title, QStringLiteral("Reference"));
+  bool listAction = false;
+  QVERIFY(answerDialog(
+      "todoNewListDialog",
+      [&](QDialog *p_dialog) {
+        auto *name = control<QLineEdit>(p_dialog, "todoNewListName");
+        auto *group = control<QComboBox>(p_dialog, "todoNewListGroup");
+        auto *accept = control<QPushButton>(p_dialog, "todoNewListAccept");
+        if (!name || !group || !accept || group->currentData().toString() != archiveKey)
+          return false;
+        name->setText(QStringLiteral("Work"));
+        accept->click();
+        return true;
+      },
+      [&] { listAction = chooseButtonMenu(groupMore, "todoGroupNewListAction"); }));
+  QVERIFY(listAction);
+  const auto referenceList = controller->getProjection().m_listKey;
+  QVERIFY(referenceList != QLatin1String("id:work"));
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(referenceList))
+               ->m_key,
+           archiveKey);
+  QVERIFY(quickAdd(window, QStringLiteral("Reference task")));
+  const auto referenceTask = controller->getSelectedItemKey();
+  QVERIFY(answerNewList(QStringLiteral("Inbox"), [&] { newList->click(); }));
+  const auto inbox = controller->getProjection().m_listKey;
+  QCOMPARE(
+      controller->getDocument().groupForList(*controller->getDocument().findList(inbox))->m_key,
+      defaultKey);
+  QVERIFY(controller->getDocument().m_lists.last().m_key != inbox);
+  QCOMPARE(editor->selectedGroupKey(), defaultKey);
+
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  const auto alphaBefore = *controller->getDocument().findItem(QStringLiteral("id:alpha"));
+  auto *listMore = control<QPushButton>(window, "todoListMore");
+  QVERIFY(listMore && listMore->isVisible());
+  const auto moveTo = [&](const QString &p_groupKey) {
+    bool chosen = false;
+    const bool answered = answerDialog(
+        "todoMoveListDialog",
+        [&](QDialog *p_dialog) {
+          auto *destination = control<QComboBox>(p_dialog, "todoMoveListGroup");
+          auto *accept = control<QPushButton>(p_dialog, "todoMoveListAccept");
+          if (!destination || !accept || destination->findData(p_groupKey) < 0)
+            return false;
+          destination->setCurrentIndex(destination->findData(p_groupKey));
+          accept->click();
+          return true;
+        },
+        [&] { chosen = chooseButtonMenu(listMore, "todoMoveListGroupAction"); });
+    return answered && chosen;
+  };
+  QVERIFY(moveTo(projectKey));
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+               ->m_key,
+           projectKey);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_note,
+           alphaBefore.m_fields.m_note);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(),
+           alphaBefore.m_steps.size());
+  const auto moved = window->getLatestContent();
+  QVERIFY(chooseButtonMenu(listMore, "todoListUpAction"));
+  QCOMPARE(window->getLatestContent(), moved);
+  QVERIFY(chooseButtonMenu(listMore, "todoListDownAction"));
+  QCOMPARE(window->getLatestContent(), moved); // The only list cannot cross its group boundary.
+  window->undo();
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+               ->m_key,
+           defaultKey);
+  window->redo();
+  QCOMPARE(window->getLatestContent(), moved);
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *destination = control<QComboBox>(window, "todoDestination");
+  QVERIFY(destination);
+  QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:work"))),
+           QStringLiteral("Projects / Work"));
+  QCOMPARE(destination->itemText(destination->findData(referenceList)),
+           QStringLiteral("Reference / Work"));
+
+  editor->focusGroup(projectKey);
+  bool confirmationNamed = false;
+  {
+    DialogAnswers answers({QMessageBox::No}, [&](QMessageBox *p_box) {
+      confirmationNamed = p_box->text().contains(QStringLiteral("Projects")) &&
+                          p_box->text().contains(QStringLiteral("lists and tasks"));
+    });
+    QVERIFY(chooseButtonMenu(groupMore, "todoDeleteGroupAction"));
+    QVERIFY(answers.accepted());
+  }
+  QVERIFY(confirmationNamed);
+  QCOMPARE(window->getLatestContent(), moved);
+  {
+    DialogAnswers answers({QMessageBox::Yes});
+    QVERIFY(chooseButtonMenu(groupMore, "todoDeleteGroupAction"));
+    QVERIFY(answers.accepted());
+  }
+  QVERIFY(!controller->getDocument().findGroup(projectKey));
+  QVERIFY(!controller->getDocument().findList(QStringLiteral("id:work")));
+  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  QVERIFY(controller->getDocument().findItem(referenceTask));
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("File-scoped author comment")));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), moved);
+  window->redo();
+  const auto saved = window->getLatestContent();
+  QVERIFY(saved.contains(QStringLiteral("\"version\":1")));
+  QVERIFY(saved.contains(QStringLiteral("# Reference\n")));
+  QVERIFY(saved.contains(QStringLiteral("## Work\n")));
+  QVERIFY(window->getSourceEditor()->isHidden());
+  QVERIFY(window->save());
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(readBytes(absolute(QStringLiteral("groups.todo"))), saved.toUtf8());
+
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(!newGroup->isEnabled() && !newList->isEnabled());
+  QVERIFY(groups->isEnabled() && groupMore->isEnabled());
+  QVERIFY(chooseCombo(groups, groups->findData(archiveKey)));
+  QCOMPARE(editor->selectedGroupKey(), archiveKey);
+  QVERIFY(activate(groupMore));
+  QTest::mouseClick(groupMore, Qt::LeftButton);
+  QTRY_VERIFY(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  for (auto *action : menu->actions()) {
+    if (action->isSeparator())
+      continue;
+    QCOMPARE(action->isEnabled(), action->objectName() == QLatin1String("todoToggleGroupAction"));
+  }
+  menu->close();
+  QVERIFY(chooseButtonMenu(groupMore, "todoToggleGroupAction"));
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(archiveKey));
+  editor->focusGroup(archiveKey);
+  QVERIFY(activate(groupFocus));
+  QTest::keyClick(groupFocus, Qt::Key_Up, Qt::AltModifier);
+  QCOMPARE(window->getLatestContent(), saved);
+  QVERIFY(!window->isModified());
+  QVERIFY(!controller->removeGroup(archiveKey));
+  const auto node = buffer.nodeId();
+  QVERIFY(m_area->getController()->closeViewWindow(window->getViewWindowId(), false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(m_buffers->openBuffer(node).isValid());
+  window = current();
+  QVERIFY(window);
+  QCOMPARE(window->getLatestContent(), saved);
+  QCOMPARE(window->getController()->getDocument().findGroup(archiveKey)->m_title,
+           QStringLiteral("Reference"));
+  QVERIFY(window->getController()->getDocument().findItem(referenceTask));
+  QVERIFY(window->getController()->getProjection().m_collapsedGroups.isEmpty());
+  QVERIFY(!window->isModified());
+}
+
+void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
+  createArea();
+  const QByteArray source =
+      "<!-- file-owned -->\n\n## Inbox\n\n- [ ] Existing\n\n# Other\n\n## Elsewhere\n";
+  QVERIFY(openNote(QStringLiteral("implicit.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  auto *editor = window->getTodoEditor();
+  auto *groups = control<QComboBox>(window, "todoGroupCombo");
+  auto *more = control<QPushButton>(window, "todoGroupMore");
+  auto *newList = control<QPushButton>(window, "todoNewList");
+  QVERIFY(groups && more && newList);
+  QVERIFY(controller->getDocument().defaultGroup());
+  QCOMPARE(controller->getDocument().defaultGroup()->m_key, QStringLiteral("default:"));
+  editor->focusGroup(QStringLiteral("default:"));
+  QVERIFY(chooseButtonMenu(more, "todoToggleGroupAction"));
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(!window->isModified());
+  QVERIFY(window->save());
+  QCOMPARE(readBytes(absolute(QStringLiteral("implicit.todo"))), source);
+  QVERIFY(answerNewList(QStringLiteral("New default list"), [&] { newList->click(); }));
+  const auto createdKey = controller->getProjection().m_listKey;
+  const auto defaultKey = controller->getDocument().defaultGroup()->m_key;
+  QVERIFY(defaultKey.startsWith(QLatin1String("id:")));
+  QVERIFY(!controller->getDocument().defaultGroup()->m_implicit);
+  QCOMPARE(controller->getDocument().defaultGroup()->m_listCount, 2);
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(createdKey))
+               ->m_key,
+           defaultKey);
+  QVERIFY(controller->getDocument().m_lists.last().m_key != createdKey);
+  const auto materialized = window->getLatestContent();
+  QVERIFY(materialized.indexOf(QStringLiteral("# Default")) >
+          materialized.indexOf(QStringLiteral("file-owned")));
+  QVERIFY(materialized.indexOf(QStringLiteral("# Default")) <
+          materialized.indexOf(QStringLiteral("## Inbox")));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  window->redo();
+  QCOMPARE(window->getLatestContent(), materialized);
+  editor->focusGroup(defaultKey);
+  {
+    DialogAnswers answers({QMessageBox::Yes});
+    QVERIFY(chooseButtonMenu(more, "todoDeleteGroupAction"));
+    QVERIFY(answers.accepted());
+  }
+  QVERIFY(!controller->getDocument().defaultGroup());
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("file-owned")));
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("# Other")));
+  QVERIFY(answerNewList(QStringLiteral("Recreated"), [&] { newList->click(); }));
+  QVERIFY(controller->getDocument().defaultGroup());
+  QVERIFY(controller->getDocument().defaultGroup()->m_key != defaultKey);
+  QVERIFY(controller->getDocument().m_groups.last().m_isDefault);
+  const auto recreatedKey = controller->getProjection().m_listKey;
+  QCOMPARE(controller->getDocument().findList(recreatedKey)->m_title, QStringLiteral("Recreated"));
+  // An empty explicit group can be deleted immediately, then restored through source undo.
+  QVERIFY(controller->addGroup(QStringLiteral("Empty")));
+  const auto emptyKey = controller->getDocument().m_groups.last().m_key;
+  editor->focusGroup(emptyKey);
+  QVERIFY(chooseButtonMenu(more, "todoDeleteGroupAction"));
+  QVERIFY(!QApplication::activeModalWidget());
+  QVERIFY(!controller->getDocument().findGroup(emptyKey));
+  window->undo();
+  QVERIFY(controller->getDocument().findGroup(emptyKey));
+}
+
+void TestTodoViewWindow::groupDialogsRejectForeignReload() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("group-modal.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  auto replacement = c_source;
+  replacement.replace("# Default", "# Reloaded");
+  bool chosen = false;
+  QVERIFY(answerDialog(
+      "todoNewListDialog",
+      [&](QDialog *p_dialog) {
+        auto *name = control<QLineEdit>(p_dialog, "todoNewListName");
+        auto *accept = control<QPushButton>(p_dialog, "todoNewListAccept");
+        if (!name || !accept ||
+            !writeBytes(absolute(QStringLiteral("group-modal.todo")), replacement) ||
+            !window->reload())
+          return false;
+        name->setText(QStringLiteral("Stale list"));
+        accept->click();
+        return true;
+      },
+      [&] {
+        window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
+        chosen = chooseButtonMenu(control<QPushButton>(window, "todoGroupMore"),
+                                  "todoGroupNewListAction");
+      }));
+  QVERIFY(chosen);
+  QCOMPARE(window->getLatestContent().toUtf8(), replacement);
+  QCOMPARE(controller->getDocument().m_lists.size(), 2);
+  QVERIFY(!window->isModified());
+  {
+    DialogAnswers answers({QMessageBox::Yes}, [&](QMessageBox *) {
+      QVERIFY(writeBytes(absolute(QStringLiteral("group-modal.todo")), c_source));
+      QVERIFY(window->reload());
+    });
+    QVERIFY(
+        chooseButtonMenu(control<QPushButton>(window, "todoGroupMore"), "todoDeleteGroupAction"));
+    QVERIFY(answers.accepted());
+  }
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(controller->getDocument().findGroup(QStringLiteral("id:default")));
+  QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  QVERIFY(!window->isModified());
 }
 
 void TestTodoViewWindow::deletionConfirmationRejectsForeignReload() {
@@ -1401,9 +1882,12 @@ void TestTodoViewWindow::repeatedSaveAutosaveAndReopen() {
   QFETCH(bool, crlf);
   QFETCH(bool, eofNewline);
   createArea();
-  QString initial = QString::fromUtf8("<!-- untouched α 😀 -->\n# 工作\n"
-                                      "<!-- todo-list: {\"id\":\"work\"} -->\n\n"
-                                      "- [ ] Café 😀\n  <!-- todo-item: {\"id\":\"alpha\"} -->");
+  QString initial =
+      QString::fromUtf8("<!-- untouched α 😀 -->\n# Default\n"
+                        "<!-- todo-group: {\"id\":\"default\",\"default\":true} -->\n\n"
+                        "## 工作\n"
+                        "<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+                        "- [ ] Café 😀\n  <!-- todo-item: {\"id\":\"alpha\"} -->");
   if (eofNewline)
     initial += QLatin1Char('\n');
   if (crlf)
@@ -1569,7 +2053,7 @@ void TestTodoViewWindow::dirtyReplacement() {
   QVERIFY(typeText(control<QLineEdit>(window, "todoTitle"), QStringLiteral("Outgoing draft")));
   const auto draft = window->getLatestContent();
   const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
-  const QByteArray incoming = "# Incoming\n\n- [ ] Replacement task\n";
+  const QByteArray incoming = "# Default\n\n## Incoming\n\n- [ ] Replacement task\n";
   DialogAnswers dialog({static_cast<QMessageBox::StandardButton>(answer)});
   const auto second = openNote(QStringLiteral("replace-second.todo"), incoming);
   QVERIFY(dialog.accepted());
@@ -1628,6 +2112,20 @@ void TestTodoViewWindow::readOnlyNavigation() {
   QVERIFY(add->isReadOnly() || !add->isEnabled());
   QVERIFY(!important->isEnabled());
   QVERIFY(note->isReadOnly());
+  auto *groupMore = control<QPushButton>(window, "todoGroupMore");
+  auto *newGroup = control<QPushButton>(window, "todoNewGroup");
+  auto *groups = control<QComboBox>(window, "todoGroupCombo");
+  QVERIFY(groupMore && newGroup && groups);
+  QVERIFY(!newGroup->isEnabled());
+  QVERIFY(groups->isEnabled());
+  window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
+  QVERIFY(chooseButtonMenu(groupMore, "todoToggleGroupAction"));
+  QVERIFY(window->getController()->getProjection().m_collapsedGroups.contains(
+      QStringLiteral("id:default")));
+  QVERIFY(!window->getController()->renameGroup(QStringLiteral("id:default"),
+                                                QStringLiteral("Blocked")));
+  QVERIFY(!window->getController()->removeGroup(QStringLiteral("id:default")));
+  QCOMPARE(window->getLatestContent(), before);
   QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
   QVERIFY(selectView(window, TodoViewKind::All));
   auto *search = control<QLineEdit>(window, "todoSearch");
@@ -1755,7 +2253,7 @@ void TestTodoViewWindow::foreignReloadAndSameTypeReplacement() {
   m_config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
   FileOpenSettings settings;
   settings.m_mode = ViewWindowMode::Edit;
-  const QByteArray nextSource = "# Next\n\n- [ ] New binding\n";
+  const QByteArray nextSource = "# Default\n\n## Next\n\n- [ ] New binding\n";
   const auto next = openNote(QStringLiteral("next.todo"), nextSource, settings);
   QVERIFY(next.isValid());
   QCOMPARE(current(), window);
@@ -1892,6 +2390,76 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   }
 }
 
+void TestTodoViewWindow::groupSourceNavigation_data() {
+  QTest::addColumn<QString>("needle");
+  QTest::addColumn<int>("width");
+  QTest::newRow("wide-heading") << QStringLiteral("# Empty") << 1000;
+  QTest::newRow("wide-comment") << QStringLiteral("Empty group comment") << 1000;
+  QTest::newRow("narrow-heading") << QStringLiteral("# Empty") << 600;
+  QTest::newRow("narrow-comment") << QStringLiteral("Empty group comment") << 600;
+}
+
+void TestTodoViewWindow::groupSourceNavigation() {
+  QFETCH(QString, needle);
+  QFETCH(int, width);
+  createArea();
+  const auto source =
+      c_source +
+      QByteArray(
+          "\n# Empty\n<!-- todo-group: {\"id\":\"empty\"} -->\n\n<!-- Empty group comment -->\n");
+  FileOpenSettings readMode;
+  readMode.m_mode = ViewWindowMode::Read;
+  readMode.m_forceMode = true;
+  QVERIFY(openNote(QStringLiteral("group-navigation.todo"), source, readMode).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  QTRY_COMPARE(window->getTodoEditor()->width() < 840, width < 840);
+  auto *controller = window->getController();
+  controller->setView(TodoViewKind::Important);
+  controller->setSearch(QStringLiteral("Beta"));
+  controller->setSelectedItemKey(QStringLiteral("id:beta"));
+  controller->setGroupExpanded(QStringLiteral("id:default"), false);
+  const auto before = controller->getProjection();
+  const auto items = taskTitles(window);
+  const auto text = QString::fromUtf8(source);
+  FileOpenSettings settings;
+  settings.m_lineNumber = text.left(text.indexOf(needle)).count(QLatin1Char('\n'));
+  window->applyFileOpenSettings(settings);
+  QCOMPARE(window->getTodoEditor()->selectedGroupKey(), QStringLiteral("id:empty"));
+  QCOMPARE(controller->getProjection().m_view, before.m_view);
+  QCOMPARE(controller->getProjection().m_listKey, before.m_listKey);
+  QCOMPARE(controller->getProjection().m_search, before.m_search);
+  QCOMPARE(controller->getProjection().m_tag, before.m_tag);
+  QCOMPARE(controller->getProjection().m_collapsedGroups, before.m_collapsedGroups);
+  QCOMPARE(taskTitles(window), items);
+  QVERIFY(controller->getSelectedItemKey().isEmpty());
+  if (width < 840) {
+    auto *groups = control<QComboBox>(window, "todoGroupCombo");
+    // Qt shows reparented shared controls on the next event turn.
+    QTRY_VERIFY(groups && groups->isVisible() && groups->hasFocus());
+    QCOMPARE(groups->currentData().toString(), QStringLiteral("id:empty"));
+  } else {
+    auto *lists = control<QListView>(window, "todoLists");
+    QVERIFY(lists && lists->hasFocus());
+    QVERIFY(lists->currentIndex().data(TodoListModel::GroupRole).toBool());
+    QCOMPARE(lists->currentIndex().data(TodoListModel::GroupIdRole).toString(),
+             QStringLiteral("id:empty"));
+  }
+  settings.m_lineNumber =
+      text.left(text.indexOf(QStringLiteral("- [ ] Gamma"))).count(QLatin1Char('\n'));
+  window->applyFileOpenSettings(settings);
+  QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(controller->getSelectedItemKey(), QStringLiteral("id:gamma"));
+  QCOMPARE(controller->getProjection().m_groupKey, QStringLiteral("id:default"));
+  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(QStringLiteral("id:default")));
+  QVERIFY(controller->getProjection().m_search.isEmpty());
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(window->getSourceEditor()->isHidden());
+  QVERIFY(!window->isModified());
+}
+
 void TestTodoViewWindow::tasksOnlyNavigation_data() {
   QTest::addColumn<QString>("needle");
   QTest::addColumn<int>("bias");
@@ -1908,7 +2476,7 @@ void TestTodoViewWindow::tasksOnlyNavigation_data() {
                         << QStringLiteral("id:work") << QStringLiteral("id:alpha");
   QTest::newRow("task-metadata") << QStringLiteral("opaque-metadata-only") << 0 << 0
                                  << QStringLiteral("id:work") << QStringLiteral("id:alpha");
-  QTest::newRow("list-heading") << QStringLiteral("# Personal") << 0 << 0
+  QTest::newRow("list-heading") << QStringLiteral("## Personal") << 0 << 0
                                 << QStringLiteral("id:personal") << QString();
   QTest::newRow("list-description")
       << QStringLiteral("> Team commitments") << 0 << 0 << QStringLiteral("id:work") << QString();
@@ -1934,7 +2502,7 @@ void TestTodoViewWindow::tasksOnlyNavigation() {
   QFETCH(QString, itemKey);
   createArea();
   auto text = QString::fromUtf8(c_source);
-  text.replace(QStringLiteral("# Work"), QString::fromUtf8("# 工作 😀 Work"));
+  text.replace(QStringLiteral("## Work"), QString::fromUtf8("## 工作 😀 Work"));
   FileOpenSettings readMode;
   readMode.m_forceMode = true;
   readMode.m_mode = ViewWindowMode::Read;

@@ -3,6 +3,7 @@
 
 #include <QAbstractListModel>
 #include <QHash>
+#include <QSet>
 #include <QUuid>
 
 #include <core/tododocument.h>
@@ -17,6 +18,8 @@ enum class TodoSortOrder { Manual, Importance, DueDate, Title };
 struct TodoProjection {
   TodoViewKind m_view = TodoViewKind::All;
   QString m_listKey;
+  QString m_groupKey;
+  QSet<QString> m_collapsedGroups;
   QString m_search;
   QString m_tag;
   TodoSortOrder m_sort = TodoSortOrder::Manual;
@@ -28,7 +31,17 @@ class TodoListModel : public QAbstractListModel {
   Q_OBJECT
 
 public:
-  enum Roles { IdRole = Qt::UserRole + 1, TitleRole, ViewKindRole, IncompleteCountRole };
+  enum Roles {
+    IdRole = Qt::UserRole + 1,
+    TitleRole,
+    ViewKindRole,
+    IncompleteCountRole,
+    GroupRole,
+    GroupIdRole,
+    GroupTitleRole,
+    ExpandedRole,
+    ListCountRole
+  };
 
   explicit TodoListModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
@@ -38,8 +51,12 @@ public:
   QHash<int, QByteArray> roleNames() const override;
 
   void setSnapshot(const TodoDocument &p_document, const TodoProjection &p_projection);
+  void setGroupExpanded(const QString &p_key, bool p_expanded);
   int rowForKey(const QString &p_key) const;
   int rowForView(TodoViewKind p_view, const QString &p_listKey = {}) const;
+  int rowForGroup(const QString &p_key) const;
+  // Group headers and child lists resolve their group; smart rows return nullptr.
+  const TodoGroup *groupAt(int p_row) const;
   // Smart rows have no list. Pointers remain valid until the next setSnapshot().
   const TodoList *listAt(int p_row) const;
 
@@ -47,7 +64,9 @@ private:
   struct Row {
     TodoViewKind m_view;
     int m_list = -1;
+    int m_group = -1;
     int m_incompleteCount = 0;
+    bool m_expanded = true;
   };
 
   TodoDocument m_document;
@@ -74,7 +93,9 @@ public:
     SectionRole,
     ExpandedRole,
     CompletedCountRole,
-    RevisionRole
+    RevisionRole,
+    SourceGroupIdRole,
+    SourceGroupNameRole
   };
 
   explicit TodoTaskModel(ServiceLocator &p_services, QObject *p_parent = nullptr);

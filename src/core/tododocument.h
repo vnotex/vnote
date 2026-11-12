@@ -68,6 +68,26 @@ struct TodoItem {
   QString m_continuationIndent; // Bullet continuation column, NOT the title column.
 };
 
+struct TodoGroup {
+  QString m_key;
+  QString m_id;
+  QString m_title;
+  QJsonObject m_properties;
+  TodoSourceRange m_range;
+  TodoSourceRange m_headingRange;
+  TodoSourceRange m_titleRange;
+  TodoSourceRange m_titleSyntaxRange;
+  TodoSourceRange m_metadataRange;
+  QVector<TodoSourceRange> m_commentRanges;
+  int m_metadataInsertion = -1;
+  int m_listInsertion = -1;
+  int m_firstList = 0;
+  int m_listCount = 0;
+  bool m_setext = false;
+  bool m_implicit = false;
+  bool m_isDefault = false;
+};
+
 struct TodoList {
   QString m_key;
   QString m_id;
@@ -75,7 +95,8 @@ struct TodoList {
   QString m_description;
   QJsonObject m_properties;
   QVector<TodoItem> m_items;
-  TodoSourceRange m_range;            // Heading through just before the next H1 (or EOF).
+  int m_groupIndex = -1;              // Snapshot-local index in TodoDocument::m_groups.
+  TodoSourceRange m_range;            // H2 through just before the next H1/H2 (or EOF).
   TodoSourceRange m_headingRange;     // Whole heading line(s), including line ending.
   TodoSourceRange m_titleRange;       // Inline Markdown, excluding ATX markers/closing hashes.
   TodoSourceRange m_titleSyntaxRange; // Exact ATX syntax or the Setext title line.
@@ -103,17 +124,22 @@ public:
                          QString *p_result, QString *p_error = nullptr);
 
   bool isValid() const { return m_diagnostics.isEmpty(); }
+  const TodoGroup *findGroup(const QString &p_key) const;
+  const TodoGroup *defaultGroup() const;
+  const TodoGroup *groupForList(const TodoList &p_list) const;
   const TodoList *findList(const QString &p_key) const;
   const TodoItem *findItem(const QString &p_key, const TodoList **p_list = nullptr) const;
   QString text(const TodoSourceRange &p_range) const;
   int lineAt(int p_position) const;
   TodoSourceEdit edit(const TodoSourceRange &p_range, const QString &p_replacement) const;
+  TodoSourceEdit titleEdit(const TodoGroup &p_group, const QString &p_title) const;
   TodoSourceEdit titleEdit(const TodoList &p_list, const QString &p_title) const;
   TodoSourceEdit titleEdit(const TodoItem &p_item, const QString &p_title) const;
   TodoSourceEdit titleEdit(const TodoStep &p_step, const QString &p_title) const;
 
   QString m_source;
   QString m_lineEnding = QStringLiteral("\n");
+  QVector<TodoGroup> m_groups;
   QVector<TodoList> m_lists;
   QVector<TodoDiagnostic> m_diagnostics;
   QJsonObject m_properties;

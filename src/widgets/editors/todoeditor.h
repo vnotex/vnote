@@ -17,6 +17,7 @@ class QListWidget;
 class QModelIndex;
 class QPushButton;
 class QScrollArea;
+class QSortFilterProxyModel;
 class QSplitter;
 class QStackedWidget;
 
@@ -36,6 +37,8 @@ public:
   void focusSearch();
   void focusCurrent();
   void focusTasks();
+  void focusGroup(const QString &p_key);
+  QString selectedGroupKey() const;
   void closeDetails();
   void scroll(bool p_up);
   void zoom(int p_delta);
@@ -58,6 +61,7 @@ private:
     quint64 m_generation = 0;
     QString m_source;
     QString m_selection;
+    QString m_groupSelection;
   };
 
   void createUi();
@@ -71,7 +75,14 @@ private:
   void selectView(int p_row);
   void openTask(const QModelIndex &p_index);
   void addTask();
-  void addList();
+  void addList(const QString &p_groupKey = {});
+  void addGroup();
+  void renameGroup(const QString &p_key);
+  void deleteGroup(const QString &p_key);
+  void moveGroup(const QString &p_key, int p_direction);
+  void showGroupMenu(const QString &p_key, const QPoint &p_globalPosition);
+  void toggleGroup(const QString &p_key);
+  void moveListToGroup(const QString &p_key);
   void showListMenu(const QString &p_key, const QPoint &p_globalPosition);
   void showTaskMenu(const QString &p_key, const QPoint &p_globalPosition);
   void renameList(const QString &p_key);
@@ -93,6 +104,7 @@ private:
   const TodoItem *selectedItem() const;
   Gesture gesture() const;
   bool accepts(const Gesture &p_gesture) const;
+  bool acceptsNavigation(const Gesture &p_gesture) const;
   void showTextMenu(QWidget *p_widget, const QPoint &p_position);
 
   ServiceLocator &m_services;
@@ -108,6 +120,10 @@ private:
   QLineEdit *m_search = nullptr;
   QListView *m_lists = nullptr;
   QComboBox *m_viewCombo = nullptr;
+  QSortFilterProxyModel *m_viewProxy = nullptr;
+  QComboBox *m_groupCombo = nullptr;
+  QPushButton *m_groupMore = nullptr;
+  QPushButton *m_newGroup = nullptr;
   QPushButton *m_newList = nullptr;
   QLineEdit *m_listTitle = nullptr;
   QLabel *m_viewTitle = nullptr;
@@ -156,6 +172,7 @@ private:
   bool m_committing = false;
   bool m_narrow = false;
   bool m_detailsOpen = false;
+  bool m_groupFocused = false;
 };
 } // namespace vnotex
 

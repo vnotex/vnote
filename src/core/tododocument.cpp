@@ -113,7 +113,7 @@ public:
         !cmark_node_get_syntax_extent(p_node, &sl, &sc, &el, &ec)) {
       // Setext finalization can include the next physical line. Locate the
       // underline only within this AST-validated heading's reported span.
-      static const QRegularExpression underline(QStringLiteral("^ {0,3}=+[ \\t]*$"));
+      static const QRegularExpression underline(QStringLiteral("^ {0,3}(?:=+|-+)[ \\t]*$"));
       for (int line = first + 1; line <= cmark_node_get_end_line(p_node) && line <= m_lines.size();
            ++line) {
         if (underline.match(text(line)).hasMatch()) {
@@ -194,11 +194,14 @@ QString inlineText(cmark_node *p_node) {
   return result;
 }
 
-enum class CommentKind { Ordinary, File, List, Item, Invalid };
+enum class CommentKind { Ordinary, File, Group, List, Item, Invalid };
 
 CommentKind commentKind(const QString &p_body) {
   if (p_body.startsWith(QLatin1String("todo:"))) {
     return CommentKind::File;
+  }
+  if (p_body.startsWith(QLatin1String("todo-group:"))) {
+    return CommentKind::Group;
   }
   if (p_body.startsWith(QLatin1String("todo-list:"))) {
     return CommentKind::List;
@@ -246,17 +249,19 @@ public:
     for (auto *node = cmark_node_first_child(root.get()); node; node = cmark_node_next(node)) {
       const auto type = cmark_node_get_type(node);
       if (type == CMARK_NODE_HEADING && cmark_node_get_heading_level(node) == 1) {
+        parseGroup(node);
+      } else if (type == CMARK_NODE_HEADING && cmark_node_get_heading_level(node) == 2) {
         parseList(node);
       } else if (type == CMARK_NODE_HTML_BLOCK) {
         parseRootComment(node);
       } else if (type == CMARK_NODE_LIST && cmark_node_get_list_type(node) == CMARK_BULLET_LIST &&
-                 !m_document.m_lists.isEmpty()) {
-        auto &list = m_document.m_lists.last();
+                 m_currentList >= 0) {
+        auto &list = m_document.m_lists[m_currentList];
         for (auto *item = cmark_node_first_child(node); item; item = cmark_node_next(item)) {
           list.m_items.append(parseItem(item));
         }
-      } else if (type == CMARK_NODE_BLOCK_QUOTE && !m_document.m_lists.isEmpty()) {
-        auto &list = m_document.m_lists.last();
+      } else if (type == CMARK_NODE_BLOCK_QUOTE && m_currentList >= 0) {
+        auto &list = m_document.m_lists[m_currentList];
         if (list.m_descriptionRange.isValid() || !list.m_items.isEmpty()) {
           error(node, "A list allows one description blockquote before its tasks.");
         } else {
@@ -265,13 +270,13 @@ public:
         }
         cover(node);
       } else {
-        error(node, "Unsupported document block; use H1 lists, checkbox tasks, or quoted notes.");
+        error(node,
+              "Unsupported document block; use H1 groups, H2 lists, and checkbox tasks under H2.");
         cover(node);
       }
     }
-    if (!m_document.m_lists.isEmpty()) {
-      m_document.m_lists.last().m_range.m_end = int(m_document.m_source.size());
-    }
+    finishList(int(m_document.m_source.size()));
+    finishGroup(int(m_document.m_source.size()));
     assignIdentities();
     for (int i = 0; i < m_lines.m_lines.size(); ++i) {
       if (!m_covered.testBit(i) && !m_lines.text(i + 1).trimmed().isEmpty()) {
@@ -400,6 +405,10 @@ private:
         error(p_comment.m_line, "An owner ID must be a nonempty string.");
       }
     }
+    if (p_comment.m_kind == CommentKind::Group && properties.contains(QStringLiteral("default")) &&
+        !properties.value(QStringLiteral("default")).isBool()) {
+      error(p_comment.m_line, "Group default must be a boolean.");
+    }
     if (p_comment.m_kind != CommentKind::Item) {
       return;
     }
@@ -429,21 +438,19 @@ private:
     }
   }
 
-  void parseList(cmark_node *p_node) {
-    TodoList list;
-    list.m_headingRange = m_lines.fullRange(p_node);
-    list.m_range = {list.m_headingRange.m_start, -1};
-    list.m_metadataInsertion = list.m_headingRange.m_end;
-    list.m_descriptionInsertion = list.m_metadataInsertion;
+  template <typename Owner> void parseHeading(cmark_node *p_node, Owner &p_owner) {
+    p_owner.m_headingRange = m_lines.fullRange(p_node);
+    p_owner.m_range = {p_owner.m_headingRange.m_start, -1};
+    p_owner.m_metadataInsertion = p_owner.m_headingRange.m_end;
     const int firstLine = cmark_node_get_start_line(p_node);
     const auto &line = m_lines.m_lines[firstLine - 1];
     const auto opening = m_lines.text(firstLine);
     int sl = 0, sc = 0, el = 0, ec = 0;
     if (cmark_node_get_syntax_extent(p_node, &sl, &sc, &el, &ec)) {
-      list.m_titleSyntaxRange = {m_lines.position(sl, sc), m_lines.position(el, ec)};
-      static const QRegularExpression atx(QStringLiteral("^ {0,3}#(?:[ \\t]+|$)"));
+      p_owner.m_titleSyntaxRange = {m_lines.position(sl, sc), m_lines.position(el, ec)};
+      static const QRegularExpression atx(QStringLiteral("^ {0,3}#{1,2}(?:[ \\t]+|$)"));
       const auto match = atx.match(opening);
-      if (!match.hasMatch() || !list.m_titleSyntaxRange.isValid()) {
+      if (!match.hasMatch() || !p_owner.m_titleSyntaxRange.isValid()) {
         error(p_node, "Invalid heading source positions.");
       } else {
         int start = int(match.capturedEnd());
@@ -457,10 +464,10 @@ private:
           end = int(close.capturedStart());
           start = qMin(start, end);
         }
-        list.m_titleRange = {line.m_start + start, line.m_start + qMax(start, end)};
+        p_owner.m_titleRange = {line.m_start + start, line.m_start + qMax(start, end)};
       }
     } else {
-      list.m_setext = true;
+      p_owner.m_setext = true;
       int start = 0;
       while (start < opening.size() && opening.at(start).isSpace()) {
         ++start;
@@ -469,44 +476,99 @@ private:
       while (end > start && opening.at(end - 1).isSpace()) {
         --end;
       }
-      list.m_titleRange = {line.m_start + start, line.m_start + end};
-      list.m_titleSyntaxRange = {line.m_start, line.m_end};
+      p_owner.m_titleRange = {line.m_start + start, line.m_start + end};
+      p_owner.m_titleSyntaxRange = {line.m_start, line.m_end};
       if (m_lines.endLine(p_node) != firstLine + 1) {
-        error(p_node, "List titles must occupy one logical line.");
+        error(p_node, "Group and list titles must occupy one logical line.");
       }
     }
-    list.m_title = inlineText(p_node);
-    if (list.m_title.contains(QLatin1Char('\n'))) {
-      error(p_node, "List titles must occupy one logical line.");
+    p_owner.m_title = inlineText(p_node);
+    if (p_owner.m_title.contains(QLatin1Char('\n'))) {
+      error(p_node, "Group and list titles must occupy one logical line.");
     }
     if (cmark_node_get_content_start_line(p_node) != firstLine) {
-      error(p_node, "Reference definitions cannot precede a list title.");
+      error(p_node, "Reference definitions cannot precede a group or list title.");
     }
     checkInlineMetadata(p_node);
     cover(p_node);
-    if (!m_document.m_lists.isEmpty()) {
-      m_document.m_lists.last().m_range.m_end = list.m_range.m_start;
+  }
+
+  void finishList(int p_end) {
+    if (m_currentList >= 0) {
+      auto &list = m_document.m_lists[m_currentList];
+      list.m_range.m_end = p_end;
+      list.m_taskInsertion = p_end;
+      m_currentList = -1;
     }
+  }
+
+  void finishGroup(int p_end) {
+    if (!m_document.m_groups.isEmpty()) {
+      auto &group = m_document.m_groups.last();
+      group.m_range.m_end = p_end;
+      group.m_listInsertion = p_end;
+    }
+  }
+
+  void parseGroup(cmark_node *p_node) {
+    TodoGroup group;
+    parseHeading(p_node, group);
+    finishList(group.m_range.m_start);
+    finishGroup(group.m_range.m_start);
+    group.m_firstList = int(m_document.m_lists.size());
+    m_document.m_groups.append(std::move(group));
+  }
+
+  void parseList(cmark_node *p_node) {
+    TodoList list;
+    parseHeading(p_node, list);
+    finishList(list.m_range.m_start);
+    if (m_document.m_groups.isEmpty()) {
+      TodoGroup group;
+      group.m_key = QStringLiteral("default:");
+      group.m_title = diagnosticText("Default");
+      group.m_range = {list.m_range.m_start, -1};
+      group.m_implicit = true;
+      group.m_isDefault = true;
+      m_document.m_groups.append(std::move(group));
+    }
+    list.m_groupIndex = int(m_document.m_groups.size()) - 1;
+    list.m_descriptionInsertion = list.m_metadataInsertion;
+    ++m_document.m_groups.last().m_listCount;
+    m_currentList = int(m_document.m_lists.size());
     m_document.m_lists.append(std::move(list));
   }
 
   void parseRootComment(cmark_node *p_node) {
     const auto comment = parseComment(p_node);
     if (comment.m_kind == CommentKind::Ordinary) {
-      if (m_document.m_lists.isEmpty()) {
-        m_document.m_commentRanges.append(comment.m_range);
+      if (m_currentList >= 0) {
+        m_document.m_lists[m_currentList].m_commentRanges.append(comment.m_range);
+      } else if (!m_document.m_groups.isEmpty()) {
+        m_document.m_groups.last().m_commentRanges.append(comment.m_range);
       } else {
-        m_document.m_lists.last().m_commentRanges.append(comment.m_range);
+        m_document.m_commentRanges.append(comment.m_range);
       }
-    } else if (comment.m_kind == CommentKind::File && m_document.m_lists.isEmpty() &&
+    } else if (comment.m_kind == CommentKind::File && m_document.m_groups.isEmpty() &&
                !m_document.m_metadataRange.isValid()) {
       m_document.m_metadataRange = comment.m_range;
       m_document.m_properties = comment.m_properties;
-    } else if (comment.m_kind == CommentKind::List && !m_document.m_lists.isEmpty()) {
-      auto &list = m_document.m_lists.last();
+    } else if (comment.m_kind == CommentKind::Group && !m_document.m_groups.isEmpty() &&
+               m_currentList < 0) {
+      auto &group = m_document.m_groups.last();
+      if (group.m_metadataRange.isValid() ||
+          !whitespaceBetween(group.m_metadataInsertion, comment.m_range.m_start)) {
+        error(p_node, "Group metadata must immediately follow its H1 and occur only once.");
+      } else {
+        group.m_metadataRange = comment.m_range;
+        group.m_properties = comment.m_properties;
+        group.m_isDefault = comment.m_properties.value(QStringLiteral("default")).toBool();
+      }
+    } else if (comment.m_kind == CommentKind::List && m_currentList >= 0) {
+      auto &list = m_document.m_lists[m_currentList];
       if (list.m_metadataRange.isValid() ||
           !whitespaceBetween(list.m_metadataInsertion, comment.m_range.m_start)) {
-        error(p_node, "List metadata must immediately follow its H1 and occur only once.");
+        error(p_node, "List metadata must immediately follow its H2 and occur only once.");
       } else {
         list.m_metadataRange = comment.m_range;
         list.m_properties = comment.m_properties;
@@ -682,20 +744,35 @@ private:
     if (!p_id.isEmpty()) {
       if (m_ids.contains(p_id)) {
         error(m_document.lineAt(p_metadataRange.m_start),
-              "List and task IDs must be unique in this file.");
+              "Group, list, and task IDs must be unique in this file.");
       }
       m_ids.insert(p_id);
     }
   }
 
   void assignIdentities() {
-    for (auto &list : m_document.m_lists) {
-      assignIdentity(list.m_properties, list.m_range, list.m_metadataRange, list.m_id, list.m_key);
-      list.m_taskInsertion = list.m_range.m_end;
-      for (auto &item : list.m_items) {
-        assignIdentity(item.m_properties, item.m_range, item.m_metadataRange, item.m_id,
-                       item.m_key);
-        item.m_listKey = list.m_key;
+    bool hasDefault = false;
+    for (auto &group : m_document.m_groups) {
+      if (!group.m_implicit) {
+        assignIdentity(group.m_properties, group.m_range, group.m_metadataRange, group.m_id,
+                       group.m_key);
+      }
+      if (group.m_isDefault) {
+        if (hasDefault) {
+          error(m_document.lineAt(group.m_metadataRange.m_start),
+                "Only one Default group is permitted, including leading ungrouped lists.");
+        }
+        hasDefault = true;
+      }
+      for (int i = group.m_firstList; i < group.m_firstList + group.m_listCount; ++i) {
+        auto &list = m_document.m_lists[i];
+        assignIdentity(list.m_properties, list.m_range, list.m_metadataRange, list.m_id,
+                       list.m_key);
+        for (auto &item : list.m_items) {
+          assignIdentity(item.m_properties, item.m_range, item.m_metadataRange, item.m_id,
+                         item.m_key);
+          item.m_listKey = list.m_key;
+        }
       }
     }
   }
@@ -704,6 +781,7 @@ private:
   SourceLines m_lines;
   QBitArray m_covered;
   QSet<QString> m_ids;
+  int m_currentList = -1;
 };
 
 QString titleReplacement(const QString &p_source, const TodoSourceRange &p_range,
@@ -721,6 +799,25 @@ QString titleReplacement(const QString &p_source, const TodoSourceRange &p_range
     }
   }
   return replacement;
+}
+
+template <typename Owner>
+TodoSourceEdit headingTitleEdit(const TodoDocument &p_document, const Owner &p_owner,
+                                const QString &p_title, int p_level) {
+  if (p_owner.m_setext && p_title.isEmpty()) {
+    QString ending;
+    const auto heading = p_document.text(p_owner.m_headingRange);
+    if (heading.endsWith(QLatin1String("\r\n"))) {
+      ending = QStringLiteral("\r\n");
+    } else if (heading.endsWith(QLatin1Char('\n'))) {
+      ending = QStringLiteral("\n");
+    } else if (heading.endsWith(QLatin1Char('\r'))) {
+      ending = QStringLiteral("\r");
+    }
+    return p_document.edit(p_owner.m_headingRange, QString(p_level, QLatin1Char('#')) + ending);
+  }
+  return p_document.edit(p_owner.m_titleRange,
+                         titleReplacement(p_document.m_source, p_owner.m_titleRange, p_title));
 }
 
 } // namespace
@@ -830,6 +927,30 @@ bool TodoDocument::applyEdits(const QString &p_source, const QVector<TodoSourceE
   return true;
 }
 
+const TodoGroup *TodoDocument::findGroup(const QString &p_key) const {
+  for (const auto &group : m_groups) {
+    if (group.m_key == p_key) {
+      return &group;
+    }
+  }
+  return nullptr;
+}
+
+const TodoGroup *TodoDocument::defaultGroup() const {
+  for (const auto &group : m_groups) {
+    if (group.m_isDefault) {
+      return &group;
+    }
+  }
+  return nullptr;
+}
+
+const TodoGroup *TodoDocument::groupForList(const TodoList &p_list) const {
+  return p_list.m_groupIndex >= 0 && p_list.m_groupIndex < m_groups.size()
+             ? &m_groups[p_list.m_groupIndex]
+             : nullptr;
+}
+
 const TodoList *TodoDocument::findList(const QString &p_key) const {
   for (const auto &list : m_lists) {
     if (list.m_key == p_key) {
@@ -882,20 +1003,12 @@ TodoSourceEdit TodoDocument::edit(const TodoSourceRange &p_range,
   return {p_range, text(p_range), p_replacement};
 }
 
+TodoSourceEdit TodoDocument::titleEdit(const TodoGroup &p_group, const QString &p_title) const {
+  return headingTitleEdit(*this, p_group, p_title, 1);
+}
+
 TodoSourceEdit TodoDocument::titleEdit(const TodoList &p_list, const QString &p_title) const {
-  if (p_list.m_setext && p_title.isEmpty()) {
-    QString ending;
-    const auto heading = text(p_list.m_headingRange);
-    if (heading.endsWith(QLatin1String("\r\n"))) {
-      ending = QStringLiteral("\r\n");
-    } else if (heading.endsWith(QLatin1Char('\n'))) {
-      ending = QStringLiteral("\n");
-    } else if (heading.endsWith(QLatin1Char('\r'))) {
-      ending = QStringLiteral("\r");
-    }
-    return edit(p_list.m_headingRange, QLatin1Char('#') + ending);
-  }
-  return edit(p_list.m_titleRange, titleReplacement(m_source, p_list.m_titleRange, p_title));
+  return headingTitleEdit(*this, p_list, p_title, 2);
 }
 
 TodoSourceEdit TodoDocument::titleEdit(const TodoItem &p_item, const QString &p_title) const {
