@@ -531,6 +531,7 @@ private slots:
   void htmlHeadings();
   void htmlMath();
   void htmlMathRoundTrip();
+  void htmlMathUnderOver();
   void htmlMathTokenRecovery();
   void htmlMathUnsupportedTokens();
   void allOperations_data();
@@ -1228,6 +1229,18 @@ void TestMarkdownWebJobs::htmlMath() {
       {"malformed-script-is-not-partially-recovered",
        presentation(QStringLiteral("<msup><mi>a</mi><mi>b</mi><mi>c</mi></msup>")),
        QStringLiteral("abc")},
+      {"missing-under-over-child",
+       presentation(QStringLiteral("<munderover><mi>x</mi><mi>l</mi></munderover>")),
+       QStringLiteral("xl")},
+      {"extra-under-over-child",
+       presentation(QStringLiteral("<munderover><mi>x</mi><mi>l</mi><mi>u</mi><mi>z</mi>"
+                                   "</munderover>")),
+       QStringLiteral("xluz")},
+      {"unsupported-under-over-child",
+       presentation(
+           QStringLiteral("<mrow><mi>y</mi><munderover><mo>∑</mo>"
+                          "<menclose><mi>l</mi></menclose><mi>u</mi></munderover></mrow>")),
+       QStringLiteral("y∑lu")},
       {"multiple-semantics-presentations-are-not-guessed",
        presentation(QStringLiteral("<mi>x</mi><mi>y</mi>")), QStringLiteral("xy")},
       {"reported-katex-display",
@@ -1354,6 +1367,77 @@ void TestMarkdownWebJobs::htmlMathRoundTrip() {
     } else {
       QCOMPARE(prose, QStringLiteral("Before  after.\n"));
       QCOMPARE(result.value(QStringLiteral("text")).toString(), entry.text);
+    }
+  }
+}
+
+void TestMarkdownWebJobs::htmlMathUnderOver() {
+  QFile clipboardFile(QFINDTESTDATA("../data/katex-sampling-clipboard.html"));
+  QVERIFY(clipboardFile.open(QIODevice::ReadOnly));
+  struct Case {
+    QString html;
+    QString formula;
+    QString base;
+    QString lower;
+    QString upper;
+    QString prose;
+    bool display;
+  };
+  const Case cases[] = {
+      {QString::fromUtf8(clipboardFile.readAll()),
+       QStringLiteral("x(t)=∑n=−∞∞x(nT)sinc⁡(t−nTT)"), QStringLiteral("∑"),
+       QStringLiteral("n=−∞"), QStringLiteral("∞"),
+       QStringLiteral("② 采样与信号重建\n\n"
+                      "香农采样定理中，带限信号可以用 sinc 插值重建：\n\n"
+                      "这是理想插值/理想重构的核心。实际系统常用升余弦、样条等近似，"
+                      "因为理想 sinc 不可实现。"),
+       true},
+      {QStringLiteral("<p>Before <math><munderover><mrow><mi>a</mi><mo>+</mo><mi>b</mi>"
+                      "</mrow><mi>l</mi><mi>u</mi></munderover></math> after.</p>"),
+       QStringLiteral("a+blu"), QStringLiteral("a+b"), QStringLiteral("l"), QStringLiteral("u"),
+       QStringLiteral("Before  after."), false}};
+  Runtime runtime(true);
+  QObject owner;
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  for (const auto &entry : cases) {
+    const auto job = submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
+                            source(entry.html), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+    QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
+    rendered.clear();
+    const auto document = runtime.renderDocument(job->result.value.toString());
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    const auto result = evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+      const root = vxcore.contentContainer;
+      const formulas = Array.from(root.querySelectorAll('.katex-mathml semantics'));
+      const lower = root.querySelector('.katex-mathml munder');
+      const upper = root.querySelector('.katex-mathml mover');
+      const fraction = root.querySelector('.katex-mathml mfrac');
+      const prose = root.cloneNode(true);
+      prose.querySelectorAll('.tex-to-render').forEach(node => node.remove());
+      return {
+        formulas: formulas.map(node => node.firstElementChild.textContent),
+        base: lower?.children[0]?.textContent,
+        lower: lower?.children[1]?.textContent,
+        upper: upper?.children[1]?.textContent,
+        fraction: fraction ? Array.from(fraction.children, node => node.textContent) : [],
+        inlineCount: root.querySelectorAll('eq .katex').length,
+        displayCount: root.querySelectorAll('.katex-display').length,
+        errors: root.querySelectorAll('.katex-error').length,
+        prose: prose.textContent.trim().replace(/\n+/g, '\n\n')
+      };
+    })())JS"));
+    QCOMPARE(result.value(QStringLiteral("formulas")).toArray(), QJsonArray{entry.formula});
+    QCOMPARE(result.value(QStringLiteral("base")).toString(), entry.base);
+    QCOMPARE(result.value(QStringLiteral("lower")).toString(), entry.lower);
+    QCOMPARE(result.value(QStringLiteral("upper")).toString(), entry.upper);
+    QCOMPARE(result.value(QStringLiteral("inlineCount")).toInt(), entry.display ? 0 : 1);
+    QCOMPARE(result.value(QStringLiteral("displayCount")).toInt(), entry.display ? 1 : 0);
+    QCOMPARE(result.value(QStringLiteral("errors")).toInt(), 0);
+    QCOMPARE(result.value(QStringLiteral("prose")).toString(), entry.prose);
+    if (entry.display) {
+      QCOMPARE(result.value(QStringLiteral("fraction")).toArray(), QJsonArray({"t−nT", "T"}));
     }
   }
 }

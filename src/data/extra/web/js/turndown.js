@@ -239,6 +239,9 @@ class TurndownConverter {
                 return parts.length === 2 ? scriptBase + (name === 'msub' ? '_{' : '^{') + parts[1] + '}' : null;
             case 'msubsup':
                 return parts.length === 3 ? scriptBase + '_{' + parts[1] + '}^{' + parts[2] + '}' : null;
+            case 'munderover':
+                return parts.length === 3 ?
+                    '\\overset{' + parts[2] + '}{\\underset{' + parts[1] + '}{' + parts[0] + '}}' : null;
             case 'munder':
             case 'mover':
                 if (parts.length !== 2) {
