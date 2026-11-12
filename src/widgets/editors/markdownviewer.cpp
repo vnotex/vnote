@@ -472,7 +472,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     }
   }
 
-  if (m_viewWindow2 && m_viewWindow2->getMode() == ViewWindowMode::Read) {
+  if (!hasSelection() && m_viewWindow2 && m_viewWindow2->getMode() == ViewWindowMode::Read) {
     const QPointer<QMenu> guardedMenu(menu);
     const QPointer<QAction> firstStandardAction(actions.isEmpty() ? nullptr : actions[0]);
     const QPointer<MarkdownViewer> viewer(this);
@@ -483,7 +483,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     const auto current = [guardedMenu, viewer, viewerPage, generation, viewerSize, zoom]() {
       return guardedMenu && viewer && viewerPage && viewer->m_navigationGeneration == generation &&
              viewer->page() == viewerPage.data() && viewer->isVisible() && viewer->m_viewWindow2 &&
-             viewer->m_viewWindow2->getMode() == ViewWindowMode::Read &&
+             !viewer->hasSelection() && viewer->m_viewWindow2->getMode() == ViewWindowMode::Read &&
              viewer->m_adapter->isReady() && viewer->size() == viewerSize &&
              !viewerSize.isEmpty() && std::isfinite(zoom) && zoom > 0 &&
              viewer->zoomFactor() == zoom;

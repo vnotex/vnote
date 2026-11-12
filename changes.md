@@ -18,6 +18,7 @@ A refinement release with smoother tree navigation, more flexible Markdown editi
     * Offer three Markdown editing experiences and show the choice again when upgrading from versions below `4.14.4`, preserving the saved concealment preset until a new choice is accepted
     * Fix pasted MathML formulas ending in TeX commands, recover symbols according to their token role, and preserve identifier font variants
     * Move the readable-width toolbar hint into shared Editor settings instead of Mind Map Editor settings
+    * Show Collapse and Expand in Markdown code-block context menus only when no text is selected
 * **Translations**: Simplified Chinese (zh_CN) and Japanese (ja) catalogs updated
 
 ## v4.14.2
