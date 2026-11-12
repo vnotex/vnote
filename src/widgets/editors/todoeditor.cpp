@@ -569,7 +569,7 @@ void TodoEditor::createUi() {
     m_newList->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
     m_newGroup->setIcon(
-        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_note.svg"))));
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_group.svg"))));
   };
   refreshIcons();
   connect(theme, &ThemeService::themeChanged, this, refreshIcons);

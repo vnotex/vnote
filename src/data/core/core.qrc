@@ -34,6 +34,7 @@
         <file>icons/notebook_default.svg</file>
         <file>icons/file_node.svg</file>
         <file>icons/folder_node.svg</file>
+        <file>icons/new_group.svg</file>
         <file>icons/other_item.svg</file>
         <file>icons/save_editor.svg</file>
         <file>icons/undo_editor.svg</file>

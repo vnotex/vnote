@@ -650,9 +650,11 @@ Organizational group selection and collapsed keys live only in `TodoProjection`,
 The model retains all rows; the sidebar hides collapsed children and the task-view combo's
 proxy excludes group headers. The wide sidebar places search above icon-leading smart views,
 a separator, group rows and indented lists; nonzero incomplete counts occupy trailing badges.
-New List and the accessible icon-only New Group control stay below the scrolling list. Group
-rows select on single click (including the chevron); only a group-row double click toggles
-mouse expansion. Child-list double clicks never toggle their parent. Keyboard Enter/Space,
+New List and the accessible icon-only New Group control stay below the scrolling list. New Group
+uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`
+for normal and disabled states. Group rows select on single click (including the chevron);
+only a group-row double click toggles mouse expansion. Child-list double clicks never toggle
+their parent. Keyboard Enter/Space,
 Left/Right and explicit context-menu expansion remain available, including in Read mode.
 Wide group actions use the row context menu; narrow mode retains the group selector and Group
 actions beside the shared search/creation controls, including for empty groups. Collapse and
