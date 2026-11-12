@@ -13,6 +13,7 @@ using namespace vnotex;
 
 namespace {
 
+const QString ListMimeType = QStringLiteral("application/x-vnote-todo-list");
 const QString TaskMimeType = QStringLiteral("application/x-vnote-todo-task");
 constexpr quint32 DragFormatVersion = 1;
 
@@ -93,7 +94,20 @@ bool readBoolean(const QVariant &p_value, bool *p_result) {
 TodoListModel::TodoListModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractListModel(p_parent) {
   Q_UNUSED(p_services);
-  setSnapshot(TodoDocument(), TodoProjection());
+  setSnapshot(TodoDocument(), TodoProjection(), false, -1);
+}
+
+QModelIndex TodoListModel::index(int p_row, int p_column, const QModelIndex &p_parent) const {
+  if (p_parent.isValid() || p_column != 0 || p_row < 0 || p_row >= m_rows.size()) {
+    return {};
+  }
+  return createIndex(p_row, p_column, static_cast<quintptr>(m_snapshot));
+}
+
+bool TodoListModel::isOwnIndex(const QModelIndex &p_index) const {
+  return p_index.isValid() && p_index.model() == this && p_index.column() == 0 &&
+         p_index.row() >= 0 && p_index.row() < m_rows.size() &&
+         p_index.internalId() == static_cast<quintptr>(m_snapshot);
 }
 
 int TodoListModel::rowCount(const QModelIndex &p_parent) const {
@@ -101,8 +115,7 @@ int TodoListModel::rowCount(const QModelIndex &p_parent) const {
 }
 
 QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
-  if (!p_index.isValid() || p_index.model() != this || p_index.column() != 0 || p_index.row() < 0 ||
-      p_index.row() >= m_rows.size()) {
+  if (!isOwnIndex(p_index)) {
     return {};
   }
 
@@ -174,11 +187,17 @@ QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
 }
 
 Qt::ItemFlags TodoListModel::flags(const QModelIndex &p_index) const {
-  if (!p_index.isValid() || p_index.model() != this || p_index.column() != 0 || p_index.row() < 0 ||
-      p_index.row() >= m_rows.size()) {
+  if (!p_index.isValid()) {
+    return m_editable ? Qt::ItemIsDropEnabled : Qt::NoItemFlags;
+  }
+  if (!isOwnIndex(p_index)) {
     return Qt::NoItemFlags;
   }
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+  auto result = Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+  if (m_editable && groupAt(p_index.row())) {
+    result |= Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+  }
+  return result;
 }
 
 QHash<int, QByteArray> TodoListModel::roleNames() const {
@@ -195,10 +214,13 @@ QHash<int, QByteArray> TodoListModel::roleNames() const {
   return roles;
 }
 
-void TodoListModel::setSnapshot(const TodoDocument &p_document,
-                                const TodoProjection &p_projection) {
+void TodoListModel::setSnapshot(const TodoDocument &p_document, const TodoProjection &p_projection,
+                                bool p_editable, int p_revision) {
   beginResetModel();
   m_document = p_document;
+  m_editable = p_editable && m_document.isValid();
+  m_revision = p_revision;
+  ++m_snapshot;
   m_rows.clear();
   m_rows.reserve(
       4 + (m_document.isValid() ? m_document.m_lists.size() + m_document.m_groups.size() : 0));
@@ -297,6 +319,151 @@ const TodoList *TodoListModel::listAt(int p_row) const {
   }
   return &m_document.m_lists.at(m_rows.at(p_row).m_list);
 }
+
+QStringList TodoListModel::mimeTypes() const { return {ListMimeType}; }
+
+QMimeData *TodoListModel::mimeData(const QModelIndexList &p_indexes) const {
+  if (!m_editable || p_indexes.size() != 1 || !isOwnIndex(p_indexes.first())) {
+    return nullptr;
+  }
+  const int row = p_indexes.first().row();
+  const auto *group = groupAt(row);
+  if (!group) {
+    return nullptr;
+  }
+  const auto *list = listAt(row);
+  const auto kind = list ? DragKind::List : DragKind::Group;
+  QByteArray bytes;
+  QDataStream stream(&bytes, QIODevice::WriteOnly);
+  stream.setVersion(QDataStream::Qt_6_0);
+  stream << DragFormatVersion << m_dragIdentity << m_snapshot << m_revision
+         << static_cast<quint8>(kind) << (list ? list->m_key : group->m_key);
+  auto *mime = new QMimeData();
+  mime->setData(ListMimeType, bytes);
+  return mime;
+}
+
+bool TodoListModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                               int p_column, const QModelIndex &p_parent, Drop *p_drop) const {
+  if (!m_editable || p_action != Qt::MoveAction || !p_data || !p_data->hasFormat(ListMimeType) ||
+      (p_column != -1 && p_column != 0) || p_row < -1 || p_row > m_rows.size() ||
+      (p_parent.isValid() && (!isOwnIndex(p_parent) || p_row != -1))) {
+    return false;
+  }
+
+  QDataStream stream(p_data->data(ListMimeType));
+  stream.setVersion(QDataStream::Qt_6_0);
+  quint32 version = 0;
+  QUuid identity;
+  quint64 snapshot = 0;
+  int revision = -1;
+  quint8 kind = 0;
+  QString key;
+  stream >> version >> identity >> snapshot >> revision >> kind >> key;
+  if (stream.status() != QDataStream::Ok || !stream.atEnd() || version != DragFormatVersion ||
+      identity != m_dragIdentity || snapshot != m_snapshot || revision != m_revision ||
+      (kind != static_cast<quint8>(DragKind::Group) &&
+       kind != static_cast<quint8>(DragKind::List))) {
+    return false;
+  }
+  const auto dragKind = static_cast<DragKind>(kind);
+  const int sourceRow = dragKind == DragKind::Group ? rowForGroup(key) : rowForKey(key);
+  if (sourceRow < 0) {
+    return false;
+  }
+  const auto &source = m_rows.at(sourceRow);
+  const int targetRow = p_parent.isValid() ? p_parent.row() : p_row;
+  const bool atEnd = !p_parent.isValid() && (p_row == -1 || p_row == m_rows.size());
+  if (!atEnd && !groupAt(targetRow)) {
+    return false;
+  }
+
+  QString groupKey;
+  QString beforeKey;
+  bool unchanged = false;
+  if (dragKind == DragKind::Group) {
+    // Groups can only occupy root gaps before headers or at the end, never nest.
+    if (p_parent.isValid() || (!atEnd && listAt(targetRow))) {
+      return false;
+    }
+    const int beforeGroup =
+        atEnd ? static_cast<int>(m_document.m_groups.size()) : m_rows.at(targetRow).m_group;
+    if (!atEnd) {
+      beforeKey = m_document.m_groups.at(beforeGroup).m_key;
+    }
+    unchanged = beforeGroup == source.m_group || beforeGroup == source.m_group + 1;
+  } else {
+    const TodoGroup *targetGroup = nullptr;
+    int beforeList = -1;
+    if (atEnd) {
+      // An empty key requests Default, including creating it when it is absent.
+      targetGroup = m_document.defaultGroup();
+    } else {
+      const auto &target = m_rows.at(targetRow);
+      targetGroup = groupAt(targetRow);
+      if (target.m_list >= 0) {
+        // Root gaps and on-item drops both refer to the actual child, even hidden ones.
+        beforeList = target.m_list;
+      } else if (!p_parent.isValid()) {
+        if (target.m_group > 0) {
+          // A root gap before a later header belongs to the preceding group.
+          targetGroup = &m_document.m_groups.at(target.m_group - 1);
+        } else if (targetGroup->m_listCount > 0) {
+          beforeList = targetGroup->m_firstList;
+        }
+      }
+      // An on-header drop appends to that group, unlike the root gap before it.
+    }
+    if (targetGroup && !targetGroup->m_isDefault) {
+      groupKey = targetGroup->m_key;
+    }
+    if (beforeList >= 0) {
+      beforeKey = m_document.m_lists.at(beforeList).m_key;
+    }
+    if (targetGroup == groupAt(sourceRow)) {
+      const int insertion =
+          beforeList >= 0 ? beforeList : targetGroup->m_firstList + targetGroup->m_listCount;
+      unchanged = insertion == source.m_list || insertion == source.m_list + 1;
+    }
+  }
+  if (p_drop) {
+    p_drop->m_kind = dragKind;
+    p_drop->m_key = key;
+    p_drop->m_groupKey = groupKey;
+    p_drop->m_beforeKey = beforeKey;
+    p_drop->m_unchanged = unchanged;
+  }
+  return true;
+}
+
+bool TodoListModel::canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                                    int p_column, const QModelIndex &p_parent) const {
+  return decodeDrop(p_data, p_action, p_row, p_column, p_parent, nullptr);
+}
+
+bool TodoListModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                                 int p_column, const QModelIndex &p_parent) {
+  Drop drop;
+  if (!decodeDrop(p_data, p_action, p_row, p_column, p_parent, &drop)) {
+    return false;
+  }
+  if (drop.m_unchanged) {
+    return true;
+  }
+  // Local keys remain valid when a direct controller connection resets the snapshot.
+  if (drop.m_kind == DragKind::Group) {
+    emit groupMoveRequested(drop.m_key, drop.m_beforeKey, m_revision);
+  } else {
+    emit listMoveRequested(drop.m_key, drop.m_groupKey, drop.m_beforeKey, m_revision);
+  }
+  return true;
+}
+
+Qt::DropActions TodoListModel::supportedDragActions() const {
+  return m_editable ? Qt::MoveAction : Qt::IgnoreAction;
+}
+
+Qt::DropActions TodoListModel::supportedDropActions() const { return supportedDragActions(); }
 
 TodoTaskModel::TodoTaskModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractListModel(p_parent) {

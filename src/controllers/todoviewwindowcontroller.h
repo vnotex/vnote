@@ -53,13 +53,14 @@ public:
 
   bool addGroup(const QString &p_title, QString *p_createdGroupKey = nullptr);
   bool renameGroup(const QString &p_groupKey, const QString &p_title);
-  bool removeGroup(const QString &p_groupKey);
+  bool ungroupLists(const QString &p_groupKey);
   bool moveGroup(const QString &p_groupKey, const QString &p_beforeGroupKey);
   bool addList(const QString &p_title, const QString &p_groupKey = {},
                QString *p_createdListKey = nullptr);
   bool renameList(const QString &p_listId, const QString &p_title);
   bool setListDescription(const QString &p_listId, const QString &p_markdown);
   bool removeList(const QString &p_listId);
+  bool duplicateList(const QString &p_listKey, QString *p_createdKey = nullptr);
   bool moveList(const QString &p_listId, const QString &p_groupKey, const QString &p_beforeListId);
   bool addTask(const QString &p_listId, const TodoTaskFields &p_fields);
   bool updateTask(const QString &p_itemId, const TodoTaskFields &p_fields);
@@ -95,7 +96,7 @@ private:
   void appendMetadata(Change &p_change, const QString &p_kind, const QJsonObject &p_properties,
                       const TodoSourceRange &p_range, int p_insertion,
                       const QString &p_indent = {}) const;
-  bool admitModelIntent(int p_revision);
+  bool admitModelIntent(int p_revision, int p_publishedRevision);
 
   QPointer<QTextDocument> m_document;
   BufferService *m_buffers;

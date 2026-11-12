@@ -17,6 +17,9 @@
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
@@ -395,6 +398,23 @@ bool showLists(TodoViewWindow *p_window) {
   return QTest::qWaitFor([=] { return lists->isVisible(); });
 }
 
+bool dropOnSidebar(QListView *p_lists, const QModelIndex &p_from, const QPoint &p_position) {
+  std::unique_ptr<QMimeData> mime(p_lists->model()->mimeData({p_from}));
+  if (!mime)
+    return false;
+  QDragEnterEvent enter(p_position, Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(p_lists->viewport(), &enter);
+  if (!enter.isAccepted())
+    return false;
+  QDragMoveEvent move(p_position, Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(p_lists->viewport(), &move);
+  if (!move.isAccepted())
+    return false;
+  QDropEvent drop(QPointF(p_position), Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(p_lists->viewport(), &drop);
+  return drop.isAccepted();
+}
+
 bool openGroupMenu(TodoViewWindow *p_window) {
   if (!showLists(p_window))
     return false;
@@ -413,6 +433,38 @@ bool openGroupMenu(TodoViewWindow *p_window) {
 
 bool chooseGroupMenu(TodoViewWindow *p_window, const char *p_actionName) {
   return openGroupMenu(p_window) && chooseOpenMenu(p_actionName);
+}
+
+bool toggleGroupInSidebar(TodoViewWindow *p_window) {
+  auto *editor = p_window->getTodoEditor();
+  editor->focusGroup(editor->selectedGroupKey());
+  auto *lists = control<QListView>(p_window, "todoLists");
+  if (!lists || !activate(lists))
+    return false;
+  QTest::keyClick(lists, Qt::Key_Space);
+  return true;
+}
+
+bool chooseOpenGroupDestination(const QString &p_key) {
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  if (!menu)
+    return false;
+  auto *move = control<QAction>(menu, "todoMoveListGroupAction");
+  if (!move || !move->isEnabled() || !move->menu())
+    return false;
+  auto *submenu = move->menu();
+  menu->setActiveAction(move);
+  QTest::keyClick(menu, Qt::Key_Right);
+  if (!QTest::qWaitFor([=] { return submenu->isVisible(); }))
+    return false;
+  for (auto *action : submenu->actions()) {
+    if (action->data().toString() == p_key && action->isEnabled()) {
+      QTest::mouseClick(submenu, Qt::LeftButton, Qt::NoModifier,
+                        submenu->actionGeometry(action).center());
+      return true;
+    }
+  }
+  return false;
 }
 
 bool chooseMenu(QWidget *p_widget, const QPoint &p_point, const QString &p_label) {
@@ -506,6 +558,10 @@ private slots:
   void filteringSortingAndDayRollover();
   void nativeMoveReorderAndDeletion();
   void nativeListActions();
+  void sidebarDropEvents_data();
+  void sidebarDropEvents();
+  void sidebarMenusAndDuplication_data();
+  void sidebarMenusAndDuplication();
   void nativeGroupsWideAndNarrow_data();
   void nativeGroupsWideAndNarrow();
   void implicitDefaultAndGroupRecreation();
@@ -1353,15 +1409,17 @@ void TestTodoViewWindow::nativeListActions() {
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
            QStringLiteral("Work"));
   window->redo();
-  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Edit description")));
   auto *description = control<SimpleMarkdownEditor>(window, "todoListDescription");
-  QVERIFY(description && description->getTextEdit()->hasFocus());
+  QVERIFY(description && activate(description->getTextEdit()));
   replaceDocument(description, QStringLiteral("Changed description"));
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_description,
            QStringLiteral("Changed description"));
-  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Move Down")));
+  QVERIFY(activate(lists));
+  lists->setCurrentIndex(controller->getListModel()->index(
+      controller->getListModel()->rowForKey(QStringLiteral("id:work"))));
+  QTest::keyClick(lists, Qt::Key_Down, Qt::AltModifier);
   QCOMPARE(controller->getDocument().m_lists.last().m_key, QStringLiteral("id:work"));
-  QVERIFY(listMenu(QStringLiteral("id:work"), QStringLiteral("Move Up")));
+  QTest::keyClick(lists, Qt::Key_Up, Qt::AltModifier);
   QCOMPARE(controller->getDocument().m_lists.first().m_key, QStringLiteral("id:work"));
   bool named = false;
   {
@@ -1396,6 +1454,180 @@ void TestTodoViewWindow::nativeListActions() {
   QVERIFY(!controller->getDocument().findList(emptyKey));
   window->undo();
   QVERIFY(controller->getDocument().findList(emptyKey));
+}
+
+void TestTodoViewWindow::sidebarDropEvents_data() {
+  QTest::addColumn<int>("width");
+  QTest::addColumn<bool>("hasDefault");
+  QTest::newRow("wide-existing-default") << 1000 << true;
+  QTest::newRow("narrow-existing-default") << 600 << true;
+  QTest::newRow("wide-create-default") << 1000 << false;
+  QTest::newRow("narrow-create-default") << 600 << false;
+}
+
+void TestTodoViewWindow::sidebarDropEvents() {
+  QFETCH(int, width);
+  QFETCH(bool, hasDefault);
+  const QByteArray source = (hasDefault ? c_source : QByteArray()) +
+                            "\n# Projects\n<!-- todo-group: {\"id\":\"projects\"} -->\n\n"
+                            "## Last\n<!-- todo-list: {\"id\":\"last\"} -->\n\n"
+                            "- [ ] Keep\n  <!-- todo-item: {\"id\":\"keep\"} -->\n";
+  createArea();
+  QVERIFY(openNote(QStringLiteral("sidebar-drops.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  QVERIFY(showLists(window));
+  auto *lists = control<QListView>(window, "todoLists");
+  QVERIFY(activate(lists));
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  const auto last = model->index(model->rowForKey(QStringLiteral("id:last")));
+  lists->setCurrentIndex(last);
+  lists->scrollTo(last);
+  QCOMPARE(last.row(), model->rowCount() - 1);
+  const QPoint empty(lists->viewport()->width() / 2, lists->viewport()->height() - 5);
+  QVERIFY(!lists->indexAt(empty).isValid());
+  QVERIFY(dropOnSidebar(lists, last, empty));
+  const auto *moved = controller->getDocument().findList(QStringLiteral("id:last"));
+  QVERIFY(moved && controller->getDocument().groupForList(*moved)->m_isDefault);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:keep"))->m_fields.m_title,
+           QStringLiteral("Keep"));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+
+  if (hasDefault) {
+    controller->setGroupExpanded(QStringLiteral("id:projects"), false);
+    const auto group = model->index(model->rowForGroup(QStringLiteral("id:projects")));
+    lists->scrollTo(group);
+    QVERIFY(dropOnSidebar(lists, model->index(model->rowForKey(QStringLiteral("id:work"))),
+                          lists->visualRect(group).center()));
+    QCOMPARE(controller->getDocument()
+                 .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+                 ->m_key,
+             QStringLiteral("id:projects"));
+    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(QStringLiteral("id:projects")));
+    window->undo();
+    QCOMPARE(window->getLatestContent().toUtf8(), source);
+  }
+}
+
+void TestTodoViewWindow::sidebarMenusAndDuplication_data() {
+  QTest::addColumn<int>("width");
+  QTest::newRow("wide") << 1000;
+  QTest::newRow("narrow") << 600;
+}
+
+void TestTodoViewWindow::sidebarMenusAndDuplication() {
+  QFETCH(int, width);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("menus.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  auto *editor = window->getTodoEditor();
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  auto *lists = control<QListView>(window, "todoLists");
+  const auto labels = [](QMenu *p_menu) {
+    QStringList result;
+    for (auto *action : p_menu->actions())
+      result.append(action->text());
+    return result;
+  };
+  const auto openListMenu = [&](const QString &p_key) -> QMenu * {
+    if (!showLists(window) || !activate(lists))
+      return nullptr;
+    const auto index = model->index(model->rowForKey(p_key));
+    if (!index.isValid())
+      return nullptr;
+    lists->scrollTo(index);
+    const auto point = lists->visualRect(index).center();
+    QContextMenuEvent event(QContextMenuEvent::Mouse, point, lists->viewport()->mapToGlobal(point));
+    QCoreApplication::sendEvent(lists->viewport(), &event);
+    if (!QTest::qWaitFor([] { return QApplication::activePopupWidget(); }))
+      return nullptr;
+    return qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  };
+  editor->focusGroup(QStringLiteral("id:default"));
+  QVERIFY(openGroupMenu(window));
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  QCOMPARE(labels(menu), QStringList({"Rename", "New List", "Ungroup Lists"}));
+  QVERIFY(!control<QAction>(menu, "todoUngroupListsAction")->isEnabled());
+  menu->close();
+  menu = openListMenu(QStringLiteral("id:work"));
+  QVERIFY(menu);
+  QCOMPARE(labels(menu), QStringList({"Rename", "Move List To Group", "Duplicate", "Delete"}));
+  QVERIFY(!control<QAction>(menu, "todoMoveListGroupAction")->isEnabled());
+  menu->close();
+
+  QString projectKey, secondKey;
+  QVERIFY(controller->addGroup(QStringLiteral("Projects"), &projectKey));
+  QVERIFY(controller->addGroup(QStringLiteral("Research & Notes"), &secondKey));
+  menu = openListMenu(QStringLiteral("id:work"));
+  QVERIFY(menu);
+  auto *move = control<QAction>(menu, "todoMoveListGroupAction");
+  QVERIFY(move && move->menu() && move->isEnabled());
+  QStringList destinations;
+  for (auto *action : move->menu()->actions())
+    destinations.append(action->data().toString());
+  QCOMPARE(destinations, QStringList({projectKey, secondKey}));
+  QVERIFY(chooseOpenGroupDestination(projectKey));
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+               ->m_key,
+           projectKey);
+  menu = openListMenu(QStringLiteral("id:work"));
+  QVERIFY(menu);
+  QCOMPARE(labels(menu), QStringList({"Rename", "Remove from Group", "Duplicate", "Delete"}));
+  QVERIFY(chooseOpenMenu("todoRemoveListFromGroupAction"));
+  QVERIFY(controller->getDocument()
+              .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+              ->m_isDefault);
+  window->undo();
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+               ->m_key,
+           projectKey);
+
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  controller->setGroupExpanded(projectKey, false);
+  const auto beforeCopy = window->getLatestContent();
+  auto *more = control<QPushButton>(window, "todoListMore");
+  QVERIFY(chooseButtonMenu(more, "todoDuplicateListAction"));
+  const auto copyKey = controller->getProjection().m_listKey;
+  QVERIFY(copyKey != QStringLiteral("id:work"));
+  const auto *copy = controller->getDocument().findList(copyKey);
+  QVERIFY(copy);
+  QCOMPARE(controller->getDocument().groupForList(*copy)->m_key, projectKey);
+  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(projectKey));
+  QCOMPARE(copy->m_description, QStringLiteral("Team commitments"));
+  QCOMPARE(copy->m_items.size(), 3);
+  const auto copiedTask = copy->m_items.first().m_key;
+  QVERIFY(copiedTask != QStringLiteral("id:alpha"));
+  QVERIFY(openTask(window, copiedTask));
+  QVERIFY(typeText(control<QLineEdit>(window, "todoTitle"), QStringLiteral("Independent copy")));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_title,
+           QStringLiteral("Alpha"));
+  window->undo();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), beforeCopy);
+
+  window->setMode(ViewWindowMode::Read);
+  editor->focusGroup(projectKey);
+  QVERIFY(openGroupMenu(window));
+  menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  QCOMPARE(labels(menu), QStringList({"Rename", "New List", "Ungroup Lists"}));
+  for (auto *action : menu->actions())
+    QVERIFY(!action->isEnabled());
+  menu->close();
+  controller->setGroupExpanded(projectKey, true);
+  menu = openListMenu(QStringLiteral("id:work"));
+  QVERIFY(menu);
+  for (auto *action : menu->actions())
+    QVERIFY(!action->isEnabled());
+  menu->close();
+  QCOMPARE(window->getLatestContent(), beforeCopy);
 }
 
 void TestTodoViewWindow::nativeGroupsWideAndNarrow_data() {
@@ -1478,7 +1710,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
     doubleClick();
     QCOMPARE(expansionChanges(), 3);
   } else {
-    QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+    QVERIFY(toggleGroupInSidebar(window));
   }
   QVERIFY(controller->getProjection().m_collapsedGroups.contains(defaultKey));
   QVERIFY(lists->isRowHidden(workRow));
@@ -1546,14 +1778,14 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QCOMPARE(controller->getDocument().findGroup(projectKey)->m_listCount, 0);
   QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:work"));
   QCOMPARE(taskTitles(window), originalItems);
-  QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+  QVERIFY(toggleGroupInSidebar(window));
   QVERIFY(controller->getProjection().m_collapsedGroups.contains(projectKey));
-  QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+  QVERIFY(toggleGroupInSidebar(window));
   QVERIFY(!controller->getProjection().m_collapsedGroups.contains(projectKey));
   QVERIFY(createGroup(QStringLiteral("Scratch")));
   const auto scratchKey = editor->selectedGroupKey();
   const auto withScratch = window->getLatestContent();
-  QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
+  QVERIFY(chooseGroupMenu(window, "todoUngroupListsAction"));
   QVERIFY(!QApplication::activeModalWidget());
   QVERIFY(!controller->getDocument().findGroup(scratchKey));
   window->undo();
@@ -1621,20 +1853,10 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   auto *listMore = control<QPushButton>(window, "todoListMore");
   QVERIFY(listMore && listMore->isVisible());
   const auto moveTo = [&](const QString &p_groupKey) {
-    bool chosen = false;
-    const bool answered = answerDialog(
-        "todoMoveListDialog",
-        [&](QDialog *p_dialog) {
-          auto *destination = control<QComboBox>(p_dialog, "todoMoveListGroup");
-          auto *accept = control<QPushButton>(p_dialog, "todoMoveListAccept");
-          if (!destination || !accept || destination->findData(p_groupKey) < 0)
-            return false;
-          destination->setCurrentIndex(destination->findData(p_groupKey));
-          accept->click();
-          return true;
-        },
-        [&] { chosen = chooseButtonMenu(listMore, "todoMoveListGroupAction"); });
-    return answered && chosen;
+    if (!activate(listMore))
+      return false;
+    QTest::mouseClick(listMore, Qt::LeftButton);
+    return chooseOpenGroupDestination(p_groupKey);
   };
   QVERIFY(moveTo(projectKey));
   QCOMPARE(controller->getDocument()
@@ -1646,9 +1868,11 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(),
            alphaBefore.m_steps.size());
   const auto moved = window->getLatestContent();
-  QVERIFY(chooseButtonMenu(listMore, "todoListUpAction"));
+  QVERIFY(showLists(window));
+  QVERIFY(activate(lists));
+  QTest::keyClick(lists, Qt::Key_Up, Qt::AltModifier);
   QCOMPARE(window->getLatestContent(), moved);
-  QVERIFY(chooseButtonMenu(listMore, "todoListDownAction"));
+  QTest::keyClick(lists, Qt::Key_Down, Qt::AltModifier);
   QCOMPARE(window->getLatestContent(), moved); // The only list cannot cross its group boundary.
   window->undo();
   QCOMPARE(controller->getDocument()
@@ -1666,25 +1890,13 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
            QStringLiteral("Reference / Work"));
 
   editor->focusGroup(projectKey);
-  bool confirmationNamed = false;
-  {
-    DialogAnswers answers({QMessageBox::No}, [&](QMessageBox *p_box) {
-      confirmationNamed = p_box->text().contains(QStringLiteral("Projects")) &&
-                          p_box->text().contains(QStringLiteral("lists and tasks"));
-    });
-    QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
-    QVERIFY(answers.accepted());
-  }
-  QVERIFY(confirmationNamed);
-  QCOMPARE(window->getLatestContent(), moved);
-  {
-    DialogAnswers answers({QMessageBox::Yes});
-    QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
-    QVERIFY(answers.accepted());
-  }
+  QVERIFY(chooseGroupMenu(window, "todoUngroupListsAction"));
+  QVERIFY(!QApplication::activeModalWidget());
   QVERIFY(!controller->getDocument().findGroup(projectKey));
-  QVERIFY(!controller->getDocument().findList(QStringLiteral("id:work")));
-  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:alpha")));
+  const auto *ungrouped = controller->getDocument().findList(QStringLiteral("id:work"));
+  QVERIFY(ungrouped);
+  QCOMPARE(controller->getDocument().groupForList(*ungrouped)->m_key, defaultKey);
+  QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
   QVERIFY(controller->getDocument().findItem(referenceTask));
   QVERIFY(window->getLatestContent().contains(QStringLiteral("File-scoped author comment")));
   window->undo();
@@ -1713,17 +1925,17 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   for (auto *action : menu->actions()) {
     if (action->isSeparator())
       continue;
-    QCOMPARE(action->isEnabled(), action->objectName() == QLatin1String("todoToggleGroupAction"));
+    QVERIFY(!action->isEnabled());
   }
   menu->close();
-  QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+  QVERIFY(toggleGroupInSidebar(window));
   QVERIFY(controller->getProjection().m_collapsedGroups.contains(archiveKey));
   editor->focusGroup(archiveKey);
   QVERIFY(activate(groupFocus));
   QTest::keyClick(groupFocus, Qt::Key_Up, Qt::AltModifier);
   QCOMPARE(window->getLatestContent(), saved);
   QVERIFY(!window->isModified());
-  QVERIFY(!controller->removeGroup(archiveKey));
+  QVERIFY(!controller->ungroupLists(archiveKey));
   const auto node = buffer.nodeId();
   QVERIFY(m_area->getController()->closeViewWindow(window->getViewWindowId(), false));
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
@@ -1752,7 +1964,7 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   QVERIFY(controller->getDocument().defaultGroup());
   QCOMPARE(controller->getDocument().defaultGroup()->m_key, QStringLiteral("default:"));
   editor->focusGroup(QStringLiteral("default:"));
-  QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+  QVERIFY(toggleGroupInSidebar(window));
   QCOMPARE(window->getLatestContent().toUtf8(), source);
   QVERIFY(!window->isModified());
   QVERIFY(window->save());
@@ -1778,25 +1990,24 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   window->redo();
   QCOMPARE(window->getLatestContent(), materialized);
   editor->focusGroup(defaultKey);
-  {
-    DialogAnswers answers({QMessageBox::Yes});
-    QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
-    QVERIFY(answers.accepted());
-  }
-  QVERIFY(!controller->getDocument().defaultGroup());
+  QVERIFY(openGroupMenu(window));
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  auto *ungroup = control<QAction>(menu, "todoUngroupListsAction");
+  QVERIFY(ungroup && !ungroup->isEnabled());
+  menu->close();
+  const auto otherKey = controller->getDocument().m_groups.last().m_key;
+  editor->focusGroup(otherKey);
+  QVERIFY(chooseGroupMenu(window, "todoUngroupListsAction"));
+  QVERIFY(!controller->getDocument().findGroup(otherKey));
+  QCOMPARE(controller->getDocument().defaultGroup()->m_key, defaultKey);
+  QCOMPARE(controller->getDocument().defaultGroup()->m_listCount, 3);
   QVERIFY(window->getLatestContent().contains(QStringLiteral("file-owned")));
-  QVERIFY(window->getLatestContent().contains(QStringLiteral("# Other")));
-  QVERIFY(answerNewList(QStringLiteral("Recreated"), [&] { newList->click(); }));
-  QVERIFY(controller->getDocument().defaultGroup());
-  QVERIFY(controller->getDocument().defaultGroup()->m_key != defaultKey);
-  QVERIFY(controller->getDocument().m_groups.last().m_isDefault);
-  const auto recreatedKey = controller->getProjection().m_listKey;
-  QCOMPARE(controller->getDocument().findList(recreatedKey)->m_title, QStringLiteral("Recreated"));
-  // An empty explicit group can be deleted immediately, then restored through source undo.
+  QVERIFY(window->getLatestContent().contains(QStringLiteral("## Elsewhere")));
+  // Ungrouping an empty group removes only its container and is undoable.
   QVERIFY(controller->addGroup(QStringLiteral("Empty")));
   const auto emptyKey = controller->getDocument().m_groups.last().m_key;
   editor->focusGroup(emptyKey);
-  QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
+  QVERIFY(chooseGroupMenu(window, "todoUngroupListsAction"));
   QVERIFY(!QApplication::activeModalWidget());
   QVERIFY(!controller->getDocument().findGroup(emptyKey));
   window->undo();
@@ -1833,14 +2044,17 @@ void TestTodoViewWindow::groupDialogsRejectForeignReload() {
   QCOMPARE(window->getLatestContent().toUtf8(), replacement);
   QCOMPARE(controller->getDocument().m_lists.size(), 2);
   QVERIFY(!window->isModified());
-  {
-    DialogAnswers answers({QMessageBox::Yes}, [&](QMessageBox *) {
-      QVERIFY(writeBytes(absolute(QStringLiteral("group-modal.todo")), c_source));
-      QVERIFY(window->reload());
-    });
-    QVERIFY(chooseGroupMenu(window, "todoDeleteGroupAction"));
-    QVERIFY(answers.accepted());
-  }
+  QVERIFY(openGroupMenu(window));
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  QPointer<QAction> staleRename = control<QAction>(menu, "todoRenameGroupAction");
+  QVERIFY(staleRename);
+  QVERIFY(writeBytes(absolute(QStringLiteral("group-modal.todo")), c_source));
+  QVERIFY(window->reload());
+  if (staleRename)
+    staleRename->trigger();
+  QVERIFY(!QApplication::activeModalWidget());
+  if (auto *popup = QApplication::activePopupWidget())
+    popup->close();
   QCOMPARE(window->getLatestContent().toUtf8(), c_source);
   QVERIFY(controller->getDocument().findGroup(QStringLiteral("id:default")));
   QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
@@ -2165,12 +2379,12 @@ void TestTodoViewWindow::readOnlyNavigation() {
   auto *newGroup = control<QPushButton>(window, "todoNewGroup");
   QVERIFY(newGroup && !newGroup->isEnabled());
   window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
-  QVERIFY(chooseGroupMenu(window, "todoToggleGroupAction"));
+  QVERIFY(toggleGroupInSidebar(window));
   QVERIFY(window->getController()->getProjection().m_collapsedGroups.contains(
       QStringLiteral("id:default")));
   QVERIFY(!window->getController()->renameGroup(QStringLiteral("id:default"),
                                                 QStringLiteral("Blocked")));
-  QVERIFY(!window->getController()->removeGroup(QStringLiteral("id:default")));
+  QVERIFY(!window->getController()->ungroupLists(QStringLiteral("id:default")));
   QCOMPARE(window->getLatestContent(), before);
   QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
   QVERIFY(selectView(window, TodoViewKind::All));

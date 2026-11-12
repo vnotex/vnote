@@ -79,11 +79,11 @@ private:
   void addList(const QString &p_groupKey = {});
   void addGroup();
   void renameGroup(const QString &p_key);
-  void deleteGroup(const QString &p_key);
   void moveGroup(const QString &p_key, int p_direction);
   void showGroupMenu(const QString &p_key, const QPoint &p_globalPosition);
   void toggleGroup(const QString &p_key);
-  void moveListToGroup(const QString &p_key);
+  void moveListToGroup(const QString &p_key, const QString &p_groupKey);
+  void duplicateList(const QString &p_key);
   void showListMenu(const QString &p_key, const QPoint &p_globalPosition);
   void showTaskMenu(const QString &p_key, const QPoint &p_globalPosition);
   void renameList(const QString &p_key);

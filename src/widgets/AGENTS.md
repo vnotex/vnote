@@ -643,8 +643,30 @@ precedes a renamed list title, but list metadata follows that title even at unte
 Groups own contiguous spans of the flat list snapshot; list `m_groupIndex` is snapshot-local.
 Group ranges end at the next H1; list ranges end at the next H1/H2. Group/list moves preserve
 owned blocks and remap synthetic child selections. Parent-group edits stay outside moved list
-payloads. List Up/Down stays inside its group; Move to group changes ownership. Nonempty group
-deletion asks confirmation before removing its owned lists/tasks, and remains undoable.
+payloads. Keyboard List Up/Down stays inside its group; grouping commands change ownership.
+Group menus contain Rename, New List and Ungroup Lists. Ungroup Lists dissolves a custom group
+into Default without deleting its lists/tasks; Default itself cannot be ungrouped. Group comments
+move to Default's pre-list region, not into another list. Without Default, the dissolved group's
+heading becomes a fresh Default in place. The command is one source transaction/undo step.
+List menus contain Rename, either Remove from Group (custom-group lists) or Move List To Group
+(Default lists, submenu of all custom groups), Duplicate and Delete. The move submenu is disabled
+when no custom group exists. The list-actions button uses the same menu. Duplicate inserts a copy
+beside its source, retaining descriptions, notes, steps, completion/date/tag fields, comments and
+unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy and is one undo
+step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
+
+The sidebar accepts same-model Move drags for real groups/lists, never smart views, in both
+wide and overlay modes. Lists drop on a group to append, on/before a list to insert there, or on
+Default/empty viewport space to leave a custom group (creating Default if necessary). Groups
+reorder at root gaps before group headers or at the end; they never nest. A gap before a later
+group header appends a list to the preceding group; a gap before a hidden child still refers to
+that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
+of task search/sort/smart-view projection. Model UUID, snapshot epoch, revision and writable-source
+admission reject foreign/stale/read-only drags; unchanged source after formatting retains published
+intents. No-op drops add no identities or undo history. Controllers own all source mutations.
+`TodoListView` uses model-admitted DragDrop and `QAbstractItemView::dropEvent`, bypassing
+`QListView`'s adjacent/end-row move shortcut: the last row dropped on the viewport may still change
+its group. Its drag lifecycle never asks Qt to remove source rows after the controller's move.
 
 Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
 The model retains all rows; the sidebar hides collapsed children. The same sidebar at every
@@ -654,12 +676,13 @@ New List and the accessible icon-only New Group control stay below the scrolling
 uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`
 for normal and disabled states. Group rows select on single click (including the chevron);
 only a group-row double click toggles mouse expansion. Child-list double clicks never toggle
-their parent. Keyboard Enter/Space,
-Left/Right and explicit context-menu expansion remain available, including in Read mode.
+their parent. Keyboard Enter/Space and Left/Right expansion remain available, including in Read
+mode; expansion and reordering are no longer separate context-menu actions.
 Group actions use the row context menu at every width, including for empty groups. Collapse and
 group selection do not change task projection/history or invalidate task drags; group-title
 search ignores collapse state. New Group/New List use post-commit output keys, never a guessed
-last list. This is presentation/transient state only; no document or config migration is needed.
+last list. Sidebar presentation is transient; the new commands reuse the existing source schema.
+No document or config migration is needed.
 
 My Day is explicit `myDay == today`, independent of due dates. Important and Planned are
 current-file projections; search and exact-tag filters compose across this file and ignore

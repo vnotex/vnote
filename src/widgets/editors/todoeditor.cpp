@@ -7,6 +7,8 @@
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDrag>
+#include <QDropEvent>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QInputMethodEvent>
@@ -88,6 +90,42 @@ QString taskName(const TodoItem &p_item) {
   return p_item.m_fields.m_title.trimmed().isEmpty() ? TodoEditor::tr("Untitled task")
                                                      : p_item.m_fields.m_title;
 }
+
+class TodoListView final : public QListView {
+public:
+  using QListView::QListView;
+
+protected:
+  void startDrag(Qt::DropActions p_supportedActions) override {
+    if (!(p_supportedActions & Qt::MoveAction) || !model()) {
+      return;
+    }
+    const auto indexes = selectedIndexes();
+    auto *mime = model()->mimeData(indexes);
+    if (!mime) {
+      return;
+    }
+    QPointer<QDrag> drag = new QDrag(this);
+    drag->setMimeData(mime);
+    if (!indexes.isEmpty()) {
+      const auto rect = visualRect(indexes.first()).intersected(viewport()->rect());
+      if (!rect.isEmpty()) {
+        drag->setPixmap(viewport()->grab(rect));
+      }
+    }
+    drag->exec(Qt::MoveAction, Qt::MoveAction);
+    // The controller already moved the source. Never let the view remove it again.
+    if (drag) {
+      drag->deleteLater();
+    }
+  }
+
+  void dropEvent(QDropEvent *p_event) override {
+    // QListView optimizes adjacent/end row moves before consulting the model.
+    // Sidebar viewport drops can change ownership even for the final row.
+    QAbstractItemView::dropEvent(p_event);
+  }
+};
 
 class ListDelegate : public QStyledItemDelegate {
 public:
@@ -508,9 +546,15 @@ void TodoEditor::createUi() {
   sidebar->addWidget(searchWidget);
   auto *theme = m_services.get<ThemeService>();
   Q_ASSERT(theme);
-  m_lists = named(new QListView(m_sidebar), "todoLists", tr("Lists and smart views"));
+  m_lists = named(new TodoListView(m_sidebar), "todoLists", tr("Lists and smart views"));
   m_lists->setItemDelegate(new ListDelegate(theme, m_lists));
   m_lists->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  m_lists->setSelectionMode(QAbstractItemView::SingleSelection);
+  // Same-model MIME admission is owned by TodoListModel, not Qt's row-move policy.
+  m_lists->setDragDropMode(QAbstractItemView::DragDrop);
+  m_lists->setDefaultDropAction(Qt::MoveAction);
+  m_lists->setDragDropOverwriteMode(false);
+  m_lists->setDropIndicatorShown(true);
   m_lists->setContextMenuPolicy(Qt::CustomContextMenu);
   m_lists->setMouseTracking(true);
   m_lists->setFrameShape(QFrame::NoFrame);
@@ -987,6 +1031,8 @@ void TodoEditor::refresh() {
   const bool writable = canMutate();
   m_newList->setEnabled(writable);
   m_newGroup->setEnabled(writable);
+  m_lists->setDragEnabled(writable);
+  m_lists->setAcceptDrops(writable);
   m_listTitle->setReadOnly(!writable);
   m_description->setReadOnly(!writable);
   if (!m_controller) {
@@ -1707,29 +1753,6 @@ void TodoEditor::renameGroup(const QString &p_key) {
   }
 }
 
-void TodoEditor::deleteGroup(const QString &p_key) {
-  if (!canMutate()) {
-    return;
-  }
-  const auto *group = m_controller->getDocument().findGroup(p_key);
-  if (!group) {
-    return;
-  }
-  endTyping();
-  const auto token = gesture();
-  const QPointer<TodoEditor> self(this);
-  if (group->m_listCount > 0) {
-    const auto answer = QMessageBox::question(
-        this, tr("Delete group"),
-        tr("Delete group \"%1\" and all its lists and tasks?").arg(groupName(*group)),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    if (!self || answer != QMessageBox::Yes || !accepts(token)) {
-      return;
-    }
-  }
-  command([this, p_key]() { return m_controller->removeGroup(p_key); });
-}
-
 void TodoEditor::moveGroup(const QString &p_key, int p_direction) {
   if (!canMutate()) {
     return;
@@ -1752,9 +1775,11 @@ void TodoEditor::moveGroup(const QString &p_key, int p_direction) {
 }
 
 void TodoEditor::showGroupMenu(const QString &p_key, const QPoint &p_globalPosition) {
-  if (!m_controller || !m_controller->getDocument().findGroup(p_key)) {
+  const auto *group = m_controller ? m_controller->getDocument().findGroup(p_key) : nullptr;
+  if (!group) {
     return;
   }
+  const bool isDefault = group->m_isDefault;
   endTyping();
   m_groupFocused = true;
   m_controller->setSelectedGroupKey(p_key);
@@ -1762,26 +1787,22 @@ void TodoEditor::showGroupMenu(const QString &p_key, const QPoint &p_globalPosit
   auto *menu = named(new QMenu(this), "todoGroupMenu", tr("Group actions"));
   menu->setAttribute(Qt::WA_DeleteOnClose);
   auto add = [&](const QString &p_label, const char *p_name, const std::function<void()> &p_action,
-                 bool p_mutation = true) {
+                 bool p_enabled = true) {
     auto *action = menu->addAction(p_label);
     action->setObjectName(QString::fromLatin1(p_name));
-    action->setEnabled(!p_mutation || canMutate());
-    connect(action, &QAction::triggered, this, [this, token, p_action, p_mutation]() {
-      if (p_mutation ? accepts(token) : acceptsNavigation(token)) {
+    action->setEnabled(canMutate() && p_enabled);
+    connect(action, &QAction::triggered, this, [this, token, p_action]() {
+      if (accepts(token)) {
         p_action();
       }
     });
   };
-  add(tr("New List"), "todoGroupNewListAction", [this, p_key]() { addList(p_key); });
   add(tr("Rename"), "todoRenameGroupAction", [this, p_key]() { renameGroup(p_key); });
-  add(tr("Move Up"), "todoGroupUpAction", [this, p_key]() { moveGroup(p_key, -1); });
-  add(tr("Move Down"), "todoGroupDownAction", [this, p_key]() { moveGroup(p_key, 1); });
-  const bool collapsed = m_controller->getProjection().m_collapsedGroups.contains(p_key);
+  add(tr("New List"), "todoGroupNewListAction", [this, p_key]() { addList(p_key); });
   add(
-      collapsed ? tr("Expand") : tr("Collapse"), "todoToggleGroupAction",
-      [this, p_key]() { toggleGroup(p_key); }, false);
-  menu->addSeparator();
-  add(tr("Delete"), "todoDeleteGroupAction", [this, p_key]() { deleteGroup(p_key); });
+      tr("Ungroup Lists"), "todoUngroupListsAction",
+      [this, p_key]() { command([this, p_key]() { return m_controller->ungroupLists(p_key); }); },
+      !isDefault);
   menu->popup(p_globalPosition);
 }
 
@@ -1943,68 +1964,58 @@ void TodoEditor::moveList(const QString &p_key, int p_direction) {
   });
 }
 
-void TodoEditor::moveListToGroup(const QString &p_key) {
+void TodoEditor::moveListToGroup(const QString &p_key, const QString &p_groupKey) {
   if (!canMutate()) {
-    return;
-  }
-  const auto *list = m_controller->getDocument().findList(p_key);
-  const auto *group = list ? m_controller->getDocument().groupForList(*list) : nullptr;
-  if (!group) {
     return;
   }
   endTyping();
   m_groupFocused = false;
   m_controller->setView(TodoViewKind::List, p_key);
-  const auto token = gesture();
   const QPointer<TodoEditor> self(this);
-  QPointer<QDialog> dialog =
-      named(new QDialog(this), "todoMoveListDialog", tr("Move list to group"));
-  dialog->setWindowTitle(tr("Move list to group"));
-  auto *layout = new QVBoxLayout(dialog);
-  spacing(layout);
-  auto *destination = named(new QComboBox(dialog), "todoMoveListGroup", tr("Destination group"));
-  addGroupChoices(destination, m_controller->getDocument());
-  destination->setCurrentIndex(group->m_isDefault ? 0 : destination->findData(group->m_key));
-  layout->addWidget(destination);
-  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
-  named(buttons->button(QDialogButtonBox::Ok), "todoMoveListAccept", tr("Move list"));
-  named(buttons->button(QDialogButtonBox::Cancel), "todoMoveListCancel", tr("Cancel move"));
-  layout->addWidget(buttons);
-  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-  const int result = dialog->exec();
-  if (!dialog) {
-    return;
-  }
-  const auto groupKey = destination->currentData().toString();
-  delete dialog;
-  if (self && result == QDialog::Accepted && accepts(token)) {
-    const QPointer<TodoViewWindowController> controller(m_controller);
-    if (command([controller, p_key, groupKey]() {
-          return controller->moveList(p_key, groupKey, {});
-        }) &&
-        self && m_controller == controller) {
-      const auto &projection = controller->getProjection();
-      const auto *moved = controller->getDocument().findList(projection.m_listKey);
-      const auto *owner = moved ? controller->getDocument().groupForList(*moved) : nullptr;
-      if (owner) {
-        controller->setGroupExpanded(owner->m_key, true);
-      }
+  const QPointer<TodoViewWindowController> controller(m_controller);
+  if (command([controller, p_key, p_groupKey]() {
+        return controller->moveList(p_key, p_groupKey, {});
+      }) &&
+      self && m_controller == controller) {
+    const auto *moved = controller->getDocument().findList(controller->getProjection().m_listKey);
+    const auto *owner = moved ? controller->getDocument().groupForList(*moved) : nullptr;
+    if (owner) {
+      controller->setGroupExpanded(owner->m_key, true);
     }
   }
 }
 
+void TodoEditor::duplicateList(const QString &p_key) {
+  const QPointer<TodoEditor> self(this);
+  const QPointer<TodoViewWindowController> controller(m_controller);
+  QString createdKey;
+  if (command([controller, p_key, &createdKey]() {
+        return controller->duplicateList(p_key, &createdKey);
+      }) &&
+      self && m_controller == controller) {
+    const auto *copy = controller->getDocument().findList(createdKey);
+    const auto *owner = copy ? controller->getDocument().groupForList(*copy) : nullptr;
+    if (owner) {
+      controller->setGroupExpanded(owner->m_key, true);
+    }
+    selectView(controller->getListModel()->rowForKey(createdKey));
+    focusTasks();
+  }
+}
+
 void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPosition) {
-  if (!m_controller || !m_controller->getDocument().findList(p_key)) {
+  const auto *list = m_controller ? m_controller->getDocument().findList(p_key) : nullptr;
+  const auto *group = list ? m_controller->getDocument().groupForList(*list) : nullptr;
+  if (!group) {
     return;
   }
   endTyping();
   const auto token = gesture();
-  auto *menu = new QMenu(this);
+  auto *menu = named(new QMenu(this), "todoListMenu", tr("List actions"));
   menu->setAttribute(Qt::WA_DeleteOnClose);
-  auto add = [&](const QString &p_label, const char *p_name,
+  auto add = [&](QMenu *p_menu, const QString &p_label, const char *p_name,
                  const std::function<void()> &p_action) {
-    auto *action = menu->addAction(p_label);
+    auto *action = p_menu->addAction(p_label);
     action->setObjectName(QString::fromLatin1(p_name));
     action->setEnabled(canMutate());
     connect(action, &QAction::triggered, this, [this, token, p_action]() {
@@ -2012,23 +2023,28 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
         p_action();
       }
     });
+    return action;
   };
-  add(tr("Rename"), "todoRenameListAction", [this, p_key]() { renameList(p_key); });
-  add(tr("Edit description"), "todoEditDescriptionAction", [this, p_key]() {
-    endTyping();
-    m_controller->setView(TodoViewKind::List, p_key);
-    m_controller->setSearch({});
-    m_controller->setTagFilter({});
-    if (m_narrow) {
-      closeDetails();
+  add(menu, tr("Rename"), "todoRenameListAction", [this, p_key]() { renameList(p_key); });
+  if (group->m_isDefault) {
+    auto *destinations = menu->addMenu(tr("Move List To Group"));
+    destinations->menuAction()->setObjectName(QStringLiteral("todoMoveListGroupAction"));
+    for (const auto &destination : m_controller->getDocument().m_groups) {
+      if (!destination.m_isDefault) {
+        const auto key = destination.m_key;
+        auto *action =
+            add(destinations, groupName(destination).replace(QLatin1Char('&'), QLatin1String("&&")),
+                "todoMoveListToGroupAction", [this, p_key, key]() { moveListToGroup(p_key, key); });
+        action->setData(key);
+      }
     }
-    m_description->getTextEdit()->setFocus(Qt::OtherFocusReason);
-  });
-  add(tr("Move to group"), "todoMoveListGroupAction", [this, p_key]() { moveListToGroup(p_key); });
-  add(tr("Move Up"), "todoListUpAction", [this, p_key]() { moveList(p_key, -1); });
-  add(tr("Move Down"), "todoListDownAction", [this, p_key]() { moveList(p_key, 1); });
-  menu->addSeparator();
-  add(tr("Delete"), "todoDeleteListAction", [this, p_key]() { deleteList(p_key); });
+    destinations->menuAction()->setEnabled(canMutate() && !destinations->isEmpty());
+  } else {
+    add(menu, tr("Remove from Group"), "todoRemoveListFromGroupAction",
+        [this, p_key]() { moveListToGroup(p_key, {}); });
+  }
+  add(menu, tr("Duplicate"), "todoDuplicateListAction", [this, p_key]() { duplicateList(p_key); });
+  add(menu, tr("Delete"), "todoDeleteListAction", [this, p_key]() { deleteList(p_key); });
   menu->popup(p_globalPosition);
 }
 
