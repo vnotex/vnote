@@ -591,10 +591,11 @@ and `test_pdfvieweradapter_viewer` covers new-document versus same-document repl
 
 `TodoViewWindow` handles newable/searchable `TODO` files (`.todo`) and memory buffers with
 `editorType="todo"`. Ordinary opens default to Edit; forced Read and an existing tab's mode
-remain authoritative. Tasks/Source are independent surfaces, not Read/Edit modes. Printing
-and encrypted-note support are not advertised or extended.
+remain authoritative. Tasks is the sole visible surface; there is no raw Source mode or
+Tasks/Source switch. Printing and encrypted-note support are not advertised or extended.
 
-One `SimpleMarkdownEditor` owns the LF-normalized `QTextDocument` and its undo history.
+One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
+`QTextDocument` and its undo history. It is an internal document engine, never a visible fallback.
 `TodoEditor` renders `TodoListModel` / `TodoTaskModel`; `TodoViewWindowController` validates
 and applies source commands without widgets or storage writes. Projected notes/descriptions
 use separate `SimpleMarkdownEditor` inputs with local undo disabled and source-history routing.
@@ -605,7 +606,17 @@ document-child H1 is a list; direct unordered checkbox items are tasks. One bloc
 a list description or task Markdown note; direct nested checkbox items are steps. Checklists,
 headings and fences inside notes are not planner structure. Ordinary comments stay opaque;
 unsupported root/body blocks and malformed owned metadata produce line-numbered diagnostics,
-disable Tasks mutation and remain editable/saveable in Source when the buffer permits it.
+disable Tasks mutation and keep Tasks visible. Invalid source remains saveable unchanged;
+repair it at its source and reload rather than silently rewriting or exposing a raw editor.
+
+Ctrl+F and Find route to native current-file task search. Raw Replace/ReplaceAll is rejected
+without source changes, and the raw Find-and-Replace toolbar action is not advertised.
+File-open navigation uses an absolute UTF-16 cursor offset first, otherwise a zero-based search
+match line, otherwise a zero-based explicit line. Lines are converted through the LF document's
+block positions. A task range includes its steps, note and comments; other owned positions
+select the containing list. Navigation switches to that real list, clears search/tag filters,
+expands Completed when needed and selects/focuses the native row, including in Read mode.
+Invalid/unavailable source or positions with no owner leave the native selection unchanged.
 
 Whole-line adjacent `todo`, `todo-list` and `todo-item` HTML comments contain per-owner JSON.
 Format 1 is optional on input; structured changes add its header. Owners without IDs get

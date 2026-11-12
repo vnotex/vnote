@@ -5,7 +5,6 @@
 
 #include <vtextedit/global.h>
 
-class QStackedWidget;
 class QTimer;
 
 namespace vnotex {
@@ -15,7 +14,7 @@ class SimpleMarkdownEditor;
 class TodoEditor;
 class TodoViewWindowController;
 
-// Both surfaces edit the source document; ViewWindow2 owns persistence and writer handoff.
+// Tasks edit an internal Markdown document; ViewWindow2 owns persistence and writer handoff.
 class TodoViewWindow : public ViewWindow2 {
   Q_OBJECT
 public:
@@ -27,8 +26,6 @@ public:
   TodoViewWindowController *getController() const { return m_controller; }
   SimpleMarkdownEditor *getSourceEditor() const { return m_sourceEditor; }
   TodoEditor *getTodoEditor() const { return m_todoEditor; }
-  void setSourceMode(bool p_source);
-  bool isSourceMode() const { return m_sourceMode; }
 
   void setMode(ViewWindowMode p_mode) override;
   QString getLatestContent() const override;
@@ -42,7 +39,6 @@ public:
 public slots:
   void undo();
   void redo();
-  void clearHighlights() override;
   void applyFileOpenSettings(const FileOpenSettings &p_settings) override;
 
 protected:
@@ -54,14 +50,11 @@ protected:
   void resetZoom() override;
   QString selectedText() const override;
   void showFindAndReplaceWidget() override;
-  void handleFindTextChanged(const QString &p_text, FindOptions p_options) override;
   void handleFindNext(const QStringList &p_texts, FindOptions p_options) override;
   void handleReplace(const QString &p_text, FindOptions p_options,
                      const QString &p_replaceText) override;
   void handleReplaceAll(const QString &p_text, FindOptions p_options,
                         const QString &p_replaceText) override;
-  void handleFindAndReplaceWidgetClosed() override;
-  void handleFindAndReplaceWidgetOpened() override;
   void prepareBufferReplacement() override;
   void releaseBufferResources() override;
   void bindBufferResources() override;
@@ -85,17 +78,12 @@ private:
   void registerSnapshotWriter();
   void requestSourceRefresh() const;
   bool ownsWidget(const QWidget *p_widget) const;
-  void showSourceContextMenu(const QPoint &p_globalPosition);
-  void applySurface(bool p_source, bool p_focus);
 
   BufferService *m_buffers = nullptr;
   TodoViewWindowController *m_controller = nullptr;
   SimpleMarkdownEditor *m_sourceEditor = nullptr;
   TodoEditor *m_todoEditor = nullptr;
-  QStackedWidget *m_surfaces = nullptr;
   InlineBanner *m_diagnosticBanner = nullptr;
-  QAction *m_tasksAction = nullptr;
-  QAction *m_sourceAction = nullptr;
   QAction *m_undoAction = nullptr;
   QAction *m_redoAction = nullptr;
   QTimer *m_dayTimer = nullptr;
@@ -112,7 +100,6 @@ private:
   bool m_waitingForSource = false;
   mutable bool m_refreshPending = false;
   mutable bool m_refreshQueued = false;
-  bool m_sourceMode = false;
   bool m_bindingBuffer = false;
   bool m_loading = true;
   bool m_updatingEditability = false;

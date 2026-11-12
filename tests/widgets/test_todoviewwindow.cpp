@@ -446,7 +446,9 @@ private slots:
   void sharedBufferRejectsStaleGestures();
   void foreignReloadAndSameTypeReplacement();
   void nativeLayoutsKeyboardAndTheme();
-  void sourceNavigationFindReplaceAndPrint();
+  void tasksOnlyNavigation_data();
+  void tasksOnlyNavigation();
+  void tasksOnlyFindAndReplace();
   void unavailableSourceIsNotEmpty();
   void plannedDueDoesNotLeak();
   void storedMyDayRemainsVisible();
@@ -721,7 +723,7 @@ void TestTodoViewWindow::factoryAndDefaultMode() {
   QVERIFY(window);
   QCOMPARE(window->getMode(), forcedRead ? ViewWindowMode::Read : ViewWindowMode::Edit);
   QCOMPARE(window->getLatestContent().toUtf8(), c_source);
-  QVERIFY(!window->isSourceMode());
+  QTRY_VERIFY(window->getTodoEditor()->isVisible());
   QVERIFY(!window->isModified());
   QCOMPARE(window->getController()->getDocument().m_lists.size(), 2);
   QCOMPARE(window->getController()->getTaskModel()->getActiveCount(), 2);
@@ -958,14 +960,10 @@ void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
   QTest::keyClick(important, Qt::Key_Space);
   QVERIFY(controller->getDocument().findItem(key)->m_fields.m_important);
   const auto starred = window->getLatestContent();
-  window->setSourceMode(true);
-  auto *sourceEdit = window->getSourceEditor()->getTextEdit();
-  QVERIFY(activate(sourceEdit));
-  QTest::keyClick(sourceEdit, Qt::Key_Z, Qt::ControlModifier);
+  QTest::keyClick(important, Qt::Key_Z, Qt::ControlModifier);
   QCOMPARE(window->getLatestContent(), typed);
-  QTest::keyClick(sourceEdit, Qt::Key_Y, Qt::ControlModifier);
+  QTest::keyClick(important, Qt::Key_Y, Qt::ControlModifier);
   QCOMPARE(window->getLatestContent(), starred);
-  window->setSourceMode(false);
   QCOMPARE(controller->getSelectedItemKey(), key);
   QVERIFY(openTask(window, key));
   QVERIFY(activate(title));
@@ -1365,7 +1363,8 @@ void TestTodoViewWindow::invalidSourceRecovery() {
   auto *banner = control<InlineBanner>(window, "todoDiagnosticBanner");
   auto *controller = window->getController();
   QVERIFY(banner);
-  QVERIFY(window->isSourceMode());
+  QTRY_VERIFY(window->getTodoEditor()->isVisible());
+  QVERIFY(window->getSourceEditor()->isHidden());
   QTRY_VERIFY(banner->isVisible());
   QVERIFY(!banner->getText().isEmpty());
   QVERIFY(!controller->getDocument().isValid());
@@ -1376,22 +1375,16 @@ void TestTodoViewWindow::invalidSourceRecovery() {
   QCOMPARE(window->getLatestContent().toUtf8(), broken);
   QVERIFY(window->save());
   QCOMPARE(readBytes(absolute(QStringLiteral("broken.todo"))), broken);
-  auto *source = window->getSourceEditor();
-  QVERIFY(!source->isReadOnly());
-  QVERIFY(activate(source->getTextEdit()));
-  replaceDocument(source, QString::fromUtf8(c_source));
-  window->setSourceMode(false);
-  QVERIFY(!window->isSourceMode());
+  QVERIFY(writeBytes(absolute(QStringLiteral("broken.todo")), c_source));
+  QVERIFY(window->reload());
   QVERIFY(controller->getDocument().isValid());
   QVERIFY(!banner->isVisible());
-  window->undo();
-  QVERIFY(window->isSourceMode());
-  QVERIFY(banner->isVisible());
-  QCOMPARE(window->getLatestContent().toUtf8(), broken);
-  window->redo();
-  window->setSourceMode(false);
-  QVERIFY(controller->getDocument().isValid());
+  QVERIFY(window->getSourceEditor()->isHidden());
   QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(quickAdd(window, QStringLiteral("Recovered task")));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
   QVERIFY(window->save());
 }
 
@@ -1640,12 +1633,8 @@ void TestTodoViewWindow::readOnlyNavigation() {
   auto *search = control<QLineEdit>(window, "todoSearch");
   QVERIFY(typeText(search, QStringLiteral("Gamma")));
   QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
-  window->setSourceMode(true);
-  QVERIFY(window->getSourceEditor()->isReadOnly());
-  QVERIFY(activate(window->getSourceEditor()->getTextEdit()));
-  QTest::keyClicks(window->getSourceEditor()->getTextEdit(), "not editable");
-  QCOMPARE(window->getLatestContent(), before);
-  window->setSourceMode(false);
+  QVERIFY(window->getSourceEditor()->isHidden());
+  QVERIFY(window->getTodoEditor()->isVisible());
   QCOMPARE(window->getLatestContent(), before);
   QVERIFY(!window->isModified());
   if (!bufferReadOnly) {
@@ -1761,8 +1750,6 @@ void TestTodoViewWindow::foreignReloadAndSameTypeReplacement() {
   QVERIFY(!rejected.isEmpty());
   QCOMPARE(window->getLatestContent().toUtf8(), replacement);
   QVERIFY(!model->dropMimeData(payload.get(), Qt::MoveAction, 0, 0, QModelIndex()));
-  window->setSourceMode(true);
-  window->setSourceMode(false);
   QCOMPARE(window->getLatestContent().toUtf8(), replacement);
   // Reuse through the real ViewArea path, not a copied replacement hook.
   m_config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
@@ -1889,10 +1876,8 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   QVERIFY(typeText(title, QStringLiteral("Edited in narrow details")));
   QCOMPARE(window->getController()->getDocument().findItem(narrowKey)->m_fields.m_title,
            QStringLiteral("Edited in narrow details"));
-  window->setSourceMode(true);
-  QVERIFY(window->getSourceEditor()->isVisible());
   window->undo();
-  window->setSourceMode(false);
+  QVERIFY(window->getSourceEditor()->isHidden());
   QCOMPARE(window->getController()->getDocument().findItem(narrowKey)->m_fields.m_title,
            QStringLiteral("Added in a narrow split"));
   QTRY_VERIFY(back->isVisible());
@@ -1907,73 +1892,132 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   }
 }
 
-void TestTodoViewWindow::sourceNavigationFindReplaceAndPrint() {
+void TestTodoViewWindow::tasksOnlyNavigation_data() {
+  QTest::addColumn<QString>("needle");
+  QTest::addColumn<int>("bias");
+  QTest::addColumn<int>("route"); // 0: line, 1: search line, 2: cursor offset, 3: invalid line.
+  QTest::addColumn<QString>("listKey");
+  QTest::addColumn<QString>("itemKey");
+  QTest::newRow("another-list") << QStringLiteral("- [ ] Gamma") << 0 << 0
+                                << QStringLiteral("id:personal") << QStringLiteral("id:gamma");
+  QTest::newRow("completed-task") << QStringLiteral("- [x] Done") << 0 << 0
+                                  << QStringLiteral("id:work") << QStringLiteral("id:done");
+  QTest::newRow("step") << QStringLiteral("Second step") << 0 << 0 << QStringLiteral("id:work")
+                        << QStringLiteral("id:alpha");
+  QTest::newRow("note") << QStringLiteral("Existing **note**") << 0 << 0
+                        << QStringLiteral("id:work") << QStringLiteral("id:alpha");
+  QTest::newRow("task-metadata") << QStringLiteral("opaque-metadata-only") << 0 << 0
+                                 << QStringLiteral("id:work") << QStringLiteral("id:alpha");
+  QTest::newRow("list-heading") << QStringLiteral("# Personal") << 0 << 0
+                                << QStringLiteral("id:personal") << QString();
+  QTest::newRow("list-description")
+      << QStringLiteral("> Team commitments") << 0 << 0 << QStringLiteral("id:work") << QString();
+  QTest::newRow("list-blank-line")
+      << QStringLiteral("\n\n- [ ] Alpha") << 1 << 0 << QStringLiteral("id:work") << QString();
+  QTest::newRow("list-comment") << QStringLiteral("Work-scoped separator") << 0 << 0
+                                << QStringLiteral("id:work") << QString();
+  QTest::newRow("search-line-precedence") << QStringLiteral("+ [ ] Beta") << 0 << 1
+                                          << QStringLiteral("id:work") << QStringLiteral("id:beta");
+  QTest::newRow("utf16-offset-precedence")
+      << QStringLiteral("Gamma") << 2 << 2 << QStringLiteral("id:personal")
+      << QStringLiteral("id:gamma");
+  QTest::newRow("file-comment-no-owner")
+      << QStringLiteral("File-scoped author comment") << 0 << 0 << QString() << QString();
+  QTest::newRow("out-of-range-line") << QStringLiteral("Gamma") << 0 << 3 << QString() << QString();
+}
+
+void TestTodoViewWindow::tasksOnlyNavigation() {
+  QFETCH(QString, needle);
+  QFETCH(int, bias);
+  QFETCH(int, route);
+  QFETCH(QString, listKey);
+  QFETCH(QString, itemKey);
   createArea();
-  FileOpenSettings settings;
-  settings.m_lineNumber = 8;
-  settings.m_forceMode = true;
-  settings.m_mode = ViewWindowMode::Edit;
-  QVERIFY(openNote(QStringLiteral("navigate.todo"), c_source, settings).isValid());
+  auto text = QString::fromUtf8(c_source);
+  text.replace(QStringLiteral("# Work"), QString::fromUtf8("# 工作 😀 Work"));
+  FileOpenSettings readMode;
+  readMode.m_forceMode = true;
+  readMode.m_mode = ViewWindowMode::Read;
+  QVERIFY(openNote(QStringLiteral("navigate.todo"), text.toUtf8(), readMode).isValid());
   auto *window = current();
   QVERIFY(window);
-  QVERIFY(window->isSourceMode());
-  auto *source = window->getSourceEditor();
-  auto *edit = source->getTextEdit();
-  QTRY_COMPARE(edit->textCursor().blockNumber(), settings.m_lineNumber);
-  QVERIFY(activate(edit));
-  auto cursor = edit->textCursor();
-  cursor.setPosition(3, QTextCursor::MoveAnchor);
-  cursor.setPosition(7, QTextCursor::KeepAnchor);
-  edit->setTextCursor(cursor);
-  QCOMPARE(window->getSelectedText(), source->toPlainText().mid(3, 4));
-  const auto position = window->capturePositionState();
-  edit->moveCursor(QTextCursor::End);
-  window->restorePositionState(position);
-  QCOMPARE(edit->textCursor().blockNumber(), position.m_cursorLine);
-  QCOMPARE(edit->textCursor().positionInBlock(), position.m_cursorPositionInBlock);
-  // Source mode must expose markers even with the caret in a different block.
-  edit->moveCursor(QTextCursor::End);
-  const auto text = source->toPlainText();
-  const auto heading = text.indexOf(QStringLiteral("# Work"));
-  const auto block = source->document()->findBlock(heading);
-  source->document()->documentLayout()->blockBoundingRect(block);
-  const auto line = block.layout()->lineForTextPosition(0);
-  QVERIFY(line.isValid());
-  QTRY_VERIFY(line.cursorToX(2) - line.cursorToX(0) > 1);
-  const auto metadata =
-      source->document()->findBlock(text.indexOf(QStringLiteral("<!-- todo-item:")));
-  source->document()->documentLayout()->blockBoundingRect(metadata);
-  QVERIFY(metadata.layout()->lineAt(0).naturalTextWidth() > 30);
-  window->findNext(QStringLiteral("Alpha"), FindNone);
-  QTRY_VERIFY([&] {
-    for (const auto &highlight : edit->extraSelections()) {
-      if (highlight.cursor.selectedText() == QStringLiteral("Alpha"))
-        return true;
-    }
-    return false;
-  }());
-  QTest::keyClick(edit, Qt::Key_F, Qt::ControlModifier);
-  QTRY_VERIFY(QApplication::focusWidget() != edit);
-  window->setSourceMode(false);
-  window->replaceAll(QStringLiteral("Alpha"), FindNone, QStringLiteral("Renamed from Replace"));
-  QVERIFY(window->isSourceMode());
-  QVERIFY(window->getLatestContent().contains(QLatin1String("Renamed from Replace")));
-  window->undo();
-  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
-  QVERIFY(!window->isPrintSupported());
-  for (auto *action : window->findChildren<QAction *>()) {
-    QVERIFY(action->text().remove(QLatin1Char('&')) != QLatin1String("Print"));
-    QVERIFY(action->property("iconName").toString() != QLatin1String("print.svg"));
+  focusTasks(window);
+  auto *controller = window->getController();
+  controller->setView(TodoViewKind::MyDay);
+  controller->setSearch(QStringLiteral("no matching task"));
+  controller->setTagFilter(QStringLiteral("missing tag"));
+  controller->setCompletedExpanded(false);
+  const auto before = controller->getProjection();
+  const auto selected = controller->getSelectedItemKey();
+  const int offset = text.indexOf(needle) + bias;
+  QVERIFY(offset >= 0);
+  const int line = text.left(offset).count(QLatin1Char('\n'));
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit; // Unforced navigation must preserve Read.
+  settings.m_lineNumber = line;
+  if (route == 1 || route == 2) {
+    settings.m_lineNumber = 0;
+    settings.m_searchHighlight.m_isValid = true;
+    settings.m_searchHighlight.m_patterns =
+        QStringList{QStringLiteral("metadata-not-a-task-filter")};
+    settings.m_searchHighlight.m_currentMatchLine = route == 2 ? 0 : line;
   }
-  auto *tasksAction = control<QAction>(window, "todoTasksAction");
-  auto *sourceAction = control<QAction>(window, "todoSourceAction");
-  QVERIFY(tasksAction && sourceAction);
-  tasksAction->trigger();
-  QVERIFY(tasksAction->isChecked() && !sourceAction->isChecked());
-  window->setMode(ViewWindowMode::Read);
-  sourceAction->trigger();
-  QVERIFY(sourceAction->isChecked() && !tasksAction->isChecked());
-  QVERIFY(window->isSourceMode());
+  if (route == 2)
+    settings.m_cursorOffset = offset;
+  if (route == 3)
+    settings.m_lineNumber = 99999;
+  window->applyFileOpenSettings(settings);
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  QCOMPARE(window->getLatestContent(), text);
+  QVERIFY(!window->isModified());
+  QVERIFY(window->getTodoEditor()->isVisible());
+  QVERIFY(window->getSourceEditor()->isHidden());
+  if (listKey.isEmpty()) {
+    QCOMPARE(controller->getProjection().m_view, before.m_view);
+    QCOMPARE(controller->getProjection().m_search, before.m_search);
+    QCOMPARE(controller->getProjection().m_tag, before.m_tag);
+    QCOMPARE(controller->getSelectedItemKey(), selected);
+    return;
+  }
+  QCOMPARE(controller->getProjection().m_view, TodoViewKind::List);
+  QCOMPARE(controller->getProjection().m_listKey, listKey);
+  QVERIFY(controller->getProjection().m_search.isEmpty());
+  QVERIFY(controller->getProjection().m_tag.isEmpty());
+  QCOMPARE(controller->getSelectedItemKey(), itemKey);
+  if (!itemKey.isEmpty()) {
+    const int row = controller->getTaskModel()->rowForKey(itemKey);
+    QVERIFY(row >= 0);
+    QCOMPARE(control<QListView>(window, "todoTasks")->currentIndex().row(), row);
+  }
+}
+
+void TestTodoViewWindow::tasksOnlyFindAndReplace() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("tasks-search.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *search = control<QLineEdit>(window, "todoSearch");
+  auto *tasks = control<QListView>(window, "todoTasks");
+  QVERIFY(search && tasks);
+  QTest::keyClick(tasks, Qt::Key_F, Qt::ControlModifier);
+  QTRY_VERIFY(search->hasFocus());
+  window->findNext(QStringLiteral("Gamma"), FindNone);
+  QCOMPARE(search->text(), QStringLiteral("Gamma"));
+  QCOMPARE(taskTitles(window), QStringList{QStringLiteral("Gamma")});
+  window->replace(QStringLiteral("Gamma"), FindNone, QStringLiteral("Not a raw edit"));
+  window->replaceAll(QStringLiteral("Gamma"), FindNone, QStringLiteral("Not a raw edit"));
+  QTest::keyClick(search, Qt::Key_H, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(window->getSourceEditor()->isHidden());
+  QVERIFY(window->getTodoEditor()->isVisible());
+  QVERIFY(!window->isModified());
+  QVERIFY(openTask(window, QStringLiteral("id:gamma")));
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  QVERIFY(title && activate(title));
+  title->setSelection(0, 3);
+  QCOMPARE(window->getSelectedText(), QStringLiteral("Gam"));
+  QVERIFY(!window->isPrintSupported());
 }
 
 void TestTodoViewWindow::unavailableSourceIsNotEmpty() {

@@ -1,21 +1,14 @@
 #include "todoviewwindow.h"
 
 #include <QAction>
-#include <QActionGroup>
 #include <QApplication>
-#include <QClipboard>
-#include <QContextMenuEvent>
 #include <QHideEvent>
-#include <QInputMethodEvent>
 #include <QKeyEvent>
 #include <QListView>
-#include <QMenu>
 #include <QPointer>
 #include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QShowEvent>
-#include <QSignalBlocker>
-#include <QStackedWidget>
 #include <QTextBlock>
 #include <QTextDocument>
 #include <QTimer>
@@ -27,7 +20,6 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/themeservice.h>
-#include <gui/utils/widgetutils.h>
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/textutils.h>
 #include <vtextedit/theme.h>
@@ -61,24 +53,21 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
   m_boundBufferId = p_buffer.id();
   m_boundGeneration = getBufferGeneration();
 
-  m_surfaces = new QStackedWidget(this);
-  m_surfaces->setObjectName(QStringLiteral("todoSurfaceStack"));
-  m_sourceEditor = new SimpleMarkdownEditor(p_services, m_surfaces);
+  m_sourceEditor = new SimpleMarkdownEditor(p_services, this);
+  m_sourceEditor->setFocusPolicy(Qt::NoFocus);
+  m_sourceEditor->hide();
   m_sourceEditor->setObjectName(QStringLiteral("todoSourceEditor"));
-  m_sourceEditor->setAccessibleName(tr("TODO Markdown source"));
   auto *textEdit = m_sourceEditor->getTextEdit();
   textEdit->setObjectName(QStringLiteral("todoSourceTextEdit"));
-  textEdit->setAccessibleName(tr("TODO Markdown source"));
+  textEdit->setFocusPolicy(Qt::NoFocus);
   configureLiteralSource();
 
   m_controller = new TodoViewWindowController(p_services, textEdit->document(), p_buffer, this);
   m_controller->setMutationGuard([this]() { return admitMutation(); });
-  m_todoEditor = new TodoEditor(p_services, m_surfaces);
+  m_todoEditor = new TodoEditor(p_services, this);
   m_todoEditor->setObjectName(QStringLiteral("todoEditor"));
   m_todoEditor->bindController(m_controller);
-  m_surfaces->addWidget(m_todoEditor);
-  m_surfaces->addWidget(m_sourceEditor);
-  setCentralWidget(m_surfaces);
+  setCentralWidget(m_todoEditor);
   setFocusProxy(m_todoEditor);
 
   setupToolBar();
@@ -108,7 +97,6 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
           [this](const QString &p_message) { showMessage(p_message); });
   connect(m_todoEditor, &TodoEditor::undoRequested, this, &TodoViewWindow::undo);
   connect(m_todoEditor, &TodoEditor::redoRequested, this, &TodoViewWindow::redo);
-  connect(m_todoEditor, &TodoEditor::requestSourceMode, this, [this]() { setSourceMode(true); });
   connect(this, &ViewWindow2::statusChanged, this, [this]() { updateEditability(); });
   connect(this, &ViewWindow2::focused, this, [this](ViewWindow2 *) {
     updateToday();
@@ -158,20 +146,6 @@ void TodoViewWindow::setupToolBar() {
   addToolBar(bar);
   addLeftCommonToolBarActions(bar);
 
-  auto *surfaces = new QActionGroup(this);
-  surfaces->setExclusive(true);
-  m_tasksAction = bar->addAction(tr("Tasks"));
-  m_tasksAction->setObjectName(QStringLiteral("todoTasksAction"));
-  m_sourceAction = bar->addAction(tr("Source"));
-  m_sourceAction->setObjectName(QStringLiteral("todoSourceAction"));
-  for (auto *action : {m_tasksAction, m_sourceAction}) {
-    action->setCheckable(true);
-    surfaces->addAction(action);
-  }
-  m_tasksAction->setChecked(true);
-  connect(m_tasksAction, &QAction::triggered, this, [this]() { setSourceMode(false); });
-  connect(m_sourceAction, &QAction::triggered, this, [this]() { setSourceMode(true); });
-
   const auto actions = TextViewWindowHelper::addUndoRedoActions(bar, getServices(), this);
   m_undoAction = actions.first;
   m_redoAction = actions.second;
@@ -179,7 +153,7 @@ void TodoViewWindow::setupToolBar() {
   m_redoAction->setObjectName(QStringLiteral("todoRedoAction"));
   connect(m_undoAction, &QAction::triggered, this, &TodoViewWindow::undo);
   connect(m_redoAction, &QAction::triggered, this, &TodoViewWindow::redo);
-  addRightCommonToolBarActions(bar);
+  addRightCommonToolBarActions(bar, false);
 }
 
 void TodoViewWindow::configureLiteralSource() {
@@ -419,7 +393,6 @@ void TodoViewWindow::updateEditability() {
   auto *document = m_sourceEditor->getTextEdit()->document();
   m_undoAction->setEnabled(editable && document->isUndoAvailable());
   m_redoAction->setEnabled(editable && document->isRedoAvailable());
-  setFindAndReplaceReplaceEnabled(editable);
 }
 
 bool TodoViewWindow::admitMutation() {
@@ -459,40 +432,6 @@ void TodoViewWindow::setMode(ViewWindowMode p_mode) {
   }
 }
 
-void TodoViewWindow::applySurface(bool p_source, bool p_focus) {
-  m_sourceMode = p_source;
-  m_surfaces->setCurrentWidget(p_source ? static_cast<QWidget *>(m_sourceEditor)
-                                        : static_cast<QWidget *>(m_todoEditor));
-  setFocusProxy(p_source ? static_cast<QWidget *>(m_sourceEditor)
-                         : static_cast<QWidget *>(m_todoEditor));
-  const QSignalBlocker tasksBlocker(m_tasksAction);
-  const QSignalBlocker sourceBlocker(m_sourceAction);
-  m_tasksAction->setChecked(!p_source);
-  m_sourceAction->setChecked(p_source);
-  if (p_focus && isVisible()) {
-    if (p_source) {
-      m_sourceEditor->getTextEdit()->setFocus(Qt::OtherFocusReason);
-    } else {
-      m_todoEditor->focusCurrent();
-    }
-  }
-}
-
-void TodoViewWindow::setSourceMode(bool p_source) {
-  m_controller->endCoalescing();
-  if (!p_source) {
-    m_controller->refreshFromSource();
-    if (!m_sourceAvailable || !m_controller->getDocument().isValid()) {
-      updateDiagnostics();
-      applySurface(true, true);
-      return;
-    }
-    hideFindAndReplaceWidget();
-  }
-  applySurface(p_source, true);
-  updateEditability();
-}
-
 void TodoViewWindow::updateDiagnostics() {
   QStringList messages;
   m_diagnosticBanner->setSeverity(m_waitingForSource ? InlineBanner::Severity::Info
@@ -505,13 +444,12 @@ void TodoViewWindow::updateDiagnostics() {
     for (const auto &diagnostic : m_controller->getDocument().m_diagnostics) {
       messages.append(tr("Line %1: %2").arg(diagnostic.m_line).arg(diagnostic.m_message));
     }
+    if (!messages.isEmpty()) {
+      messages.append(tr("Correct the task data at its source, then reload this document."));
+    }
   }
   m_diagnosticBanner->setText(messages.join(QLatin1Char('\n')));
   m_diagnosticBanner->setVisible(!messages.isEmpty());
-  if (!messages.isEmpty() && !m_waitingForSource) {
-    const bool hadTaskFocus = ownsWidget(QApplication::focusWidget()) && !m_sourceMode;
-    applySurface(true, hadTaskFocus);
-  }
 }
 
 void TodoViewWindow::undo() {
@@ -594,8 +532,7 @@ bool TodoViewWindow::eventFilter(QObject *p_object, QEvent *p_event) {
         } else if (redoKey) {
           redo();
         } else if (replaceKey) {
-          setSourceMode(true);
-          showFindAndReplaceWidget();
+          showMessage(tr("Edit task fields to change this document."));
         } else {
           showFindAndReplaceWidget();
         }
@@ -603,176 +540,39 @@ bool TodoViewWindow::eventFilter(QObject *p_object, QEvent *p_event) {
       return true;
     }
   }
-
-  auto *text = m_sourceEditor->getTextEdit();
-  const bool sourceInput = widget == text || text->isAncestorOf(widget);
-  if (sourceInput && p_event->type() == QEvent::ContextMenu) {
-    auto *context = static_cast<QContextMenuEvent *>(p_event);
-    showSourceContextMenu(context->globalPos());
-    context->accept();
-    return true;
-  }
-  if (sourceInput && p_event->type() == QEvent::KeyPress) {
-    const auto *key = static_cast<QKeyEvent *>(p_event);
-    const bool changesText =
-        key->matches(QKeySequence::Cut) || key->matches(QKeySequence::Paste) ||
-        key->key() == Qt::Key_Backspace || key->key() == Qt::Key_Delete ||
-        key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter ||
-        (key->key() == Qt::Key_Tab && !(key->modifiers() & Qt::ControlModifier)) ||
-        (!key->text().isEmpty() && key->text().front().isPrint() &&
-         !key->matches(QKeySequence::Copy) && !key->matches(QKeySequence::SelectAll));
-    if (changesText && !text->isReadOnly() && !admitMutation()) {
-      p_event->accept();
-      return true;
-    }
-  }
-  if (sourceInput && !text->isReadOnly() &&
-      (p_event->type() == QEvent::Drop ||
-       (p_event->type() == QEvent::InputMethod &&
-        (!static_cast<QInputMethodEvent *>(p_event)->commitString().isEmpty() ||
-         static_cast<QInputMethodEvent *>(p_event)->replacementLength() != 0))) &&
-      !admitMutation()) {
-    p_event->accept();
-    return true;
-  }
   return ViewWindow2::eventFilter(p_object, p_event);
 }
 
-void TodoViewWindow::showSourceContextMenu(const QPoint &p_globalPosition) {
-  QMenu menu(this);
-  auto *text = m_sourceEditor->getTextEdit();
-  const bool editable = canEditSource();
-  const bool selection = text->textCursor().hasSelection();
-  auto *undoAction = menu.addAction(tr("Undo"));
-  undoAction->setEnabled(editable && text->document()->isUndoAvailable());
-  auto *redoAction = menu.addAction(tr("Redo"));
-  redoAction->setEnabled(editable && text->document()->isRedoAvailable());
-  menu.addSeparator();
-  auto *cutAction = menu.addAction(tr("Cut"));
-  cutAction->setEnabled(editable && selection);
-  auto *copyAction = menu.addAction(tr("Copy"));
-  copyAction->setEnabled(selection);
-  auto *pasteAction = menu.addAction(tr("Paste"));
-  pasteAction->setEnabled(editable && text->canPaste());
-  auto *deleteAction = menu.addAction(tr("Delete"));
-  deleteAction->setEnabled(editable && selection);
-  menu.addSeparator();
-  auto *selectAllAction = menu.addAction(tr("Select All"));
-  const QPointer<TodoViewWindow> guard(this);
-  const auto generation = getBufferGeneration();
-  const auto revision = text->document()->revision();
-  auto *chosen = menu.exec(p_globalPosition);
-  if (!guard || generation != getBufferGeneration() || !chosen) {
-    return;
-  }
-  if (chosen == copyAction) {
-    text->copy();
-  } else if (chosen == selectAllAction) {
-    text->selectAll();
-  } else if (revision == text->document()->revision() && admitMutation()) {
-    m_controller->endCoalescing();
-    if (chosen == undoAction) {
-      undo();
-    } else if (chosen == redoAction) {
-      redo();
-    } else if (chosen == cutAction) {
-      text->cut();
-    } else if (chosen == pasteAction) {
-      text->paste();
-    } else if (chosen == deleteAction) {
-      auto cursor = text->textCursor();
-      cursor.removeSelectedText();
-    }
-  }
+void TodoViewWindow::showFindAndReplaceWidget() { m_todoEditor->focusSearch(); }
+
+void TodoViewWindow::handleFindNext(const QStringList &p_texts, FindOptions) {
+  m_controller->setSearch(p_texts.isEmpty() ? QString() : p_texts.constFirst());
+  m_todoEditor->focusSearch();
 }
 
-void TodoViewWindow::showFindAndReplaceWidget() {
-  if (!m_sourceMode) {
-    m_todoEditor->focusSearch();
-    return;
-  }
-  ViewWindow2::showFindAndReplaceWidget();
-  updateEditability();
-}
-
-void TodoViewWindow::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
-  if (p_options & FindOption::IncrementalSearch) {
-    m_sourceEditor->peekText(p_text, TextViewWindowHelper::toEditorFindFlags(p_options));
-  }
-}
-
-void TodoViewWindow::handleFindNext(const QStringList &p_texts, FindOptions p_options) {
-  if (!m_sourceMode) {
-    setSourceMode(true);
-  }
-  const auto result =
-      m_sourceEditor->findText(p_texts, TextViewWindowHelper::toEditorFindFlags(p_options));
-  showFindResult(p_texts, result.m_totalMatches, result.m_currentMatchIndex);
-}
-
-void TodoViewWindow::handleReplace(const QString &p_text, FindOptions p_options,
-                                   const QString &p_replaceText) {
-  if (!m_sourceMode) {
-    setSourceMode(true);
-  }
-  if (!admitMutation()) {
-    return;
-  }
-  m_controller->endCoalescing();
-  const auto result = m_sourceEditor->replaceText(
-      p_text, TextViewWindowHelper::toEditorFindFlags(p_options), p_replaceText);
-  showReplaceResult(p_text, result.m_totalMatches);
+void TodoViewWindow::handleReplace(const QString &, FindOptions, const QString &) {
+  showMessage(tr("Edit task fields to change this document."));
 }
 
 void TodoViewWindow::handleReplaceAll(const QString &p_text, FindOptions p_options,
                                       const QString &p_replaceText) {
-  if (!m_sourceMode) {
-    setSourceMode(true);
-  }
-  if (!admitMutation()) {
-    return;
-  }
-  m_controller->endCoalescing();
-  const auto result = m_sourceEditor->replaceAll(
-      p_text, TextViewWindowHelper::toEditorFindFlags(p_options), p_replaceText);
-  showReplaceResult(p_text, result.m_totalMatches);
+  handleReplace(p_text, p_options, p_replaceText);
 }
 
-void TodoViewWindow::clearHighlights() {
-  m_sourceEditor->clearIncrementalSearchHighlight();
-  m_sourceEditor->clearSearchHighlight();
-}
-
-void TodoViewWindow::handleFindAndReplaceWidgetClosed() { clearHighlights(); }
-
-void TodoViewWindow::handleFindAndReplaceWidgetOpened() { updateEditability(); }
-
-QString TodoViewWindow::selectedText() const {
-  return m_sourceMode ? m_sourceEditor->getTextEdit()->selectedText()
-                      : m_todoEditor->selectedText();
-}
+QString TodoViewWindow::selectedText() const { return m_todoEditor->selectedText(); }
 
 int TodoViewWindow::getCursorPosition() const {
-  if (m_sourceMode) {
-    return m_sourceEditor->getTextEdit()->textCursor().blockNumber();
-  }
   const auto &document = m_controller->getDocument();
   const auto *item = document.findItem(m_controller->getSelectedItemKey());
   return item ? document.lineAt(item->m_range.m_start) - 1 : -1;
 }
 
 int TodoViewWindow::getScrollPosition() const {
-  if (m_sourceMode) {
-    return m_sourceEditor->getTextEdit()->verticalScrollBar()->value();
-  }
   const auto *tasks = taskView(m_todoEditor);
   return tasks ? tasks->verticalScrollBar()->value() : -1;
 }
 
 ViewWindow2::ViewPositionState TodoViewWindow::capturePositionState() const {
-  if (m_sourceMode) {
-    return captureEditorPositionState(m_sourceEditor->getTextEdit());
-  }
   ViewPositionState state;
   if (const auto *tasks = taskView(m_todoEditor)) {
     state.m_scrollValue = tasks->verticalScrollBar()->value();
@@ -784,10 +584,6 @@ ViewWindow2::ViewPositionState TodoViewWindow::capturePositionState() const {
 }
 
 void TodoViewWindow::restorePositionState(const ViewPositionState &p_state) {
-  if (m_sourceMode) {
-    applyEditorPositionState(m_sourceEditor->getTextEdit(), p_state);
-    return;
-  }
   if (auto *tasks = taskView(m_todoEditor); tasks && p_state.m_scrollValue >= 0) {
     auto *bar = tasks->verticalScrollBar();
     const int value =
@@ -805,60 +601,62 @@ void TodoViewWindow::applyFileOpenSettings(const FileOpenSettings &p_settings) {
     m_bindingBuffer = false;
     setMode(p_settings.m_forceMode ? p_settings.m_mode : ViewWindowMode::Edit);
   }
-  if (p_settings.m_lineNumber >= 0 || p_settings.m_cursorOffset >= 0 ||
-      p_settings.m_searchHighlight.m_isValid) {
-    setSourceMode(true);
+  const auto &document = m_controller->getDocument();
+  if (!m_sourceAvailable || !document.isValid()) {
+    return;
   }
-  if (p_settings.m_lineNumber >= 0) {
-    m_sourceEditor->scrollToLine(p_settings.m_lineNumber, true);
+  int position = -1;
+  if (p_settings.m_cursorOffset >= 0) {
+    position = qMin(p_settings.m_cursorOffset, m_sourceEditor->document()->characterCount() - 1);
+  } else {
+    const int line = p_settings.m_searchHighlight.m_isValid &&
+                             p_settings.m_searchHighlight.m_currentMatchLine >= 0
+                         ? p_settings.m_searchHighlight.m_currentMatchLine
+                         : p_settings.m_lineNumber;
+    const auto block = m_sourceEditor->document()->findBlockByNumber(line);
+    if (block.isValid()) {
+      position = block.position();
+    }
   }
-  if (p_settings.m_cursorOffset >= 0 && !m_sourceEditor->isReadOnly()) {
-    WidgetUtils::applyCursorOffset(m_sourceEditor->getTextEdit(), p_settings.m_cursorOffset);
+  if (position < 0) {
+    return;
   }
-  if (p_settings.m_searchHighlight.m_isValid) {
-    const auto result = m_sourceEditor->findText(
-        p_settings.m_searchHighlight.m_patterns,
-        TextViewWindowHelper::toEditorFindFlags(p_settings.m_searchHighlight.m_options), 0, -1,
-        p_settings.m_searchHighlight.m_currentMatchLine);
-    showFindResult(p_settings.m_searchHighlight.m_patterns, result.m_totalMatches,
-                   result.m_currentMatchIndex);
+  for (const auto &list : document.m_lists) {
+    if (position < list.m_range.m_start || position >= list.m_range.m_end) {
+      continue;
+    }
+    QString itemKey;
+    bool completed = false;
+    for (const auto &item : list.m_items) {
+      if (position >= item.m_range.m_start && position < item.m_range.m_end) {
+        itemKey = item.m_key;
+        completed = item.m_fields.m_checked;
+        break;
+      }
+    }
+    m_controller->setView(TodoViewKind::List, list.m_key);
+    m_controller->setSearch(QString());
+    m_controller->setTagFilter(QString());
+    if (completed) {
+      m_controller->setCompletedExpanded(true);
+    }
+    m_controller->setSelectedItemKey(itemKey);
+    m_todoEditor->focusTasks();
+    return;
   }
 }
 
-void TodoViewWindow::scrollUp() {
-  if (m_sourceMode) {
-    m_sourceEditor->getTextEdit()->verticalScrollBar()->triggerAction(
-        QAbstractSlider::SliderSingleStepSub);
-  } else {
-    m_todoEditor->scroll(true);
-  }
-}
+void TodoViewWindow::scrollUp() { m_todoEditor->scroll(true); }
 
-void TodoViewWindow::scrollDown() {
-  if (m_sourceMode) {
-    m_sourceEditor->getTextEdit()->verticalScrollBar()->triggerAction(
-        QAbstractSlider::SliderSingleStepAdd);
-  } else {
-    m_todoEditor->scroll(false);
-  }
-}
+void TodoViewWindow::scrollDown() { m_todoEditor->scroll(false); }
 
 void TodoViewWindow::zoom(bool p_zoomIn) {
-  if (m_sourceMode) {
-    m_sourceEditor->zoom(m_sourceEditor->zoomDelta() + (p_zoomIn ? 1 : -1));
-    showZoomDelta(m_sourceEditor->zoomDelta());
-  } else {
-    m_todoEditor->zoom(p_zoomIn ? 1 : -1);
-    showZoomDelta(m_todoEditor->getZoomDelta());
-  }
+  m_todoEditor->zoom(p_zoomIn ? 1 : -1);
+  showZoomDelta(m_todoEditor->getZoomDelta());
 }
 
 void TodoViewWindow::resetZoom() {
-  if (m_sourceMode) {
-    m_sourceEditor->zoom(0);
-  } else {
-    m_todoEditor->zoom(-m_todoEditor->getZoomDelta());
-  }
+  m_todoEditor->zoom(-m_todoEditor->getZoomDelta());
   showZoomDelta(0);
 }
 
@@ -892,5 +690,4 @@ void TodoViewWindow::bindBufferResources() {
   m_boundGeneration = getBufferGeneration();
   m_controller->setBuffer(getBuffer());
   registerSnapshotWriter();
-  applySurface(false, false);
 }

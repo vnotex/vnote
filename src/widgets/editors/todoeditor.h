@@ -47,7 +47,6 @@ public:
 signals:
   void undoRequested();
   void redoRequested();
-  void requestSourceMode();
 
 protected:
   bool eventFilter(QObject *p_object, QEvent *p_event) override;

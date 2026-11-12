@@ -25,7 +25,7 @@ public:
   void setBuffer(const Buffer2 &p_buffer);
   void setEditable(bool p_editable);
   void refreshFromSource();
-  // Source mode may defer parsing; returning to Tasks refreshes immediately.
+  // Suspend parsing while loading or waiting for an authoritative source snapshot.
   void setSourceRefreshEnabled(bool p_enabled);
   void setMutationGuard(std::function<bool()> p_guard);
 
