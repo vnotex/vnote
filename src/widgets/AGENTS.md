@@ -661,9 +661,11 @@ move to Default's pre-list region, not into another list. Without Default, the d
 heading becomes a fresh Default in place. The command is one source transaction/undo step.
 List menus contain Rename, either Remove from Group (custom-group lists) or Move List To Group
 (Default lists, submenu of all custom groups), Duplicate and Delete. The move submenu is disabled
-when no custom group exists. The list-actions button uses the same menu. Duplicate inserts a copy
-beside its source, retaining descriptions, notes, steps, completion/date/tag fields, comments and
-unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy and is one undo
+when no custom group exists. The icon-only **List Options** button uses the themed three-dot
+`menu.svg`, retains a List Options tooltip/accessibility label, and opens the same menu.
+Duplicate inserts a copy beside its source, retaining descriptions, notes, steps, completion/date/tag
+fields, comments and unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy
+and is one undo
 step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
 
 The sidebar accepts same-model Move drags for real groups/lists, never smart views, in both

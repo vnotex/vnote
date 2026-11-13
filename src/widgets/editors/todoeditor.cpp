@@ -594,9 +594,9 @@ void TodoEditor::createUi() {
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
     m_newGroup->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_group.svg"))));
+    m_listMore->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg"))));
   };
-  refreshIcons();
-  connect(theme, &ThemeService::themeChanged, this, refreshIcons);
 
   m_pages = named(new QStackedWidget(m_splitter), "todoNativePages", tr("Tasks or details"));
   m_taskPane = named(new QWidget(m_pages), "todoTaskPane", tr("Tasks"));
@@ -610,8 +610,13 @@ void TodoEditor::createUi() {
   m_viewTitle = named(new QLabel(m_taskPane), "todoViewTitle", tr("Current view"));
   heading->addWidget(m_listTitle, 1);
   heading->addWidget(m_viewTitle, 1);
-  m_listMore =
-      named(new QPushButton(tr("List actions"), m_taskPane), "todoListMore", tr("List actions"));
+  m_listMore = named(new QPushButton(m_taskPane), "todoListMore", tr("List Options"));
+  m_listMore->setToolTip(tr("List Options"));
+  m_listMore->setIconSize(QSize(20, 20));
+  m_listMore->setFlat(true);
+  m_listMore->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 6px; }"));
+  refreshIcons();
+  connect(theme, &ThemeService::themeChanged, this, refreshIcons);
   heading->addWidget(m_listMore);
   tasksLayout->addLayout(heading);
   m_description = named(new SimpleMarkdownEditor(m_services, m_taskPane), "todoListDescription",
@@ -2028,7 +2033,7 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
   }
   endTyping();
   const auto token = gesture();
-  auto *menu = named(new QMenu(this), "todoListMenu", tr("List actions"));
+  auto *menu = named(new QMenu(this), "todoListMenu", tr("List Options"));
   menu->setAttribute(Qt::WA_DeleteOnClose);
   auto add = [&](QMenu *p_menu, const QString &p_label, const char *p_name,
                  const std::function<void()> &p_action) {
