@@ -128,6 +128,11 @@ private slots:
   void implicitGroupMoveRemapsChildren();
   void crossGroupListMoveBoundaries();
   void groupProjectionIsPresentational();
+  void rootListProjection_data();
+  void rootListProjection();
+  void internalGroupSearch();
+  void rootListDropBoundaries_data();
+  void rootListDropBoundaries();
   void groupCreationReturnsActualOwners();
   void listCommands();
   void setextAndEmptyTitles();
@@ -925,6 +930,312 @@ void TestTodoViewWindowController::groupProjectionIsPresentational() {
   QCOMPARE(m_document->toPlainText(), source);
 }
 
+void TestTodoViewWindowController::rootListProjection_data() {
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<int>("defaultIndex");
+  QTest::addColumn<bool>("implicit");
+  QTest::addColumn<int>("rootCount");
+  const auto roots =
+      QStringLiteral("## Inbox\n<!-- todo-list: {\"id\":\"root\"} -->\n\n"
+                     "- [ ] Root task\n  <!-- todo-item: {\"id\":\"root-task\",\"important\":true,"
+                     "\"due\":\"2026-11-12\",\"myDay\":\"2026-11-12\"} -->\n\n"
+                     "- [x] Finished\n  <!-- todo-item: {\"id\":\"finished\"} -->\n\n"
+                     "## Spare\n<!-- todo-list: {\"id\":\"spare\"} -->\n\n"
+                     "- [ ] Spare task\n  <!-- todo-item: {\"id\":\"spare-task\"} -->\n\n");
+  const auto internal = QStringLiteral(
+      "# Internal archive\n<!-- todo-group: {\"id\":\"internal\",\"default\":true} -->\n\n");
+  const auto office =
+      QStringLiteral("# Office\n<!-- todo-group: {\"id\":\"office\"} -->\n\n"
+                     "## Projects\n<!-- todo-list: {\"id\":\"office-list\"} -->\n\n"
+                     "- [ ] Office task\n  <!-- todo-item: {\"id\":\"office-task\"} -->\n\n");
+  const auto namedDefault =
+      QStringLiteral("# Default\n<!-- todo-group: {\"id\":\"named-default\"} -->\n\n"
+                     "## Personal\n<!-- todo-list: {\"id\":\"custom-list\"} -->\n\n"
+                     "- [ ] Custom task\n  <!-- todo-item: {\"id\":\"custom-task\"} -->\n\n");
+  QTest::newRow("implicit") << header() + roots + office + namedDefault << 0 << true << 2;
+  QTest::newRow("explicit-before")
+      << header() + internal + roots + office + namedDefault << 0 << false << 2;
+  QTest::newRow("explicit-middle")
+      << header() + office + internal + roots + namedDefault << 1 << false << 2;
+  QTest::newRow("explicit-after") << header() + office + namedDefault + internal + roots << 2
+                                  << false << 2;
+  QTest::newRow("empty-before") << header() + internal + office + namedDefault << 0 << false << 0;
+  QTest::newRow("empty-middle") << header() + office + internal + namedDefault << 1 << false << 0;
+  QTest::newRow("empty-after") << header() + office + namedDefault + internal << 2 << false << 0;
+}
+
+void TestTodoViewWindowController::rootListProjection() {
+  QFETCH(QString, source);
+  QFETCH(int, defaultIndex);
+  QFETCH(bool, implicit);
+  QFETCH(int, rootCount);
+  QVERIFY(load(source));
+  auto *model = m_controller->getListModel();
+  auto *tasks = m_controller->getTaskModel();
+  const auto &document = m_controller->getDocument();
+  const auto *owner = document.defaultGroup();
+  QVERIFY(owner);
+  QCOMPARE(owner, &document.m_groups.at(defaultIndex));
+  QCOMPARE(owner->m_implicit, implicit);
+  QCOMPARE(owner->m_listCount, rootCount);
+  const auto defaultKey = owner->m_key;
+  const auto internalTitle = implicit ? QStringLiteral("Default") : owner->m_title;
+  const auto sourceGroups = document.m_groups;
+  const auto sourceLists = document.m_lists;
+  m_controller->setView(TodoViewKind::All);
+  m_controller->setGroupExpanded(defaultKey, false);
+  QVERIFY(m_controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
+  QVERIFY(!model->mimeData({model->index(model->rowForGroup(defaultKey))}));
+  QCOMPARE(model->rowCount(), 8 + rootCount);
+  for (int row = 0; row < 4; ++row) {
+    QVERIFY(!model->groupAt(row));
+    QVERIFY(!model->listAt(row));
+  }
+  const QStringList rootKeys{key("root"), key("spare")};
+  for (int offset = 0; offset < rootCount; ++offset) {
+    const auto index = model->index(4 + offset);
+    QCOMPARE(model->rowForKey(rootKeys.at(offset)), index.row());
+    QCOMPARE(index.data(TodoListModel::IdRole).toString(), rootKeys.at(offset));
+    QCOMPARE(index.data(TodoListModel::ViewKindRole).value<TodoViewKind>(), TodoViewKind::List);
+    QVERIFY(!index.data(TodoListModel::GroupRole).toBool());
+    QVERIFY(index.data(TodoListModel::GroupIdRole).toString().isEmpty());
+    QVERIFY(index.data(TodoListModel::GroupTitleRole).toString().isEmpty());
+    QVERIFY(index.data(TodoListModel::ExpandedRole).toBool());
+    QVERIFY(!index.data(TodoListModel::ListCountRole).isValid());
+    QCOMPARE(index.data(TodoListModel::IncompleteCountRole).toInt(), 1);
+    const auto *actualOwner = model->groupAt(index.row());
+    QVERIFY(actualOwner && actualOwner->m_isDefault);
+    QCOMPARE(actualOwner->m_key, defaultKey);
+    QCOMPARE(actualOwner->m_firstList, owner->m_firstList);
+    QCOMPARE(model->listAt(index.row())->m_key, rootKeys.at(offset));
+    QVERIFY(!index.data(Qt::AccessibleTextRole).toString().contains(internalTitle));
+  }
+  QCOMPARE(model->rowForGroup(key("office")), 4 + rootCount);
+  QCOMPARE(model->rowForKey(key("office-list")), 5 + rootCount);
+  QCOMPARE(model->rowForGroup(key("named-default")), 6 + rootCount);
+  QCOMPARE(model->rowForKey(key("custom-list")), 7 + rootCount);
+  const auto custom = model->index(model->rowForGroup(key("named-default")));
+  QVERIFY(custom.data(TodoListModel::GroupRole).toBool());
+  QCOMPARE(custom.data(TodoListModel::TitleRole).toString(), QStringLiteral("Default"));
+  QCOMPARE(custom.data(TodoListModel::ListCountRole).toInt(), 1);
+  QCOMPARE(custom.data(TodoListModel::IncompleteCountRole).toInt(), 1);
+  QCOMPARE(custom.data(TodoListModel::GroupIdRole).toString(), key("named-default"));
+  QVERIFY(!model->groupAt(custom.row())->m_isDefault);
+  const auto customTask = tasks->index(tasks->rowForKey(key("custom-task")));
+  QCOMPARE(customTask.data(TodoTaskModel::SourceGroupNameRole).toString(),
+           QStringLiteral("Default"));
+  QCOMPARE(customTask.data(TodoTaskModel::SourceGroupIdRole).toString(), key("named-default"));
+  QVERIFY(customTask.data(Qt::AccessibleTextRole)
+              .toString()
+              .contains(QStringLiteral("Group: Default")));
+  QCOMPARE(model->index(3).data(TodoListModel::IncompleteCountRole).toInt(), rootCount + 2);
+  for (int row = 0; row < 3; ++row) {
+    QCOMPARE(model->index(row).data(TodoListModel::IncompleteCountRole).toInt(), rootCount ? 1 : 0);
+  }
+  QCOMPARE(tasks->getActiveCount(), rootCount + 2);
+  QCOMPARE(tasks->getCompletedCount(), rootCount ? 1 : 0);
+  if (rootCount) {
+    const auto rootTask = tasks->index(tasks->rowForKey(key("root-task")));
+    QCOMPARE(rootTask.data(TodoTaskModel::SourceGroupIdRole).toString(), defaultKey);
+    QVERIFY(rootTask.data(TodoTaskModel::SourceGroupNameRole).toString().isEmpty());
+    for (int role : {Qt::AccessibleTextRole, Qt::ToolTipRole}) {
+      const auto label = rootTask.data(role).toString();
+      QVERIFY(!label.contains(QStringLiteral("Group:")));
+      QVERIFY(!label.contains(internalTitle));
+      QVERIFY(label.contains(QStringLiteral("List: Inbox")));
+    }
+  }
+  // Rebuilding a filtered snapshot must also ignore the latent Default collapse key.
+  m_controller->setSearch(internalTitle);
+  QCOMPARE(visibleKeys(tasks), implicit ? QStringList{key("custom-task")} : QStringList());
+  QCOMPARE(model->index(3).data(TodoListModel::IncompleteCountRole).toInt(), implicit ? 1 : 0);
+  m_controller->setSearch({});
+  for (int offset = 0; offset < rootCount; ++offset) {
+    QVERIFY(model->index(4 + offset).data(TodoListModel::ExpandedRole).toBool());
+  }
+  for (int index = 0; index < sourceGroups.size(); ++index) {
+    QCOMPARE(m_controller->getDocument().m_groups.at(index).m_key, sourceGroups.at(index).m_key);
+  }
+  for (int index = 0; index < sourceLists.size(); ++index) {
+    QCOMPARE(m_controller->getDocument().m_lists.at(index).m_key, sourceLists.at(index).m_key);
+    QCOMPARE(m_controller->getDocument().m_lists.at(index).m_groupIndex,
+             sourceLists.at(index).m_groupIndex);
+  }
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
+void TestTodoViewWindowController::internalGroupSearch() {
+  const auto source =
+      groupedHeader() +
+      QStringLiteral("## Inbox\n<!-- todo-list: {\"id\":\"inbox\"} -->\n\n"
+                     "- [ ] Unrelated\n  <!-- todo-item: {\"id\":\"unrelated\"} -->\n\n"
+                     "- [ ] Default task\n  <!-- todo-item: {\"id\":\"title\"} -->\n\n"
+                     "- [ ] Noted\n  <!-- todo-item: {\"id\":\"note\"} -->\n\n  > Default note\n\n"
+                     "## Default list\n<!-- todo-list: {\"id\":\"list-match\"} -->\n\n"
+                     "- [ ] List content\n  <!-- todo-item: {\"id\":\"list-task\"} -->\n\n"
+                     "# Default\n<!-- todo-group: {\"id\":\"custom\"} -->\n\n"
+                     "## Custom list\n<!-- todo-list: {\"id\":\"custom-list\"} -->\n\n"
+                     "- [ ] Custom content\n  <!-- todo-item: {\"id\":\"custom-task\"} -->\n");
+  QVERIFY(load(source));
+  auto *lists = m_controller->getListModel();
+  m_controller->setSearch(QStringLiteral("DEFAULT"));
+  QCOMPARE(visibleKeys(m_controller->getTaskModel()),
+           QStringList({key("title"), key("note"), key("list-task"), key("custom-task")}));
+  QCOMPARE(lists->index(3).data(TodoListModel::IncompleteCountRole).toInt(), 4);
+  QCOMPARE(
+      lists->index(lists->rowForKey(key("inbox"))).data(TodoListModel::IncompleteCountRole).toInt(),
+      2);
+  QCOMPARE(lists->index(lists->rowForGroup(key("custom")))
+               .data(TodoListModel::IncompleteCountRole)
+               .toInt(),
+           1);
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
+void TestTodoViewWindowController::rootListDropBoundaries_data() {
+  QTest::addColumn<QString>("source");
+  const auto alpha =
+      QStringLiteral("# Alpha\n\n## One\n<!-- todo-list: {\"id\":\"one\"} -->\n\n- [ ] First\n\n");
+  const auto beta =
+      QStringLiteral("# Beta\n\n## Two\n<!-- todo-list: {\"id\":\"two\"} -->\n\n- [ ] Second\n\n");
+  const auto internal = QStringLiteral(
+      "# Renamed internal\n<!-- todo-group: {\"id\":\"internal\",\"default\":true} -->\n\n");
+  const auto roots =
+      QStringLiteral("## Root\n<!-- todo-list: {\"id\":\"root\"} -->\n\n- [ ] Root task\n\n"
+                     "## Spare\n<!-- todo-list: {\"id\":\"spare\"} -->\n\n- [ ] Spare task\n\n");
+  QTest::newRow("implicit") << header() + roots + alpha + beta;
+  QTest::newRow("before") << header() + internal + roots + alpha + beta;
+  QTest::newRow("middle") << header() + alpha + internal + roots + beta;
+  QTest::newRow("after") << header() + alpha + beta + internal + roots;
+  QTest::newRow("empty-before") << header() + internal + alpha + beta;
+  QTest::newRow("empty-middle") << header() + alpha + internal + beta;
+  QTest::newRow("empty-after") << header() + alpha + beta + internal;
+  QTest::newRow("absent") << header() + alpha + beta;
+}
+
+void TestTodoViewWindowController::rootListDropBoundaries() {
+  QFETCH(QString, source);
+  QVERIFY(load(source));
+  auto *model = m_controller->getListModel();
+  const auto alpha = m_controller->getDocument().groupForList(list("one"))->m_key;
+  const auto beta = m_controller->getDocument().groupForList(list("two"))->m_key;
+  const auto *initialDefault = m_controller->getDocument().defaultGroup();
+  const int rootCount = initialDefault ? initialDefault->m_listCount : 0;
+  QSignalSpy groupMoves(model, &TodoListModel::groupMoveRequested);
+  QSignalSpy listMoves(model, &TodoListModel::listMoveRequested);
+  std::unique_ptr<QMimeData> mime(model->mimeData({model->index(model->rowForGroup(alpha))}));
+  QVERIFY(mime);
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(alpha), 0, {}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(beta), 0, {}));
+  QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
+                               model->index(model->rowForGroup(beta))));
+  QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("one")), 0, {}));
+  if (rootCount) {
+    QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("root")), 0, {}));
+    QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
+                                 model->index(model->rowForKey(key("root")))));
+  }
+  mime.reset(model->mimeData({model->index(model->rowForGroup(beta))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowCount(), 0, {}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0, {}));
+  QCOMPARE(groupMoves.count(), 0);
+  QCOMPARE(listMoves.count(), 0);
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(alpha), 0, {}));
+  QCOMPARE(groupMoves.count(), 1);
+  QCOMPARE(model->groupAt(4 + rootCount)->m_title, QStringLiteral("Beta"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  mime.reset(model->mimeData({model->index(model->rowForGroup(alpha))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowCount(), 0, {}));
+  QCOMPARE(model->groupAt(4 + rootCount)->m_title, QStringLiteral("Beta"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+
+  // The first custom header gap always appends to Default, even if it must be created.
+  mime.reset(model->mimeData({model->index(model->rowForKey(key("one")))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(alpha), 0, {}));
+  const auto *owner = m_controller->getDocument().groupForList(list("one"));
+  QVERIFY(owner && owner->m_isDefault);
+  QCOMPARE(owner->m_listCount, rootCount + 1);
+  QCOMPARE(model->rowForKey(key("one")), 4 + rootCount);
+  QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList + rootCount).m_key,
+           key("one"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+
+  // A later header gap appends to the previous custom group, skipping physical Default.
+  mime.reset(model->mimeData({model->index(model->rowForKey(key("two")))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(beta), 0, {}));
+  owner = m_controller->getDocument().groupForList(list("two"));
+  QVERIFY(owner && !owner->m_isDefault);
+  QCOMPARE(owner->m_title, QStringLiteral("Alpha"));
+  QCOMPARE(owner->m_listCount, 2);
+  QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList + 1).m_key, key("two"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+
+  // On-header drops append, whereas on/before a hidden child uses its actual source index.
+  m_controller->setGroupExpanded(beta, false);
+  mime.reset(model->mimeData({model->index(model->rowForKey(key("one")))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
+                              model->index(model->rowForGroup(beta))));
+  owner = m_controller->getDocument().groupForList(list("one"));
+  QCOMPARE(owner->m_title, QStringLiteral("Beta"));
+  QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList + 1).m_key, key("one"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  for (bool onItem : {false, true}) {
+    m_controller->setGroupExpanded(beta, false);
+    const auto target = model->index(model->rowForKey(key("two")));
+    QVERIFY(!target.data(TodoListModel::ExpandedRole).toBool());
+    mime.reset(model->mimeData({model->index(model->rowForKey(key("one")))}));
+    QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, onItem ? -1 : target.row(), 0,
+                                onItem ? target : QModelIndex()));
+    owner = m_controller->getDocument().groupForList(list("one"));
+    QCOMPARE(owner->m_title, QStringLiteral("Beta"));
+    QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList).m_key, key("one"));
+    QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList + 1).m_key, key("two"));
+    m_document->undo();
+    QCOMPARE(m_document->toPlainText(), source);
+  }
+
+  if (rootCount) {
+    for (bool onItem : {false, true}) {
+      const auto target = model->index(model->rowForKey(key("root")));
+      mime.reset(model->mimeData({model->index(model->rowForKey(key("two")))}));
+      QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, onItem ? -1 : target.row(), 0,
+                                  onItem ? target : QModelIndex()));
+      owner = m_controller->getDocument().groupForList(list("two"));
+      QVERIFY(owner && owner->m_isDefault);
+      QCOMPARE(owner->m_listCount, rootCount + 1);
+      QCOMPARE(model->rowForKey(key("two")), 4);
+      QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList).m_key, key("two"));
+      m_document->undo();
+      QCOMPARE(m_document->toPlainText(), source);
+    }
+  }
+  for (int row : {-1, model->rowCount()}) {
+    mime.reset(model->mimeData({model->index(model->rowForKey(key("two")))}));
+    QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, row, 0, {}));
+    owner = m_controller->getDocument().groupForList(list("two"));
+    QVERIFY(owner && owner->m_isDefault);
+    QCOMPARE(owner->m_listCount, rootCount + 1);
+    QCOMPARE(model->rowForKey(key("two")), 4 + rootCount);
+    m_document->undo();
+    QCOMPARE(m_document->toPlainText(), source);
+  }
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
 void TestTodoViewWindowController::groupCreationReturnsActualOwners() {
   QVERIFY(load({}));
   QString firstGroup, tailGroup, firstList, tailList, inserted;
@@ -1644,19 +1955,18 @@ void TestTodoViewWindowController::listModelDrops() {
   model = m_controller->getListModel();
   const auto workBody =
       m_controller->getDocument().text(m_controller->getDocument().findGroup(key("work"))->m_range);
-  mime.reset(model->mimeData({model->index(model->rowForGroup(key("work")))}));
-  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(key("defaultgroup")),
-                              0, {}));
-  QCOMPARE(m_controller->getDocument().m_groups.first().m_key, key("work"));
+  mime.reset(model->mimeData({model->index(model->rowForGroup(key("empty")))}));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(key("work")), 0, {}));
+  QCOMPARE(m_controller->getDocument().m_groups.at(1).m_key, key("empty"));
   QCOMPARE(
       m_controller->getDocument().text(m_controller->getDocument().findGroup(key("work"))->m_range),
       workBody);
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
-  mime.reset(model->mimeData({model->index(model->rowForGroup(key("defaultgroup")))}));
+  mime.reset(model->mimeData({model->index(model->rowForGroup(key("work")))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowCount(), 0, {}));
-  QCOMPARE(m_controller->getDocument().m_groups.last().m_key, key("defaultgroup"));
-  QCOMPARE(item("a").m_listKey, key("first"));
+  QCOMPARE(m_controller->getDocument().m_groups.last().m_key, key("work"));
+  QCOMPARE(item("c").m_listKey, key("third"));
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
 
@@ -1693,8 +2003,8 @@ void TestTodoViewWindowController::listModelDrops() {
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
 
-  // A root gap before a later header is the previous group's end, not the
-  // on-header target, even when its child rows are hidden in the view.
+  // The gap before the first custom header appends a root list to Default,
+  // regardless of its latent logical collapse state.
   m_controller->setGroupExpanded(key("defaultgroup"), false);
   mime.reset(model->mimeData({model->index(model->rowForKey(key("third")))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(key("work")), 0, {}));
@@ -1717,8 +2027,7 @@ void TestTodoViewWindowController::listModelDrops() {
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("first")), 0, {}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("second")), 0, {}));
   mime.reset(model->mimeData({model->index(model->rowForKey(key("second")))}));
-  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
-                              model->index(model->rowForGroup(key("defaultgroup")))));
+  QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowCount(), 0, {}));
   mime.reset(model->mimeData({model->index(model->rowForGroup(key("work")))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(key("work")), 0, {}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(key("empty")), 0, {}));
@@ -1765,9 +2074,13 @@ void TestTodoViewWindowController::listModelDropAdmission() {
   std::unique_ptr<QMimeData> groupMime(
       model->mimeData({model->index(model->rowForGroup(key("work")))}));
   QVERIFY(!model->dropMimeData(groupMime.get(), Qt::MoveAction, -1, 0,
-                               model->index(model->rowForGroup(key("defaultgroup")))));
+                               model->index(model->rowForGroup(key("empty")))));
   QVERIFY(
       !model->dropMimeData(groupMime.get(), Qt::MoveAction, model->rowForKey(key("first")), 0, {}));
+  QVERIFY(!model->dropMimeData(groupMime.get(), Qt::MoveAction, -1, 0,
+                               model->index(model->rowForKey(key("first")))));
+  QCOMPARE(model->rowForGroup(key("defaultgroup")), -1);
+  QVERIFY(!model->mimeData({model->index(model->rowForGroup(key("defaultgroup")))}));
   QCOMPARE(m_document->toPlainText(), source);
   QVERIFY(!m_document->isUndoAvailable());
 
@@ -1811,33 +2124,42 @@ void TestTodoViewWindowController::listModelDropAdmission() {
 }
 
 void TestTodoViewWindowController::listModelSourceIdentityDrops() {
-  const auto source = QStringLiteral("## A\n\n- [ ] First\n\n## B\n\n- [ ] Selected\n\n"
-                                     "# Work\n\n## C\n\n- [ ] Other");
+  const auto source = QStringLiteral("## A\n\n- [ ] First\n\n"
+                                     "# Work\n\n## B\n\n- [ ] Selected\n\n"
+                                     "# Other\n\n## C\n\n- [ ] Other");
   QVERIFY(load(source));
   auto *model = m_controller->getListModel();
-  const auto originalDefault = m_controller->getDocument().defaultGroup()->m_key;
+  const auto originalGroup = m_controller->getDocument().m_groups.at(1).m_key;
   const auto selected = m_controller->getDocument().m_lists.at(1);
   m_controller->setView(TodoViewKind::List, selected.m_key);
   m_controller->setSelectedItemKey(selected.m_items.first().m_key);
+  m_controller->setSelectedGroupKey(originalGroup);
+  m_controller->setGroupExpanded(originalGroup, false);
   std::unique_ptr<QMimeData> mime(
-      model->mimeData({model->index(model->rowForGroup(originalDefault))}));
+      model->mimeData({model->index(model->rowForGroup(originalGroup))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0, {}));
   const auto &afterGroup = m_controller->getDocument();
-  QCOMPARE(afterGroup.m_groups.last().m_key, afterGroup.defaultGroup()->m_key);
-  QVERIFY(!afterGroup.defaultGroup()->m_id.isEmpty());
+  QCOMPARE(afterGroup.m_groups.last().m_title, QStringLiteral("Work"));
+  QVERIFY(!afterGroup.m_groups.last().m_id.isEmpty());
+  QCOMPARE(m_controller->getProjection().m_groupKey, afterGroup.m_groups.last().m_key);
+  QVERIFY(
+      m_controller->getProjection().m_collapsedGroups.contains(afterGroup.m_groups.last().m_key));
+  QVERIFY(!m_controller->getProjection().m_collapsedGroups.contains(originalGroup));
+  QVERIFY(afterGroup.defaultGroup()->m_implicit);
+  QVERIFY(afterGroup.defaultGroup()->m_id.isEmpty());
   const auto moved = afterGroup.m_lists.last();
   QCOMPARE(moved.m_title, QStringLiteral("B"));
   QVERIFY(moved.m_id.isEmpty());
   QCOMPARE(m_controller->getProjection().m_listKey, moved.m_key);
   QCOMPARE(m_controller->getSelectedItemKey(), moved.m_items.first().m_key);
   const auto groupResult = m_document->toPlainText();
-  const auto work = afterGroup.m_groups.first().m_key;
-  m_controller->setGroupExpanded(work, false);
+  const auto other = afterGroup.m_groups.at(1).m_key;
+  m_controller->setGroupExpanded(other, false);
   mime.reset(model->mimeData({model->index(model->rowForKey(moved.m_key))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
-                              model->index(model->rowForGroup(work))));
+                              model->index(model->rowForGroup(other))));
   const auto &afterList = m_controller->getDocument();
-  const auto &retained = afterList.m_lists.at(1);
+  const auto &retained = afterList.m_lists.at(2);
   QCOMPARE(retained.m_title, QStringLiteral("B"));
   QVERIFY(!retained.m_id.isEmpty());
   QVERIFY(retained.m_items.first().m_id.isEmpty());

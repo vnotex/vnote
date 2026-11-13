@@ -27,6 +27,7 @@ struct TodoProjection {
   bool m_completedExpanded = false;
 };
 
+// Smart views, then always-expanded Default-owned root lists, then custom groups and children.
 class TodoListModel : public QAbstractListModel {
   Q_OBJECT
 
@@ -37,8 +38,10 @@ public:
     ViewKindRole,
     IncompleteCountRole,
     GroupRole,
+    // Presentation ownership: empty for top-level lists owned by internal Default.
     GroupIdRole,
     GroupTitleRole,
+    // Root lists are always expanded, regardless of the internal Default collapse key.
     ExpandedRole,
     ListCountRole
   };
@@ -67,10 +70,11 @@ public:
   void setGroupExpanded(const QString &p_key, bool p_expanded);
   int rowForKey(const QString &p_key) const;
   int rowForView(TodoViewKind p_view, const QString &p_listKey = {}) const;
+  // Internal Default has no group row; returns -1 for its key.
   int rowForGroup(const QString &p_key) const;
-  // Group headers and child lists resolve their group; smart rows return nullptr.
+  // Actual source owner, including internal Default for root lists; smart rows return nullptr.
   const TodoGroup *groupAt(int p_row) const;
-  // Smart rows have no list. Pointers remain valid until the next setSnapshot().
+  // Smart rows and group headers have no list. Pointers expire at setSnapshot().
   const TodoList *listAt(int p_row) const;
 
 signals:
@@ -131,6 +135,7 @@ public:
     ExpandedRole,
     CompletedCountRole,
     RevisionRole,
+    // IDs retain the logical source owner; names omit internal Default for presentation.
     SourceGroupIdRole,
     SourceGroupNameRole
   };

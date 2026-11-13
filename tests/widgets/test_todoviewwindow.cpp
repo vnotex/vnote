@@ -352,7 +352,9 @@ bool answerNewList(const QString &p_title, const std::function<void()> &p_open) 
         auto *name = control<QLineEdit>(p_dialog, "todoNewListName");
         auto *group = control<QComboBox>(p_dialog, "todoNewListGroup");
         auto *accept = control<QPushButton>(p_dialog, "todoNewListAccept");
-        if (!name || !group || !accept || !group->currentData().toString().isEmpty())
+        if (!name || !group || !accept || !group->currentData().toString().isEmpty() ||
+            group->itemText(0) != QLatin1String("No group") ||
+            !group->itemData(0).toString().isEmpty())
           return false;
         name->setText(p_title);
         accept->click();
@@ -564,6 +566,10 @@ private slots:
   void sidebarMenusAndDuplication();
   void nativeGroupsWideAndNarrow_data();
   void nativeGroupsWideAndNarrow();
+  void rootListsWideAndNarrow_data();
+  void rootListsWideAndNarrow();
+  void keyboardGroupsSkipDefault_data();
+  void keyboardGroupsSkipDefault();
   void implicitDefaultAndGroupRecreation();
   void groupDialogsRejectForeignReload();
   void deletionConfirmationRejectsForeignReload();
@@ -1316,7 +1322,7 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
     auto *destination = dialog ? control<QComboBox>(dialog, "todoMoveDestination") : nullptr;
     if (destination) {
       QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:personal"))),
-               QStringLiteral("Default / Personal"));
+               QStringLiteral("Personal"));
       destination->setCurrentIndex(destination->findData(QStringLiteral("id:personal")));
       auto *buttons = dialog->findChild<QDialogButtonBox *>();
       if (buttons) {
@@ -1496,7 +1502,47 @@ void TestTodoViewWindow::sidebarDropEvents() {
   window->undo();
   QCOMPARE(window->getLatestContent().toUtf8(), source);
 
+  const auto firstGroup = model->index(model->rowForGroup(QStringLiteral("id:projects")));
+  lists->scrollTo(firstGroup);
+  const auto groupRect = lists->visualRect(firstGroup);
+  QVERIFY(dropOnSidebar(lists, model->index(model->rowForKey(QStringLiteral("id:last"))),
+                        QPoint(groupRect.center().x(), groupRect.top() + 1)));
+  const auto *defaultGroup = controller->getDocument().defaultGroup();
+  QVERIFY(defaultGroup);
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:last")))
+               ->m_key,
+           defaultGroup->m_key);
+  QCOMPARE(model->rowForGroup(defaultGroup->m_key), -1);
+  QCOMPARE(model->rowForKey(QStringLiteral("id:last")), hasDefault ? 6 : 4);
+  QVERIFY(model->index(model->rowForKey(QStringLiteral("id:last")))
+              .data(TodoListModel::GroupIdRole)
+              .toString()
+              .isEmpty());
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+
   if (hasDefault) {
+    auto work = model->index(model->rowForKey(QStringLiteral("id:work")));
+    lists->scrollTo(work);
+    QVERIFY(dropOnSidebar(lists, model->index(model->rowForKey(QStringLiteral("id:last"))),
+                          lists->visualRect(work).center()));
+    QCOMPARE(model->rowForKey(QStringLiteral("id:last")), 4);
+    QCOMPARE(model->rowForKey(QStringLiteral("id:work")), 5);
+    QVERIFY(controller->getDocument()
+                .groupForList(*controller->getDocument().findList(QStringLiteral("id:last")))
+                ->m_isDefault);
+    window->undo();
+    QCOMPARE(window->getLatestContent().toUtf8(), source);
+
+    work = model->index(model->rowForKey(QStringLiteral("id:work")));
+    lists->scrollTo(work);
+    QVERIFY(dropOnSidebar(lists, model->index(model->rowForKey(QStringLiteral("id:personal"))),
+                          lists->visualRect(work).center()));
+    QCOMPARE(model->rowForKey(QStringLiteral("id:personal")), 4);
+    QCOMPARE(model->rowForKey(QStringLiteral("id:work")), 5);
+    window->undo();
+    QCOMPARE(window->getLatestContent().toUtf8(), source);
     controller->setGroupExpanded(QStringLiteral("id:projects"), false);
     const auto group = model->index(model->rowForGroup(QStringLiteral("id:projects")));
     lists->scrollTo(group);
@@ -1549,13 +1595,7 @@ void TestTodoViewWindow::sidebarMenusAndDuplication() {
       return nullptr;
     return qobject_cast<QMenu *>(QApplication::activePopupWidget());
   };
-  editor->focusGroup(QStringLiteral("id:default"));
-  QVERIFY(openGroupMenu(window));
-  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
-  QCOMPARE(labels(menu), QStringList({"Rename", "New List", "Ungroup Lists"}));
-  QVERIFY(!control<QAction>(menu, "todoUngroupListsAction")->isEnabled());
-  menu->close();
-  menu = openListMenu(QStringLiteral("id:work"));
+  auto *menu = openListMenu(QStringLiteral("id:work"));
   QVERIFY(menu);
   QCOMPARE(labels(menu), QStringList({"Rename", "Move List To Group", "Duplicate", "Delete"}));
   QVERIFY(!control<QAction>(menu, "todoMoveListGroupAction")->isEnabled());
@@ -1630,6 +1670,259 @@ void TestTodoViewWindow::sidebarMenusAndDuplication() {
   QCOMPARE(window->getLatestContent(), beforeCopy);
 }
 
+void TestTodoViewWindow::rootListsWideAndNarrow_data() {
+  QTest::addColumn<int>("width");
+  QTest::addColumn<bool>("hasRoots");
+  QTest::newRow("wide-roots") << 1000 << true;
+  QTest::newRow("narrow-roots") << 600 << true;
+  QTest::newRow("wide-empty-default") << 1000 << false;
+  QTest::newRow("narrow-empty-default") << 600 << false;
+}
+
+void TestTodoViewWindow::rootListsWideAndNarrow() {
+  QFETCH(int, width);
+  QFETCH(bool, hasRoots);
+  QByteArray source =
+      "# Projects\n<!-- todo-group: {\"id\":\"projects\"} -->\n\n"
+      "## Grouped\n<!-- todo-list: {\"id\":\"grouped\"} -->\n\n"
+      "- [ ] Custom task\n  <!-- todo-item: {\"id\":\"custom\"} -->\n\n"
+      "# Default\n<!-- todo-group: {\"id\":\"named-default\"} -->\n\n"
+      "## Named\n<!-- todo-list: {\"id\":\"named\"} -->\n\n"
+      "- [ ] Literal task\n  <!-- todo-item: {\"id\":\"literal\"} -->\n\n"
+      "# Private owner\n<!-- todo-group: {\"id\":\"default\",\"default\":true} -->\n\n";
+  if (hasRoots) {
+    source += "## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+              "- [ ] Root task\n  <!-- todo-item: {\"id\":\"root\",\"important\":true} -->\n\n"
+              "  > Root note\n\n"
+              "## Personal\n<!-- todo-list: {\"id\":\"personal\"} -->\n\n"
+              "- [ ] Home task\n  <!-- todo-item: {\"id\":\"home\"} -->\n";
+  }
+  createArea();
+  QVERIFY(openNote(QStringLiteral("root-lists.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  auto *editor = window->getTodoEditor();
+  QTRY_COMPARE(editor->width() < 840, width < 840);
+  QVERIFY(showLists(window));
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  auto *taskModel = controller->getTaskModel();
+  auto *lists = control<QListView>(window, "todoLists");
+  const auto defaultKey = QStringLiteral("id:default");
+  const int rootCount = hasRoots ? 2 : 0;
+  QCOMPARE(controller->getDocument().m_groups.last().m_key, defaultKey);
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
+  QCOMPARE(model->rowCount(), 8 + rootCount);
+  QCOMPARE(model->rowForGroup(QStringLiteral("id:projects")), 4 + rootCount);
+  const auto namedDefault = model->index(model->rowForGroup(QStringLiteral("id:named-default")));
+  QCOMPARE(namedDefault.row(), 6 + rootCount);
+  QVERIFY(namedDefault.data(TodoListModel::GroupRole).toBool());
+  QCOMPARE(namedDefault.data(TodoListModel::TitleRole).toString(), QStringLiteral("Default"));
+  controller->setGroupExpanded(defaultKey, false);
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  for (int row = 4; row < 4 + rootCount; ++row) {
+    const auto index = model->index(row);
+    QVERIFY(!index.data(TodoListModel::GroupRole).toBool());
+    QVERIFY(index.data(TodoListModel::GroupIdRole).toString().isEmpty());
+    QVERIFY(index.data(TodoListModel::GroupTitleRole).toString().isEmpty());
+    QVERIFY(index.data(TodoListModel::ExpandedRole).toBool());
+    QVERIFY(!lists->isRowHidden(row));
+    QCOMPARE(model->groupAt(row)->m_key, defaultKey);
+  }
+  if (hasRoots) {
+    QCOMPARE(model->rowForKey(QStringLiteral("id:work")), 4);
+    QCOMPARE(model->rowForKey(QStringLiteral("id:personal")), 5);
+  }
+
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *destination = control<QComboBox>(window, "todoDestination");
+  QVERIFY(destination);
+  QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:grouped"))),
+           QStringLiteral("Projects / Grouped"));
+  QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:named"))),
+           QStringLiteral("Default / Named"));
+  if (hasRoots) {
+    QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:work"))),
+             QStringLiteral("Work"));
+    QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:personal"))),
+             QStringLiteral("Personal"));
+  }
+  int rootTasks = 0;
+  for (int row = 0; row < taskModel->rowCount(); ++row) {
+    const auto index = taskModel->index(row);
+    if (!index.data(TodoTaskModel::SectionRole).toBool() &&
+        index.data(TodoTaskModel::SourceGroupIdRole).toString() == defaultKey) {
+      ++rootTasks;
+      QVERIFY(index.data(TodoTaskModel::SourceGroupNameRole).toString().isEmpty());
+    }
+  }
+  QCOMPARE(rootTasks, rootCount);
+  controller->setSearch(QStringLiteral("Private owner"));
+  QVERIFY(taskTitles(window).isEmpty());
+  QCOMPARE(taskModel->getActiveCount(), 0);
+  QCOMPARE(taskModel->getCompletedCount(), 0);
+  for (int row = 0; row < model->rowCount(); ++row)
+    QCOMPARE(model->index(row).data(TodoListModel::IncompleteCountRole).toInt(), 0);
+  controller->setSearch(QStringLiteral("Default"));
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Literal task")}));
+  if (hasRoots) {
+    controller->setSearch(QStringLiteral("Work"));
+    QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Root task")}));
+    controller->setSearch(QStringLiteral("Root note"));
+    QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Root task")}));
+    controller->setSearch(QStringLiteral("Home task"));
+    QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Home task")}));
+  }
+  controller->setSearch({});
+
+  QVERIFY(showLists(window));
+  auto *newList = control<QPushButton>(window, "todoNewList");
+  QVERIFY(newList);
+  QVERIFY(answerDialog(
+      "todoNewListDialog",
+      [&](QDialog *p_dialog) {
+        auto *groups = control<QComboBox>(p_dialog, "todoNewListGroup");
+        if (!groups || groups->count() != 3 || groups->itemText(0) != QLatin1String("No group") ||
+            !groups->itemData(0).toString().isEmpty() ||
+            !groups->currentData().toString().isEmpty() ||
+            groups->itemData(1).toString() != QLatin1String("id:projects") ||
+            groups->itemText(1) != QLatin1String("Projects") ||
+            groups->itemData(2).toString() != QLatin1String("id:named-default") ||
+            groups->itemText(2) != QLatin1String("Default"))
+          return false;
+        p_dialog->reject();
+        return true;
+      },
+      [&] { newList->click(); }));
+
+  controller->setView(TodoViewKind::Important);
+  const auto before = controller->getProjection();
+  const auto items = taskTitles(window);
+  QSignalSpy taskReset(taskModel, &QAbstractItemModel::modelReset);
+  editor->focusGroup(defaultKey);
+  QCOMPARE(editor->selectedGroupKey(), defaultKey);
+  QCOMPARE(lists->currentIndex().row(), hasRoots ? 4 : 1);
+  controller->setGroupExpanded(QStringLiteral("id:projects"), false);
+  QCOMPARE(lists->currentIndex().row(), hasRoots ? 4 : 1);
+  QCOMPARE(editor->selectedGroupKey(), defaultKey);
+  QCOMPARE(controller->getProjection().m_view, before.m_view);
+  QCOMPARE(controller->getProjection().m_listKey, before.m_listKey);
+  QCOMPARE(controller->getProjection().m_search, before.m_search);
+  QCOMPARE(controller->getProjection().m_tag, before.m_tag);
+  QCOMPARE(taskTitles(window), items);
+  QCOMPARE(taskReset.size(), 0);
+  window->setMode(ViewWindowMode::Read);
+  QCOMPARE(lists->currentIndex().row(), hasRoots ? 4 : 1);
+  for (int row = 4; row < 4 + rootCount; ++row)
+    QVERIFY(!lists->isRowHidden(row));
+  if (!hasRoots) {
+    controller->setView(TodoViewKind::List, QStringLiteral("id:grouped"));
+    editor->focusGroup(defaultKey);
+    QCOMPARE(lists->currentIndex().data(TodoListModel::IdRole).toString(),
+             QStringLiteral("id:grouped"));
+    controller->setGroupExpanded(QStringLiteral("id:named-default"), false);
+    QCOMPARE(lists->currentIndex().data(TodoListModel::IdRole).toString(),
+             QStringLiteral("id:grouped"));
+    QCOMPARE(editor->selectedGroupKey(), defaultKey);
+    QCOMPARE(controller->getProjection().m_view, TodoViewKind::List);
+    QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:grouped"));
+    QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Custom task")}));
+  }
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(!window->isModified());
+}
+
+void TestTodoViewWindow::keyboardGroupsSkipDefault_data() {
+  QTest::addColumn<int>("width");
+  QTest::addColumn<int>("defaultPosition");
+  QTest::newRow("wide-before") << 1000 << 0;
+  QTest::newRow("wide-between") << 1000 << 1;
+  QTest::newRow("wide-after") << 1000 << 3;
+  QTest::newRow("narrow-before") << 600 << 0;
+  QTest::newRow("narrow-between") << 600 << 1;
+  QTest::newRow("narrow-after") << 600 << 3;
+}
+
+void TestTodoViewWindow::keyboardGroupsSkipDefault() {
+  QFETCH(int, width);
+  QFETCH(int, defaultPosition);
+  QList<QByteArray> blocks = {"# A\n<!-- todo-group: {\"id\":\"a\"} -->\n\n",
+                              "# B\n<!-- todo-group: {\"id\":\"b\"} -->\n\n",
+                              "# C\n<!-- todo-group: {\"id\":\"c\"} -->\n\n"};
+  blocks.insert(defaultPosition, "# Internal owner\n<!-- todo-group: {\"default\":true} -->\n\n"
+                                 "## Root\n\n- [ ] Keep\n\n");
+  QByteArray source;
+  for (const auto &block : blocks)
+    source += block;
+  createArea();
+  QVERIFY(openNote(QStringLiteral("keyboard-groups.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  auto *editor = window->getTodoEditor();
+  QTRY_COMPARE(editor->width() < 840, width < 840);
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  auto *lists = control<QListView>(window, "todoLists");
+  const auto groupOrder = [&] {
+    QStringList keys;
+    for (int row = 0; row < model->rowCount(); ++row) {
+      const auto index = model->index(row);
+      if (index.data(TodoListModel::GroupRole).toBool())
+        keys.append(index.data(TodoListModel::GroupIdRole).toString());
+    }
+    return keys;
+  };
+  const QStringList originalOrder = {QStringLiteral("id:a"), QStringLiteral("id:b"),
+                                     QStringLiteral("id:c")};
+  QCOMPARE(groupOrder(), originalOrder);
+  const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+  editor->focusGroup(QStringLiteral("id:a"));
+  QVERIFY(activate(lists));
+  QTest::keyClick(lists, Qt::Key_Up, Qt::AltModifier);
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+  QVERIFY(!window->isModified());
+  editor->focusGroup(QStringLiteral("id:c"));
+  QVERIFY(activate(lists));
+  QTest::keyClick(lists, Qt::Key_Down, Qt::AltModifier);
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+  QVERIFY(!window->isModified());
+
+  struct Move {
+    const char *key;
+    Qt::Key direction;
+    QStringList order;
+  };
+  const Move moves[] = {
+      {"id:a", Qt::Key_Down, {"id:b", "id:a", "id:c"}},
+      {"id:b", Qt::Key_Up, {"id:b", "id:a", "id:c"}},
+      {"id:b", Qt::Key_Down, {"id:a", "id:c", "id:b"}},
+      {"id:c", Qt::Key_Up, {"id:a", "id:c", "id:b"}},
+  };
+  for (const auto &move : moves) {
+    editor->focusGroup(QString::fromLatin1(move.key));
+    QVERIFY(activate(lists));
+    QTest::keyClick(lists, move.direction, Qt::AltModifier);
+    QCOMPARE(groupOrder(), move.order);
+    QCOMPARE(editor->selectedGroupKey(), QString::fromLatin1(move.key));
+    QCOMPARE(model->rowForGroup(controller->getDocument().defaultGroup()->m_key), -1);
+    QCOMPARE(model->index(4).data(TodoListModel::TitleRole).toString(), QStringLiteral("Root"));
+    const auto moved = window->getLatestContent();
+    QVERIFY(moved.toUtf8() != source);
+    window->undo();
+    QCOMPARE(window->getLatestContent().toUtf8(), source);
+    QCOMPARE(groupOrder(), originalOrder);
+    window->redo();
+    QCOMPARE(window->getLatestContent(), moved);
+    QCOMPARE(groupOrder(), move.order);
+    window->undo();
+    QCOMPARE(window->getLatestContent().toUtf8(), source);
+  }
+}
+
 void TestTodoViewWindow::nativeGroupsWideAndNarrow_data() {
   QTest::addColumn<int>("width");
   QTest::newRow("wide") << 1000;
@@ -1639,7 +1932,11 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow_data() {
 void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QFETCH(int, width);
   createArea();
-  const auto buffer = openNote(QStringLiteral("groups.todo"));
+  auto source = c_source;
+  source.replace("# Default\n<!-- todo-group: {\"id\":\"default\",\"default\":true} -->\n\n",
+                 "# Internal\n<!-- todo-group: {\"id\":\"default\",\"default\":true} -->\n\n"
+                 "# Team\n<!-- todo-group: {\"id\":\"team\"} -->\n\n");
+  const auto buffer = openNote(QStringLiteral("groups.todo"), source);
   QVERIFY(buffer.isValid());
   auto *window = current();
   QVERIFY(window);
@@ -1656,26 +1953,28 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QVERIFY(showLists(window));
   QTRY_VERIFY(newGroup->isVisible() && newList->isVisible());
   const auto defaultKey = QStringLiteral("id:default");
-  const int defaultRow = model->rowForGroup(defaultKey);
+  const auto teamKey = QStringLiteral("id:team");
+  const int teamRow = model->rowForGroup(teamKey);
   const int workRow = model->rowForKey(QStringLiteral("id:work"));
-  QVERIFY(defaultRow >= 0 && workRow >= 0);
-  QVERIFY(model->groupAt(defaultRow));
-  QCOMPARE(model->groupAt(workRow)->m_key, defaultKey);
+  QVERIFY(teamRow >= 0 && workRow >= 0);
+  QVERIFY(model->groupAt(teamRow));
+  QCOMPARE(model->groupAt(workRow)->m_key, teamKey);
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
   QVERIFY(!model->groupAt(0));
-  QVERIFY(model->index(defaultRow).data(TodoListModel::GroupRole).toBool());
-  QVERIFY(!model->index(defaultRow).data(TodoListModel::ViewKindRole).isValid());
-  QCOMPARE(model->index(defaultRow).data(TodoListModel::ListCountRole).toInt(), 2);
-  QCOMPARE(model->index(defaultRow).data(TodoListModel::IncompleteCountRole).toInt(), 3);
+  QVERIFY(model->index(teamRow).data(TodoListModel::GroupRole).toBool());
+  QVERIFY(!model->index(teamRow).data(TodoListModel::ViewKindRole).isValid());
+  QCOMPARE(model->index(teamRow).data(TodoListModel::ListCountRole).toInt(), 2);
+  QCOMPARE(model->index(teamRow).data(TodoListModel::IncompleteCountRole).toInt(), 3);
   const auto original = window->getLatestContent();
   const auto originalView = controller->getProjection().m_view;
   const auto originalList = controller->getProjection().m_listKey;
   const auto originalItems = taskTitles(window);
   const auto originalSelection = controller->getSelectedItemKey();
-  editor->focusGroup(defaultKey);
+  editor->focusGroup(teamKey);
   QSignalSpy taskReset(taskModel, &QAbstractItemModel::modelReset);
   if (width >= 840) {
     QVERIFY(activate(lists));
-    const auto index = model->index(defaultRow);
+    const auto index = model->index(teamRow);
     lists->scrollTo(index);
     QSignalSpy changes(model, &QAbstractItemModel::dataChanged);
     const auto expansionChanges = [&]() {
@@ -1688,8 +1987,8 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
     };
     const auto center = lists->visualRect(index).center();
     QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier, center);
-    QCOMPARE(editor->selectedGroupKey(), defaultKey);
-    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(defaultKey));
+    QCOMPARE(editor->selectedGroupKey(), teamKey);
+    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(teamKey));
     QVERIFY(!lists->isRowHidden(workRow));
     const auto chevron = QPoint(lists->visualRect(index).right() - 22, center.y());
     QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier, chevron);
@@ -1712,7 +2011,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   } else {
     QVERIFY(toggleGroupInSidebar(window));
   }
-  QVERIFY(controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(teamKey));
   QVERIFY(lists->isRowHidden(workRow));
   QCOMPARE(model->rowForKey(QStringLiteral("id:work")), workRow);
   QCOMPARE(taskReset.size(), 0);
@@ -1723,20 +2022,19 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QCOMPARE(window->getLatestContent(), original);
   QVERIFY(!window->isModified());
   auto *search = control<QLineEdit>(window, "todoSearch");
-  QVERIFY(typeText(search, QStringLiteral("Default")));
+  QVERIFY(typeText(search, QStringLiteral("Team")));
   QCOMPARE(taskModel->getActiveCount(), 3);
   QCOMPARE(taskModel->getCompletedCount(), 1);
   for (int row = 0; row < taskModel->rowCount(); ++row) {
     const auto index = taskModel->index(row);
     if (!index.data(TodoTaskModel::SectionRole).toBool()) {
-      QCOMPARE(index.data(TodoTaskModel::SourceGroupIdRole).toString(), defaultKey);
-      QCOMPARE(index.data(TodoTaskModel::SourceGroupNameRole).toString(),
-               QStringLiteral("Default"));
+      QCOMPARE(index.data(TodoTaskModel::SourceGroupIdRole).toString(), teamKey);
+      QCOMPARE(index.data(TodoTaskModel::SourceGroupNameRole).toString(), QStringLiteral("Team"));
     }
   }
   search->clear();
   QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
-  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(defaultKey));
+  QVERIFY(!controller->getProjection().m_collapsedGroups.contains(teamKey));
   QVERIFY(!lists->isRowHidden(workRow));
   QCOMPARE(window->getLatestContent(), original);
   if (width >= 840) {
@@ -1750,7 +2048,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
     QTest::mouseRelease(lists->viewport(), Qt::LeftButton, Qt::NoModifier, point);
     for (const auto &change : changes)
       QVERIFY(!change.at(2).value<QList<int>>().contains(TodoListModel::ExpandedRole));
-    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(defaultKey));
+    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(teamKey));
     QVERIFY(!lists->isRowHidden(workRow));
     QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:work"));
     QCOMPARE(window->getLatestContent(), original);
@@ -1799,7 +2097,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   QWidget *groupFocus = lists;
   QVERIFY(activate(groupFocus));
   QTest::keyClick(groupFocus, Qt::Key_Up, Qt::AltModifier);
-  QCOMPARE(controller->getDocument().m_groups.at(1).m_key, archiveKey);
+  QCOMPARE(controller->getDocument().m_groups.at(2).m_key, archiveKey);
   QTest::keyClick(groupFocus, Qt::Key_Down, Qt::AltModifier);
   QCOMPARE(controller->getDocument().m_groups.last().m_key, archiveKey);
   bool renamedAction = false;
@@ -1852,6 +2150,11 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   const auto alphaBefore = *controller->getDocument().findItem(QStringLiteral("id:alpha"));
   auto *listMore = control<QPushButton>(window, "todoListMore");
   QVERIFY(listMore && listMore->isVisible());
+  QVERIFY(chooseButtonMenu(listMore, "todoRemoveListFromGroupAction"));
+  QCOMPARE(controller->getDocument()
+               .groupForList(*controller->getDocument().findList(QStringLiteral("id:work")))
+               ->m_key,
+           defaultKey);
   const auto moveTo = [&](const QString &p_groupKey) {
     if (!activate(listMore))
       return false;
@@ -1964,7 +2267,12 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   QVERIFY(controller->getDocument().defaultGroup());
   QCOMPARE(controller->getDocument().defaultGroup()->m_key, QStringLiteral("default:"));
   editor->focusGroup(QStringLiteral("default:"));
-  QVERIFY(toggleGroupInSidebar(window));
+  auto *model = controller->getListModel();
+  auto *lists = control<QListView>(window, "todoLists");
+  QCOMPARE(model->rowForGroup(QStringLiteral("default:")), -1);
+  QCOMPARE(lists->currentIndex().row(), 4);
+  QVERIFY(!lists->isRowHidden(4));
+  QVERIFY(lists->currentIndex().data(TodoListModel::GroupIdRole).toString().isEmpty());
   QCOMPARE(window->getLatestContent().toUtf8(), source);
   QVERIFY(!window->isModified());
   QVERIFY(window->save());
@@ -1989,12 +2297,22 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   QCOMPARE(window->getLatestContent().toUtf8(), source);
   window->redo();
   QCOMPARE(window->getLatestContent(), materialized);
-  editor->focusGroup(defaultKey);
-  QVERIFY(openGroupMenu(window));
-  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
-  auto *ungroup = control<QAction>(menu, "todoUngroupListsAction");
-  QVERIFY(ungroup && !ungroup->isEnabled());
-  menu->close();
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
+  QCOMPARE(model->rowForKey(createdKey), 5);
+  QVERIFY(selectView(window, TodoViewKind::List, createdKey));
+  QVERIFY(
+      chooseButtonMenu(control<QPushButton>(window, "todoListMore"), "todoDuplicateListAction"));
+  const auto copyKey = controller->getProjection().m_listKey;
+  QVERIFY(copyKey != createdKey);
+  QVERIFY(controller->getDocument()
+              .groupForList(*controller->getDocument().findList(copyKey))
+              ->m_isDefault);
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
+  const auto copyIndex = model->index(model->rowForKey(copyKey));
+  QVERIFY(copyIndex.data(TodoListModel::GroupIdRole).toString().isEmpty());
+  QVERIFY(!copyIndex.data(TodoListModel::GroupRole).toBool());
+  window->undo();
+  QCOMPARE(window->getLatestContent(), materialized);
   const auto otherKey = controller->getDocument().m_groups.last().m_key;
   editor->focusGroup(otherKey);
   QVERIFY(chooseGroupMenu(window, "todoUngroupListsAction"));
@@ -2003,6 +2321,13 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
   QCOMPARE(controller->getDocument().defaultGroup()->m_listCount, 3);
   QVERIFY(window->getLatestContent().contains(QStringLiteral("file-owned")));
   QVERIFY(window->getLatestContent().contains(QStringLiteral("## Elsewhere")));
+  QCOMPARE(model->rowForGroup(defaultKey), -1);
+  QCOMPARE(model->rowCount(), 7);
+  for (int row = 4; row < model->rowCount(); ++row) {
+    QVERIFY(!model->index(row).data(TodoListModel::GroupRole).toBool());
+    QVERIFY(model->index(row).data(TodoListModel::GroupIdRole).toString().isEmpty());
+    QVERIFY(!lists->isRowHidden(row));
+  }
   // Ungrouping an empty group removes only its container and is undoable.
   QVERIFY(controller->addGroup(QStringLiteral("Empty")));
   const auto emptyKey = controller->getDocument().m_groups.last().m_key;
@@ -2016,12 +2341,13 @@ void TestTodoViewWindow::implicitDefaultAndGroupRecreation() {
 
 void TestTodoViewWindow::groupDialogsRejectForeignReload() {
   createArea();
-  QVERIFY(openNote(QStringLiteral("group-modal.todo")).isValid());
+  const auto source = c_source + "\n# Projects\n<!-- todo-group: {\"id\":\"projects\"} -->\n";
+  QVERIFY(openNote(QStringLiteral("group-modal.todo"), source).isValid());
   auto *window = current();
   QVERIFY(window);
   auto *controller = window->getController();
-  auto replacement = c_source;
-  replacement.replace("# Default", "# Reloaded");
+  auto replacement = source;
+  replacement.replace("# Projects", "# Reloaded");
   bool chosen = false;
   QVERIFY(answerDialog(
       "todoNewListDialog",
@@ -2037,7 +2363,7 @@ void TestTodoViewWindow::groupDialogsRejectForeignReload() {
         return true;
       },
       [&] {
-        window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
+        window->getTodoEditor()->focusGroup(QStringLiteral("id:projects"));
         chosen = chooseGroupMenu(window, "todoGroupNewListAction");
       }));
   QVERIFY(chosen);
@@ -2048,15 +2374,15 @@ void TestTodoViewWindow::groupDialogsRejectForeignReload() {
   auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
   QPointer<QAction> staleRename = control<QAction>(menu, "todoRenameGroupAction");
   QVERIFY(staleRename);
-  QVERIFY(writeBytes(absolute(QStringLiteral("group-modal.todo")), c_source));
+  QVERIFY(writeBytes(absolute(QStringLiteral("group-modal.todo")), source));
   QVERIFY(window->reload());
   if (staleRename)
     staleRename->trigger();
   QVERIFY(!QApplication::activeModalWidget());
   if (auto *popup = QApplication::activePopupWidget())
     popup->close();
-  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
-  QVERIFY(controller->getDocument().findGroup(QStringLiteral("id:default")));
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(controller->getDocument().findGroup(QStringLiteral("id:projects")));
   QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
   QVERIFY(!window->isModified());
 }
@@ -2355,7 +2681,10 @@ void TestTodoViewWindow::readOnlyNavigation_data() {
 void TestTodoViewWindow::readOnlyNavigation() {
   QFETCH(bool, bufferReadOnly);
   createArea();
-  auto source = memorySource(QStringLiteral("Read-only planner"));
+  auto source =
+      memorySource(QStringLiteral("Read-only planner"),
+                   c_source + "\n# Projects\n<!-- todo-group: {\"id\":\"projects\"} -->\n\n"
+                              "## Grouped\n<!-- todo-list: {\"id\":\"grouped\"} -->\n");
   source.readOnly = bufferReadOnly;
   FileOpenSettings settings;
   settings.m_mode = bufferReadOnly ? ViewWindowMode::Edit : ViewWindowMode::Read;
@@ -2378,13 +2707,18 @@ void TestTodoViewWindow::readOnlyNavigation() {
   QVERIFY(note->isReadOnly());
   auto *newGroup = control<QPushButton>(window, "todoNewGroup");
   QVERIFY(newGroup && !newGroup->isEnabled());
-  window->getTodoEditor()->focusGroup(QStringLiteral("id:default"));
+  window->getTodoEditor()->focusGroup(QStringLiteral("id:projects"));
   QVERIFY(toggleGroupInSidebar(window));
   QVERIFY(window->getController()->getProjection().m_collapsedGroups.contains(
-      QStringLiteral("id:default")));
-  QVERIFY(!window->getController()->renameGroup(QStringLiteral("id:default"),
+      QStringLiteral("id:projects")));
+  auto *lists = control<QListView>(window, "todoLists");
+  auto *model = window->getController()->getListModel();
+  QVERIFY(lists->isRowHidden(model->rowForKey(QStringLiteral("id:grouped"))));
+  QVERIFY(!lists->isRowHidden(model->rowForKey(QStringLiteral("id:work"))));
+  QCOMPARE(model->rowForGroup(QStringLiteral("id:default")), -1);
+  QVERIFY(!window->getController()->renameGroup(QStringLiteral("id:projects"),
                                                 QStringLiteral("Blocked")));
-  QVERIFY(!window->getController()->ungroupLists(QStringLiteral("id:default")));
+  QVERIFY(!window->getController()->ungroupLists(QStringLiteral("id:projects")));
   QCOMPARE(window->getLatestContent(), before);
   QVERIFY(!window->getController()->removeTask(QStringLiteral("id:alpha")));
   QVERIFY(selectView(window, TodoViewKind::All));
@@ -2686,15 +3020,27 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
 void TestTodoViewWindow::groupSourceNavigation_data() {
   QTest::addColumn<QString>("needle");
   QTest::addColumn<int>("width");
-  QTest::newRow("wide-heading") << QStringLiteral("# Empty") << 1000;
-  QTest::newRow("wide-comment") << QStringLiteral("Empty group comment") << 1000;
-  QTest::newRow("narrow-heading") << QStringLiteral("# Empty") << 600;
-  QTest::newRow("narrow-comment") << QStringLiteral("Empty group comment") << 600;
+  QTest::addColumn<QString>("groupKey");
+  QTest::newRow("wide-heading") << QStringLiteral("# Empty") << 1000 << QStringLiteral("id:empty");
+  QTest::newRow("wide-comment") << QStringLiteral("Empty group comment") << 1000
+                                << QStringLiteral("id:empty");
+  QTest::newRow("narrow-heading") << QStringLiteral("# Empty") << 600 << QStringLiteral("id:empty");
+  QTest::newRow("narrow-comment") << QStringLiteral("Empty group comment") << 600
+                                  << QStringLiteral("id:empty");
+  QTest::newRow("wide-default-heading")
+      << QStringLiteral("# Default") << 1000 << QStringLiteral("id:default");
+  QTest::newRow("wide-default-comment")
+      << QStringLiteral("Default group comment") << 1000 << QStringLiteral("id:default");
+  QTest::newRow("narrow-default-heading")
+      << QStringLiteral("# Default") << 600 << QStringLiteral("id:default");
+  QTest::newRow("narrow-default-comment")
+      << QStringLiteral("Default group comment") << 600 << QStringLiteral("id:default");
 }
 
 void TestTodoViewWindow::groupSourceNavigation() {
   QFETCH(QString, needle);
   QFETCH(int, width);
+  QFETCH(QString, groupKey);
   createArea();
   const auto source =
       c_source +
@@ -2719,7 +3065,7 @@ void TestTodoViewWindow::groupSourceNavigation() {
   FileOpenSettings settings;
   settings.m_lineNumber = text.left(text.indexOf(needle)).count(QLatin1Char('\n'));
   window->applyFileOpenSettings(settings);
-  QCOMPARE(window->getTodoEditor()->selectedGroupKey(), QStringLiteral("id:empty"));
+  QCOMPARE(window->getTodoEditor()->selectedGroupKey(), groupKey);
   QCOMPARE(controller->getProjection().m_view, before.m_view);
   QCOMPARE(controller->getProjection().m_listKey, before.m_listKey);
   QCOMPARE(controller->getProjection().m_search, before.m_search);
@@ -2729,9 +3075,26 @@ void TestTodoViewWindow::groupSourceNavigation() {
   QVERIFY(controller->getSelectedItemKey().isEmpty());
   auto *lists = control<QListView>(window, "todoLists");
   QTRY_VERIFY(lists && lists->isVisible() && lists->hasFocus());
-  QVERIFY(lists->currentIndex().data(TodoListModel::GroupRole).toBool());
-  QCOMPARE(lists->currentIndex().data(TodoListModel::GroupIdRole).toString(),
-           QStringLiteral("id:empty"));
+  const bool defaultOwner = groupKey == QLatin1String("id:default");
+  QCOMPARE(lists->currentIndex().data(TodoListModel::GroupRole).toBool(), !defaultOwner);
+  QCOMPARE(lists->currentIndex().data(TodoListModel::IdRole).toString(),
+           defaultOwner ? QStringLiteral("id:work") : groupKey);
+  if (defaultOwner) {
+    QCOMPARE(lists->currentIndex().row(), 4);
+    QVERIFY(lists->currentIndex().data(TodoListModel::GroupIdRole).toString().isEmpty());
+    QVERIFY(!lists->isRowHidden(4));
+  }
+  QSignalSpy taskReset(controller->getTaskModel(), &QAbstractItemModel::modelReset);
+  controller->setGroupExpanded(QStringLiteral("id:empty"), false);
+  QCOMPARE(window->getTodoEditor()->selectedGroupKey(), groupKey);
+  QCOMPARE(lists->currentIndex().data(TodoListModel::IdRole).toString(),
+           defaultOwner ? QStringLiteral("id:work") : groupKey);
+  QCOMPARE(controller->getProjection().m_view, before.m_view);
+  QCOMPARE(controller->getProjection().m_listKey, before.m_listKey);
+  QCOMPARE(controller->getProjection().m_search, before.m_search);
+  QCOMPARE(controller->getProjection().m_tag, before.m_tag);
+  QCOMPARE(taskTitles(window), items);
+  QCOMPARE(taskReset.size(), 0);
   settings.m_lineNumber =
       text.left(text.indexOf(QStringLiteral("- [ ] Gamma"))).count(QLatin1Char('\n'));
   window->applyFileOpenSettings(settings);

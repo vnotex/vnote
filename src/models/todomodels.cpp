@@ -66,6 +66,9 @@ bool hasFilters(const TodoProjection &p_projection) {
 }
 
 QString groupTitle(const TodoGroup &p_group) {
+  if (p_group.m_isDefault) {
+    return {};
+  }
   return QStringView(p_group.m_title).trimmed().isEmpty() ? TodoListModel::tr("Untitled group")
                                                           : p_group.m_title;
 }
@@ -127,7 +130,7 @@ QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
   case GroupRole:
     return groupHeader;
   case GroupIdRole:
-    return group ? group->m_key : QString();
+    return group && !group->m_isDefault ? group->m_key : QString();
   case GroupTitleRole:
     return group ? groupTitle(*group) : QString();
   case ExpandedRole:
@@ -231,24 +234,29 @@ void TodoListModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
 
   if (m_document.isValid()) {
     const auto &lists = std::as_const(m_document.m_lists);
-    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
-      const auto &group = m_document.m_groups.at(groupIndex);
-      const bool expanded = !p_projection.m_collapsedGroups.contains(group.m_key);
+    const auto appendGroup = [&](int p_groupIndex) {
+      const auto &group = m_document.m_groups.at(p_groupIndex);
+      const bool expanded =
+          group.m_isDefault || !p_projection.m_collapsedGroups.contains(group.m_key);
       const bool groupMatches =
-          !p_projection.m_search.isEmpty() &&
+          !group.m_isDefault && !p_projection.m_search.isEmpty() &&
           groupTitle(group).contains(p_projection.m_search, Qt::CaseInsensitive);
-      const int groupRow = m_rows.size();
-      m_rows.append({TodoViewKind::List, -1, groupIndex, 0, expanded});
+      const int groupRow = group.m_isDefault ? -1 : static_cast<int>(m_rows.size());
+      if (groupRow >= 0) {
+        m_rows.append({TodoViewKind::List, -1, p_groupIndex, 0, expanded});
+      }
       for (int listIndex = group.m_firstList; listIndex < group.m_firstList + group.m_listCount;
            ++listIndex) {
         const auto &list = lists.at(listIndex);
-        Row row{TodoViewKind::List, listIndex, groupIndex, 0, expanded};
+        Row row{TodoViewKind::List, listIndex, p_groupIndex, 0, expanded};
         for (const auto &item : list.m_items) {
           if (item.m_fields.m_checked || !matchesFilters(item, list, groupMatches, p_projection)) {
             continue;
           }
           ++row.m_incompleteCount;
-          ++m_rows[groupRow].m_incompleteCount;
+          if (groupRow >= 0) {
+            ++m_rows[groupRow].m_incompleteCount;
+          }
           ++m_rows[3].m_incompleteCount;
           if (matchesView(item, list, TodoViewKind::MyDay, {}, p_projection.m_today)) {
             ++m_rows[0].m_incompleteCount;
@@ -261,6 +269,18 @@ void TodoListModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
           }
         }
         m_rows.append(row);
+      }
+    };
+    // Project the internal Default owner first without changing source indexes or order.
+    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
+      if (m_document.m_groups.at(groupIndex).m_isDefault) {
+        appendGroup(groupIndex);
+        break;
+      }
+    }
+    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
+      if (!m_document.m_groups.at(groupIndex).m_isDefault) {
+        appendGroup(groupIndex);
       }
     }
   }
@@ -386,12 +406,18 @@ bool TodoListModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
     if (p_parent.isValid() || (!atEnd && listAt(targetRow))) {
       return false;
     }
-    const int beforeGroup =
-        atEnd ? static_cast<int>(m_document.m_groups.size()) : m_rows.at(targetRow).m_group;
     if (!atEnd) {
-      beforeKey = m_document.m_groups.at(beforeGroup).m_key;
+      beforeKey = groupAt(targetRow)->m_key;
     }
-    unchanged = beforeGroup == source.m_group || beforeGroup == source.m_group + 1;
+    int nextGroup = source.m_group + 1;
+    while (nextGroup < m_document.m_groups.size() &&
+           m_document.m_groups.at(nextGroup).m_isDefault) {
+      ++nextGroup;
+    }
+    unchanged =
+        beforeKey == key || (atEnd ? nextGroup == m_document.m_groups.size()
+                                   : nextGroup < m_document.m_groups.size() &&
+                                         beforeKey == m_document.m_groups.at(nextGroup).m_key);
   } else {
     const TodoGroup *targetGroup = nullptr;
     int beforeList = -1;
@@ -405,12 +431,13 @@ bool TodoListModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
         // Root gaps and on-item drops both refer to the actual child, even hidden ones.
         beforeList = target.m_list;
       } else if (!p_parent.isValid()) {
-        if (target.m_group > 0) {
-          // A root gap before a later header belongs to the preceding group.
-          targetGroup = &m_document.m_groups.at(target.m_group - 1);
-        } else if (targetGroup->m_listCount > 0) {
-          beforeList = targetGroup->m_firstList;
+        // Header gaps follow presented custom groups, not the hidden Default block.
+        int previousGroup = target.m_group - 1;
+        while (previousGroup >= 0 && m_document.m_groups.at(previousGroup).m_isDefault) {
+          --previousGroup;
         }
+        targetGroup =
+            previousGroup >= 0 ? &m_document.m_groups.at(previousGroup) : m_document.defaultGroup();
       }
       // An on-header drop appends to that group, unlike the root gap before it.
     }
@@ -554,9 +581,12 @@ QVariant TodoTaskModel::data(const QModelIndex &p_index, int p_role) const {
     return groupTitle(m_document.m_groups.at(list.m_groupIndex));
   case Qt::AccessibleTextRole:
   case Qt::ToolTipRole: {
-    QStringList parts{itemTitle(*item), fields.m_checked ? tr("Completed") : tr("Not completed"),
-                      tr("Group: %1").arg(groupTitle(m_document.m_groups.at(list.m_groupIndex))),
-                      tr("List: %1").arg(listTitle(list))};
+    QStringList parts{itemTitle(*item), fields.m_checked ? tr("Completed") : tr("Not completed")};
+    const auto &group = m_document.m_groups.at(list.m_groupIndex);
+    if (!group.m_isDefault) {
+      parts.append(tr("Group: %1").arg(groupTitle(group)));
+    }
+    parts.append(tr("List: %1").arg(listTitle(list)));
     if (fields.m_important) {
       parts.append(tr("Important"));
     }
@@ -690,9 +720,10 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
     const bool filtered = hasFilters(m_projection);
     for (int listIndex = 0; listIndex < lists.size(); ++listIndex) {
       const auto &list = lists.at(listIndex);
-      const bool groupMatches = !m_projection.m_search.isEmpty() &&
-                                groupTitle(m_document.m_groups.at(list.m_groupIndex))
-                                    .contains(m_projection.m_search, Qt::CaseInsensitive);
+      const auto &group = m_document.m_groups.at(list.m_groupIndex);
+      const bool groupMatches =
+          !group.m_isDefault && !m_projection.m_search.isEmpty() &&
+          groupTitle(group).contains(m_projection.m_search, Qt::CaseInsensitive);
       for (int itemIndex = 0; itemIndex < list.m_items.size(); ++itemIndex) {
         const auto &item = list.m_items.at(itemIndex);
         if ((!filtered && !matchesView(item, list, m_projection.m_view, m_projection.m_listKey,

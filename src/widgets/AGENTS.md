@@ -617,8 +617,10 @@ match line, otherwise a zero-based explicit line. Lines are converted through th
 block positions. A task range includes its steps, note and comments; other owned positions
 select the containing list. Navigation switches to that real list, clears search/tag filters,
 expands its group and Completed when needed, and selects/focuses the native row, including in Read.
-Group-heading/group-comment hits select the organizational group control without changing the
+Custom-group heading/comment hits select the organizational group control without changing the
 task view, filters or collapse state, and clear task selection rather than invent a task hit.
+Internal Default heading/comment hits focus its first root list, or the current view row when
+empty, without exposing a group header. Organizational focus survives projection refreshes.
 Invalid/unavailable source or positions with no owner leave the native selection unchanged.
 
 Whole-line adjacent `todo`, `todo-group`, `todo-list` and `todo-item` comments contain per-owner
@@ -633,6 +635,13 @@ the tentative result before one undo transaction. Formatting-only revisions do n
 published task rows; source changes and foreign loads invalidate pending owner gestures.
 
 `default:true` in group metadata identifies Default independently of its translated/edited title.
+Default is an internal global owner, never a visible group. Its lists appear as unindented,
+always-expanded root rows immediately after smart views, before all custom groups, regardless
+of Default's physical source position or latent collapse state. An empty Default adds no row.
+It has no group menu or drag handle; custom groups literally titled "Default" remain ordinary
+groups. Task/list labels and accessibility omit the internal owner name, and that name does not
+contribute to group-title search or counts. Group choices use **No group** with the existing
+empty destination key. Projection does not rewrite or materialize source; no migration is needed.
 Leading H2 lists without H1 belong to one implicit Default, excluding the file preamble. When a
 command materializes that parent, insert its H1/metadata at the first leading H2, never EOF.
 An absent Default is created at EOF when New List has no chosen group; empty-file quick-add
@@ -644,6 +653,8 @@ Groups own contiguous spans of the flat list snapshot; list `m_groupIndex` is sn
 Group ranges end at the next H1; list ranges end at the next H1/H2. Group/list moves preserve
 owned blocks and remap synthetic child selections. Parent-group edits stay outside moved list
 payloads. Keyboard List Up/Down stays inside its group; grouping commands change ownership.
+Custom-group keyboard and drag reordering skip Default when choosing neighbors or detecting
+boundary/adjacent no-ops, matching the visible custom-group order.
 Group menus contain Rename, New List and Ungroup Lists. Ungroup Lists dissolves a custom group
 into Default without deleting its lists/tasks; Default itself cannot be ungrouped. Group comments
 move to Default's pre-list region, not into another list. Without Default, the dissolved group's
@@ -656,11 +667,12 @@ unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy
 step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
 
 The sidebar accepts same-model Move drags for real groups/lists, never smart views, in both
-wide and overlay modes. Lists drop on a group to append, on/before a list to insert there, or on
-Default/empty viewport space to leave a custom group (creating Default if necessary). Groups
-reorder at root gaps before group headers or at the end; they never nest. A gap before a later
-group header appends a list to the preceding group; a gap before a hidden child still refers to
-that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
+wide and overlay modes. Lists drop on a custom group to append, on/before a list to insert in
+that list's owner, or on empty viewport space to become root lists (creating Default if needed).
+The gap before the first custom group also returns a list to the root; a gap before a later
+custom group appends to the preceding visible custom group, never a hidden source neighbor.
+Groups reorder only at gaps before custom headers or at the end; they never nest among root
+lists or children. A gap before a hidden custom child still refers to that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
 of task search/sort/smart-view projection. Model UUID, snapshot epoch, revision and writable-source
 admission reject foreign/stale/read-only drags; unchanged source after formatting retains published
 intents. No-op drops add no identities or undo history. Controllers own all source mutations.
@@ -669,9 +681,11 @@ intents. No-op drops add no identities or undo history. Controllers own all sour
 its group. Its drag lifecycle never asks Qt to remove source rows after the controller's move.
 
 Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
-The model retains all rows; the sidebar hides collapsed children. The same sidebar at every
-width places search above icon-leading smart views,
-a separator, group rows and indented lists; nonzero incomplete counts occupy trailing badges.
+The model retains all list and custom-group rows; the sidebar hides only collapsed custom
+children. The same sidebar at every width places search above icon-leading smart views,
+a separator, root lists, then custom groups and their indented lists; nonzero incomplete counts
+occupy trailing badges. `groupAt()` still resolves a root list's internal Default owner, while
+its presentation `GroupIdRole` / `GroupTitleRole` are empty and `rowForGroup(Default)` is absent.
 New List and the accessible icon-only New Group control stay below the scrolling list. New Group
 uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`
 for normal and disabled states. Group rows select on single click (including the chevron);
