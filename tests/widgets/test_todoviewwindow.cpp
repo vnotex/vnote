@@ -345,6 +345,20 @@ bool answerDialog(const char *p_name, const std::function<bool(QDialog *)> &p_fi
   return answered;
 }
 
+bool pickListIcon(QDialog *p_dialog, const QString &p_query, bool p_mouse = false) {
+  auto *input = control<QLineEdit>(p_dialog, "todoListIconSearch");
+  auto *choices = control<QListView>(p_dialog, "emojiChoices");
+  if (!input || !choices || !typeText(input, p_query) || !choices->currentIndex().isValid())
+    return false;
+  if (p_mouse) {
+    QTest::mouseClick(choices->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      choices->visualRect(choices->currentIndex()).center());
+  } else {
+    QTest::keyClick(input, Qt::Key_Return);
+  }
+  return p_dialog->result() == QDialog::Accepted;
+}
+
 bool answerNewList(const QString &p_title, const std::function<void()> &p_open) {
   return answerDialog(
       "todoNewListDialog",
@@ -560,6 +574,9 @@ private slots:
   void filteringSortingAndDayRollover();
   void nativeMoveReorderAndDeletion();
   void nativeListActions();
+  void listIconsPersistAndUndo();
+  void listIconPickerRejectsStaleOwner_data();
+  void listIconPickerRejectsStaleOwner();
   void sidebarDropEvents_data();
   void sidebarDropEvents();
   void sidebarMenusAndDuplication_data();
@@ -1387,6 +1404,122 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
   QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_note,
            original.m_fields.m_note);
+}
+
+void TestTodoViewWindow::listIconsPersistAndUndo() {
+  createArea();
+  const auto buffer = openNote(QStringLiteral("icons.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *button = control<QPushButton>(window, "todoListIcon");
+  QVERIFY(button && button->isVisible() && button->isEnabled());
+  const auto original = window->getLatestContent();
+  QVERIFY(answerDialog(
+      "todoListIconDialog",
+      [](QDialog *p_dialog) {
+        auto *input = control<QLineEdit>(p_dialog, "todoListIconSearch");
+        if (!input || !typeText(input, QStringLiteral("rocket")))
+          return false;
+        QTest::keyClick(input, Qt::Key_Escape);
+        return p_dialog->result() == QDialog::Rejected;
+      },
+      [&] { button->click(); }));
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  QVERIFY(answerDialog(
+      "todoListIconDialog",
+      [](QDialog *p_dialog) { return pickListIcon(p_dialog, QStringLiteral("rocket")); },
+      [&] { button->click(); }));
+  const auto rocket = QString::fromUtf8("🚀");
+  QCOMPARE(button->text(), rocket);
+  const auto assigned = window->getLatestContent();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(button->text().isEmpty());
+  window->redo();
+  QCOMPARE(window->getLatestContent(), assigned);
+  QCOMPARE(button->text(), rocket);
+  QVERIFY(window->save());
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(readBytes(absolute(QStringLiteral("icons.todo"))), assigned.toUtf8());
+  const auto node = buffer.nodeId();
+  QVERIFY(m_area->getController()->closeViewWindow(window->getViewWindowId(), false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(m_buffers->openBuffer(node).isValid());
+  window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  button = control<QPushButton>(window, "todoListIcon");
+  QVERIFY(button);
+  QCOMPARE(button->text(), rocket);
+  QCOMPARE(window->getLatestContent(), assigned);
+  QVERIFY(!window->isModified());
+  QVERIFY(answerDialog(
+      "todoListIconDialog",
+      [](QDialog *p_dialog) { return pickListIcon(p_dialog, QStringLiteral("briefcase"), true); },
+      [&] { button->click(); }));
+  QCOMPARE(button->text(), QString::fromUtf8("💼"));
+  window->undo();
+  QCOMPARE(button->text(), rocket);
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(button->isVisible() && !button->isEnabled());
+  QCOMPARE(button->text(), rocket);
+  window->setMode(ViewWindowMode::Edit);
+  QVERIFY(answerDialog(
+      "todoListIconDialog",
+      [](QDialog *p_dialog) {
+        auto *remove = control<QPushButton>(p_dialog, "todoRemoveListIcon");
+        if (!remove || !remove->isEnabled())
+          return false;
+        remove->click();
+        return p_dialog->result() == QDialog::Accepted;
+      },
+      [&] { button->click(); }));
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(button->text().isEmpty());
+  window->undo();
+  QCOMPARE(window->getLatestContent(), assigned);
+  QCOMPARE(button->text(), rocket);
+  QVERIFY(selectView(window, TodoViewKind::All));
+  QVERIFY(button->isHidden());
+}
+
+void TestTodoViewWindow::listIconPickerRejectsStaleOwner_data() {
+  QTest::addColumn<int>("change");
+  QTest::newRow("reload") << 0;
+  QTest::newRow("list-selection") << 1;
+  QTest::newRow("read-only") << 2;
+}
+
+void TestTodoViewWindow::listIconPickerRejectsStaleOwner() {
+  QFETCH(int, change);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("stale-icon.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *button = control<QPushButton>(window, "todoListIcon");
+  QVERIFY(button);
+  auto expected = c_source;
+  QVERIFY(answerDialog(
+      "todoListIconDialog",
+      [&](QDialog *p_dialog) {
+        if (change == 0) {
+          expected.replace("## Work", "## Reloaded");
+          if (!writeBytes(absolute(QStringLiteral("stale-icon.todo")), expected) ||
+              !window->reload())
+            return false;
+        } else if (change == 1) {
+          window->getController()->setView(TodoViewKind::List, QStringLiteral("id:personal"));
+        } else {
+          window->setMode(ViewWindowMode::Read);
+        }
+        return pickListIcon(p_dialog, QStringLiteral("rocket"));
+      },
+      [&] { button->click(); }));
+  QCOMPARE(window->getLatestContent().toUtf8(), expected);
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
 }
 
 void TestTodoViewWindow::nativeListActions() {

@@ -43,7 +43,8 @@ public:
     GroupTitleRole,
     // Root lists are always expanded, regardless of the internal Default collapse key.
     ExpandedRole,
-    ListCountRole
+    ListCountRole,
+    IconRole
   };
 
   explicit TodoListModel(ServiceLocator &p_services, QObject *p_parent = nullptr);

@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScopedValueRollback>
+#include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSplitter>
@@ -43,6 +44,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <m3/qt/emoji_line_edit.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
 
@@ -238,15 +240,24 @@ public:
     }
     const QRect icon =
         visual(QRect(row.left() + indent + 16, row.center().y() - side / 2, side, side));
-    p_painter->save();
-    p_painter->translate(icon.topLeft());
-    p_painter->scale(side / 24.0, side / 24.0);
-    p_painter->setBrush(Qt::NoBrush);
-    p_painter->setPen(
-        QPen(selected || !enabled || group ? foreground : m_iconColors[static_cast<int>(view)], 1.5,
-             Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    p_painter->drawPath(group ? m_groupIcon : m_icons[static_cast<int>(view)]);
-    p_painter->restore();
+    const auto glyph = p_index.data(TodoListModel::IconRole).toString();
+    if (!glyph.isEmpty()) {
+      QFont glyphFont = option.font;
+      glyphFont.setPixelSize(side);
+      p_painter->setFont(glyphFont);
+      p_painter->setPen(foreground);
+      p_painter->drawText(icon, Qt::AlignCenter, glyph);
+    } else {
+      p_painter->save();
+      p_painter->translate(icon.topLeft());
+      p_painter->scale(side / 24.0, side / 24.0);
+      p_painter->setBrush(Qt::NoBrush);
+      p_painter->setPen(
+          QPen(selected || !enabled || group ? foreground : m_iconColors[static_cast<int>(view)],
+               1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+      p_painter->drawPath(group ? m_groupIcon : m_icons[static_cast<int>(view)]);
+      p_painter->restore();
+    }
 
     int trailing = row.right() - 12;
     p_painter->setFont(option.font);
@@ -596,6 +607,7 @@ void TodoEditor::createUi() {
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_group.svg"))));
     m_listMore->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg"))));
+    refreshListIcon();
   };
 
   m_pages = named(new QStackedWidget(m_splitter), "todoNativePages", tr("Tasks or details"));
@@ -605,6 +617,14 @@ void TodoEditor::createUi() {
   spacing(tasksLayout);
   auto *heading = new QHBoxLayout;
   heading->setSpacing(4);
+  m_listIcon = named(new QPushButton(m_taskPane), "todoListIcon", tr("Add list icon"));
+  m_listIcon->setIconSize(QSize(20, 20));
+  m_listIcon->setFlat(true);
+  m_listIcon->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 6px; }"));
+  auto iconFont = m_listIcon->font();
+  iconFont.setPixelSize(20);
+  m_listIcon->setFont(iconFont);
+  heading->addWidget(m_listIcon);
   m_listTitle = named(new QLineEdit(m_taskPane), "todoListTitle", tr("List title"));
   m_listTitle->setPlaceholderText(tr("Untitled list"));
   m_viewTitle = named(new QLabel(m_taskPane), "todoViewTitle", tr("Current view"));
@@ -743,6 +763,7 @@ void TodoEditor::createUi() {
       m_controller->setTagFilter({});
     }
   });
+  connect(m_listIcon, &QPushButton::clicked, this, &TodoEditor::chooseListIcon);
   connect(m_listMore, &QPushButton::clicked, this, [this]() {
     if (m_controller) {
       showListMenu(m_controller->getProjection().m_listKey,
@@ -1042,6 +1063,7 @@ void TodoEditor::refresh() {
   m_description->setReadOnly(!writable);
   if (!m_controller) {
     m_listTitle->hide();
+    m_listIcon->hide();
     m_description->hide();
     m_listMore->hide();
     m_viewTitle->setText(tr("All Tasks"));
@@ -1080,6 +1102,9 @@ void TodoEditor::refresh() {
                          ? m_controller->getDocument().findList(projection.m_listKey)
                          : nullptr;
   m_listTitle->setVisible(list != nullptr);
+  m_listIcon->setVisible(list != nullptr);
+  m_listIcon->setEnabled(writable);
+  refreshListIcon();
   m_description->setVisible(list != nullptr);
   m_listMore->setVisible(list != nullptr);
   m_listMore->setEnabled(writable);
@@ -1845,6 +1870,74 @@ void TodoEditor::renameList(const QString &p_key) {
   }
   m_listTitle->setFocus(Qt::OtherFocusReason);
   m_listTitle->selectAll();
+}
+
+void TodoEditor::refreshListIcon() {
+  const auto *list =
+      m_controller ? m_controller->getDocument().findList(m_controller->getProjection().m_listKey)
+                   : nullptr;
+  const auto glyph = list ? list->m_properties.value(QStringLiteral("icon")).toString() : QString();
+  m_listIcon->setText(glyph);
+  m_listIcon->setIcon(
+      glyph.isEmpty() ? IconUtils::fetchIconWithDisabledState(
+                            m_services.get<ThemeService>()->getIconFile(QStringLiteral("add.svg")))
+                      : QIcon());
+  const auto label = glyph.isEmpty() ? tr("Add list icon") : tr("Change list icon");
+  m_listIcon->setToolTip(label);
+  m_listIcon->setAccessibleName(label);
+}
+
+void TodoEditor::chooseListIcon() {
+  if (!canMutate()) {
+    return;
+  }
+  const auto &projection = m_controller->getProjection();
+  const auto key = projection.m_listKey;
+  const auto *list = m_controller->getDocument().findList(key);
+  if (!list || projection.m_view != TodoViewKind::List || !projection.m_search.isEmpty() ||
+      !projection.m_tag.isEmpty()) {
+    return;
+  }
+  const bool hasIcon = !list->m_properties.value(QStringLiteral("icon")).toString().isEmpty();
+  endTyping();
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  QPointer<QDialog> dialog = named(new QDialog(this), "todoListIconDialog", tr("List icon"));
+  dialog->setWindowTitle(tr("List icon"));
+  auto *layout = new QVBoxLayout(dialog);
+  spacing(layout);
+  auto *input =
+      named(new m3::qt::EmojiLineEdit(dialog, m3::qt::EmojiLineEdit::PickerMode::Embedded),
+            "todoListIconSearch", tr("Search list icons"));
+  input->setPlaceholderText(tr("Search emoji names or paste emoji"));
+  layout->addWidget(input);
+  layout->addWidget(input->pickerWidget(), 1);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Cancel, dialog);
+  auto *remove = named(buttons->addButton(tr("Remove icon"), QDialogButtonBox::DestructiveRole),
+                       "todoRemoveListIcon", tr("Remove list icon"));
+  remove->setEnabled(hasIcon);
+  remove->setAutoDefault(false);
+  layout->addWidget(buttons);
+  QString chosen;
+  connect(input, &m3::qt::EmojiLineEdit::emojiSelected, dialog,
+          [dialog, &chosen](const QString &p_glyph) {
+            chosen = p_glyph;
+            dialog->accept();
+          });
+  connect(remove, &QPushButton::clicked, dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+  dialog->resize(QSize(440, 440).boundedTo(dialog->screen()->availableGeometry().size()));
+  const int result = dialog->exec();
+  if (!dialog) {
+    return;
+  }
+  delete dialog;
+  if (!self || result != QDialog::Accepted || !accepts(token) ||
+      m_controller->getProjection().m_view != TodoViewKind::List ||
+      m_controller->getProjection().m_listKey != key) {
+    return;
+  }
+  command([this, key, chosen]() { return m_controller->setListIcon(key, chosen); });
 }
 
 void TodoEditor::deleteList(const QString &p_key) {

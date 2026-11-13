@@ -1053,6 +1053,32 @@ bool TodoViewWindowController::setListDescription(const QString &p_listId,
   return commit(change, true);
 }
 
+bool TodoViewWindowController::setListIcon(const QString &p_listKey, const QString &p_icon) {
+  if (!admit()) {
+    return false;
+  }
+  const auto *list = m_snapshot.findList(p_listKey);
+  if (!list || !singleLine(p_icon)) {
+    return reject(tr("The list is missing or its icon contains a line break."));
+  }
+  if (list->m_properties.value(QStringLiteral("icon")).toString() == p_icon) {
+    return true;
+  }
+  Change change;
+  ensureHeader(change);
+  ensureGroupIdentity(change, *m_snapshot.groupForList(*list));
+  auto properties = list->m_properties;
+  if (list->m_id.isEmpty()) {
+    const auto id = newId();
+    properties.insert(QStringLiteral("id"), id);
+    change.m_keys.insert(list->m_key, runtimeKey(id));
+  }
+  setOptional(properties, QStringLiteral("icon"), p_icon, !p_icon.isEmpty());
+  appendMetadata(change, QStringLiteral("todo-list"), properties, list->m_metadataRange,
+                 list->m_metadataInsertion);
+  return commit(change);
+}
+
 bool TodoViewWindowController::removeList(const QString &p_listId) {
   if (!admit()) {
     return false;

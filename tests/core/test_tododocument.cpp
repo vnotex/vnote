@@ -72,6 +72,7 @@ private slots:
   void strictGrammar();
   void metadataValuesAndNamespaces();
   void metadataStringEscaping();
+  void listIconMetadata();
   void targetedEdits();
   void titleEditsAndEmptyTitles();
   void quoteRoundTrip_data();
@@ -585,6 +586,11 @@ void TestTodoDocument::strictGrammar_data() {
   QTest::newRow("id-empty") << QStringLiteral("## L\n<!-- todo-list: {\"id\":\"\"} -->\n") << 2;
   QTest::newRow("id-null") << QStringLiteral("## L\n<!-- todo-list: {\"id\":null} -->\n") << 2;
   QTest::newRow("id-number") << QStringLiteral("## L\n<!-- todo-list: {\"id\":1} -->\n") << 2;
+  QTest::newRow("icon-null") << QStringLiteral("## L\n<!-- todo-list: {\"icon\":null} -->\n") << 2;
+  QTest::newRow("icon-number") << QStringLiteral("## L\n<!-- todo-list: {\"icon\":1} -->\n") << 2;
+  QTest::newRow("icon-bool") << QStringLiteral("## L\n<!-- todo-list: {\"icon\":true} -->\n") << 2;
+  QTest::newRow("icon-array") << QStringLiteral("## L\n<!-- todo-list: {\"icon\":[]} -->\n") << 2;
+  QTest::newRow("icon-object") << QStringLiteral("## L\n<!-- todo-list: {\"icon\":{}} -->\n") << 2;
   QTest::newRow("duplicate-id") << QStringLiteral(
                                        "## L\n<!-- todo-list: {\"id\":\"same\"} -->\n"
                                        "- [ ] A\n  <!-- todo-item: {\"id\":\"same\"} -->\n")
@@ -711,6 +717,26 @@ void TestTodoDocument::metadataValuesAndNamespaces() {
            -3);
   QVERIFY(list.m_items[1].m_properties.contains(QStringLiteral("tags")));
   QCOMPARE(document.m_source, source);
+}
+
+void TestTodoDocument::listIconMetadata() {
+  for (const auto &icon :
+       {QString(), QString::fromUtf8(u8"👩🏽‍💻"), QString::fromUtf8(u8"旗帜 🇻🇳")}) {
+    const QJsonObject properties{{QStringLiteral("icon"), icon},
+                                 {QStringLiteral("future"), QJsonArray{1, true}}};
+    const auto source =
+        QStringLiteral("# Group\n<!-- todo-group: {\"icon\":false} -->\n## List\n") +
+        TodoDocument::encodeMetadata(QStringLiteral("todo-list"), properties) +
+        QStringLiteral("\n- [ ] Task\n  <!-- todo-item: {\"icon\":42} -->");
+    const auto document = TodoDocument::parse(source);
+    QVERIFY2(document.isValid(), qPrintable(diagnostics(document)));
+    QCOMPARE(document.m_source, source);
+    QCOMPARE(document.m_lists.first().m_properties, properties);
+    QCOMPARE(document.m_lists.first().m_properties.value(QStringLiteral("icon")).toString(), icon);
+    const auto reloaded = TodoDocument::parse(QString::fromUtf8(document.m_source.toUtf8()));
+    QVERIFY2(reloaded.isValid(), qPrintable(diagnostics(reloaded)));
+    QCOMPARE(reloaded.m_lists.first().m_properties, properties);
+  }
 }
 
 void TestTodoDocument::metadataStringEscaping() {

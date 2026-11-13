@@ -409,6 +409,10 @@ private:
         !properties.value(QStringLiteral("default")).isBool()) {
       error(p_comment.m_line, "Group default must be a boolean.");
     }
+    if (p_comment.m_kind == CommentKind::List && properties.contains(QStringLiteral("icon")) &&
+        !properties.value(QStringLiteral("icon")).isString()) {
+      error(p_comment.m_line, "List icon must be a string.");
+    }
     if (p_comment.m_kind != CommentKind::Item) {
       return;
     }

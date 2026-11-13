@@ -127,6 +127,8 @@ QVariant TodoListModel::data(const QModelIndex &p_index, int p_role) const {
   const auto *group = groupAt(p_index.row());
   const bool groupHeader = group && !list;
   switch (p_role) {
+  case IconRole:
+    return list ? list->m_properties.value(QStringLiteral("icon")).toString() : QString();
   case GroupRole:
     return groupHeader;
   case GroupIdRole:
@@ -214,6 +216,7 @@ QHash<int, QByteArray> TodoListModel::roleNames() const {
   roles.insert(GroupTitleRole, "groupTitle");
   roles.insert(ExpandedRole, "expanded");
   roles.insert(ListCountRole, "listCount");
+  roles.insert(IconRole, "icon");
   return roles;
 }
 

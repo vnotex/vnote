@@ -59,6 +59,7 @@ public:
                QString *p_createdListKey = nullptr);
   bool renameList(const QString &p_listId, const QString &p_title);
   bool setListDescription(const QString &p_listId, const QString &p_markdown);
+  bool setListIcon(const QString &p_listKey, const QString &p_icon);
   bool removeList(const QString &p_listId);
   bool duplicateList(const QString &p_listKey, QString *p_createdKey = nullptr);
   bool moveList(const QString &p_listId, const QString &p_groupKey, const QString &p_beforeListId);

@@ -135,6 +135,10 @@ private slots:
   void rootListDropBoundaries();
   void groupCreationReturnsActualOwners();
   void listCommands();
+  void listIconRoundTrip_data();
+  void listIconRoundTrip();
+  void listIconPreservesMetadataAndCopies();
+  void listIconAdmission();
   void setextAndEmptyTitles();
   void checkboxChangesOnlyOneCharacter();
   void taskFieldsAndUnknownMetadata();
@@ -275,6 +279,7 @@ void TestTodoViewWindowController::initialCleanAndNoOps() {
   QSignalSpy changed(m_controller.get(), &TodoViewWindowController::documentChanged);
   QVERIFY(m_controller->renameList(listKey, QStringLiteral("Inbox")));
   QVERIFY(m_controller->setListDescription(listKey, {}));
+  QVERIFY(m_controller->setListIcon(listKey, {}));
   QVERIFY(
       m_controller->updateTask(taskKey, m_controller->getDocument().findItem(taskKey)->m_fields));
   QVERIFY(m_controller->updateStep(taskKey, 0, QStringLiteral("Step"), false));
@@ -292,6 +297,231 @@ void TestTodoViewWindowController::initialCleanAndNoOps() {
   QVERIFY(!m_document->isUndoAvailable());
   QCOMPARE(changed.count(), 0);
   QVERIFY(m_controller->getDocument().m_properties.isEmpty());
+}
+
+void TestTodoViewWindowController::listIconRoundTrip_data() {
+  QTest::addColumn<QString>("source");
+  QTest::newRow("implicit-default-heading-eof") << QStringLiteral("## Inbox");
+  QTest::newRow("implicit-default-empty-icon-eof") << QStringLiteral(
+      "## Inbox\n<!-- todo-list: {\"icon\":\"\",\"future\":{\"nested\":[1,true]}} -->");
+  QTest::newRow("explicit-idless-group") << QStringLiteral("# Group\n## Inbox");
+  QTest::newRow("idless-task-selection") << QStringLiteral("## Inbox\n- [ ] Task");
+}
+
+void TestTodoViewWindowController::listIconRoundTrip() {
+  QFETCH(QString, source);
+  QVERIFY(load(source));
+  QVERIFY(m_controller->getDocument().isValid());
+  const auto original = m_controller->getDocument().m_lists.first();
+  m_controller->setView(TodoViewKind::List, original.m_key);
+  if (!original.m_items.isEmpty()) {
+    m_controller->setSelectedItemKey(original.m_items.first().m_key);
+  }
+  QSignalSpy changed(m_controller.get(), &TodoViewWindowController::documentChanged);
+  QVERIFY(m_controller->setListIcon(original.m_key, {}));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+  QCOMPARE(changed.count(), 0);
+
+  const auto icon = QString::fromUtf8(u8"👩🏽‍💻");
+  const auto replacement = QString::fromUtf8(u8"🇻🇳");
+  QVERIFY(m_controller->setListIcon(original.m_key, icon));
+  QCOMPARE(changed.count(), 1);
+  const auto assigned = m_document->toPlainText();
+  QCOMPARE(assigned.count(QStringLiteral("<!-- todo-list:")), 1);
+  QCOMPARE(assigned.count(QStringLiteral("<!-- todo-group:")), 1);
+  QCOMPARE(assigned.count(QStringLiteral("<!-- todo:")), 1);
+  QVERIFY(assigned.contains(icon));
+  const auto listKey = m_controller->getProjection().m_listKey;
+  QVERIFY(listKey.startsWith(QLatin1String("id:")));
+  const auto *assignedList = m_controller->getDocument().findList(listKey);
+  QVERIFY(assignedList);
+  QVERIFY(!m_controller->getDocument().groupForList(*assignedList)->m_id.isEmpty());
+  auto expected = original.m_properties;
+  expected.insert(QStringLiteral("id"), assignedList->m_id);
+  expected.insert(QStringLiteral("icon"), icon);
+  QCOMPARE(assignedList->m_properties, expected);
+  if (!original.m_items.isEmpty()) {
+    const auto *selected = m_controller->getDocument().findItem(m_controller->getSelectedItemKey());
+    QVERIFY(selected);
+    QCOMPARE(selected->m_listKey, listKey);
+    QCOMPARE(selected->m_fields.m_title, original.m_items.first().m_fields.m_title);
+  }
+  auto *model = m_controller->getListModel();
+  QCOMPARE(model->index(model->rowForKey(listKey)).data(TodoListModel::IconRole).toString(), icon);
+  const auto reloaded = TodoDocument::parse(QString::fromUtf8(assigned.toUtf8()));
+  QVERIFY(reloaded.isValid());
+  QCOMPARE(reloaded.findList(listKey)->m_properties, expected);
+  m_document->setModified(false);
+  QVERIFY(m_controller->setListIcon(listKey, icon));
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(m_document->toPlainText(), assigned);
+  QVERIFY(!m_document->isModified());
+
+  QVERIFY(m_controller->setListIcon(listKey, replacement));
+  const auto replaced = m_document->toPlainText();
+  QCOMPARE(replaced.count(QStringLiteral("<!-- todo-list:")), 1);
+  QCOMPARE(model->index(model->rowForKey(listKey)).data(TodoListModel::IconRole).toString(),
+           replacement);
+  QVERIFY(m_controller->setListIcon(listKey, {}));
+  const auto cleared = m_document->toPlainText();
+  QVERIFY(!m_controller->getDocument().findList(listKey)->m_properties.contains(
+      QStringLiteral("icon")));
+  expected.remove(QStringLiteral("icon"));
+  QCOMPARE(m_controller->getDocument().findList(listKey)->m_properties, expected);
+  QCOMPARE(cleared.count(QStringLiteral("<!-- todo-list:")), 1);
+  QVERIFY(
+      model->index(model->rowForKey(listKey)).data(TodoListModel::IconRole).toString().isEmpty());
+  m_document->setModified(false);
+  QVERIFY(m_controller->setListIcon(listKey, {}));
+  QCOMPARE(m_document->toPlainText(), cleared);
+  QVERIFY(!m_document->isModified());
+  QCOMPARE(changed.count(), 3);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), replaced);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), assigned);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), assigned);
+}
+
+void TestTodoViewWindowController::listIconPreservesMetadataAndCopies() {
+  const auto icon = QString::fromUtf8(u8"👩🏽‍💻");
+  const auto source =
+      QStringLiteral("# Group\n<!-- todo-group: {\"id\":\"g\",\"icon\":\"group-only\"} -->\n"
+                     "## List\n<!-- todo-list: {\"icon\":\"") +
+      icon +
+      QStringLiteral("\",\"future\":{\"nested\":[1,true]},\"number\":-1e-9} -->\n"
+                     "# Other\n<!-- todo-group: {\"id\":\"other\"} -->");
+  QVERIFY(load(source));
+  QVERIFY(m_controller->getDocument().isValid());
+  const auto original = m_controller->getDocument().m_lists.first();
+  QVERIFY(m_controller->setListIcon(original.m_key, icon));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+  auto *model = m_controller->getListModel();
+  QCOMPARE(model->roleNames().value(TodoListModel::IconRole), QByteArray("icon"));
+  for (int row = 0; row < model->rowCount(); ++row) {
+    QCOMPARE(model->index(row).data(TodoListModel::IconRole).toString(),
+             model->listAt(row) ? icon : QString());
+  }
+  QString created;
+  QVERIFY(m_controller->duplicateList(original.m_key, &created));
+  const auto *copy = m_controller->getDocument().findList(created);
+  QVERIFY(copy);
+  auto copiedProperties = copy->m_properties;
+  copiedProperties.remove(QStringLiteral("id"));
+  QCOMPARE(copiedProperties, original.m_properties);
+  const auto duplicated = m_document->toPlainText();
+  QVERIFY(m_controller->moveList(created, key("other"), {}));
+  copy = m_controller->getDocument().findList(created);
+  QVERIFY(copy);
+  QCOMPARE(m_controller->getDocument().groupForList(*copy)->m_key, key("other"));
+  auto movedProperties = copy->m_properties;
+  movedProperties.remove(QStringLiteral("id"));
+  QCOMPARE(movedProperties, original.m_properties);
+  QCOMPARE(model->index(model->rowForKey(created)).data(TodoListModel::IconRole).toString(), icon);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), duplicated);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  m_controller->setView(TodoViewKind::List, original.m_key);
+  QVERIFY(m_controller->setListIcon(original.m_key, {}));
+  const auto *cleared =
+      m_controller->getDocument().findList(m_controller->getProjection().m_listKey);
+  QVERIFY(cleared && !cleared->m_id.isEmpty());
+  auto clearedProperties = cleared->m_properties;
+  clearedProperties.remove(QStringLiteral("id"));
+  auto expected = original.m_properties;
+  expected.remove(QStringLiteral("icon"));
+  QCOMPARE(clearedProperties, expected);
+  QCOMPARE(m_document->toPlainText().count(QStringLiteral("<!-- todo-list:")), 1);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
+void TestTodoViewWindowController::listIconAdmission() {
+  const auto source = projectionSource();
+  const auto icon = QString::fromUtf8(u8"📝");
+  QVERIFY(load(source));
+  QSignalSpy changed(m_controller.get(), &TodoViewWindowController::documentChanged);
+  QSignalSpy rejected(m_controller.get(), &TodoViewWindowController::operationRejected);
+  QVERIFY(!m_controller->setListIcon(key("missing"), icon));
+  QVERIFY(!m_controller->setListIcon(key("defaultgroup"), icon));
+  QVERIFY(!m_controller->setListIcon({}, icon));
+  for (const auto separator :
+       {QChar('\n'), QChar('\r'), QChar(QChar::ParagraphSeparator), QChar(QChar::LineSeparator)}) {
+    QVERIFY(!m_controller->setListIcon(key("work"), icon + separator + icon));
+  }
+  QCOMPARE(rejected.count(), 7);
+  QCOMPARE(changed.count(), 0);
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  m_controller->setEditable(false);
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QVERIFY(!m_controller->setListIcon(key("work"), {}));
+  m_controller->setEditable(true);
+  int calls = 0;
+  m_controller->setMutationGuard([&calls]() {
+    ++calls;
+    return false;
+  });
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(calls, 1);
+  m_controller->setMutationGuard([this]() {
+    m_controller->setBuffer(m_buffer);
+    m_controller->refreshFromSource();
+    return true;
+  });
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+  m_controller->setMutationGuard({});
+  m_controller->setBuffer(Buffer2());
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+
+  QVERIFY(load(source, true));
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  QVERIFY(load(source));
+  m_controller->setSourceRefreshEnabled(false);
+  QTextCursor cursor(m_document.get());
+  cursor.movePosition(QTextCursor::End);
+  cursor.insertText(QStringLiteral("\n<!-- external -->\n"));
+  const auto external = m_document->toPlainText();
+  m_document->setModified(false);
+  m_document->clearUndoRedoStacks();
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(m_document->toPlainText(), external);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  QVERIFY(load(source));
+  m_controller->setMutationGuard([this]() {
+    QTextCursor cursor(m_document.get());
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QStringLiteral("\n<!-- guard source change -->\n"));
+    return true;
+  });
+  QVERIFY(!m_controller->setListIcon(key("work"), icon));
+  QCOMPARE(m_document->toPlainText(), source + QStringLiteral("\n<!-- guard source change -->\n"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
 }
 
 void TestTodoViewWindowController::emptyQuickAddAtomic() {

@@ -668,6 +668,19 @@ fields, comments and unknown metadata, but assigning fresh list/task IDs. It exp
 and is one undo
 step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
 
+The title-leading **Add list icon** / **Change list icon** button embeds m3's public
+`EmojiLineEdit` (`<m3/qt/emoji_line_edit.h>`), sharing the mind-map emoji catalog, categories,
+search and keyboard navigation. Only a confirmed catalog choice changes the list; search text
+and cancellation never do. **Remove icon** clears the assignment. The optional version-1
+`todo-list` metadata `icon` is a string; empty/absent is unassigned, and clearing removes the key.
+`setListIcon()` preserves unknown metadata and assigns missing owner IDs in one source/undo
+transaction; no-op changes do not materialize IDs. `IconRole` exposes the glyph only for real
+lists. Assigned glyphs replace the generic sidebar list icon and lead the content title, remaining
+visible in Read mode with the title button disabled. Picker results must pass the existing
+source/generation/writability gesture check and still target the selected real list. Duplicate,
+move, save and reload retain the metadata. This optional document field needs no config or
+existing-document migration; unassigned lists keep their previous sidebar rendering.
+
 The sidebar accepts same-model Move drags for real groups/lists, never smart views, in both
 wide and overlay modes. Lists drop on a custom group to append, on/before a list to insert in
 that list's owner, or on empty viewport space to become root lists (creating Default if needed).
