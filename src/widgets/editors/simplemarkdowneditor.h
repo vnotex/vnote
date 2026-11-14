@@ -3,6 +3,8 @@
 
 #include <vtextedit/vmarkdowneditor.h>
 
+class QToolBar;
+
 namespace vnotex {
 class ServiceLocator;
 
@@ -21,8 +23,17 @@ public slots:
 signals:
   void textChanged();
 
+protected:
+  bool eventFilter(QObject *p_object, QEvent *p_event) override;
+
 private:
+  void setupToolBar();
+  void refreshToolBarIcons();
+  void typeLink();
+  void typeTable();
+
   ServiceLocator &m_services;
+  QToolBar *m_toolBar = nullptr;
 };
 } // namespace vnotex
 

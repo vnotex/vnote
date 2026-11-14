@@ -49,6 +49,16 @@ add_qt_test(test_simplemarkdowneditor
   SOURCES
     test_simplemarkdowneditor.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/simplemarkdowneditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdowntable.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/linkinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/tableinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
@@ -59,6 +69,7 @@ add_qt_test(test_simplemarkdowneditor
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
     ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+    ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
   LINKS
     core_configs
     Qt6::Widgets

@@ -150,6 +150,16 @@ preferences; concealment does not strip source markers. Normal input, no line nu
 and disabled in-place previews keep embedding independent of resource paths, WebEngine and
 preview helpers. This is a source editor, not the HTML reading view.
 
+Editable instances show a compact formatting toolbar; read-only instances hide it, including
+when read-only is changed through the base editor or `getTextEdit()`. It offers local undo/redo,
+headings, inline formatting, lists, code, quotes, links and tables. Image import and both math
+buttons are omitted: there is no asset workflow or image/formula rendering. Existing image and
+math source remains intact. Heading choices remain reachable through the narrow-width overflow.
+Link and table actions reuse the insertion dialogs, kept outside the host widget hierarchy so
+Todo's document-wide shortcuts cannot intercept dialog input. Insertion rechecks editability
+after the dialog closes. The toolbar adds no shortcuts; undo/redo stay disabled when the host
+owns history and disables the local document's undo stack. Toolbar icons follow live themes.
+
 `UpdateDialog` uses a read-only instance for nonempty `UpdateInfo::releaseNotes` when
 an update is available. It receives the locator from `UpdateController`; `UpdateService`
 provides source-specific notes after HEAD discovery. The dialog fetches nothing. Empty
