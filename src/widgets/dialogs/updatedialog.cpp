@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include <utils/docsutils.h>
 #include <widgets/editors/simplemarkdowneditor.h>
 
 using namespace vnotex;
@@ -34,10 +35,13 @@ void UpdateDialog::setupUi(ServiceLocator &p_services) {
   m_summary->setOpenExternalLinks(true);
   layout->addWidget(m_summary);
 
-  if (m_info.updateAvailable && !m_info.releaseNotes.isEmpty()) {
+  const auto releaseNotes = m_info.updateAvailable
+                                ? m_info.releaseNotes
+                                : DocsUtils::getDocText(QStringLiteral("changes.md"));
+  if (!releaseNotes.isEmpty()) {
     auto *notes = new SimpleMarkdownEditor(p_services, this);
     notes->setReadOnly(true);
-    notes->setPlainText(m_info.releaseNotes);
+    notes->setPlainText(releaseNotes);
     notes->setMinimumHeight(180);
     layout->addWidget(notes, 1);
   }
@@ -65,7 +69,7 @@ void UpdateDialog::setupUi(ServiceLocator &p_services) {
     m_releasePageButton->setVisible(false);
     m_skipButton->setVisible(false);
     m_laterButton->setText(tr("Close"));
-    resize(420, 160);
+    resize(releaseNotes.isEmpty() ? QSize(420, 160) : QSize(560, 460));
     return;
   }
 

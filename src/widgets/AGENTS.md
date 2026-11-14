@@ -171,8 +171,10 @@ existing shortcut preferences are consumed without changing defaults or stored v
 
 `UpdateDialog` uses a read-only instance for nonempty `UpdateInfo::releaseNotes` when
 an update is available. It receives the locator from `UpdateController`; `UpdateService`
-provides source-specific notes after HEAD discovery. The dialog fetches nothing. Empty
-notes (including an optional notes-fetch failure) and up-to-date results allocate no
+provides source-specific notes after HEAD discovery. Up-to-date results instead show the
+bundled `changes.md` through `DocsUtils`, using the active UI language with an English
+fallback (repository sources: `docs/changes.md` and `docs/changes_zh_CN.md`). The dialog
+fetches nothing and expands to fit nonempty notes. Empty or unavailable notes allocate no
 editor and use a compact layout. The release-page action stays available when notes are
 missing. On Windows, an available update also offers `Update Now`, with visible disclosure
 that it downloads the update, then closes and reopens VNote. This button is neither default
