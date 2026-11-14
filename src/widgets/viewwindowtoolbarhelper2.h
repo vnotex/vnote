@@ -95,6 +95,11 @@ public:
   static QAction *addAction(QToolBar *p_tb, Action p_action, ServiceLocator &p_services,
                             QWidget *p_shortcutWidget);
 
+  // Shared Markdown formatting actions, including configured shortcuts.
+  // Requires ConfigMgr2 and ThemeService, but no ViewWindow or notebook services.
+  static QAction *addFormattingAction(QToolBar *p_tb, Action p_action, ServiceLocator &p_services,
+                                      QWidget *p_shortcutWidget);
+
   // Create a menu action via DI, with the same shortcut context as toolbar actions.
   static QAction *addAction(QMenu *p_menu, Action p_action, ServiceLocator &p_services,
                             QWidget *p_shortcutWidget);

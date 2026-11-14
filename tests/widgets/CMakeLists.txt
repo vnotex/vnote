@@ -49,6 +49,7 @@ add_qt_test(test_simplemarkdowneditor
   SOURCES
     test_simplemarkdowneditor.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/simplemarkdowneditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/viewwindowtoolbarhelper2actions.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdowntable.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/linkinsertdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/tableinsertdialog.cpp

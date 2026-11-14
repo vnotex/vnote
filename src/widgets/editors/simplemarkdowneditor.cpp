@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QPointer>
+#include <QShortcut>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -15,10 +16,10 @@
 
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
-#include <gui/utils/iconutils.h>
 #include <utils/widgetutils.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/tableinsertdialog.h>
+#include <widgets/viewwindowtoolbarhelper2.h>
 
 #include "markdowntable.h"
 
@@ -87,10 +88,10 @@ void SimpleMarkdownEditor::setupToolBar() {
     action->setProperty("iconName", p_icon);
     return action;
   };
-  const auto addTypeAction = [this, &addAction](const QString &p_text, const QString &p_icon,
-                                                vte::TypeAction p_type,
-                                                const QVariant &p_data = QVariant()) {
-    auto *action = addAction(p_text, p_icon);
+  using Helper = ViewWindowToolBarHelper2;
+  const auto addTypeAction = [this](Helper::Action p_action, vte::TypeAction p_type,
+                                    const QVariant &p_data = QVariant()) {
+    auto *action = Helper::addFormattingAction(m_toolBar, p_action, m_services, this);
     connect(action, &QAction::triggered, this, [this, p_type, p_data]() {
       if (isEnabled() && !isReadOnly()) {
         getTextEdit()->setFocus();
@@ -120,74 +121,46 @@ void SimpleMarkdownEditor::setupToolBar() {
   });
   m_toolBar->addSeparator();
 
-  auto *heading = addTypeAction(QObject::tr("Heading 1"), QStringLiteral("type_heading_editor.svg"),
-                                vte::TypeAction::TypeHeading, 1);
-  auto *menu = new QMenu(m_toolBar);
-  for (int level = 1; level <= 6; ++level) {
-    auto *action = menu->addAction(QObject::tr("Heading %1").arg(level));
-    connect(action, &QAction::triggered, this, [this, level]() {
-      if (isEnabled() && !isReadOnly()) {
-        getTextEdit()->setFocus();
-        handleTypeAction(vte::TypeAction::TypeHeading, level);
-      }
-    });
-  }
-  menu->addSeparator();
-  connect(menu->addAction(QObject::tr("Clear")), &QAction::triggered, this, [this]() {
+  auto *heading = addTypeAction(Helper::TypeHeading, vte::TypeAction::TypeHeading, 1);
+  connect(heading->menu(), &QMenu::triggered, this, [this](QAction *p_action) {
     if (isEnabled() && !isReadOnly()) {
       getTextEdit()->setFocus();
-      handleTypeAction(vte::TypeAction::TypeHeading, 0);
+      handleTypeAction(vte::TypeAction::TypeHeading, p_action->data().toInt());
     }
   });
-  heading->setMenu(menu);
-  auto *headingButton = qobject_cast<QToolButton *>(m_toolBar->widgetForAction(heading));
-  headingButton->setPopupMode(QToolButton::MenuButtonPopup);
-
-  addTypeAction(QObject::tr("Bold"), QStringLiteral("type_bold_editor.svg"),
-                vte::TypeAction::TypeBold);
-  addTypeAction(QObject::tr("Italic"), QStringLiteral("type_italic_editor.svg"),
-                vte::TypeAction::TypeItalic);
-  addTypeAction(QObject::tr("Strikethrough"), QStringLiteral("type_strikethrough_editor.svg"),
-                vte::TypeAction::TypeStrikethrough);
-  addTypeAction(QObject::tr("Mark"), QStringLiteral("type_mark_editor.svg"),
-                vte::TypeAction::TypeMark);
-  addTypeAction(QObject::tr("Unordered List"), QStringLiteral("type_unordered_list_editor.svg"),
-                vte::TypeAction::TypeUnorderedList);
-  addTypeAction(QObject::tr("Ordered List"), QStringLiteral("type_ordered_list_editor.svg"),
-                vte::TypeAction::TypeOrderedList);
-  addTypeAction(QObject::tr("Todo List"), QStringLiteral("type_todo_list_editor.svg"),
-                vte::TypeAction::TypeTodoList, false);
-  addTypeAction(QObject::tr("Checked Todo List"),
-                QStringLiteral("type_checked_todo_list_editor.svg"), vte::TypeAction::TypeTodoList,
-                true);
-  addTypeAction(QObject::tr("Code"), QStringLiteral("type_code_editor.svg"),
-                vte::TypeAction::TypeCode);
-  addTypeAction(QObject::tr("Code Block"), QStringLiteral("type_code_block_editor.svg"),
-                vte::TypeAction::TypeCodeBlock);
-  addTypeAction(QObject::tr("Quote"), QStringLiteral("type_quote_editor.svg"),
-                vte::TypeAction::TypeQuote);
-  connect(addAction(QObject::tr("Link"), QStringLiteral("type_link_editor.svg")),
+  addTypeAction(Helper::TypeBold, vte::TypeAction::TypeBold);
+  addTypeAction(Helper::TypeItalic, vte::TypeAction::TypeItalic);
+  addTypeAction(Helper::TypeStrikethrough, vte::TypeAction::TypeStrikethrough);
+  addTypeAction(Helper::TypeMark, vte::TypeAction::TypeMark);
+  addTypeAction(Helper::TypeUnorderedList, vte::TypeAction::TypeUnorderedList);
+  addTypeAction(Helper::TypeOrderedList, vte::TypeAction::TypeOrderedList);
+  addTypeAction(Helper::TypeTodoList, vte::TypeAction::TypeTodoList, false);
+  addTypeAction(Helper::TypeCheckedTodoList, vte::TypeAction::TypeTodoList, true);
+  addTypeAction(Helper::TypeCode, vte::TypeAction::TypeCode);
+  addTypeAction(Helper::TypeCodeBlock, vte::TypeAction::TypeCodeBlock);
+  addTypeAction(Helper::TypeQuote, vte::TypeAction::TypeQuote);
+  connect(Helper::addFormattingAction(m_toolBar, Helper::TypeLink, m_services, this),
           &QAction::triggered, this, &SimpleMarkdownEditor::typeLink);
-  connect(addAction(QObject::tr("Table"), QStringLiteral("type_table_editor.svg")),
+  connect(Helper::addFormattingAction(m_toolBar, Helper::TypeTable, m_services, this),
           &QAction::triggered, this, &SimpleMarkdownEditor::typeTable);
+  m_formattingShortcuts = findChildren<QShortcut *>(QString(), Qt::FindDirectChildrenOnly);
 
   for (auto *button : m_toolBar->findChildren<QToolButton *>()) {
     button->setFocusPolicy(Qt::NoFocus);
   }
   m_toolBar->setVisible(!isReadOnly());
   m_toolBar->setEnabled(!isReadOnly());
+  for (auto *shortcut : m_formattingShortcuts) {
+    shortcut->setEnabled(!isReadOnly());
+  }
   refreshToolBarIcons();
 }
 
 void SimpleMarkdownEditor::refreshToolBarIcons() {
-  auto *theme = m_services.get<ThemeService>();
-  const QVector<IconUtils::OverriddenColor> colors{
-      {theme->paletteColor(QStringLiteral("widgets#toolbar#icon#fg")), QIcon::Normal},
-      {theme->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg")), QIcon::Disabled}};
   for (auto *action : m_toolBar->actions()) {
     const auto icon = action->property("iconName").toString();
     if (!icon.isEmpty()) {
-      action->setIcon(IconUtils::fetchIcon(theme->getIconFile(icon), colors));
+      action->setIcon(ViewWindowToolBarHelper2::generateIcon(m_services, icon));
     }
   }
 }
@@ -196,6 +169,9 @@ bool SimpleMarkdownEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   if (p_object == getTextEdit() && p_event->type() == QEvent::ReadOnlyChange && m_toolBar) {
     m_toolBar->setVisible(!isReadOnly());
     m_toolBar->setEnabled(!isReadOnly());
+    for (auto *shortcut : m_formattingShortcuts) {
+      shortcut->setEnabled(!isReadOnly());
+    }
   }
   return vte::VMarkdownEditor::eventFilter(p_object, p_event);
 }

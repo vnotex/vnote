@@ -3,13 +3,14 @@
 
 #include <vtextedit/vmarkdowneditor.h>
 
+class QShortcut;
 class QToolBar;
 
 namespace vnotex {
 class ServiceLocator;
 
-// In-memory Markdown source editor. Requires ThemeService, but no buffer or view window.
-// Like setPlainText(), inherited setText() loads literal source, never auto-detected HTML.
+// In-memory Markdown source editor. Requires ThemeService and ConfigMgr2, but no buffer or view
+// window. Like setPlainText(), inherited setText() loads literal source, never auto-detected HTML.
 class SimpleMarkdownEditor : public vte::VMarkdownEditor {
   Q_OBJECT
 public:
@@ -34,6 +35,7 @@ private:
 
   ServiceLocator &m_services;
   QToolBar *m_toolBar = nullptr;
+  QList<QShortcut *> m_formattingShortcuts;
 };
 } // namespace vnotex
 

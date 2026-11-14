@@ -161,6 +161,7 @@ target_sources(vnote PRIVATE
     viewsplit2.cpp viewsplit2.h
     viewwindow2.cpp viewwindow2.h
     viewwindowtoolbarhelper2.cpp viewwindowtoolbarhelper2.h
+    viewwindowtoolbarhelper2actions.cpp
     webpage.cpp webpage.h
     webviewer.cpp webviewer.h
     widgetviewwindow2.cpp widgetviewwindow2.h

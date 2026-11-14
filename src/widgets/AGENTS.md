@@ -28,12 +28,13 @@ overflow menu (rotate, cursor, scroll mode, spread mode, presentation, document
 properties) was simply gone.
 
 With the menu on the action both surfaces work from one declaration:
-`QToolButton::menu()` falls back to `defaultAction()->menu()` on the toolbar, and
-`QMenu` renders an action-with-a-menu as a **submenu** inside the extension
-popup. It also makes the icon reachable by
+the tool button's popup uses `defaultAction()->menu()`, and `QMenu` renders an
+action-with-a-menu as a **submenu** inside the extension popup. Query `action->menu()`
+when connecting menu signals: `QToolButton::menu()` only returns a menu explicitly
+installed on the button. Keep `MenuButtonPopup` for a primary click plus dropdown,
+as with Markdown headings. Action ownership also makes the icon reachable by
 `ViewWindowToolBarHelper2::refreshToolBarIcons()`, which recursively visits the
-toolbar actions and their action-owned menus. Precedents: `Outline` / `Tag` / `Attachment` in
-`viewwindowtoolbarhelper2.cpp`. Gate:
+toolbar actions and their action-owned menus. Gate:
 `theOverflowMenuSurvivesANarrowToolBar` in `tests/widgets/test_pdfviewertoolbar.cpp`,
 which resizes a real toolbar until it overflows.
 
@@ -136,7 +137,8 @@ editor->setReadOnly(true); // Omit for editable content.
 layout->addWidget(editor);
 ```
 
-Only `ThemeService` must be registered; the locator and service must outlive the widget.
+Register `ThemeService` and an initialized `ConfigMgr2`; the locator and both services must
+outlive the widget.
 The widget derives from `vte::VMarkdownEditor`, not `QTextEdit`. `setPlainText()` and
 inherited `setText()` both load literal Markdown source, never auto-detected HTML.
 `toPlainText()` returns that source and `textChanged()` forwards the underlying editor's
@@ -157,8 +159,15 @@ buttons are omitted: there is no asset workflow or image/formula rendering. Exis
 math source remains intact. Heading choices remain reachable through the narrow-width overflow.
 Link and table actions reuse the insertion dialogs, kept outside the host widget hierarchy so
 Todo's document-wide shortcuts cannot intercept dialog input. Insertion rechecks editability
-after the dialog closes. The toolbar adds no shortcuts; undo/redo stay disabled when the host
-owns history and disables the local document's undo stack. Toolbar icons follow live themes.
+after the dialog closes. Formatting buttons and shortcut bindings share
+`ViewWindowToolBarHelper2::addFormattingAction()` with the main Markdown editor. Keys come
+from `ConfigMgr2::getEditorConfig()` at construction, preserving custom bindings and explicit
+unbound keys. They use the individual editor's `WidgetWithChildrenShortcut` context and are
+disabled when read-only; hidden source engines and unfocused sibling fields do not intercept
+them. No image/math shortcuts are installed. Native/host undo and redo routing is unchanged;
+the toolbar history buttons stay disabled when the host owns history and disables the local
+document's undo stack. Toolbar icons follow live themes. No configuration migration is needed:
+existing shortcut preferences are consumed without changing defaults or stored values.
 
 `UpdateDialog` uses a read-only instance for nonempty `UpdateInfo::releaseNotes` when
 an update is available. It receives the locator from `UpdateController`; `UpdateService`
@@ -173,8 +182,8 @@ launch. An existing attempt keeps the dialog open with visible in-progress feedb
 otherwise the controller closes it before launch so warning notifications are accessible.
 Up-to-date results and non-Windows platforms do not offer the updater action.
 
-`test_simplemarkdowneditor` covers concealed source preservation and live theme changes
-with selection, read-only state, dirty state and undo/redo history intact.
+`test_simplemarkdowneditor` covers concealed source preservation, live theme changes with
+editing state intact, shortcut focus/read-only transitions, chords, custom bindings and opt-outs.
 
 ### MainWindow
 

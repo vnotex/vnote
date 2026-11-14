@@ -4,12 +4,20 @@
 #include <QFileInfo>
 #include <QPalette>
 #include <QStyleHints>
+#include <QTemporaryDir>
 #include <QTextBlock>
 #include <QTextLayout>
+#include <QVBoxLayout>
+
+#include <memory>
+#include <vxcore/vxcore.h>
 
 #include <vtextedit/vtextedit.h>
 
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <gui/services/themeservice.h>
 #include <widgets/editors/simplemarkdowneditor.h>
 
@@ -38,9 +46,40 @@ private slots:
     QVERIFY(!themesDir.isEmpty());
     m_themeConfig.appDataPath = QFileInfo(themesDir).absolutePath();
     m_palette = qApp->palette();
+    m_directory = std::make_unique<QTemporaryDir>();
+    QVERIFY(m_directory->isValid());
+    for (const char *name : {"TMP", "TEMP", "TMPDIR"}) {
+      m_environment.append({QByteArray(name), qgetenv(name)});
+      QVERIFY(qputenv(name, QFile::encodeName(m_directory->path())));
+    }
+    m_searchPaths = QDir::searchPaths(QStringLiteral("app"));
+    vxcore_set_test_mode(1);
+    QCOMPARE(vxcore_context_create(nullptr, &m_context), VXCORE_OK);
+    m_configCore = std::make_unique<ConfigCoreService>(m_context);
+    m_config = std::make_unique<ConfigMgr2>(m_configCore.get());
+    m_config->init();
+    m_editorConfig = m_config->getEditorConfig().toJson();
+  }
+
+  void cleanupTestCase() {
+    m_config.reset();
+    m_configCore.reset();
+    if (m_context) {
+      vxcore_context_destroy(m_context);
+    }
+    QDir::setSearchPaths(QStringLiteral("app"), m_searchPaths);
+    for (const auto &entry : m_environment) {
+      if (entry.second.isNull()) {
+        qunsetenv(entry.first.constData());
+      } else {
+        qputenv(entry.first.constData(), entry.second);
+      }
+    }
+    m_directory.reset();
   }
 
   void cleanup() {
+    m_config->getEditorConfig().fromJson(m_editorConfig);
     qApp->setPalette(m_palette);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     QGuiApplication::styleHints()->unsetColorScheme();
@@ -51,6 +90,7 @@ private slots:
     ThemeService theme(m_themeConfig);
     ServiceLocator services;
     services.registerService(&theme);
+    services.registerService(m_config.get());
     SimpleMarkdownEditor editor(services);
     const auto destination = QStringLiteral("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
     const auto source = QStringLiteral("# Heading\n\n**bold** and `code`\n\n<b>literal</b>\n\n"
@@ -100,6 +140,7 @@ private slots:
     ThemeService theme(m_themeConfig);
     ServiceLocator services;
     services.registerService(&theme);
+    services.registerService(m_config.get());
     SimpleMarkdownEditor editor(services);
     const auto source = QStringLiteral("# Heading\n\n**bold**\n\nbody");
     editor.setText(source);
@@ -168,7 +209,89 @@ private slots:
     QVERIFY(!editor.isModified());
   }
 
+  void formattingShortcutsFollowFocusAndReadOnly() {
+    ThemeService theme(m_themeConfig);
+    ServiceLocator services;
+    services.registerService(&theme);
+    services.registerService(m_config.get());
+    QWidget host;
+    auto *layout = new QVBoxLayout(&host);
+    auto *first = new SimpleMarkdownEditor(services, &host);
+    auto *second = new SimpleMarkdownEditor(services, &host);
+    layout->addWidget(first);
+    layout->addWidget(second);
+    first->setPlainText(QStringLiteral("first"));
+    second->setPlainText(QStringLiteral("second"));
+    host.resize(640, 360);
+    host.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&host));
+    host.activateWindow();
+    QApplication::setActiveWindow(&host);
+    first->getTextEdit()->setFocus();
+    first->getTextEdit()->selectAll();
+    QTRY_VERIFY(first->getTextEdit()->hasFocus());
+    QTest::keySequence(first->getTextEdit(), QKeySequence(QStringLiteral("Ctrl+B")));
+    QCOMPARE(first->toPlainText(), QStringLiteral("**first**"));
+    QCOMPARE(second->toPlainText(), QStringLiteral("second"));
+    QTest::keySequence(first->getTextEdit(), QKeySequence::Undo);
+    QCOMPARE(first->toPlainText(), QStringLiteral("first"));
+
+    second->getTextEdit()->setFocus();
+    second->getTextEdit()->selectAll();
+    QTRY_VERIFY(second->getTextEdit()->hasFocus());
+    QTest::keySequence(second->getTextEdit(), QKeySequence(QStringLiteral("Ctrl+G, M")));
+    QCOMPARE(second->toPlainText(), QStringLiteral("==second=="));
+    QCOMPARE(first->toPlainText(), QStringLiteral("first"));
+    second->setReadOnly(true);
+    QTest::keySequence(second->getTextEdit(), QKeySequence(QStringLiteral("Ctrl+B")));
+    QCOMPARE(second->toPlainText(), QStringLiteral("==second=="));
+    QCOMPARE(first->toPlainText(), QStringLiteral("first"));
+    second->getTextEdit()->setReadOnly(false);
+    second->setPlainText(QStringLiteral("heading"));
+    QTest::keySequence(second->getTextEdit(), QKeySequence(QStringLiteral("Ctrl+3")));
+    QCOMPARE(second->toPlainText(), QStringLiteral("### heading"));
+    QTest::keySequence(second->getTextEdit(), QKeySequence(QStringLiteral("Ctrl+7")));
+    QCOMPARE(second->toPlainText(), QStringLiteral("heading"));
+  }
+
+  void formattingShortcutsRespectConfiguredBindings() {
+    auto configured = m_editorConfig;
+    auto core = configured.value(QStringLiteral("core")).toObject();
+    auto shortcuts = core.value(QStringLiteral("shortcuts")).toObject();
+    shortcuts.insert(QStringLiteral("TypeBold"), QStringLiteral("Ctrl+Alt+B"));
+    shortcuts.insert(QStringLiteral("TypeItalic"), QString());
+    core.insert(QStringLiteral("shortcuts"), shortcuts);
+    configured.insert(QStringLiteral("core"), core);
+    m_config->getEditorConfig().fromJson(configured);
+    ThemeService theme(m_themeConfig);
+    ServiceLocator services;
+    services.registerService(&theme);
+    services.registerService(m_config.get());
+    SimpleMarkdownEditor editor(services);
+    editor.setPlainText(QStringLiteral("custom"));
+    editor.resize(640, 240);
+    editor.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&editor));
+    editor.activateWindow();
+    QApplication::setActiveWindow(&editor);
+    editor.getTextEdit()->setFocus();
+    editor.getTextEdit()->selectAll();
+    QTRY_VERIFY(editor.getTextEdit()->hasFocus());
+    QTest::keySequence(editor.getTextEdit(), QKeySequence(QStringLiteral("Ctrl+B")));
+    QTest::keySequence(editor.getTextEdit(), QKeySequence(QStringLiteral("Ctrl+I")));
+    QCOMPARE(editor.toPlainText(), QStringLiteral("custom"));
+    QTest::keySequence(editor.getTextEdit(), QKeySequence(QStringLiteral("Ctrl+Alt+B")));
+    QCOMPARE(editor.toPlainText(), QStringLiteral("**custom**"));
+  }
+
 private:
+  VxCoreContextHandle m_context = nullptr;
+  std::unique_ptr<QTemporaryDir> m_directory;
+  QList<QPair<QByteArray, QByteArray>> m_environment;
+  QStringList m_searchPaths;
+  std::unique_ptr<ConfigCoreService> m_configCore;
+  std::unique_ptr<ConfigMgr2> m_config;
+  QJsonObject m_editorConfig;
   ThemeServiceConfig m_themeConfig;
   QPalette m_palette;
 };
