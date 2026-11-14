@@ -583,7 +583,10 @@ The conversion pilot does NOT tokenize:
 - Font families, font sizes, padding, margin, line-height, border-radius.
 - Alert system (`.vx-alert*`, `.alert-*`).
 - Graph backgrounds (`div.vx-mermaid-graph` and similar).
-- Scrollbar `rgba(...)` values (the token regex does not accept `(` as a prefix character).
+- Native scrollbar `rgba(...)` values. Other bundled themes share the native
+  `widgets#qscrollbar#handle` normal/hover/pressed palette with their web thumbs.
+  Use complete color tokens, never tokens inside `rgba(...)`: the token regex
+  does not accept `(` as a prefix character.
 - CSS named colors (`purple`, `transparent`, `currentColor`).
 - CSS comments (`/* ... */`).
 - Source-text concepts with no rendered HTML analog: `LIST_BULLET`, `LIST_ENUMERATOR`, `IMAGE`, `REFERENCE`, `HTML_ENTITY`, `HTML`, `HTMLBLOCK`, `COMMENT`, `NOTE`, `FRONTMATTER`, `INLINEEQUATION`, `DISPLAYFORMULA`, `TABLEBORDER`.

@@ -60,7 +60,6 @@
         "border_table" : "#dfe2e5",
         "fg_graph_caption" : "#737373",
         "fg_graph_caption_flowchart" : "#757373",
-        "bg_scrollbar_interactive" : "#6c7c8b",
         "fg_search" : "#2a3b4c",
         "bg_search" : "#4db6ac",
         "fg_search_current" : "#2c3d4f",

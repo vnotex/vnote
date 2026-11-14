@@ -238,18 +238,18 @@ div.vx-plantuml-graph {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: @base#icon#inactive#fg;
+    background: @widgets#qscrollbar#handle#bg;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: @base#icon#fg;
+    background: @widgets#qscrollbar#handle#hover#bg;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: @base#icon#fg;
+    background: @widgets#qscrollbar#handle#pressed#bg;
 }
 
 ::-webkit-scrollbar-button {

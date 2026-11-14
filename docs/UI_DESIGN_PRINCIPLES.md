@@ -181,7 +181,7 @@ font-family:
 
 ### Scrollbars
 
-**Modern slim style** - Unobtrusive, appears on hover.
+**Modern slim style** - Unobtrusive, with state-specific handle colors.
 
 ```css
 /* Scrollbar track */
@@ -193,18 +193,21 @@ margin: 2px;
 /* Scrollbar handle */
 min-height: 40px;
 min-width: 40px;
-background: rgba(128,128,128, 0.3);
+background: @widgets#qscrollbar#handle#bg;
 border-radius: 4px;
 
 /* Handle states */
-:hover   → rgba(128,128,128, 0.5)
-:pressed → rgba(128,128,128, 0.7)
+:hover   → @widgets#qscrollbar#handle#hover#bg
+:active  → @widgets#qscrollbar#handle#pressed#bg /* QSS uses :pressed */
 
 /* No arrow buttons */
 ::add-line, ::sub-line {
   width: 0; height: 0;
 }
 ```
+
+Bundled web and native handles share these palette roles. Native is the exception:
+its widgets remain OS-styled and its web thumbs retain translucent gray colors.
 
 ### Buttons (QPushButton)
 

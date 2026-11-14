@@ -54,6 +54,16 @@ metadata-based system themes, and Windows standard-menu icon contrast in both
 Undo/Redo states. Run on the native Windows platform to exercise the icon provider;
 offscreen runs cannot verify it. Restore the system scheme and palette between test slots.
 
+### Scrollbar colors
+
+All non-Native bundled themes share `widgets#qscrollbar#handle#bg`,
+`widgets#qscrollbar#handle#hover#bg` and `widgets#qscrollbar#handle#pressed#bg`
+between native QSS handles and web CSS thumbs (`:active` maps to pressed).
+Do not substitute icon foregrounds or independent translucent colors. Native
+keeps OS-owned widget scrollbars and its separate translucent web fallback.
+This is bundled CSS, not saved configuration: no settings migration is needed;
+installed copies use the normal versioned resource refresh without replacing custom themes.
+
 ### Tree spacing
 
 The optional `palette.json` metadata flag `compact-tree-spacing` enables 12px
