@@ -668,6 +668,8 @@ fields, comments and unknown metadata, but assigning fresh list/task IDs. It exp
 and is one undo
 step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
 
+The unassigned **Add list icon** state uses Lucide's `face_slightly_smiling_plus.svg`,
+recolored through `IconUtils` for normal and disabled states. Assigned emoji replace this glyph.
 The title-leading **Add list icon** / **Change list icon** button embeds m3's public
 `EmojiLineEdit` (`<m3/qt/emoji_line_edit.h>`), sharing the mind-map emoji catalog, categories,
 search and keyboard navigation. Only a confirmed catalog choice changes the list; search text

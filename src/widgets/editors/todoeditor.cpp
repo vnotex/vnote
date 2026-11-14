@@ -1878,10 +1878,10 @@ void TodoEditor::refreshListIcon() {
                    : nullptr;
   const auto glyph = list ? list->m_properties.value(QStringLiteral("icon")).toString() : QString();
   m_listIcon->setText(glyph);
-  m_listIcon->setIcon(
-      glyph.isEmpty() ? IconUtils::fetchIconWithDisabledState(
-                            m_services.get<ThemeService>()->getIconFile(QStringLiteral("add.svg")))
-                      : QIcon());
+  m_listIcon->setIcon(glyph.isEmpty() ? IconUtils::fetchIconWithDisabledState(
+                                            m_services.get<ThemeService>()->getIconFile(
+                                                QStringLiteral("face_slightly_smiling_plus.svg")))
+                                      : QIcon());
   const auto label = glyph.isEmpty() ? tr("Add list icon") : tr("Change list icon");
   m_listIcon->setToolTip(label);
   m_listIcon->setAccessibleName(label);
