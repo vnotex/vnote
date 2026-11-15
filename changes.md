@@ -17,6 +17,7 @@ A refinement release with smoother tree navigation, more flexible Markdown editi
 * **Editing and Markdown**
     * Default Auto Section Numbering to off in Markdown read and edit modes for new profiles and missing settings, while keeping the Outline panel default on; preserve all saved numbering preferences
     * Press Enter at the end of the second consecutive empty quote line to replace both quote lines with two plain empty lines and continue outside the block quote
+    * Insert a new line after the entire collapsed block when pressing Enter at its header's end in text and Markdown editors, including VSCode and Vi input modes; Vi `o` also opens below the fold
     * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
     * Rename the concealment control to Markers Concealment and clarify the None, Passive, Moderate and Aggressive settings descriptions
     * Add Moderate concealment: hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs
