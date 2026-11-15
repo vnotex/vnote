@@ -330,18 +330,20 @@ div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: @widgets#qscrollbar#handle#bg;
+    background-color: @widgets#qscrollbar#handle#bg;
+    background-clip: padding-box;
+    border: 2px solid transparent;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: @widgets#qscrollbar#handle#hover#bg;
+    background-color: @widgets#qscrollbar#handle#hover#bg;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: @widgets#qscrollbar#handle#pressed#bg;
+    background-color: @widgets#qscrollbar#handle#pressed#bg;
 }
 
 ::-webkit-scrollbar-button {

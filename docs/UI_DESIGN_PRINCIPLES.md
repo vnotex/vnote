@@ -190,13 +190,15 @@ height: 10px;          /* Horizontal */
 background: transparent;
 margin: 2px;
 
-/* Scrollbar handle */
+/* Web scrollbar handle: 6px painted thickness inside a 10px hit area */
 min-height: 40px;
 min-width: 40px;
-background: @widgets#qscrollbar#handle#bg;
+background-color: @widgets#qscrollbar#handle#bg;
+background-clip: padding-box;
+border: 2px solid transparent;
 border-radius: 4px;
 
-/* Handle states */
+/* Handle states: change background-color only to preserve clipping */
 :hover   → @widgets#qscrollbar#handle#hover#bg
 :active  → @widgets#qscrollbar#handle#pressed#bg /* QSS uses :pressed */
 

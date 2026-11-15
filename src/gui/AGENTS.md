@@ -61,6 +61,12 @@ All non-Native bundled themes share `widgets#qscrollbar#handle#bg`,
 between native QSS handles and web CSS thumbs (`:active` maps to pressed).
 Do not substitute icon foregrounds or independent translucent colors. Native
 keeps OS-owned widget scrollbars and its separate translucent web fallback.
+
+Non-Native web thumbs retain a 10px rail/hit area with a 2px transparent border
+and `background-clip: padding-box`, painting the same 6px thickness as native
+handles with 2px margins. Use `background-color` in every thumb state: the
+`background` shorthand resets clipping and paints over the transparent inset.
+
 This is bundled CSS, not saved configuration: no settings migration is needed;
 installed copies use the normal versioned resource refresh without replacing custom themes.
 
