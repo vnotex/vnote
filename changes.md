@@ -15,6 +15,7 @@ A refinement release with smoother tree navigation, more flexible Markdown editi
     * Make tree views in every bundled theme except Native more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when returning to Native
     * Align notebook, search and task tree content with standard tree text by including theme borders and native text margins; preserve row heights and icon/count gaps
 * **Editing and Markdown**
+    * Default Auto Section Numbering to off in Markdown read and edit modes for new profiles and missing settings, while keeping the Outline panel default on; preserve all saved numbering preferences
     * Press Enter at the end of the second consecutive empty quote line to replace both quote lines with two plain empty lines and continue outside the block quote
     * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
     * Rename the concealment control to Markers Concealment and clarify the None, Passive, Moderate and Aggressive settings descriptions

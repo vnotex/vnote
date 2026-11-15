@@ -97,7 +97,7 @@ private slots:
   void testConcealmentMode_ignoresOldPreferencesAndNormalizes();
   void testConcealmentMode_persistsAllModes();
   void testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut();
-  void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
+  void testAutoSectionNumber_defaultsMergeAndPersistedOptIn();
   void testEditSectionNumber_mergeAndIndependentPersistence();
   void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
   void testSectionNumberPattern_mergeNormalizationAndPersistence();
@@ -1425,38 +1425,38 @@ void TestConfigMgr2::testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOu
   QVERIFY(!restarted.getCoreConfig().getAlwaysOpenNotesInNewTabs());
 }
 
-void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {
+void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptIn() {
   const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
                          QStringLiteral("autoSectionNumber")};
   MainConfig defaults(m_configMgr);
   const auto defaultsJson = defaults.toJson();
-  QCOMPARE(valueAt(defaultsJson, path), QJsonValue(true));
+  QCOMPARE(valueAt(defaultsJson, path), QJsonValue(false));
   const auto loaded = loadThroughMergePath(withoutKeyAt(defaultsJson, path));
-  QCOMPARE(valueAt(loaded, path), QJsonValue(true));
+  QCOMPARE(valueAt(loaded, path), QJsonValue(false));
 
   {
     ConfigMgr2 mgr(m_configService);
     mgr.init();
     auto &editor = mgr.getConfig().getEditorConfig();
     auto &markdown = editor.getMarkdownEditorConfig();
-    QVERIFY(markdown.getAutoSectionNumberEnabled());
-    QCOMPARE(editor.getSectionNumberPattern(), QStringLiteral("1.1."));
+    QVERIFY(!markdown.getAutoSectionNumberEnabled());
+    QVERIFY(!markdown.getAutoSectionNumberInEditModeEnabled());
     QVERIFY(mgr.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled());
-    markdown.setAutoSectionNumberEnabled(false);
+    markdown.setAutoSectionNumberEnabled(true);
     // Destruction flushes the normal pending config write, as at application shutdown.
   }
 
   const auto persisted =
       m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
-  QCOMPARE(valueAt(persisted, path), QJsonValue(false));
+  QCOMPARE(valueAt(persisted, path), QJsonValue(true));
   const auto merged = loadThroughMergePath(persisted);
-  QCOMPARE(valueAt(merged, path), QJsonValue(false));
+  QCOMPARE(valueAt(merged, path), QJsonValue(true));
   ConfigMgr2 restarted(m_configService);
   restarted.init();
-  QVERIFY(!restarted.getConfig()
-               .getEditorConfig()
-               .getMarkdownEditorConfig()
-               .getAutoSectionNumberEnabled());
+  QVERIFY(restarted.getConfig()
+              .getEditorConfig()
+              .getMarkdownEditorConfig()
+              .getAutoSectionNumberEnabled());
 }
 
 void TestConfigMgr2::testEditSectionNumber_mergeAndIndependentPersistence() {

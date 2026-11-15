@@ -222,7 +222,7 @@ private:
 
   bool m_headingFoldingEnabled = true;
 
-  bool m_autoSectionNumberEnabled = true;
+  bool m_autoSectionNumberEnabled = false;
   bool m_autoSectionNumberInEditModeEnabled = false;
 
   // Visually conceal Markdown syntax and destinations without changing source.
