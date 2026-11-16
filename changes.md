@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+* Fix false image asset publication errors on Windows shared folders that lack file identity support, while retaining no-overwrite and reparse-point checks
+
 ## v4.14.4
 A refinement release with smoother tree navigation, more flexible Markdown editing and improved formula paste on top of VNote 4.14.2, including the changes from the aborted 4.14.3 release:
 
