@@ -1206,7 +1206,9 @@ void TestMindMapEditor::autosaveKeepsInlineEditor() {
   caret.setPosition(6);
   caret.setPosition(15, QTextCursor::KeepAnchor);
   input->setTextCursor(caret);
-  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 1, 5000);
+  // Committing a draft changes the captured revision, so the first 3-second tick
+  // may defer persistence until the next tick. Allow both ticks and the worker save.
+  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 1, 10000);
   QVERIFY(verifyLiveInput());
   QCOMPARE(input->textCursor().position(), 15);
   QCOMPARE(input->textCursor().anchor(), 6);
@@ -1223,7 +1225,7 @@ void TestMindMapEditor::autosaveKeepsInlineEditor() {
   input->moveCursor(QTextCursor::End);
   QTest::keyClicks(input, " continued");
   QVERIFY(editor.hasPendingEdit() && editor.isModified() && m_buffers->isDirty(buffer.id()));
-  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 2, 5000);
+  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 2, 10000);
   QVERIFY(verifyLiveInput());
   QCOMPARE(input->toPlainText(), QStringLiteral("First autosaved topic continued"));
   QVERIFY(readFile(buffer.resolvedPath()).contains("First autosaved topic continued"));

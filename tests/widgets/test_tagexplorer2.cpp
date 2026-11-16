@@ -412,7 +412,9 @@ void TestTagExplorer2::postSyncPublicationDefersWhileHidden() {
 void TestTagExplorer2::badgeWidthUpdatesWithoutReset() {
   const auto tag = QStringLiteral("Long_") + QString(100, QLatin1Char('w'));
   QVERIFY(m_core->createTag(m_notebookId, tag));
-  for (int i = 0; i < 9; ++i) {
+  // The minimum circular badge can make 9 and 10 equally wide, depending on
+  // the platform font. Cross the two-to-three-digit boundary instead.
+  for (int i = 0; i < 99; ++i) {
     const auto file = QStringLiteral("wide%1.md").arg(i);
     QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), file).isEmpty());
     QVERIFY(m_core->tagFile(m_notebookId, file, tag));
@@ -421,18 +423,18 @@ void TestTagExplorer2::badgeWidthUpdatesWithoutReset() {
   m_panel->setNotebookId(m_notebookId);
   showTags();
   QTRY_VERIFY(m_view->horizontalScrollBar()->maximum() > 0);
-  QCOMPARE(count(tag), 9);
+  QCOMPARE(count(tag), 99);
   const int width = m_view->columnWidth(0);
   const int maximum = m_view->horizontalScrollBar()->maximum();
   QPersistentModelIndex row(index(tag));
   QSignalSpy resets(m_model, &QAbstractItemModel::modelReset);
-  QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), QStringLiteral("wide9.md")).isEmpty());
-  QVERIFY(m_tags->tagFile(m_notebookId, QStringLiteral("wide9.md"), tag));
-  QTRY_COMPARE(count(tag), 10);
+  QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), QStringLiteral("wide99.md")).isEmpty());
+  QVERIFY(m_tags->tagFile(m_notebookId, QStringLiteral("wide99.md"), tag));
+  QTRY_COMPARE(count(tag), 100);
   // The existing TreeHorizontalScrollHelper owns coalesced remeasurement on
   // dataChanged. No reset, resize, or forced resizeColumnToContents is needed.
   QTRY_VERIFY(m_view->columnWidth(0) > width);
-  QVERIFY(m_view->horizontalScrollBar()->maximum() > maximum);
+  QTRY_VERIFY(m_view->horizontalScrollBar()->maximum() > maximum);
   QCOMPARE(resets.count(), 0);
   QVERIFY(row.isValid());
 }

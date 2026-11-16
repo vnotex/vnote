@@ -25,6 +25,9 @@
         "disabled" : {
             "fg" : "@palette#disabled#text"
         },
+        "muted" : {
+            "fg" : "@palette#disabled#window_text"
+        },
         "content" : {
             "fg" : "@palette#active#text",
             "bg" : "@palette#active#base"

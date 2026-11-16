@@ -282,5 +282,5 @@ vnotex--InlineBanner QLabel {
    works where setEnabled(false) would not: the themes style QLabel
    unconditionally and define no :disabled variant. */
 *[MutedText="true"] {
-    color: @palette#disabled#window_text;
+    color: @base#muted#fg;
 }

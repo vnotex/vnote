@@ -68,6 +68,14 @@ than pumping the primary event loop while waiting for that marker.
 Notification backlog fixtures must wait for the scroll range to match the complete
 height-for-width layout before scrolling to the bottom. A merely positive range can still
 describe earlier rows while `QScrollArea` has a queued layout update, especially on Cocoa.
+
+Mind-map autosave fixtures allow two three-second ticks: committing the active draft can
+change its revision during capture, so snapshot admission defers persistence to the next tick.
+Keep the focus, selection, caret and disk-content assertions; do not weaken revision checks.
+
+Tag badge resize fixtures use the 99-to-100 boundary. The minimum circular badge can make
+9 and 10 equally wide with native fonts; wait for both column and scrollbar remeasurement.
+
 ## Test Structure
 
 ```
