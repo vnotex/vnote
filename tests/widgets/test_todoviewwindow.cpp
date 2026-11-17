@@ -53,6 +53,7 @@
 #include <QSplitter>
 #include <QStandardPaths>
 #include <QStyleHints>
+#include <QStyleOptionViewItem>
 #include <QTemporaryDir>
 #include <QTextBlock>
 #include <QTextBlockFormat>
@@ -63,6 +64,7 @@
 #include <QWindow>
 
 #include <controllers/newnotecontroller.h>
+#include <controllers/todostickercontroller.h>
 #include <controllers/todoviewwindowcontroller.h>
 #include <controllers/viewareacontroller.h>
 #include <core/configmgr2.h>
@@ -91,7 +93,9 @@
 #include <gui/services/viewwindowfactory.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
+#include <widgets/dashboard/todosticker.h>
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/editors/simplemarkdowneditor.h>
 #include <widgets/editors/todoeditor.h>
@@ -740,6 +744,16 @@ private slots:
   void archiveSkipsDanglingDestination_data();
   void archiveSkipsDanglingDestination();
   void archiveNameExhaustion();
+  void stickerNotebookResolution_data();
+  void stickerNotebookResolution();
+  void stickerBackingFilePersistsAndShares();
+  void stickerInteractionAndSharedDraft();
+  void stickerExistingFilesRemainUntouched_data();
+  void stickerExistingFilesRemainUntouched();
+  void stickerCreatesMissingBackingFile_data();
+  void stickerCreatesMissingBackingFile();
+  void stickerRecreatesMissingBodyFromLiveDraft();
+  void stickerCompletionKeepsLegacyListSelection();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
@@ -5288,6 +5302,364 @@ void TestTodoViewWindow::archiveNameExhaustion() {
   QCOMPARE(QFileInfo(directory.filePath(QStringLiteral("tasks.archived.todo"))).size(), 0);
   QCOMPARE(QFileInfo(directory.filePath(QStringLiteral("tasks.archived_10000.todo"))).size(), 0);
   QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("tasks.archived_10001.todo"))));
+}
+
+void TestTodoViewWindow::stickerNotebookResolution_data() {
+  QTest::addColumn<QString>("scenario");
+  QTest::newRow("current-notebook") << QStringLiteral("current");
+  QTest::newRow("opened-default-precedes-current") << QStringLiteral("opened");
+  QTest::newRow("reopen-default-with-no-notebooks") << QStringLiteral("closed");
+  QTest::newRow("unavailable-default-with-no-notebooks") << QStringLiteral("missing");
+}
+
+void TestTodoViewWindow::stickerNotebookResolution() {
+  QFETCH(QString, scenario);
+  const auto defaultRoot = m_directory->filePath(QStringLiteral("default-notebook"));
+  QString defaultId;
+  if (scenario == QLatin1String("opened") || scenario == QLatin1String("closed")) {
+    defaultId = m_notebooks->createNotebook(defaultRoot, QStringLiteral("{\"name\":\"Default\"}"),
+                                            NotebookType::Bundled);
+    QVERIFY(!defaultId.isEmpty());
+  }
+  const auto closeDefault = qScopeGuard([&]() {
+    if (!defaultId.isEmpty())
+      m_notebooks->closeNotebook(defaultId);
+  });
+  m_config->getSessionConfig().setCurrentNotebook(m_notebook);
+  m_config->getSessionConfig().setTodoStickerFilePath({});
+  if (scenario == QLatin1String("closed"))
+    QVERIFY(m_notebooks->closeNotebook(defaultId));
+  if (scenario == QLatin1String("closed") || scenario == QLatin1String("missing")) {
+    QVERIFY(m_notebooks->closeNotebook(m_notebook));
+    m_notebook.clear();
+  }
+  const QString expected = scenario == QLatin1String("current")
+                               ? absolute(QStringLiteral("My TODOs.todo"))
+                               : QDir(defaultRoot).filePath(QStringLiteral("My TODOs.todo"));
+  if (scenario == QLatin1String("opened")) {
+    QVERIFY(!m_notebooks->createFile(defaultId, {}, QStringLiteral("My TODOs.todo")).isEmpty());
+    QVERIFY(writeBytes(expected, c_source));
+  }
+  TodoStickerController controller(*m_services);
+  controller.setDefaultNotebookPathForTest(defaultRoot);
+  controller.initialize();
+  if (scenario == QLatin1String("missing")) {
+    QVERIFY(!controller.isReady());
+    QVERIFY(!controller.getError().isEmpty());
+    QVERIFY(m_config->getSessionConfig().getTodoStickerFilePath().isEmpty());
+    QVERIFY(!QFileInfo::exists(expected));
+    return;
+  }
+  QTRY_VERIFY2(controller.isReady(), qPrintable(controller.getError()));
+  QCOMPARE(QFileInfo(controller.getFilePath()).canonicalFilePath(),
+           QFileInfo(expected).canonicalFilePath());
+  const auto bytes = readBytes(expected);
+  if (scenario == QLatin1String("opened"))
+    QCOMPARE(bytes, c_source);
+  else {
+    const auto document = TodoDocument::parse(QString::fromUtf8(bytes));
+    QVERIFY(document.isValid());
+    QCOMPARE(document.m_lists.size(), 1);
+    QCOMPARE(document.m_lists.first().m_title, QStringLiteral("Tasks"));
+  }
+  controller.refresh();
+  QCOMPARE(readBytes(expected), bytes);
+  QVERIFY(!QFileInfo::exists(
+      QDir(QFileInfo(expected).absolutePath()).filePath(QStringLiteral("My TODOs_1.todo"))));
+  QVERIFY(m_buffers->listBuffers().isEmpty());
+}
+
+void TestTodoViewWindow::stickerBackingFilePersistsAndShares() {
+  m_config->getSessionConfig().setCurrentNotebook(m_notebook);
+  m_config->getSessionConfig().setTodoStickerFilePath({});
+  TodoStickerController first(*m_services);
+  first.setDefaultNotebookPathForTest(m_directory->filePath(QStringLiteral("not-default")));
+  first.initialize();
+  QTRY_VERIFY(first.isReady());
+  TodoStickerController second(*m_services);
+  second.initialize();
+  QTRY_VERIFY(second.isReady());
+  const auto name = QStringLiteral("chosen.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), c_source));
+  QVERIFY(first.setFilePath(absolute(name)));
+  QTRY_COMPARE(second.getFilePath(), first.getFilePath());
+  QTRY_VERIFY(second.isReady());
+  QTRY_COMPARE(second.getDocument().m_lists.size(), 2);
+  QVERIFY(!first.setFilePath(absolute(QStringLiteral("missing-parent/missing.todo"))));
+  QCOMPARE(m_config->getSessionConfig().getTodoStickerFilePath(), absolute(name));
+  QVERIFY(QMetaObject::invokeMethod(m_config.get(), "doWriteSessionConfig", Qt::DirectConnection));
+  const auto resourcePaths = QDir::searchPaths(QStringLiteral("app"));
+  ConfigMgr2 restarted(m_configCore.get());
+  restarted.init();
+  QCOMPARE(restarted.getSessionConfig().getTodoStickerFilePath(), absolute(name));
+  // init() restores production app paths; this fixture keeps its separate built RCC.
+  QDir::setSearchPaths(QStringLiteral("app"), resourcePaths);
+  QVERIFY(QFile::remove(absolute(name)));
+  first.refresh();
+  QTRY_VERIFY2(first.isReady(), qPrintable(first.getError()));
+  QCOMPARE(m_config->getSessionConfig().getTodoStickerFilePath(), absolute(name));
+  QVERIFY(QFileInfo::exists(absolute(name)));
+  QCOMPARE(first.getDocument().m_lists.size(), 1);
+  QCOMPARE(first.getDocument().m_lists.first().m_title, QStringLiteral("Tasks"));
+}
+
+void TestTodoViewWindow::stickerInteractionAndSharedDraft() {
+  createArea();
+  const auto name = QStringLiteral("sticker.todo");
+  const auto buffer = openNote(name);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto fields =
+      window->getController()->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  fields.m_note = QStringLiteral("An unsaved editor draft must survive sticker completion");
+  QVERIFY(window->getController()->updateTask(QStringLiteral("id:alpha"), fields));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(420, 460);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  QVERIFY(controller);
+  QTRY_VERIFY2(controller->isReady(), qPrintable(controller->getError()));
+  auto *lists = control<QComboBox>(&sticker, "todoStickerLists");
+  auto *tasks = control<QListView>(&sticker, "todoStickerTasks");
+  QVERIFY(lists && tasks);
+  QCOMPARE(lists->count(), 2);
+  QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:work"))));
+  auto *model = controller->getTaskModel();
+  auto clickCheck = [&](const QString &p_key) {
+    const auto index = model->index(model->rowForKey(p_key));
+    if (!index.isValid() || !activate(tasks))
+      return false;
+    tasks->scrollTo(index);
+    const auto row = tasks->visualRect(index);
+    QStyleOptionViewItem option;
+    option.initFrom(tasks);
+    option.rect = row;
+    option.features = QStyleOptionViewItem::HasCheckIndicator | QStyleOptionViewItem::HasDisplay;
+    option.checkState = index.data(Qt::CheckStateRole).value<Qt::CheckState>();
+    option.text = index.data().toString();
+    const auto indicator =
+        tasks->style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &option, tasks);
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, indicator.center());
+    return true;
+  };
+  QVERIFY(clickCheck(QStringLiteral("id:alpha")));
+  QTRY_VERIFY(!controller->isBusy());
+  QTRY_VERIFY2(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_checked,
+               qPrintable(controller->getError()));
+  QVERIFY(sticker.isActiveWindow());
+  auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QVERIFY(saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_checked);
+  QCOMPARE(saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_note, fields.m_note);
+  QCOMPARE(
+      window->getController()->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_note,
+      fields.m_note);
+  QVERIFY(clickCheck(QStringLiteral("id:alpha")));
+  QTRY_VERIFY(!controller->isBusy());
+  QTRY_VERIFY(!controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_checked);
+  QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:personal"))));
+  const auto gamma = model->index(model->rowForKey(QStringLiteral("id:gamma")));
+  QVERIFY(gamma.isValid());
+  QVERIFY(activate(tasks));
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tasks->visualRect(gamma).center());
+  QTRY_COMPARE(current(), window);
+  QTRY_COMPARE(window->getController()->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(window->getController()->getSelectedItemKey(), QStringLiteral("id:gamma"));
+
+  const auto other = openNote(QStringLiteral("other.todo"));
+  QVERIFY(other.isValid());
+  QPointer<TodoViewWindow> otherWindow(current());
+  QVERIFY(otherWindow && otherWindow != window);
+  auto *edit = control<QToolButton>(&sticker, "todoStickerEdit");
+  QVERIFY(edit && activate(edit));
+  QTest::mouseClick(edit, Qt::LeftButton);
+  QTRY_COMPARE(current(), window);
+  QVERIFY(otherWindow);
+  QCOMPARE(window->getMode(), ViewWindowMode::Edit);
+}
+
+void TestTodoViewWindow::stickerExistingFilesRemainUntouched_data() {
+  QTest::addColumn<QString>("scenario");
+  QTest::newRow("indexed-empty") << QStringLiteral("empty");
+  QTest::newRow("unindexed-malformed") << QStringLiteral("malformed");
+  QTest::newRow("read-only-existing") << QStringLiteral("readonly");
+#ifdef Q_OS_WIN
+  QTest::newRow("case-insensitive-existing") << QStringLiteral("case-alias");
+#endif
+}
+
+void TestTodoViewWindow::stickerExistingFilesRemainUntouched() {
+  QFETCH(QString, scenario);
+  const auto name = scenario == QLatin1String("case-alias") ? QStringLiteral("my todos.todo")
+                                                            : QStringLiteral("My TODOs.todo");
+  const auto path = absolute(name);
+  const QByteArray source = scenario == QLatin1String("empty")       ? QByteArray()
+                            : scenario == QLatin1String("malformed") ? QByteArray("Unowned prose\n")
+                                                                     : c_source;
+  if (scenario != QLatin1String("malformed"))
+    QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(path, source));
+  if (scenario == QLatin1String("readonly")) {
+    const auto root = m_notebooks->buildAbsolutePath(m_notebook, {});
+    QVERIFY(m_notebooks->closeNotebook(m_notebook));
+    m_notebook = m_notebooks->openNotebookEx(root, QStringLiteral("{\"readOnly\":true}"));
+    QVERIFY(!m_notebook.isEmpty());
+  }
+  m_config->getSessionConfig().setCurrentNotebook(m_notebook);
+  m_config->getSessionConfig().setTodoStickerFilePath({});
+  TodoStickerController controller(*m_services);
+  controller.setDefaultNotebookPathForTest(m_directory->filePath(QStringLiteral("not-default")));
+  controller.initialize();
+  QTRY_VERIFY2(controller.isReady(), qPrintable(controller.getError()));
+  QCOMPARE(readBytes(path), source);
+  QCOMPARE(controller.getDocument().m_source.toUtf8(), source);
+  QVERIFY(!QFileInfo::exists(absolute(QStringLiteral("My TODOs_1.todo"))));
+  if (scenario == QLatin1String("readonly")) {
+    const auto model = controller.getTaskModel();
+    const auto alpha = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+    QVERIFY(alpha.isValid());
+    QVERIFY(!(alpha.flags() & Qt::ItemIsUserCheckable));
+    QVERIFY(!model->setData(alpha, Qt::Checked, Qt::CheckStateRole));
+    QCOMPARE(readBytes(path), source);
+  }
+}
+
+void TestTodoViewWindow::stickerCreatesMissingBackingFile_data() {
+  QTest::addColumn<QString>("scenario");
+  QTest::newRow("indexed-default") << QStringLiteral("default");
+  QTest::newRow("configured-new") << QStringLiteral("new");
+  QTest::newRow("configured-indexed") << QStringLiteral("indexed");
+  QTest::newRow("external-new") << QStringLiteral("external");
+  QTest::newRow("read-only-missing") << QStringLiteral("readonly");
+  QTest::newRow("raw-indexed") << QStringLiteral("raw");
+}
+
+void TestTodoViewWindow::stickerCreatesMissingBackingFile() {
+  QFETCH(QString, scenario);
+  QString owner = m_notebook;
+  if (scenario == QLatin1String("raw")) {
+    owner =
+        m_notebooks->createNotebook(m_directory->filePath(QStringLiteral("raw-notebook")),
+                                    QStringLiteral("{\"name\":\"Raw TODOs\"}"), NotebookType::Raw);
+    QVERIFY(!owner.isEmpty());
+  }
+  const auto closeRaw = qScopeGuard([&]() {
+    if (owner != m_notebook && !owner.isEmpty())
+      m_notebooks->closeNotebook(owner);
+  });
+  const auto name = scenario == QLatin1String("default") ? QStringLiteral("My TODOs.todo")
+                                                         : QStringLiteral("chosen.todo");
+  const auto path = scenario == QLatin1String("external")
+                        ? m_directory->filePath(name)
+                        : m_notebooks->buildAbsolutePath(owner, name);
+  QString originalId;
+  if (scenario == QLatin1String("default") || scenario == QLatin1String("indexed") ||
+      scenario == QLatin1String("readonly") || scenario == QLatin1String("raw")) {
+    originalId = m_notebooks->createFile(owner, {}, name);
+    QVERIFY(!originalId.isEmpty());
+    QVERIFY(writeBytes(path, c_source));
+    QVERIFY(m_notebooks->updateFileMetadata(owner, name, QStringLiteral("{\"retained\":\"yes\"}")));
+    QVERIFY(QFile::remove(path));
+  }
+  if (scenario == QLatin1String("readonly")) {
+    const auto root = m_notebooks->buildAbsolutePath(owner, {});
+    QVERIFY(m_notebooks->closeNotebook(owner));
+    owner = m_notebooks->openNotebookEx(root, QStringLiteral("{\"readOnly\":true}"));
+    QVERIFY(!owner.isEmpty());
+    m_notebook = owner;
+  }
+  m_config->getSessionConfig().setCurrentNotebook(owner);
+  m_config->getSessionConfig().setTodoStickerFilePath(
+      scenario == QLatin1String("default") ? QString() : path);
+  TodoStickerController controller(*m_services);
+  controller.setDefaultNotebookPathForTest(m_directory->filePath(QStringLiteral("not-default")));
+  controller.initialize();
+  if (scenario == QLatin1String("readonly")) {
+    QVERIFY(!controller.isReady());
+    QVERIFY(!controller.getError().isEmpty());
+    QVERIFY(!QFileInfo::exists(path));
+    return;
+  }
+  QTRY_VERIFY2(controller.isReady(), qPrintable(controller.getError()));
+  QVERIFY(QFileInfo::exists(path));
+  QCOMPARE(QFileInfo(controller.getFilePath()).canonicalFilePath(),
+           QFileInfo(path).canonicalFilePath());
+  const auto created = TodoDocument::parse(QString::fromUtf8(readBytes(path)));
+  QVERIFY(created.isValid());
+  QCOMPARE(created.m_lists.size(), 1);
+  QCOMPARE(created.m_lists.first().m_title, QStringLiteral("Tasks"));
+  if (!originalId.isEmpty()) {
+    const auto info = m_notebooks->getFileInfo(owner, name);
+    QCOMPARE(info.value(QLatin1String(vxcore::kJsonKeyId)).toString(), originalId);
+    QCOMPARE(m_notebooks->getFileMetadata(owner, name).value(QStringLiteral("retained")).toString(),
+             QStringLiteral("yes"));
+  }
+  const auto content = readBytes(path);
+  const auto collision = m_notebooks->createFileWithContent(
+      scenario == QLatin1String("external") ? QString() : owner,
+      scenario == QLatin1String("external") ? QFileInfo(path).absolutePath() : QString(), name,
+      QByteArray("Must never replace the existing file"), true);
+  QVERIFY(!collision.committed && !collision.saved);
+  QCOMPARE(readBytes(path), content);
+  QVERIFY(!QFileInfo::exists(
+      QDir(QFileInfo(path).absolutePath())
+          .filePath(QFileInfo(name).completeBaseName() + QStringLiteral("_1.todo"))));
+}
+
+void TestTodoViewWindow::stickerRecreatesMissingBodyFromLiveDraft() {
+  createArea();
+  const auto name = QStringLiteral("live-missing.todo");
+  const auto buffer = openNote(name);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  focusTasks(window);
+  auto fields =
+      window->getController()->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  fields.m_note = QStringLiteral("Recover this unsaved draft, not an empty template");
+  QVERIFY(window->getController()->updateTask(QStringLiteral("id:alpha"), fields));
+  QVERIFY(QFile::remove(absolute(name)));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoStickerController controller(*m_services);
+  controller.initialize();
+  QTRY_VERIFY2(controller.isReady(), qPrintable(controller.getError()));
+  const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QVERIFY(saved.findItem(QStringLiteral("id:alpha")));
+  QCOMPARE(saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_note, fields.m_note);
+  QVERIFY(saved.findItem(QStringLiteral("id:beta")));
+  QCOMPARE(controller.getDocument().m_source.toUtf8(), readBytes(absolute(name)));
+}
+
+void TestTodoViewWindow::stickerCompletionKeepsLegacyListSelection() {
+  const auto name = QStringLiteral("legacy-sticker.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name),
+                     QByteArray("## Inbox\n\n- [ ] First\n\n## Later\n\n- [ ] Second\n")));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoStickerController controller(*m_services);
+  controller.initialize();
+  QVERIFY(controller.isReady());
+  const auto laterKey = controller.getDocument().m_lists.at(1).m_key;
+  controller.selectList(laterKey);
+  auto *model = controller.getTaskModel();
+  QCOMPARE(model->index(0).data().toString(), QStringLiteral("Second"));
+  QVERIFY(model->setData(model->index(0), Qt::Checked, Qt::CheckStateRole));
+  QTRY_VERIFY(!controller.isBusy());
+  const auto *selected = controller.getDocument().findList(controller.getSelectedListKey());
+  QVERIFY2(selected, qPrintable(controller.getError()));
+  QCOMPARE(selected->m_title, QStringLiteral("Later"));
+  QVERIFY(selected->m_items.first().m_fields.m_checked);
+  QVERIFY(model->setData(model->index(model->rowForKey(selected->m_items.first().m_key)),
+                         Qt::Unchecked, Qt::CheckStateRole));
+  QTRY_VERIFY(!controller.isBusy());
+  selected = controller.getDocument().findList(controller.getSelectedListKey());
+  QVERIFY(selected);
+  QCOMPARE(selected->m_title, QStringLiteral("Later"));
+  QVERIFY(!selected->m_items.first().m_fields.m_checked);
 }
 
 } // namespace tests

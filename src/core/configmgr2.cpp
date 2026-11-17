@@ -414,6 +414,7 @@ void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {
 void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) {
   m_pendingSessionConfig = p_jobj;
   scheduleSessionConfigWrite();
+  emit sessionConfigChanged();
 }
 
 void ConfigMgr2::scheduleMainConfigWrite() { m_mainConfigWriteTimer->start(); }

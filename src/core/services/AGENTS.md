@@ -424,6 +424,28 @@ folder, using notebook identity and path-component boundaries. Coverage lives in
 `test_searchservice`, `test_buffer`, `test_buffer_save_queue`, `test_searchresultmodel`, and
 `test_searchcontroller`.
 
+## Native text snapshot edits
+
+`BufferService::readTextSnapshot()` reads ordinary file text without opening a view. It borrows
+an existing writer's current text or briefly opens a private buffer, rejects busy/failed captures
+instead of falling back to stale bytes, and releases only private clean buffers with no writer
+or workspace owner. Returned text uses LF with one leading BOM removed.
+
+`editTextSnapshot()` is the native counterpart of the existing content-replacement reservation,
+not an HTTP/domain operation or fabricated search result. It freezes views, suspends the real
+writer, drains earlier saves and checks the expected normalized source before invoking its
+GUI-thread transform. The TODOs sticker uses a temporary `TodoViewWindowController` and plain
+`QTextDocument` there; it never installs a competing persistent writer. Native edits include
+unsaved editor changes; external NoteOperation writes still refuse drafts.
+
+Preparation preserves the captured uniform line ending, encoding and BOM, rejects mixed endings,
+and sends a whole-document result directly to the exact save queue. Before-save writer changes
+are rechecked using the same normalized source. Canonical path/digest checks, IO gates, cancellation,
+failed-save recovery and shutdown remain owned by the shared transaction. Native standalone files
+use an absolute path and an empty notebook ID; that exception does not widen search or external
+API admission. `test_buffer` covers draft preservation, stale snapshots, writer-hook changes,
+standalone CRLF/CR/BOM saves and private-buffer lifetime.
+
 ## Native initial-body creation
 
 `NotebookCoreService::createFileWithContent()` creates a nonconflicting sibling with checked
@@ -437,6 +459,14 @@ retain committed/saved facts. TODO archiving leaves source tasks intact on eithe
 Notebook and standalone naming both skip files, symlinks and junctions (including dangling
 ones), trying the original name and `_1` through `_10000` before returning `invalid_name`.
 This native path does not expand the HTTP/domain operation allowlist below.
+
+The optional exact-name mode is used for missing TODO backing files. It never chooses a suffix
+or overwrites an occupied path. Bundled missing-body records retain their UUID and metadata;
+the service reserves a new physical body without calling metadata creation again. Raw exact
+creation must not query children/file info before writing: those queries reconcile away absent
+records. It writes the body first, then performs the ordinary raw reconciliation and checks the
+returned identity. A reconciliation failure retains the saved body and reports recovery required.
+The default unique-name behavior used by TODO archiving is unchanged.
 
 ## Domain note operations
 

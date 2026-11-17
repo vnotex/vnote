@@ -157,6 +157,19 @@ public:
 
   // Literal replacement of reviewed Simple-search matches; completion is always deferred.
   int replaceSearchMatches(const SearchFileResult &p_target, const QString &p_replacement);
+  // Ephemeral GUI-thread snapshot of an ordinary file, including its unsaved active writer.
+  // Text is LF-normalized without a leading BOM. Busy/failed captures never use stale bytes.
+  bool readTextSnapshot(const NodeIdentifier &p_nodeId, QString *p_text, bool *p_readOnly,
+                        QString *p_error = nullptr);
+
+  // Reserve/drain the ordinary buffer, compare its authoritative LF snapshot, then invoke
+  // p_edit on the GUI thread. The callback must only transform its own document, not the buffer.
+  // Completion is deferred; a positive token can be cancelled with cancelSearchReplacement().
+  int editTextSnapshot(
+      const NodeIdentifier &p_nodeId, const QString &p_expectedText,
+      std::function<bool(const Buffer2 &, const QString &, QString *, QString *)> p_edit,
+      std::function<void(bool p_saved, const QString &p_error)> p_complete);
+
   void cancelSearchReplacement(int p_token);
   bool isContentReplacementActive(const QString &p_bufferId) const;
 
@@ -500,6 +513,7 @@ private:
   int replaceContent(NoteOperationRequest p_request,
                      std::function<void(NoteOperationResult)> p_complete);
   Buffer2 openReplacementBuffer(const NodeIdentifier &p_nodeId);
+  void closePrivateTextBuffer(const QString &p_bufferId);
   void startContentReplacement(int p_token);
   void prepareContentReplacement(int p_token);
   void dispatchContentReplacement(int p_token);

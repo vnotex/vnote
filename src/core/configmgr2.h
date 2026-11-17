@@ -159,6 +159,9 @@ public:
   void updateMainConfig(const QJsonObject &p_jobj) override;
   void updateSessionConfig(const QJsonObject &p_jobj) override;
 
+signals:
+  void sessionConfigChanged();
+
 private slots:
   // Debounced write handlers (called after timer expires)
   void doWriteMainConfig();

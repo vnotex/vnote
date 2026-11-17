@@ -10,6 +10,7 @@ target_sources(vnote PRIVATE
     dashboard/dashboardcontent.cpp dashboard/dashboardcontent.h
     dashboard/greetingsticker.cpp dashboard/greetingsticker.h
     dashboard/historysticker.cpp dashboard/historysticker.h
+    dashboard/todosticker.cpp dashboard/todosticker.h
     dashboard/sticker.cpp dashboard/sticker.h
     dashboard/stickerdraggeometry.cpp dashboard/stickerdraggeometry.h
     dashboard/stickerdragoverlay.cpp dashboard/stickerdragoverlay.h

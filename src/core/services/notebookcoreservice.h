@@ -537,11 +537,15 @@ public:
                      const QString &p_fileName);
   // Native initial-body creation. Caller holds the notebook maintenance lease.
   // Uses a conflict-free name and a checked atomic body write under a bounded IO gate.
-  // Empty notebook ID denotes an absolute external folder. Never overwrites an existing file.
+  // Exact mode never suffixes: it restores only the requested missing body, preserving
+  // any indexed identity/metadata, and rejects existing files, folders, and links.
+  // Empty notebook ID denotes an absolute external folder. Never overwrites existing bytes.
+  // If raw identity reconciliation fails after writing, committed/saved remain true and
+  // recoveryRequired is set. Before/after creation hooks run outside the IO gate.
   NoteOperationResult createFileWithContent(const QString &p_notebookId,
                                             const QString &p_folderPath,
                                             const QString &p_desiredName,
-                                            const QByteArray &p_content);
+                                            const QByteArray &p_content, bool p_exactName = false);
   // Delete a file. Fires NodeBeforeDelete hook (cancellable) before deletion.
   // Returns false if cancelled by hook or if deletion fails.
   bool deleteFile(const QString &p_notebookId, const QString &p_filePath);

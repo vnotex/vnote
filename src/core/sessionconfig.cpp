@@ -217,6 +217,7 @@ void SessionConfig::loadCore(const QJsonObject &p_session) {
   }
 
   m_currentNotebook = readString(coreObj, QStringLiteral("currentNotebook"));
+  m_todoStickerFilePath = readString(coreObj, QStringLiteral("todoStickerFilePath"));
   m_lastToolTipDate = readString(coreObj, QStringLiteral("lastToolTipDate"));
   m_nextToolTipIndex = qMax(0, readInt(coreObj, QStringLiteral("nextToolTipIndex")));
   m_lastUpdateCheckTime = parseTimestamp(coreObj.value(QStringLiteral("lastUpdateCheckTime")));
@@ -234,6 +235,7 @@ QJsonObject SessionConfig::saveCore() const {
   coreObj[QStringLiteral("quickAccess")] = saveQuickAccessItems();
   coreObj[QStringLiteral("externalMediaDefaultPath")] = m_externalMediaDefaultPath;
   coreObj[QStringLiteral("currentNotebook")] = m_currentNotebook;
+  coreObj[QStringLiteral("todoStickerFilePath")] = m_todoStickerFilePath;
   coreObj[QStringLiteral("lastToolTipDate")] = m_lastToolTipDate;
   coreObj[QStringLiteral("nextToolTipIndex")] = m_nextToolTipIndex;
   coreObj[QStringLiteral("lastUpdateCheckTime")] = QString::number(m_lastUpdateCheckTime);
@@ -316,6 +318,12 @@ const QString &SessionConfig::getCurrentNotebook() const { return m_currentNoteb
 
 void SessionConfig::setCurrentNotebook(const QString &p_guid) {
   updateConfig(m_currentNotebook, p_guid, this);
+}
+
+const QString &SessionConfig::getTodoStickerFilePath() const { return m_todoStickerFilePath; }
+
+void SessionConfig::setTodoStickerFilePath(const QString &p_path) {
+  updateConfig(m_todoStickerFilePath, p_path, this);
 }
 
 const QString &SessionConfig::getLastToolTipDate() const { return m_lastToolTipDate; }

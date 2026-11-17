@@ -22,6 +22,7 @@ target_sources(vnote PRIVATE
     taskcontroller.cpp taskcontroller.h
     textviewwindowcontroller.cpp textviewwindowcontroller.h
     todoviewwindowcontroller.cpp todoviewwindowcontroller.h
+    todostickercontroller.cpp todostickercontroller.h
     typstviewwindowcontroller.cpp typstviewwindowcontroller.h
     commentcontroller.cpp commentcontroller.h
     pdfviewwindowcontroller.cpp pdfviewwindowcontroller.h

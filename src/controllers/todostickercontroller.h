@@ -1,0 +1,92 @@
+#ifndef VNOTEX_TODOSTICKERCONTROLLER_H
+#define VNOTEX_TODOSTICKERCONTROLLER_H
+
+#include <QObject>
+#include <QPointer>
+#include <QVector>
+
+#include <core/nodeidentifier.h>
+#include <core/tododocument.h>
+
+namespace vnotex {
+
+class HookManager;
+class ServiceLocator;
+class TodoTaskModel;
+
+// A source-bound projection only. BufferService owns every read/edit lifetime.
+class TodoStickerController : public QObject {
+  Q_OBJECT
+public:
+  explicit TodoStickerController(ServiceLocator &p_services, QObject *p_parent = nullptr);
+  ~TodoStickerController() override;
+
+  void initialize();
+  void refresh();
+  TodoTaskModel *getTaskModel() const { return m_taskModel; }
+  const TodoDocument &getDocument() const { return m_document; }
+  const QString &getSelectedListKey() const { return m_selectedListKey; }
+  void selectList(const QString &p_key);
+  QString getFilePath() const { return m_filePath; }
+  const QString &getError() const { return m_error; }
+  bool isReady() const { return m_ready; }
+  bool isBusy() const { return m_editing || m_refreshing; }
+  void openTask(const QString &p_key);
+  void edit();
+  bool setFilePath(const QString &p_path);
+
+  // Must be set before initialize(); production uses ConfigMgr2's default root.
+  void setDefaultNotebookPathForTest(const QString &p_path);
+
+signals:
+  void stateChanged();
+  void errorOccurred(const QString &p_message);
+
+private slots:
+  void handleBufferChanged(const QString &p_bufferId);
+
+private:
+  void subscribe();
+  void scheduleRefresh();
+  void cancelEdit();
+  void changeBinding(const QString &p_path);
+  void publishModel();
+  void unavailable(const QString &p_error);
+  void reportError(const QString &p_error);
+  bool resolveFile(const QString &p_path, NodeIdentifier *p_node, QString *p_canonical,
+                   QString *p_error, bool p_allowMissing = false) const;
+  bool ensureBackingFile(const QString &p_path, NodeIdentifier *p_node, QString *p_canonical,
+                         QString *p_error);
+  QString resolveDefault(QString *p_error);
+  void retarget(const QString &p_notebookId, const QString &p_oldPath,
+                const QString &p_newNotebookId, const QString &p_newPath, bool p_folder);
+  void setChecked(const QString &p_key, bool p_checked, int p_revision);
+
+  ServiceLocator &m_services;
+  TodoTaskModel *m_taskModel;
+  QPointer<HookManager> m_hooks;
+  QVector<int> m_hookIds;
+  TodoDocument m_document;
+  NodeIdentifier m_node;
+  QString m_filePath;
+  QString m_notebookRoot;
+  QString m_selectedListKey;
+  QString m_pendingListKey;
+  QString m_error;
+  QString m_defaultNotebookPathForTest;
+  QString m_currentNotebook;
+  quint64 m_generation = 0;
+  int m_revision = 0;
+  int m_editToken = 0;
+  bool m_initialized = false;
+  bool m_ready = false;
+  bool m_readOnly = true;
+  bool m_editing = false;
+  bool m_refreshing = false;
+  bool m_refreshScheduled = false;
+  bool m_refreshAgain = false;
+};
+
+} // namespace vnotex
+
+#endif // VNOTEX_TODOSTICKERCONTROLLER_H

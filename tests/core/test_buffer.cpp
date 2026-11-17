@@ -411,6 +411,13 @@ private slots:
   void testSearchReplacementDestroyPreparation();
   void testSearchReplacementEncoding_data();
   void testSearchReplacementEncoding();
+  void testTextSnapshotDirtyWriter();
+  void testTextSnapshotRejectsStaleSource();
+  void testTextSnapshotStandaloneLineEndings_data();
+  void testTextSnapshotStandaloneLineEndings();
+  void testTextSnapshotRejectsChangingHook_data();
+  void testTextSnapshotRejectsChangingHook();
+  void testTextSnapshotPrivateLifetime();
   void testNoteOperationsCreateRenameTrash();
   void testNoteOperationsRefuseDirtyAndStale_data();
   void testNoteOperationsRefuseDirtyAndStale();
@@ -3105,6 +3112,286 @@ void TestBuffer::testSearchReplacementEncoding() {
     QCOMPARE(note.getContentRaw(), expected);
     QVERIFY(!buffers.isDirty(note.id()));
   }
+}
+
+void TestBuffer::testTextSnapshotDirtyWriter() {
+  const QByteArray original("# TODOs\r\n## Tasks\r\n- [ ] task\r\n");
+  const auto target = createReplacementTarget(QStringLiteral("snapshot-dirty.todo"), original);
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  auto note = buffers.openBuffer({target.m_notebookId, target.m_path});
+  QVERIFY(note.isValid());
+  QCOMPARE(note.getContentRaw(), original);
+  QString editor =
+      QChar(0xfeff) + QString::fromUtf8(original) + QStringLiteral("unrelated draft\r\n");
+  buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+  buffers.markDirty(note.id());
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+  });
+  QString snapshot, error;
+  bool readOnly = true;
+  QVERIFY2(buffers.readTextSnapshot(note.nodeId(), &snapshot, &readOnly, &error),
+           qPrintable(error));
+  QCOMPARE(snapshot, QStringLiteral("# TODOs\n## Tasks\n- [ ] task\nunrelated draft\n"));
+  QVERIFY(!readOnly);
+  QCOMPARE(buffers.listBuffers().size(), 1); // The shared editor remains open.
+  const auto expected = QByteArray("# TODOs\r\n## Tasks\r\n- [x] task\r\nunrelated draft\r\n");
+  ReplacementObserver observer(buffers);
+  observer.stateCallback = [&](const ReplacementState &p_state) {
+    if (!p_state.active && p_state.changed)
+      editor = buffers.decodeContent(note.id(), note.getContentRaw());
+  };
+  bool done = false, saved = false, reservedOnGui = false, busyReadRejected = false;
+  const auto token = buffers.editTextSnapshot(
+      note.nodeId(), snapshot,
+      [&](const Buffer2 &p_buffer, const QString &p_source, QString *p_replacement, QString *) {
+        reservedOnGui = p_buffer.id() == note.id() && p_source == snapshot &&
+                        QThread::currentThread() == buffers.asQObject()->thread() &&
+                        buffers.isContentReplacementActive(p_buffer.id());
+        QString busyText, busyError;
+        bool busyReadOnly = false;
+        busyReadRejected =
+            !buffers.readTextSnapshot(note.nodeId(), &busyText, &busyReadOnly, &busyError) &&
+            !busyError.isEmpty();
+        *p_replacement = p_source;
+        p_replacement->replace(QStringLiteral("- [ ] task"), QStringLiteral("- [x] task"));
+        return true;
+      },
+      [&](bool p_saved, const QString &p_error) {
+        saved = p_saved;
+        error = p_error;
+        done = true;
+      });
+  QVERIFY(token > 0);
+  QVERIFY(!done);
+  QTRY_VERIFY_WITH_TIMEOUT(done, 10000);
+  QVERIFY2(saved, qPrintable(error));
+  QVERIFY(error.isEmpty());
+  QVERIFY(reservedOnGui);
+  QVERIFY(busyReadRejected);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), expected);
+  QCOMPARE(editor.toUtf8(), expected);
+  QVERIFY(!buffers.isDirty(note.id()));
+  QVERIFY(buffers.pullActiveWriterContent(note.id()));
+  QCOMPARE(note.getContentRaw(), expected); // Restored writer cannot resurrect the old checkbox.
+}
+
+void TestBuffer::testTextSnapshotRejectsStaleSource() {
+  const QByteArray original("## Tasks\n- [ ] task\n");
+  const auto target = createReplacementTarget(QStringLiteral("snapshot-stale.todo"), original);
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  auto note = buffers.openBuffer({target.m_notebookId, target.m_path});
+  QString editor = QString::fromUtf8(original);
+  buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+  });
+  QString snapshot, error;
+  bool readOnly = false;
+  QVERIFY(buffers.readTextSnapshot(note.nodeId(), &snapshot, &readOnly, &error));
+  editor.prepend(QStringLiteral("new heading\n"));
+  buffers.markDirty(note.id());
+  bool done = false, saved = true, called = false;
+  QVERIFY(buffers.editTextSnapshot(
+              note.nodeId(), snapshot,
+              [&](const Buffer2 &, const QString &, QString *, QString *) {
+                called = true;
+                return true;
+              },
+              [&](bool p_saved, const QString &p_error) {
+                saved = p_saved;
+                error = p_error;
+                done = true;
+              }) > 0);
+  QTRY_VERIFY_WITH_TIMEOUT(done, 10000);
+  QVERIFY(!saved);
+  QVERIFY(!error.isEmpty());
+  QVERIFY(!called);
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+  QVERIFY(buffers.isDirty(note.id()));
+  QString retained;
+  QVERIFY(buffers.captureActiveWriterContent(note.id(), &retained));
+  QCOMPARE(retained, editor);
+  QCOMPARE(retained, QStringLiteral("new heading\n## Tasks\n- [ ] task\n"));
+}
+
+void TestBuffer::testTextSnapshotStandaloneLineEndings_data() {
+  QTest::addColumn<QByteArray>("ending");
+  QTest::addColumn<bool>("bom");
+  QTest::newRow("crlf-bom") << QByteArray("\r\n") << true;
+  QTest::newRow("cr-bom") << QByteArray("\r") << true;
+  QTest::newRow("lf") << QByteArray("\n") << false;
+}
+
+void TestBuffer::testTextSnapshotStandaloneLineEndings() {
+  QFETCH(QByteArray, ending);
+  QFETCH(bool, bom);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const auto path = directory.filePath(QStringLiteral("standalone.todo"));
+  const QByteArray prefix = bom ? QByteArray::fromHex("efbbbf") : QByteArray();
+  const auto original = prefix + "## Tasks" + ending + "- [ ] task" + ending;
+  QVERIFY(writeReplacementFile(path, original));
+  HookManager hooks;
+  SyncWorkQueueManager queues;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  buffers.setSyncWorkQueueManager(&queues); // Standalone must not request notebook maintenance.
+  const auto cleanup = qScopeGuard([&]() { buffers.shutdown(); });
+  const NodeIdentifier node{QString(), path};
+  QString snapshot, error;
+  bool readOnly = true;
+  QVERIFY2(buffers.readTextSnapshot(node, &snapshot, &readOnly, &error), qPrintable(error));
+  QCOMPARE(snapshot, QStringLiteral("## Tasks\n- [ ] task\n"));
+  QVERIFY(!readOnly);
+  QVERIFY(buffers.listBuffers().isEmpty());
+  for (const bool complete : {true, false}) {
+    bool done = false, saved = false;
+    QVERIFY(buffers.editTextSnapshot(
+                node, snapshot,
+                [complete](const Buffer2 &, const QString &p_source, QString *p_replacement,
+                           QString *) {
+                  *p_replacement = p_source;
+                  p_replacement->replace(complete ? QStringLiteral("[ ]") : QStringLiteral("[x]"),
+                                         complete ? QStringLiteral("[x]") : QStringLiteral("[ ]"));
+                  return true;
+                },
+                [&](bool p_saved, const QString &p_error) {
+                  saved = p_saved;
+                  error = p_error;
+                  done = true;
+                }) > 0);
+    QVERIFY(!done);
+    QTRY_VERIFY_WITH_TIMEOUT(done, 10000);
+    QVERIFY2(saved, qPrintable(error));
+    QVERIFY(error.isEmpty());
+    QCOMPARE(readReplacementFile(path),
+             prefix + "## Tasks" + ending + (complete ? "- [x] task" : "- [ ] task") + ending);
+    QVERIFY(buffers.listBuffers().isEmpty());
+    QVERIFY2(buffers.readTextSnapshot(node, &snapshot, &readOnly, &error), qPrintable(error));
+    QVERIFY(buffers.listBuffers().isEmpty());
+  }
+  QCOMPARE(readReplacementFile(path), original);
+}
+
+void TestBuffer::testTextSnapshotRejectsChangingHook_data() {
+  QTest::addColumn<bool>("changesText");
+  QTest::newRow("changed-writer") << true;
+  QTest::newRow("same-normalized-writer") << false;
+}
+
+void TestBuffer::testTextSnapshotRejectsChangingHook() {
+  QFETCH(bool, changesText);
+  const QByteArray original("## Tasks\r\n- [ ] task\r\n");
+  const auto target =
+      createReplacementTarget(QStringLiteral("snapshot-hook-%1.todo").arg(changesText), original);
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  auto note = buffers.openBuffer({target.m_notebookId, target.m_path});
+  QString editor = QChar(0xfeff) + QString::fromUtf8(original);
+  buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+  const int hook = hooks.addAction<BufferEvent>(
+      HookNames::FileBeforeSave, [&](HookContext &, const BufferEvent &) {
+        editor = QString::fromUtf8(original);
+        editor.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+        if (changesText)
+          editor += QStringLiteral("hook draft\n");
+      });
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    hooks.removeAction(hook);
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+  });
+  QString snapshot, error;
+  bool readOnly = false;
+  QVERIFY(buffers.readTextSnapshot(note.nodeId(), &snapshot, &readOnly, &error));
+  bool done = false, saved = false;
+  QVERIFY(buffers.editTextSnapshot(
+              note.nodeId(), snapshot,
+              [](const Buffer2 &, const QString &p_source, QString *p_replacement, QString *) {
+                *p_replacement = p_source;
+                p_replacement->replace(QStringLiteral("[ ]"), QStringLiteral("[x]"));
+                return true;
+              },
+              [&](bool p_saved, const QString &p_error) {
+                saved = p_saved;
+                error = p_error;
+                done = true;
+              }) > 0);
+  QTRY_VERIFY_WITH_TIMEOUT(done, 10000);
+  QVERIFY(!buffers.isContentReplacementActive(note.id()));
+  if (changesText) {
+    QVERIFY(!saved);
+    QVERIFY(!error.isEmpty());
+    QCOMPARE(readReplacementFile(replacementFilePath(target)), original);
+    QVERIFY(buffers.isDirty(note.id()));
+    QString retained;
+    QVERIFY(buffers.captureActiveWriterContent(note.id(), &retained));
+    QCOMPARE(retained, QStringLiteral("## Tasks\n- [ ] task\nhook draft\n"));
+  } else {
+    QVERIFY2(saved, qPrintable(error));
+    QCOMPARE(readReplacementFile(replacementFilePath(target)),
+             QByteArray("## Tasks\r\n- [x] task\r\n"));
+  }
+}
+
+void TestBuffer::testTextSnapshotPrivateLifetime() {
+  const QByteArray original("## Tasks\n- [ ] task\n");
+  const auto target = createReplacementTarget(QStringLiteral("snapshot-private.todo"), original);
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::None);
+  bool openedUi = false;
+  hooks.addAction<FileOpenEvent>(HookNames::FileAfterOpen,
+                                 [&](HookContext &, const FileOpenEvent &) { openedUi = true; });
+  const auto cleanup = qScopeGuard([&]() { buffers.shutdown(); });
+  const NodeIdentifier node{target.m_notebookId, target.m_path};
+  QString snapshot, error;
+  bool readOnly = true;
+  QVERIFY(buffers.listBuffers().isEmpty());
+  QVERIFY2(buffers.readTextSnapshot(node, &snapshot, &readOnly, &error), qPrintable(error));
+  QCOMPARE(snapshot, QString::fromUtf8(original));
+  QVERIFY(buffers.listBuffers().isEmpty());
+  bool done = false, saved = false;
+  QVERIFY(buffers.editTextSnapshot(
+              node, snapshot,
+              [](const Buffer2 &, const QString &p_source, QString *p_replacement, QString *) {
+                *p_replacement = p_source;
+                p_replacement->replace(QStringLiteral("[ ]"), QStringLiteral("[x]"));
+                return true;
+              },
+              [&](bool p_saved, const QString &p_error) {
+                saved = p_saved;
+                error = p_error;
+                done = true;
+              }) > 0);
+  QTRY_VERIFY_WITH_TIMEOUT(done, 10000);
+  QVERIFY2(saved, qPrintable(error));
+  QVERIFY(!openedUi);
+  QVERIFY(buffers.listBuffers().isEmpty());
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), QByteArray("## Tasks\n- [x] task\n"));
+
+  auto shared = buffers.openBuffer(node);
+  QVERIFY(shared.isValid());
+  QVERIFY(buffers.readTextSnapshot(node, &snapshot, &readOnly, &error));
+  QCOMPARE(buffers.listBuffers().size(), 1);
+  buffers.registerActiveWriter(shared.id(), 1,
+                               []() -> QString { throw std::runtime_error("writer unavailable"); });
+  QVERIFY(!buffers.readTextSnapshot(node, &snapshot, &readOnly, &error));
+  QVERIFY(snapshot.isEmpty()); // A failed editor capture never exposes stale persisted bytes.
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(buffers.listBuffers().size(), 1);
+  buffers.unregisterActiveWriter(shared.id(), 1);
+  QVERIFY(buffers.closeBuffer(shared.id()));
 }
 
 void TestBuffer::testNoteOperationsCreateRenameTrash() {

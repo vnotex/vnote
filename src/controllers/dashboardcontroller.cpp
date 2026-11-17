@@ -116,6 +116,10 @@ void DashboardController::seedDefaultLayout() {
   if (fac && fac->hasCreator(QStringLiteral("calendar"))) {
     placeRecord(QStringLiteral("calendar"), 1, 0, kDefaultRowSpan, kDefaultColSpan, QJsonObject());
   }
+  if (fac && fac->hasCreator(QStringLiteral("todos"))) {
+    placeRecord(QStringLiteral("todos"), 1 + kDefaultRowSpan, 0, kDefaultRowSpan, kDefaultColSpan,
+                QJsonObject());
+  }
   // The right column (starting at kDefaultColSpan) stacks the Activity sticker
   // at the top with the History sticker directly below it. Both share the same
   // width (one extra column wider than the default) so the column aligns.

@@ -1880,6 +1880,35 @@ and persistence live in `DashboardController` (`../controllers/`).
 - `Sticker` — abstract sticker content widget; `CalendarSticker` is the concrete built-in
 - `StickerFactory` (in `../gui/services/`) — registry mapping sticker type-ids to creators
 
+#### TODOs sticker
+
+`TodoSticker` is the `todos` built-in. Fresh and reset dashboards place it below Calendar;
+nonempty saved layouts, including an explicit empty sticker array, remain user-owned. There is
+no layout migration. The combo selects real lists (with group-qualified names), and completed
+tasks remain visible. Checkboxes/Space toggle completion; a task-body click or Enter opens the
+internal TODO view at its containing list and task. Edit forces Edit mode without replacing
+another note; an already-open backing note follows normal tab deduplication.
+
+`TodoStickerController` owns the global backing path in `SessionConfig::core.todoStickerFilePath`.
+Settings selects an existing `.todo` file; cancellation leaves the path unchanged. Session change
+notifications refresh other stickers. The absent-key default is empty, so no config migration
+is needed. An unset path prefers the opened default notebook, then the current open notebook
+(first open notebook if the current ID is stale), then tries opening the default notebook when
+none is open. The sticker never creates a notebook itself.
+
+The selected notebook's root `My TODOs.todo` is reused or created with an initial Tasks list.
+The bundled default notebook includes the same file and index entry. Missing saved backing files
+are also created at their exact path, never under a suffixed name; parent folders must already
+exist and remain writable. Existing blank/malformed files are not overwritten. Missing indexed
+bodies retain their identity; raw bodies are restored before reconciliation. A live editor's
+missing file is saved from its current draft, never replaced with the initial template.
+
+The controller keeps only a parsed projection, not a persistent background buffer or writer.
+Snapshots and native edits use `BufferService`'s reserved transaction; stale rows reject rather
+than overwriting newer editor text. Read-only tasks remain navigable but not checkable, and errors
+leave Settings available. Source line navigation reuses `TodoViewWindow::applyFileOpenSettings`.
+Regression coverage is in `test_todoviewwindow` and `test_buffer`.
+
 #### Edit mode (unlocked): drag-move / drag-resize
 
 Locked is the default and is unchanged: no overlay widget exists at all. **Unlocked

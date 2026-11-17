@@ -1662,6 +1662,82 @@ Trust is remembered until you close this notebook.</source>
         <source>Unable to read the editor content</source>
         <translation>无法读取编辑器内容</translation>
     </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="305"/>
+        <source>Mixed line endings cannot be edited from a snapshot.</source>
+        <translation>无法通过快照编辑混合换行符的文档。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="791"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="850"/>
+        <source>The note snapshot is unavailable.</source>
+        <translation>笔记快照不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="806"/>
+        <source>The notebook is closed.</source>
+        <translation>笔记本已关闭。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="816"/>
+        <source>The note is unavailable or protected.</source>
+        <translation>笔记不可用或受保护。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="819"/>
+        <source>Protected notes cannot be read as text snapshots.</source>
+        <translation>无法将受保护的笔记读取为文本快照。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="826"/>
+        <source>The note path is unavailable or linked, or the note is too large.</source>
+        <translation>笔记路径不可用、为链接路径或笔记过大。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="855"/>
+        <source>The note is busy. Try again in a moment.</source>
+        <translation>笔记正忙，请稍后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="859"/>
+        <source>The note changed on disk. Reopen it before reading a snapshot.</source>
+        <translation>磁盘上的笔记已改变。请重新打开后再读取快照。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="871"/>
+        <source>The note changed while reading its snapshot.</source>
+        <translation>读取快照时笔记发生变化。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="882"/>
+        <source>The note snapshot is not supported.</source>
+        <translation>不支持此笔记快照。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1053"/>
+        <source>The note path is unavailable or linked.</source>
+        <translation>笔记路径不可用或为链接路径。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1208"/>
+        <source>The note exceeds the snapshot size limit.</source>
+        <translation>笔记超过快照大小限制。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1221"/>
+        <source>The note changed. Refresh its snapshot before editing.</source>
+        <translation>笔记已改变。请刷新快照后再编辑。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1227"/>
+        <source>Could not edit the note snapshot.</source>
+        <translation>无法编辑笔记快照。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1233"/>
+        <source>The note changed while editing its snapshot.</source>
+        <translation>编辑快照时笔记发生变化。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::CalendarSticker</name>
@@ -7574,6 +7650,56 @@ Trust is remembered until you close this notebook.</source>
         <location line="+44"/>
         <source>vxcore context is not initialized</source>
         <translation>vxcore 上下文尚未初始化</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1837"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1884"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1889"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1903"/>
+        <source>The destination folder is unavailable.</source>
+        <translation>目标文件夹不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1839"/>
+        <source>The notebook is read-only.</source>
+        <translation>笔记本为只读。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1863"/>
+        <source>Unable to choose a file name.</source>
+        <translation>无法选择文件名。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1868"/>
+        <source>File creation was cancelled.</source>
+        <translation>文件创建已取消。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1872"/>
+        <source>The notebook is busy. Try again shortly.</source>
+        <translation>笔记本正忙，请稍后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1878"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1925"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1935"/>
+        <source>The file destination changed.</source>
+        <translation>文件目标位置已改变。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1966"/>
+        <source>The created file needs recovery; its contents were not overwritten.</source>
+        <translation>创建的文件需要恢复，未覆盖其内容。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1986"/>
+        <source>The file was written, but its notebook identity needs recovery.</source>
+        <translation>文件已写入，但其笔记本标识需要恢复。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1992"/>
+        <source>The file was written, but an after-create hook failed.</source>
+        <translation>文件已写入，但创建后钩子失败。</translation>
     </message>
 </context>
 <context>
@@ -13584,6 +13710,323 @@ Continue?</source>
     <message>
         <source>The token no longer exists</source>
         <translation>令牌已不存在</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoSticker</name>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="176"/>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="183"/>
+        <source>Settings</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="184"/>
+        <source>Choose an existing TODO file</source>
+        <translation>选择已有的 TODO 文件</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
+        <source>TODO list</source>
+        <translation>TODO 列表</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="199"/>
+        <source>TODO tasks</source>
+        <translation>TODO 任务</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="230"/>
+        <source>TODOs</source>
+        <translation>待办事项</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="254"/>
+        <source>Untitled list</source>
+        <translation>未命名列表</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="258"/>
+        <source>Default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="259"/>
+        <source>Untitled group</source>
+        <translation>未命名分组</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="260"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
+        <source>Saving TODOs...</source>
+        <translation>正在保存待办事项…</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="292"/>
+        <source>Loading TODOs...</source>
+        <translation>正在加载待办事项…</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="294"/>
+        <source>No TODO lists. Use Edit to add a list.</source>
+        <translation>没有 TODO 列表。点击“编辑”添加列表。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
+        <source>No tasks in this list.</source>
+        <translation>此列表中没有任务。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
+        <source>Choose TODO File</source>
+        <translation>选择 TODO 文件</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
+        <source>TODO files (*.todo)</source>
+        <translation>TODO 文件 (*.todo)</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoStickerController</name>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="139"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="340"/>
+        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
+        <translation>TODO 所在的笔记本已关闭。请重新打开或选择其他文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="172"/>
+        <source>The TODO file was deleted. Refresh to recreate it.</source>
+        <translation>TODO 文件已被删除。刷新可重新创建。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="285"/>
+        <source>Choose an absolute path to a .todo file.</source>
+        <translation>请选择 .todo 文件的绝对路径。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="289"/>
+        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
+        <translation>无法使用链接的 TODO 文件或文件夹。请选择普通文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="294"/>
+        <source>The TODO file is not a readable regular file: %1</source>
+        <translation>TODO 文件不是可读取的普通文件：%1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="300"/>
+        <source>The TODO file is missing or unreadable: %1</source>
+        <translation>TODO 文件不存在或无法读取：%1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="305"/>
+        <source>The TODO parent folder is missing or unavailable: %1</source>
+        <translation>TODO 的父文件夹不存在或不可用：%1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="311"/>
+        <source>The TODO file path cannot be resolved: %1</source>
+        <translation>无法解析 TODO 文件路径：%1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="362"/>
+        <source>The TODO file is being initialized by another dashboard.</source>
+        <translation>其他仪表盘正在初始化 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="386"/>
+        <source>The TODO notebook folder cannot be read.</source>
+        <translation>无法读取 TODO 所在的笔记本文件夹。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="402"/>
+        <source>A notebook folder already occupies the TODO file path.</source>
+        <translation>TODO 文件路径已被笔记本文件夹占用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="409"/>
+        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
+        <translation>TODO 位置为只读，无法创建或索引文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="417"/>
+        <source>The notebook maintenance service is unavailable.</source>
+        <translation>笔记本维护服务不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="422"/>
+        <source>The notebook is busy syncing. Try again after sync finishes.</source>
+        <translation>笔记本正在同步。请在同步完成后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="432"/>
+        <source>The existing TODO file could not be indexed safely.</source>
+        <translation>无法安全地索引已有的 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="452"/>
+        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
+        <translation>TODO 文件有相互冲突的打开缓冲区。请关闭多余视图后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="460"/>
+        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
+        <translation>打开的 TODO 缓冲区无法安全地重新创建此文件。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="468"/>
+        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
+        <translation>打开的 TODO 缓冲区正忙。请在当前操作完成后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="478"/>
+        <source>The current TODO draft could not be captured. Save it from its editor.</source>
+        <translation>无法获取当前 TODO 草稿。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="490"/>
+        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
+        <translation>保存前，打开的 TODO 缓冲区已改变或变得不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="504"/>
+        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
+        <translation>保存 TODO 草稿被拒绝或取消。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="505"/>
+        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
+        <translation>无法通过保存 TODO 草稿重新创建文件（错误 %1）。草稿仍在编辑器中打开。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="522"/>
+        <source>The bundled initial TODO document is unavailable.</source>
+        <translation>随附的初始 TODO 文档不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="527"/>
+        <source>The bundled initial TODO document could not be read.</source>
+        <translation>无法读取随附的初始 TODO 文档。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="536"/>
+        <source>The TODO file could not be created.</source>
+        <translation>无法创建 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="542"/>
+        <source>The TODO destination changed during creation. No alternate file was selected.</source>
+        <translation>创建过程中 TODO 目标位置发生变化，未选择其他文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="551"/>
+        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
+        <translation>重新创建过程中 TODO 文件发生变化。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="563"/>
+        <source>The default TODO file is being initialized by another dashboard.</source>
+        <translation>其他仪表盘正在初始化默认 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="595"/>
+        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
+        <translation>没有可用的笔记本。请打开笔记本或在“设置”中选择 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="608"/>
+        <source>The default TODO location is missing or contains a linked path.</source>
+        <translation>默认 TODO 位置不存在或包含链接路径。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="633"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="737"/>
+        <source>The TODO services are unavailable.</source>
+        <translation>TODO 服务不可用。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="684"/>
+        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
+        <translation>TODO 文件暂时不可用。请在当前操作完成后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="699"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="788"/>
+        <source>Line %1: %2</source>
+        <translation>第 %1 行：%2</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="730"/>
+        <source>Wait for the current TODO operation to finish.</source>
+        <translation>请等待当前 TODO 操作完成。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="770"/>
+        <source>The selected TODO file cannot be read right now.</source>
+        <translation>目前无法读取所选 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="805"/>
+        <source>This task is out of date. Refresh before trying again.</source>
+        <translation>此任务已过期。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="810"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="850"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="909"/>
+        <source>The selected task no longer exists.</source>
+        <translation>所选任务已不存在。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="835"/>
+        <source>The TODO selection changed before the operation could finish.</source>
+        <translation>操作完成前，所选 TODO 已发生变化。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="843"/>
+        <source>The TODO source cannot be edited without changing unrelated text.</source>
+        <translation>无法在不改变无关文本的情况下编辑 TODO 源文档。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="859"/>
+        <source>The task could not be updated.</source>
+        <translation>无法更新任务。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="873"/>
+        <source>The TODO change could not be saved.</source>
+        <translation>无法保存 TODO 更改。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="887"/>
+        <source>The TODO change could not start. Refresh and try again.</source>
+        <translation>无法开始 TODO 更改。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="904"/>
+        <source>The TODO source changed. Select the task again in the refreshed list.</source>
+        <translation>TODO 源文档已改变。请在刷新后的列表中重新选择任务。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="918"/>
+        <source>The TODO file could not be opened.</source>
+        <translation>无法打开 TODO 文件。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
+        <source>The TODO file could not be opened for editing.</source>
+        <translation>无法打开 TODO 文件进行编辑。</translation>
     </message>
 </context>
 </TS>

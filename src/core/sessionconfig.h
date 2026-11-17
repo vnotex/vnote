@@ -202,6 +202,9 @@ public:
   const QString &getCurrentNotebook() const;
   void setCurrentNotebook(const QString &p_guid);
 
+  const QString &getTodoStickerFilePath() const;
+  void setTodoStickerFilePath(const QString &p_path);
+
   const QString &getLastToolTipDate() const;
   void setLastToolTipDate(const QString &p_date);
 
@@ -315,6 +318,8 @@ private:
 
   // GUID of the currently active notebook.
   QString m_currentNotebook;
+
+  QString m_todoStickerFilePath;
 
   // Local daily-tip progress. Permanent opt-out lives in CoreConfig.
   QString m_lastToolTipDate;

@@ -1662,6 +1662,82 @@ Trust is remembered until you close this notebook.</source>
         <source>Unable to read the editor content</source>
         <translation>エディタの内容を読み取れません</translation>
     </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="305"/>
+        <source>Mixed line endings cannot be edited from a snapshot.</source>
+        <translation>改行コードが混在するドキュメントはスナップショットから編集できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="791"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="850"/>
+        <source>The note snapshot is unavailable.</source>
+        <translation>ノートのスナップショットを利用できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="806"/>
+        <source>The notebook is closed.</source>
+        <translation>ノートブックは閉じられています。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="816"/>
+        <source>The note is unavailable or protected.</source>
+        <translation>ノートは利用できないか、保護されています。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="819"/>
+        <source>Protected notes cannot be read as text snapshots.</source>
+        <translation>保護されたノートをテキストスナップショットとして読み取ることはできません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="826"/>
+        <source>The note path is unavailable or linked, or the note is too large.</source>
+        <translation>ノートのパスが無効またはリンクされているか、ノートが大きすぎます。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="855"/>
+        <source>The note is busy. Try again in a moment.</source>
+        <translation>ノートは処理中です。しばらくしてから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="859"/>
+        <source>The note changed on disk. Reopen it before reading a snapshot.</source>
+        <translation>ディスク上のノートが変更されました。スナップショットを読む前に開き直してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="871"/>
+        <source>The note changed while reading its snapshot.</source>
+        <translation>スナップショットの読み取り中にノートが変更されました。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="882"/>
+        <source>The note snapshot is not supported.</source>
+        <translation>このノートのスナップショットはサポートされていません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1053"/>
+        <source>The note path is unavailable or linked.</source>
+        <translation>ノートのパスが無効またはリンクされています。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1208"/>
+        <source>The note exceeds the snapshot size limit.</source>
+        <translation>ノートがスナップショットのサイズ制限を超えています。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1221"/>
+        <source>The note changed. Refresh its snapshot before editing.</source>
+        <translation>ノートが変更されました。編集する前にスナップショットを更新してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1227"/>
+        <source>Could not edit the note snapshot.</source>
+        <translation>ノートのスナップショットを編集できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/bufferservice.cpp" line="1233"/>
+        <source>The note changed while editing its snapshot.</source>
+        <translation>スナップショットの編集中にノートが変更されました。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::CalendarSticker</name>
@@ -7574,6 +7650,56 @@ Trust is remembered until you close this notebook.</source>
         <location line="+44"/>
         <source>vxcore context is not initialized</source>
         <translation>vxcore コンテキストが初期化されていません</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1837"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1884"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1889"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1903"/>
+        <source>The destination folder is unavailable.</source>
+        <translation>保存先フォルダーを利用できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1839"/>
+        <source>The notebook is read-only.</source>
+        <translation>ノートブックは読み取り専用です。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1863"/>
+        <source>Unable to choose a file name.</source>
+        <translation>ファイル名を選択できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1868"/>
+        <source>File creation was cancelled.</source>
+        <translation>ファイルの作成はキャンセルされました。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1872"/>
+        <source>The notebook is busy. Try again shortly.</source>
+        <translation>ノートブックは処理中です。しばらくしてから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1878"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1925"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1935"/>
+        <source>The file destination changed.</source>
+        <translation>ファイルの保存先が変更されました。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1966"/>
+        <source>The created file needs recovery; its contents were not overwritten.</source>
+        <translation>作成されたファイルは復旧が必要です。内容は上書きしていません。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1986"/>
+        <source>The file was written, but its notebook identity needs recovery.</source>
+        <translation>ファイルは書き込まれましたが、ノートブック内の識別情報は復旧が必要です。</translation>
+    </message>
+    <message>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="1992"/>
+        <source>The file was written, but an after-create hook failed.</source>
+        <translation>ファイルは書き込まれましたが、作成後フックに失敗しました。</translation>
     </message>
 </context>
 <context>
@@ -13584,6 +13710,323 @@ Continue?</source>
     <message>
         <source>The token no longer exists</source>
         <translation>トークンはもう存在しません</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoSticker</name>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="176"/>
+        <source>Edit</source>
+        <translation>編集</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="183"/>
+        <source>Settings</source>
+        <translation>設定</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="184"/>
+        <source>Choose an existing TODO file</source>
+        <translation>既存の TODO ファイルを選択</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
+        <source>TODO list</source>
+        <translation>TODO リスト</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="199"/>
+        <source>TODO tasks</source>
+        <translation>TODO タスク</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="230"/>
+        <source>TODOs</source>
+        <translation>TODO</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="254"/>
+        <source>Untitled list</source>
+        <translation>無題のリスト</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="258"/>
+        <source>Default</source>
+        <translation>デフォルト</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="259"/>
+        <source>Untitled group</source>
+        <translation>無題のグループ</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="260"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
+        <source>Saving TODOs...</source>
+        <translation>TODO を保存しています...</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="292"/>
+        <source>Loading TODOs...</source>
+        <translation>TODO を読み込んでいます...</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="294"/>
+        <source>No TODO lists. Use Edit to add a list.</source>
+        <translation>TODO リストがありません。「編集」でリストを追加してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
+        <source>No tasks in this list.</source>
+        <translation>このリストにはタスクがありません。</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
+        <source>Choose TODO File</source>
+        <translation>TODO ファイルを選択</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
+        <source>TODO files (*.todo)</source>
+        <translation>TODO ファイル (*.todo)</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoStickerController</name>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="139"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="340"/>
+        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
+        <translation>TODO のノートブックは閉じられています。開き直すか、別のファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="172"/>
+        <source>The TODO file was deleted. Refresh to recreate it.</source>
+        <translation>TODO ファイルは削除されました。更新すると再作成されます。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="285"/>
+        <source>Choose an absolute path to a .todo file.</source>
+        <translation>.todo ファイルの絶対パスを選択してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="289"/>
+        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
+        <translation>リンクされた TODO ファイルやフォルダーは使用できません。通常のファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="294"/>
+        <source>The TODO file is not a readable regular file: %1</source>
+        <translation>TODO ファイルは読み取り可能な通常のファイルではありません: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="300"/>
+        <source>The TODO file is missing or unreadable: %1</source>
+        <translation>TODO ファイルが存在しないか、読み取れません: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="305"/>
+        <source>The TODO parent folder is missing or unavailable: %1</source>
+        <translation>TODO の親フォルダーが存在しないか、利用できません: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="311"/>
+        <source>The TODO file path cannot be resolved: %1</source>
+        <translation>TODO ファイルのパスを解決できません: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="362"/>
+        <source>The TODO file is being initialized by another dashboard.</source>
+        <translation>別のダッシュボードが TODO ファイルを初期化しています。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="386"/>
+        <source>The TODO notebook folder cannot be read.</source>
+        <translation>TODO のノートブックフォルダーを読み取れません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="402"/>
+        <source>A notebook folder already occupies the TODO file path.</source>
+        <translation>TODO ファイルのパスには既にノートブックのフォルダーがあります。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="409"/>
+        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
+        <translation>TODO の保存先は読み取り専用のため、ファイルを作成または登録できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="417"/>
+        <source>The notebook maintenance service is unavailable.</source>
+        <translation>ノートブックのメンテナンスサービスを利用できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="422"/>
+        <source>The notebook is busy syncing. Try again after sync finishes.</source>
+        <translation>ノートブックを同期中です。同期が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="432"/>
+        <source>The existing TODO file could not be indexed safely.</source>
+        <translation>既存の TODO ファイルを安全に登録できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="452"/>
+        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
+        <translation>TODO ファイルの開いているバッファーが競合しています。余分なビューを閉じて再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="460"/>
+        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
+        <translation>開いている TODO バッファーからこのファイルを安全に再作成できません。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="468"/>
+        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
+        <translation>開いている TODO バッファーは処理中です。現在の操作が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="478"/>
+        <source>The current TODO draft could not be captured. Save it from its editor.</source>
+        <translation>現在の TODO 下書きを取得できませんでした。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="490"/>
+        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
+        <translation>保存する前に、開いている TODO バッファーが変更されたか利用できなくなりました。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="504"/>
+        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
+        <translation>TODO 下書きの保存が拒否またはキャンセルされました。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="505"/>
+        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
+        <translation>ファイルを再作成するための TODO 下書きの保存に失敗しました（エラー %1）。下書きはエディターに残っています。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="522"/>
+        <source>The bundled initial TODO document is unavailable.</source>
+        <translation>同梱の初期 TODO ドキュメントを利用できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="527"/>
+        <source>The bundled initial TODO document could not be read.</source>
+        <translation>同梱の初期 TODO ドキュメントを読み取れませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="536"/>
+        <source>The TODO file could not be created.</source>
+        <translation>TODO ファイルを作成できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="542"/>
+        <source>The TODO destination changed during creation. No alternate file was selected.</source>
+        <translation>作成中に TODO の保存先が変更されました。代わりのファイルは選択していません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="551"/>
+        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
+        <translation>再作成中に TODO ファイルが変更されました。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="563"/>
+        <source>The default TODO file is being initialized by another dashboard.</source>
+        <translation>別のダッシュボードがデフォルトの TODO ファイルを初期化しています。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="595"/>
+        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
+        <translation>利用可能なノートブックがありません。ノートブックを開くか、「設定」で TODO ファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="608"/>
+        <source>The default TODO location is missing or contains a linked path.</source>
+        <translation>デフォルトの TODO 保存先が存在しないか、リンクされたパスが含まれています。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="633"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="737"/>
+        <source>The TODO services are unavailable.</source>
+        <translation>TODO サービスを利用できません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="684"/>
+        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
+        <translation>TODO ファイルを一時的に利用できません。現在の操作が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="699"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="788"/>
+        <source>Line %1: %2</source>
+        <translation>%1 行目: %2</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="730"/>
+        <source>Wait for the current TODO operation to finish.</source>
+        <translation>現在の TODO 操作が完了するまでお待ちください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="770"/>
+        <source>The selected TODO file cannot be read right now.</source>
+        <translation>選択した TODO ファイルは現在読み取れません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="805"/>
+        <source>This task is out of date. Refresh before trying again.</source>
+        <translation>このタスクの表示は古くなっています。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="810"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="850"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="909"/>
+        <source>The selected task no longer exists.</source>
+        <translation>選択したタスクはもう存在しません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="835"/>
+        <source>The TODO selection changed before the operation could finish.</source>
+        <translation>操作が完了する前に TODO の選択が変更されました。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="843"/>
+        <source>The TODO source cannot be edited without changing unrelated text.</source>
+        <translation>無関係なテキストを変更せずに TODO ソースを編集することはできません。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="859"/>
+        <source>The task could not be updated.</source>
+        <translation>タスクを更新できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="873"/>
+        <source>The TODO change could not be saved.</source>
+        <translation>TODO の変更を保存できませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="887"/>
+        <source>The TODO change could not start. Refresh and try again.</source>
+        <translation>TODO の変更を開始できませんでした。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="904"/>
+        <source>The TODO source changed. Select the task again in the refreshed list.</source>
+        <translation>TODO ソースが変更されました。更新されたリストでタスクを選択し直してください。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="918"/>
+        <source>The TODO file could not be opened.</source>
+        <translation>TODO ファイルを開けませんでした。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
+        <source>The TODO file could not be opened for editing.</source>
+        <translation>TODO ファイルを編集用に開けませんでした。</translation>
     </message>
 </context>
 </TS>
