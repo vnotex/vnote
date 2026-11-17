@@ -532,7 +532,7 @@ QVariant TodoTaskModel::data(const QModelIndex &p_index, int p_role) const {
     switch (p_role) {
     case Qt::DisplayRole:
     case TitleRole:
-      return tr("Completed (%1)").arg(m_completedCount);
+      return tr("Completed");
     case Qt::AccessibleTextRole:
     case Qt::ToolTipRole:
       return m_projection.m_completedExpanded

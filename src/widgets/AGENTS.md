@@ -782,6 +782,14 @@ filtered tasks. Escape leaves active search IME composition to the input. Hiding
 editor clears the overlay, and widening docks the same sidebar again. The overlay follows the
 splitter's leading edge in RTL and uses the theme's normal base background, including Native.
 Task details still use a Back-enabled stacked page at narrow widths.
+Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
+and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day
+dates, steps, notes and tags remain in the secondary line; without any remaining details the title
+is vertically centered. Row heights and checkbox/star hitboxes do not change.
+The Completed section shows its count in a trailing `TreeChildCountDelegate` badge instead of
+parenthesized title text. Its chevron, title and badge mirror in RTL; accessible text and tooltips
+retain the count. Expansion and count/filter behavior are unchanged. These presentation changes
+need no document or configuration migration.
 Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
 not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
 The sidebar paints its own rounded selection with the theme's active list-item foreground and

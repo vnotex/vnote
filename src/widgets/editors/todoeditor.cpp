@@ -341,11 +341,21 @@ private:
   QColor m_border;
 };
 
-class TaskDelegate : public QStyledItemDelegate {
+class TaskDelegate : public TreeChildCountDelegate {
 public:
   TaskDelegate(ServiceLocator &p_services, QObject *p_parent)
-      : QStyledItemDelegate(p_parent), m_theme(p_services.get<ThemeService>()) {
+      : TreeChildCountDelegate(p_parent), m_theme(p_services.get<ThemeService>()) {
     Q_ASSERT(m_theme);
+  }
+
+  void setShowLocation(bool p_show) {
+    if (m_showLocation == p_show) {
+      return;
+    }
+    m_showLocation = p_show;
+    if (auto *view = qobject_cast<QListView *>(parent())) {
+      view->viewport()->update();
+    }
   }
 
   static QRect checkRect(const QStyleOptionViewItem &p_option) {
@@ -389,16 +399,34 @@ public:
     p_painter->setFont(option.font);
     const QRect circle = checkRect(option);
     if (p_index.data(TodoTaskModel::SectionRole).toBool()) {
+      const auto visual = [&](const QRect &p_rect) {
+        return QStyle::visualRect(option.direction, option.rect, p_rect);
+      };
+      auto badge = childCountBadge(option, p_index.data(TodoTaskModel::CompletedCountRole).toInt());
+      auto titleRect = option.rect.adjusted(circle.width() + 20, 0, -8, 0);
+      if (!badge.m_rect.isEmpty()) {
+        titleRect.setRight(qMin(titleRect.right(), badge.m_rect.left() - badge.m_gap - 1));
+        badge.m_rect = visual(badge.m_rect);
+      }
       QStyleOption arrow;
-      arrow.rect = circle.adjusted(4, 4, -4, -4);
+      arrow.rect = visual(circle.adjusted(4, 4, -4, -4));
       arrow.palette = option.palette;
       arrow.state = option.state;
       style->drawPrimitive(p_index.data(TodoTaskModel::ExpandedRole).toBool()
                                ? QStyle::PE_IndicatorArrowDown
-                               : QStyle::PE_IndicatorArrowRight,
+                           : option.direction == Qt::RightToLeft ? QStyle::PE_IndicatorArrowLeft
+                                                                 : QStyle::PE_IndicatorArrowRight,
                            &arrow, p_painter, widget);
-      p_painter->drawText(option.rect.adjusted(circle.width() + 20, 0, -8, 0),
-                          Qt::AlignVCenter | Qt::AlignLeft, p_index.data().toString());
+      p_painter->drawText(
+          visual(titleRect),
+          QStyle::visualAlignment(option.direction, Qt::AlignVCenter | Qt::AlignLeading),
+          option.fontMetrics.elidedText(p_index.data().toString(), Qt::ElideRight,
+                                        qMax(0, titleRect.width())));
+      option.palette.setColor(
+          QPalette::Text, QColor(m_theme->paletteColor(QStringLiteral("widgets#qlistview#fg"))));
+      option.palette.setColor(QPalette::Disabled, QPalette::Text,
+                              QColor(m_theme->paletteColor(QStringLiteral("base#disabled#fg"))));
+      paintChildCount(p_painter, badge, option);
       p_painter->restore();
       return;
     }
@@ -440,15 +468,13 @@ public:
                          qMax(0, star.left() - circle.right() - 16), option.rect.height() - 8);
     auto titleFont = option.font;
     titleFont.setStrikeOut(checked);
-    p_painter->setFont(titleFont);
-    p_painter->setPen(textColor);
-    p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop,
-                        QFontMetrics(titleFont).elidedText(p_index.data().toString(),
-                                                           Qt::ElideRight, textRect.width()));
     QStringList summaries;
-    const auto groupTitle = p_index.data(TodoTaskModel::SourceGroupNameRole).toString();
-    const auto list = p_index.data(TodoTaskModel::SourceListNameRole).toString();
-    summaries.append(groupTitle.isEmpty() ? list : TodoEditor::tr("%1 / %2").arg(groupTitle, list));
+    if (m_showLocation) {
+      const auto groupTitle = p_index.data(TodoTaskModel::SourceGroupNameRole).toString();
+      const auto list = p_index.data(TodoTaskModel::SourceListNameRole).toString();
+      summaries.append(groupTitle.isEmpty() ? list
+                                            : TodoEditor::tr("%1 / %2").arg(groupTitle, list));
+    }
     const auto due = p_index.data(TodoTaskModel::DueRole).toDate();
     if (due.isValid()) {
       summaries.append(TodoEditor::tr("Due %1").arg(QLocale().toString(due, QLocale::ShortFormat)));
@@ -468,17 +494,25 @@ public:
       summaries.append(TodoEditor::tr("Note"));
     }
     summaries.append(p_index.data(TodoTaskModel::TagsRole).toStringList());
-    auto secondaryFont = option.font;
-    if (secondaryFont.pointSizeF() > 2) {
-      secondaryFont.setPointSizeF(secondaryFont.pointSizeF() - 1);
+    p_painter->setFont(titleFont);
+    p_painter->setPen(textColor);
+    p_painter->drawText(textRect,
+                        Qt::AlignLeft | (summaries.isEmpty() ? Qt::AlignVCenter : Qt::AlignTop),
+                        QFontMetrics(titleFont).elidedText(p_index.data().toString(),
+                                                           Qt::ElideRight, textRect.width()));
+    if (!summaries.isEmpty()) {
+      auto secondaryFont = option.font;
+      if (secondaryFont.pointSizeF() > 2) {
+        secondaryFont.setPointSizeF(secondaryFont.pointSizeF() - 1);
+      }
+      p_painter->setFont(secondaryFont);
+      p_painter->setPen(selected ? textColor
+                                 : QColor(m_theme->paletteColor(QStringLiteral("base#muted#fg"))));
+      p_painter->drawText(
+          textRect, Qt::AlignLeft | Qt::AlignBottom,
+          QFontMetrics(secondaryFont)
+              .elidedText(summaries.join(QStringLiteral(" / ")), Qt::ElideRight, textRect.width()));
     }
-    p_painter->setFont(secondaryFont);
-    p_painter->setPen(selected ? textColor
-                               : QColor(m_theme->paletteColor(QStringLiteral("base#muted#fg"))));
-    p_painter->drawText(
-        textRect, Qt::AlignLeft | Qt::AlignBottom,
-        QFontMetrics(secondaryFont)
-            .elidedText(summaries.join(QStringLiteral(" / ")), Qt::ElideRight, textRect.width()));
     p_painter->restore();
   }
 
@@ -517,6 +551,7 @@ public:
 
 private:
   ThemeService *m_theme;
+  bool m_showLocation = true;
 };
 } // namespace
 
@@ -1098,6 +1133,7 @@ void TodoEditor::refresh() {
   const auto *list = projection.m_view == TodoViewKind::List && !filtered
                          ? m_controller->getDocument().findList(projection.m_listKey)
                          : nullptr;
+  static_cast<TaskDelegate *>(m_tasks->itemDelegate())->setShowLocation(!list);
   m_listTitle->setVisible(list != nullptr);
   m_listIcon->setVisible(list != nullptr);
   m_listIcon->setEnabled(writable);
