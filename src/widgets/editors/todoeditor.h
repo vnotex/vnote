@@ -98,7 +98,7 @@ private:
   void refreshHeadingFont();
   void deleteList(const QString &p_key);
   void deleteTask(const QString &p_key);
-  void moveTaskToList(const QString &p_key);
+  void toggleTaskMyDay(const QString &p_key);
   void moveTask(const QString &p_key, int p_direction);
   void moveList(const QString &p_key, int p_direction);
   void updateStep(int p_index, bool p_typing);

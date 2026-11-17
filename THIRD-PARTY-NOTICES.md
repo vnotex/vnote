@@ -109,9 +109,9 @@ new curl runtime; its bundle carries `LICENSE.pugixml` in `Contents/Resources`.
 - **License:** ISC, with an MIT-licensed subset inherited from Feather
 - **Full text:** [`licenses/Lucide-LICENSE.txt`](licenses/Lucide-LICENSE.txt) (verbatim copy of upstream `LICENSE`)
 
-Covers 80 files in `src/data/core/icons/`:
+Covers Lucide-derived files in `src/data/core/icons/`, including:
 
-- 78 carry `class="lucide lucide-<name>"`, which also records the upstream icon name;
+- files carrying `class="lucide lucide-<name>"`, which records the upstream icon name;
 - `read_only.svg` and `theme_switcher.svg` carry no class but are path-identical to
   upstream `pen-off` and `shirt`.
 
@@ -122,8 +122,13 @@ Covers 80 files in `src/data/core/icons/`:
 `folder_pen.svg` uses upstream [Folder Pen](https://lucide.dev/icons/folder-pen) (ISC).
 `attach_to_main_window.svg` uses upstream [Picture in Picture](https://lucide.dev/icons/picture-in-picture) (ISC).
 `face_slightly_smiling_plus.svg` uses upstream [Face Slightly Smiling Plus](https://lucide.dev/icons/face-slightly-smiling-plus) (ISC).
+`sun.svg` uses upstream [Sun](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/sun.svg) (ISC).
+`star.svg` uses upstream [Star](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/star.svg) (ISC).
+`circle_check.svg` uses upstream [Circle Check](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/circle-check.svg) (ISC).
+`calendar_arrow_right.svg` uses upstream [Calendar Arrow Right](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/calendar-arrow-right.svg) (ISC).
+`calendar_days.svg` uses upstream [Calendar Days](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/calendar-days.svg) (ISC).
 
-The files are modified from upstream in one respect: VNote rewrites Lucide
+The SVG drawing colors are normalized from upstream: VNote rewrites Lucide
 `currentColor` stroke and fill values to explicit `#000000` so
 `IconUtils::fetchIcon` recolors them per theme.
 

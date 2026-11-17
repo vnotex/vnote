@@ -953,6 +953,7 @@ void TodoEditor::createDetails() {
   m_myDay =
       named(new QPushButton(tr("Add to My Day"), m_details), "todoMyDay", tr("Add to My Day"));
   m_myDay->setCheckable(true);
+  m_myDay->setIconSize(QSize(20, 20));
   layout->addWidget(m_myDay);
   m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
   m_due->setIconSize(QSize(20, 20));
@@ -987,6 +988,8 @@ void TodoEditor::createDetails() {
 
   auto *theme = m_services.get<ThemeService>();
   const auto refreshIcons = [this, theme]() {
+    m_myDay->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("sun.svg"))));
     m_due->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("calendar.svg"))));
     m_deleteTask->setIcon(
@@ -2181,41 +2184,18 @@ void TodoEditor::deleteTask(const QString &p_key) {
   }
 }
 
-void TodoEditor::moveTaskToList(const QString &p_key) {
-  if (!canMutate() || !m_controller->getDocument().findItem(p_key)) {
+void TodoEditor::toggleTaskMyDay(const QString &p_key) {
+  if (!canMutate()) {
     return;
-  }
-  endTyping();
-  const auto token = gesture();
-  const QPointer<TodoEditor> self(this);
-  QPointer<QDialog> dialog = named(new QDialog(this), "todoMoveDialog", tr("Move task to list"));
-  dialog->setWindowTitle(tr("Move task to list"));
-  auto *layout = new QVBoxLayout(dialog);
-  spacing(layout);
-  auto *destination = named(new QComboBox(dialog), "todoMoveDestination", tr("Destination list"));
-  for (const auto &list : m_controller->getDocument().m_lists) {
-    destination->addItem(qualifiedListName(m_controller->getDocument(), list), list.m_key);
   }
   const auto *item = m_controller->getDocument().findItem(p_key);
-  destination->setCurrentIndex(destination->findData(item->m_listKey));
-  layout->addWidget(destination);
-  auto *buttons =
-      named(new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog),
-            "todoMoveButtons", tr("Move task actions"));
-  named(buttons->button(QDialogButtonBox::Ok), "todoMoveAccept", tr("Move task"));
-  named(buttons->button(QDialogButtonBox::Cancel), "todoMoveCancel", tr("Cancel move"));
-  layout->addWidget(buttons);
-  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
-  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
-  const int result = dialog->exec();
-  if (!dialog) {
+  if (!item) {
     return;
   }
-  const auto key = destination->currentData().toString();
-  delete dialog;
-  if (self && result == QDialog::Accepted && accepts(token)) {
-    command([this, p_key, key]() { return m_controller->moveTask(p_key, key, {}); });
-  }
+  auto fields = item->m_fields;
+  const auto today = m_controller->getProjection().m_today;
+  fields.m_myDay = fields.m_myDay == today ? QDate() : today;
+  command([this, p_key, fields]() { return m_controller->updateTask(p_key, fields); });
 }
 
 void TodoEditor::moveTask(const QString &p_key, int p_direction) {
@@ -2418,39 +2398,109 @@ void TodoEditor::showTaskMenu(const QString &p_key, const QPoint &p_globalPositi
     return;
   }
   endTyping();
-  m_controller->setSelectedItemKey(p_key);
+  const QPointer<TodoEditor> self(this);
+  const QPointer<TodoViewWindowController> controller(m_controller);
+  controller->setSelectedItemKey(p_key);
+  if (!self || !controller || m_controller != controller) {
+    return;
+  }
   const auto token = gesture();
-  auto *menu = new QMenu(this);
+  const auto today = controller->getProjection().m_today;
+  bool myDay = false;
+  bool important = false;
+  bool completed = false;
+  QString ownerKey;
+  {
+    const auto *item = selectedItem();
+    if (!item || item->m_key != p_key) {
+      return;
+    }
+    myDay = item->m_fields.m_myDay == today;
+    important = item->m_fields.m_important;
+    completed = item->m_fields.m_checked;
+    ownerKey = item->m_listKey;
+  }
+  auto *menu = named(new QMenu(this), "todoTaskMenu", tr("Task actions"));
   menu->setAttribute(Qt::WA_DeleteOnClose);
-  auto add = [&](const QString &p_label, const char *p_name, const std::function<void()> &p_action,
-                 bool p_enabled) {
-    auto *action = menu->addAction(p_label);
+  auto *theme = m_services.get<ThemeService>();
+  const auto icon = [theme](const QString &p_file) {
+    return IconUtils::fetchIconWithDisabledState(theme->getIconFile(p_file));
+  };
+  const auto add = [&](QMenu *p_menu, const QIcon &p_icon, const QString &p_label,
+                       const char *p_name, const std::function<void()> &p_action,
+                       const QKeySequence &p_shortcut = QKeySequence()) {
+    auto *action = p_menu->addAction(p_icon, p_label);
     action->setObjectName(QString::fromLatin1(p_name));
-    action->setEnabled(canMutate() && p_enabled);
+    action->setEnabled(canMutate());
+    action->setShortcutContext(Qt::WidgetShortcut);
+    action->setShortcut(p_shortcut);
+    action->setShortcutVisibleInContextMenu(true);
     connect(action, &QAction::triggered, this, [this, token, p_action]() {
       if (accepts(token)) {
         p_action();
       }
     });
+    return action;
   };
   add(
-      tr("Toggle completion"), "todoToggleCompletedAction",
+      menu, icon(QStringLiteral("sun.svg")), myDay ? tr("Remove from My Day") : tr("Add to My Day"),
+      "todoToggleMyDayAction",
+      [this, myDay]() {
+        // Keep the offered add/remove intent if today changes while the menu is open.
+        updateTask([&](TodoTaskFields &p_fields) {
+          p_fields.m_myDay = myDay ? QDate() : m_controller->getProjection().m_today;
+        });
+      },
+      QKeySequence(Qt::CTRL | Qt::Key_T));
+  add(menu, icon(QStringLiteral("star.svg")),
+      important ? tr("Remove importance") : tr("Mark as important"), "todoToggleImportantAction",
+      [this]() {
+        updateTask([](TodoTaskFields &p_fields) { p_fields.m_important = !p_fields.m_important; });
+      });
+  add(
+      menu, icon(QStringLiteral("circle_check.svg")),
+      completed ? tr("Mark as not completed") : tr("Mark as completed"),
+      "todoToggleCompletedAction",
       [this]() {
         updateTask([](TodoTaskFields &p_fields) { p_fields.m_checked = !p_fields.m_checked; });
       },
-      true);
-  add(
-      tr("Toggle importance"), "todoToggleImportantAction",
-      [this]() {
-        updateTask([](TodoTaskFields &p_fields) { p_fields.m_important = !p_fields.m_important; });
-      },
-      true);
-  add(tr("Move to list"), "todoMoveTaskAction", [this, p_key]() { moveTaskToList(p_key); }, true);
-  const bool reorder = m_controller->getTaskModel()->isReorderingEnabled();
-  add(tr("Move Up"), "todoTaskUpAction", [this, p_key]() { moveTask(p_key, -1); }, reorder);
-  add(tr("Move Down"), "todoTaskDownAction", [this, p_key]() { moveTask(p_key, 1); }, reorder);
+      QKeySequence(Qt::CTRL | Qt::Key_D));
   menu->addSeparator();
-  add(tr("Delete"), "todoDeleteTaskAction", [this, p_key]() { deleteTask(p_key); }, true);
+  add(menu, icon(QStringLiteral("calendar.svg")), tr("Due today"), "todoDueTodayAction",
+      [this, today]() { updateTask([&](TodoTaskFields &p_fields) { p_fields.m_due = today; }); });
+  add(menu, icon(QStringLiteral("calendar_arrow_right.svg")), tr("Due tomorrow"),
+      "todoDueTomorrowAction", [this, tomorrow = today.addDays(1)]() {
+        updateTask([&](TodoTaskFields &p_fields) { p_fields.m_due = tomorrow; });
+      });
+  add(menu, icon(QStringLiteral("calendar_days.svg")), tr("Pick a date"), "todoPickDueDateAction",
+      [this]() { pickDueDate(); });
+  menu->addSeparator();
+  auto *destinations = menu->addMenu(icon(QStringLiteral("move.svg")), tr("Move task to..."));
+  destinations->menuAction()->setObjectName(QStringLiteral("todoMoveTaskAction"));
+  for (const auto &list : m_controller->getDocument().m_lists) {
+    if (list.m_key == ownerKey) {
+      continue;
+    }
+    const auto key = list.m_key;
+    auto *action =
+        add(destinations, {},
+            qualifiedListName(m_controller->getDocument(), list)
+                .replace(QLatin1Char('&'), QLatin1String("&&")),
+            "todoMoveTaskToListAction", [this, p_key, key]() {
+              command([this, p_key, key]() { return m_controller->moveTask(p_key, key, {}); });
+            });
+    action->setData(key);
+  }
+  destinations->menuAction()->setEnabled(canMutate() && !destinations->isEmpty());
+  menu->addSeparator();
+  const auto deleteIcon = IconUtils::fetchIcon(
+      theme->getIconFile(QStringLiteral("delete.svg")),
+      QVector<IconUtils::OverriddenColor>{
+          {theme->paletteColor(QStringLiteral("base#error#fg")), QIcon::Normal},
+          {theme->paletteColor(QStringLiteral("base#disabled#fg")), QIcon::Disabled}});
+  add(
+      menu, deleteIcon, tr("Delete task"), "todoDeleteTaskAction",
+      [this, p_key]() { deleteTask(p_key); }, QKeySequence(Qt::Key_Delete));
   menu->popup(p_globalPosition);
 }
 
@@ -2540,6 +2590,43 @@ void TodoEditor::showTextMenu(QWidget *p_widget, const QPoint &p_position) {
 
 bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   auto *widget = qobject_cast<QWidget *>(p_object);
+  if (widget &&
+      (p_event->type() == QEvent::ShortcutOverride || p_event->type() == QEvent::KeyPress)) {
+    auto *menu = qobject_cast<QMenu *>(widget);
+    auto *taskMenu = menu;
+    if (auto *parentMenu = menu ? qobject_cast<QMenu *>(menu->parentWidget()) : nullptr) {
+      taskMenu = parentMenu;
+    }
+    if (taskMenu && taskMenu->parentWidget() == this &&
+        taskMenu->objectName() == QLatin1String("todoTaskMenu") &&
+        QApplication::activePopupWidget() == menu) {
+      auto *key = static_cast<QKeyEvent *>(p_event);
+      const QKeySequence shortcut(key->keyCombination());
+      for (auto *action : taskMenu->actions()) {
+        if (action->shortcut().isEmpty() || action->shortcut() != shortcut) {
+          continue;
+        }
+        // Standalone QMenu actions have no widget association for Qt's shortcut matcher.
+        // Dispatch their real shortcuts locally, ahead of the host's EditRead shortcut.
+        key->accept();
+        if (p_event->type() == QEvent::KeyPress && action->isEnabled()) {
+          const QPointer<TodoEditor> self(this);
+          const QPointer<QMenu> guardedMenu(taskMenu);
+          const QPointer<QAction> guardedAction(action);
+          if (menu != taskMenu) {
+            menu->close();
+          }
+          if (guardedMenu) {
+            guardedMenu->close();
+          }
+          if (self && guardedAction) {
+            guardedAction->trigger();
+          }
+        }
+        return true;
+      }
+    }
+  }
   if (m_narrow && m_listsButton->isChecked()) {
     if (widget == m_splitter &&
         (p_event->type() == QEvent::Resize || p_event->type() == QEvent::Move)) {
@@ -2615,6 +2702,33 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
     }
     return true;
   }
+  if (widget == m_tasks && !QApplication::activePopupWidget() &&
+      !QApplication::activeModalWidget()) {
+    const bool myDay = key->modifiers() == Qt::ControlModifier && key->key() == Qt::Key_T;
+    const bool completed = key->modifiers() == Qt::ControlModifier && key->key() == Qt::Key_D;
+    const bool remove = key->modifiers() == Qt::NoModifier && key->key() == Qt::Key_Delete;
+    if (myDay || completed || remove) {
+      key->accept();
+      if (p_event->type() == QEvent::KeyPress && canMutate()) {
+        const auto index = m_tasks->currentIndex();
+        const auto id = index.data(TodoTaskModel::IdRole).toString();
+        if (index.isValid() && !index.data(TodoTaskModel::SectionRole).toBool() && !id.isEmpty() &&
+            m_controller->getDocument().findItem(id)) {
+          if (myDay) {
+            toggleTaskMyDay(id);
+          } else if (completed) {
+            endTyping();
+            m_controller->getTaskModel()->setData(index,
+                                                  !index.data(TodoTaskModel::CheckedRole).toBool(),
+                                                  TodoTaskModel::CheckedRole);
+          } else {
+            deleteTask(id);
+          }
+        }
+      }
+      return true;
+    }
+  }
   const bool undo = key->matches(QKeySequence::Undo);
   const bool redo = key->matches(QKeySequence::Redo);
   const bool find = key->matches(QKeySequence::Find);
@@ -2667,10 +2781,6 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
         }
       }
       key->accept();
-      return true;
-    }
-    if (key->key() == Qt::Key_Delete) {
-      deleteTask(id);
       return true;
     }
     if (key->modifiers() == Qt::AltModifier &&

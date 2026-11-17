@@ -626,8 +626,9 @@ Add a step, Add to My Day, due date and Markdown note, in that order. The note p
 "Add note (markdown supported)". Task and step completion share the central list's circular
 outline/checkmark drawing, but retain independent, reversible checkbox interaction and
 accessibility. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
-button with left-aligned text: "Add to My Day" when off and "Added to My Day" when on;
-clicking it again removes membership. Quick-add due controls remain ordinary checkboxes.
+button with a themed Lucide `sun.svg` and left-aligned text: "Add to My Day" when off and
+"Added to My Day" when on; clicking it again removes membership. Quick-add due controls remain
+ordinary checkboxes.
 Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Step rows retain their input widgets through typing echoes;
@@ -644,7 +645,24 @@ including in RTL. The footer displays the immutable creation timestamp as a loca
 local date; legacy tasks show "Creation date unknown" without backfilling metadata. Its trash
 icon reuses task deletion's default-No confirmation and stale-gesture guards. The date wraps
 rather than pushing the icon offscreen; no separator is drawn above the footer.
-Task move and deletion remain available in the task context menu; there is no move footer button.
+Task context menus group My Day, importance and completion toggles; Due today, Due tomorrow
+and Pick a date; Move task to...; then Delete task. Toggle labels reflect the current task,
+with My Day membership determined by the projection's today. An offered My Day add/remove
+keeps that intent across a date rollover; adding uses the current day. Date actions share the existing
+picker and source-history commands. Lucide icons follow the theme; the trash icon uses the
+error foreground rather than a literal color.
+The move submenu lists every other real list, including empty lists in collapsed groups, using
+escaped qualified names and stable destination keys. It is disabled without a destination or
+in Read mode. There is no move dialog or move footer button; drag and Alt+Up/Down still reorder
+in eligible list views, but Move Up/Down are no longer context-menu entries.
+Ctrl+T toggles My Day, Ctrl+D toggles completion, and Delete uses the existing confirmation.
+These keys are scoped to the task list and its context menu (including the move submenu), not
+text inputs, the sidebar or modal dialogs. The task list consumes unavailable commands on empty
+selection, the Completed header and Read mode. Popup actions retain real widget-scoped shortcuts;
+a local popup handler dispatches them without registering editor/window-wide shortcuts or
+allowing a competing parent binding to run. Menus close before shortcut-triggered dialogs.
+Captured source/binding/selection/group/writability guards apply to every menu action. Formatting-
+only revisions remain admissible; no extra document-revision guard replaces the source token.
 The central list/smart-view heading uses 1.35 times the editor's current font size, with
 24px leading/options icons and extra vertical spacing. Theme refresh and zoom derive that size
 from the editor font rather than repeatedly enlarging the heading. Inline list renaming remains

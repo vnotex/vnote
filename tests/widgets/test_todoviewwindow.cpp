@@ -47,6 +47,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSemaphore>
+#include <QShortcut>
 #include <QSplitter>
 #include <QStandardPaths>
 #include <QStyleHints>
@@ -412,17 +413,52 @@ bool chooseButtonMenu(QAbstractButton *p_button, const char *p_actionName) {
   return chooseOpenMenu(p_actionName);
 }
 
-bool chooseTaskMenu(TodoViewWindow *p_window, const QString &p_key, const char *p_actionName) {
+QMenu *openTaskMenu(TodoViewWindow *p_window, const QString &p_key) {
   auto *tasks = control<QListView>(p_window, "todoTasks");
-  auto *model = p_window->getController()->getTaskModel();
-  const auto index = model->index(model->rowForKey(p_key));
-  if (!tasks || !index.isValid() || !activate(tasks))
-    return false;
-  tasks->scrollTo(index);
-  const auto point = tasks->visualRect(index).center();
+  if (!tasks || !activate(tasks))
+    return nullptr;
+  QPoint point;
+  {
+    auto *model = p_window->getController()->getTaskModel();
+    const auto index = model->index(model->rowForKey(p_key));
+    if (!index.isValid())
+      return nullptr;
+    tasks->scrollTo(index);
+    point = tasks->visualRect(index).center();
+  }
   QContextMenuEvent event(QContextMenuEvent::Mouse, point, tasks->viewport()->mapToGlobal(point));
   QCoreApplication::sendEvent(tasks->viewport(), &event);
-  return chooseOpenMenu(p_actionName);
+  if (!QTest::qWaitFor([] {
+        auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+        return menu && menu->objectName() == QLatin1String("todoTaskMenu");
+      }))
+    return nullptr;
+  return qobject_cast<QMenu *>(QApplication::activePopupWidget());
+}
+
+bool chooseTaskMenu(TodoViewWindow *p_window, const QString &p_key, const char *p_actionName) {
+  return openTaskMenu(p_window, p_key) && chooseOpenMenu(p_actionName);
+}
+
+bool chooseOpenTaskDestination(const QString &p_key) {
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  auto *move = menu ? control<QAction>(menu, "todoMoveTaskAction") : nullptr;
+  if (!move || !move->isEnabled() || !move->menu())
+    return false;
+  auto *submenu = move->menu();
+  menu->setActiveAction(move);
+  QTest::keyClick(menu, menu->layoutDirection() == Qt::RightToLeft ? Qt::Key_Left : Qt::Key_Right);
+  if (!QTest::qWaitFor([=] { return submenu->isVisible(); }))
+    return false;
+  for (auto *action : submenu->actions()) {
+    if (action->data().toString() == p_key && action->isEnabled()) {
+      QTest::mouseClick(submenu, Qt::LeftButton, Qt::NoModifier,
+                        submenu->actionGeometry(action).center());
+      return true;
+    }
+  }
+  menu->close();
+  return false;
 }
 
 bool chooseOpenSort(const char *p_actionName) {
@@ -632,6 +668,11 @@ private slots:
   void completedToggleKeepsNativeSelection_data();
   void completedToggleKeepsNativeSelection();
   void nativeMoveReorderAndDeletion();
+  void taskMenuTogglesAndDueDates();
+  void taskMenuMoveOwnershipAndAdmission();
+  void taskMenuGesturesRejectStaleOwner();
+  void taskMenuAndListShortcuts();
+  void taskShortcutsStayScoped();
   void nativeListActions();
   void descriptionDialogRejectsStaleOwner_data();
   void descriptionDialogRejectsStaleOwner();
@@ -1712,56 +1753,49 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
   QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
   auto *controller = window->getController();
   const auto original = *controller->getDocument().findItem(QStringLiteral("id:alpha"));
-  bool movedThroughPicker = false;
-  QTimer picker;
-  QElapsedTimer pickerDeadline;
-  pickerDeadline.start();
-  picker.setInterval(10);
-  connect(&picker, &QTimer::timeout, this, [&] {
-    auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
-    auto *destination = dialog ? control<QComboBox>(dialog, "todoMoveDestination") : nullptr;
-    if (destination) {
-      QCOMPARE(destination->itemText(destination->findData(QStringLiteral("id:personal"))),
-               QStringLiteral("Personal"));
-      destination->setCurrentIndex(destination->findData(QStringLiteral("id:personal")));
-      auto *buttons = dialog->findChild<QDialogButtonBox *>();
-      if (buttons) {
-        // A delayed source layout update must not cancel an unchanged owner.
-        QTextCursor sourceCursor(window->getSourceEditor()->document());
-        QTextBlockFormat format;
-        format.setLeftMargin(12);
-        sourceCursor.mergeBlockFormat(format);
-        movedThroughPicker = true;
-        picker.stop();
-        buttons->button(QDialogButtonBox::Ok)->click();
-      }
-    } else if (pickerDeadline.elapsed() > 5000) {
-      picker.stop();
-      if (dialog)
-        dialog->reject();
-    }
+  QPointer<QMenu> menu = openTaskMenu(window, QStringLiteral("id:alpha"));
+  const auto closePopup = qScopeGuard([&] {
+    if (menu)
+      menu->close();
   });
-  picker.start();
-  QVERIFY(chooseTaskMenu(window, QStringLiteral("id:alpha"), "todoMoveTaskAction"));
-  QVERIFY(movedThroughPicker);
-  const auto *moved = controller->getDocument().findItem(QStringLiteral("id:alpha"));
-  QVERIFY(moved);
-  QCOMPARE(moved->m_listKey, QStringLiteral("id:personal"));
-  QCOMPARE(moved->m_id, original.m_id);
-  QCOMPARE(moved->m_fields.m_note, original.m_fields.m_note);
-  QCOMPARE(moved->m_steps.size(), original.m_steps.size());
+  QVERIFY(menu);
+  // A delayed source layout update must not cancel an unchanged owner.
+  QTextCursor sourceCursor(window->getSourceEditor()->document());
+  QTextBlockFormat format;
+  format.setLeftMargin(12);
+  sourceCursor.mergeBlockFormat(format);
+  QVERIFY(chooseOpenTaskDestination(QStringLiteral("id:personal")));
+  {
+    const auto *moved = controller->getDocument().findItem(QStringLiteral("id:alpha"));
+    QVERIFY(moved);
+    QCOMPARE(moved->m_listKey, QStringLiteral("id:personal"));
+    QCOMPARE(moved->m_id, original.m_id);
+    QCOMPARE(moved->m_createdAt, original.m_createdAt);
+    QCOMPARE(moved->m_properties, original.m_properties);
+    QCOMPARE(moved->m_fields.m_title, original.m_fields.m_title);
+    QCOMPARE(moved->m_fields.m_checked, original.m_fields.m_checked);
+    QCOMPARE(moved->m_fields.m_important, original.m_fields.m_important);
+    QCOMPARE(moved->m_fields.m_myDay, original.m_fields.m_myDay);
+    QCOMPARE(moved->m_fields.m_due, original.m_fields.m_due);
+    QCOMPARE(moved->m_fields.m_tags, original.m_fields.m_tags);
+    QCOMPARE(moved->m_fields.m_note, original.m_fields.m_note);
+    QCOMPARE(moved->m_steps.size(), original.m_steps.size());
+    for (int i = 0; i < original.m_steps.size(); ++i) {
+      QCOMPARE(moved->m_steps[i].m_title, original.m_steps[i].m_title);
+      QCOMPARE(moved->m_steps[i].m_checked, original.m_steps[i].m_checked);
+    }
+  }
   QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
   auto *tasks = control<QListView>(window, "todoTasks");
   auto *model = controller->getTaskModel();
   QVERIFY(tasks && model->isReorderingEnabled());
-  auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
-  tasks->setCurrentIndex(index);
-  QVERIFY(
-      chooseMenu(tasks->viewport(), tasks->visualRect(index).center(), QStringLiteral("Move Up")));
+  tasks->setCurrentIndex(model->index(model->rowForKey(QStringLiteral("id:alpha"))));
+  QVERIFY(activate(tasks));
+  QTest::keyClick(tasks, Qt::Key_Up, Qt::AltModifier);
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.first().m_key,
            QStringLiteral("id:alpha"));
-  index = model->index(model->rowForKey(QStringLiteral("id:gamma")));
-  std::unique_ptr<QMimeData> drag(model->mimeData({index}));
+  std::unique_ptr<QMimeData> drag(
+      model->mimeData({model->index(model->rowForKey(QStringLiteral("id:gamma")))}));
   QVERIFY(drag);
   QVERIFY(model->canDropMimeData(drag.get(), Qt::MoveAction, 0, 0, QModelIndex()));
   QVERIFY(model->dropMimeData(drag.get(), Qt::MoveAction, 0, 0, QModelIndex()));
@@ -1785,6 +1819,567 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
   QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha")));
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_note,
            original.m_fields.m_note);
+}
+
+void TestTodoViewWindow::taskMenuTogglesAndDueDates() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("task-menu-fields.todo")).isValid());
+  auto *window = current();
+  const auto key = QStringLiteral("id:alpha");
+  QVERIFY(window && selectView(window, TodoViewKind::All));
+  auto *controller = window->getController();
+  const QDate today(2040, 2, 28);
+  controller->setToday(today);
+  controller->setCompletedExpanded(true);
+  const auto original = window->getLatestContent();
+  const auto fields = [&] { return controller->getDocument().findItem(key)->m_fields; };
+  const char *toggles[] = {"todoToggleMyDayAction", "todoToggleImportantAction",
+                           "todoToggleCompletedAction"};
+  for (int i = 0; i < 3; ++i) {
+    QVERIFY(chooseTaskMenu(window, key, toggles[i]));
+    QCOMPARE(fields().m_myDay, i == 0 ? today : QDate());
+    QCOMPARE(fields().m_important, i == 1);
+    QCOMPARE(fields().m_checked, i == 2);
+    const auto enabled = window->getLatestContent();
+    QVERIFY(chooseTaskMenu(window, key, toggles[i]));
+    QVERIFY(!fields().m_myDay.isValid());
+    QVERIFY(!fields().m_important);
+    QVERIFY(!fields().m_checked);
+    window->undo();
+    QCOMPARE(window->getLatestContent(), enabled);
+    window->undo();
+    QCOMPARE(window->getLatestContent(), original);
+  }
+
+  auto pastDay = fields();
+  pastDay.m_myDay = today.addDays(-1);
+  QVERIFY(controller->updateTask(key, pastDay));
+  const auto pastSource = window->getLatestContent();
+  QVERIFY(chooseTaskMenu(window, key, "todoToggleMyDayAction"));
+  QCOMPARE(fields().m_myDay, today);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), pastSource);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+
+  const char *presets[] = {"todoDueTodayAction", "todoDueTomorrowAction"};
+  for (int i = 0; i < 2; ++i) {
+    QVERIFY(chooseTaskMenu(window, key, presets[i]));
+    QCOMPARE(fields().m_due, today.addDays(i));
+    window->undo();
+    QCOMPARE(window->getLatestContent(), original);
+  }
+
+  QPointer<QDialog> dialog;
+  const auto closePicker = qScopeGuard([&] {
+    if (dialog)
+      dialog->reject();
+  });
+  const QDate picked(2041, 12, 31);
+  for (const bool accept : {false, true}) {
+    QVERIFY(chooseTaskMenu(window, key, "todoPickDueDateAction"));
+    QTRY_VERIFY(qobject_cast<QDialog *>(QApplication::activeModalWidget()));
+    dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+    auto *calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+    auto *button = control<QPushButton>(dialog, accept ? "todoDueDateAccept" : "todoDueDateCancel");
+    QVERIFY(calendar && button);
+    QCOMPARE(calendar->selectedDate(), today);
+    calendar->setSelectedDate(picked);
+    QCOMPARE(window->getLatestContent(), original);
+    const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+    QTest::mouseClick(button, Qt::LeftButton);
+    QTRY_VERIFY(!dialog || !dialog->isVisible());
+    if (accept) {
+      QCOMPARE(fields().m_due, picked);
+      window->undo();
+    } else {
+      QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+    }
+    QCOMPARE(window->getLatestContent(), original);
+  }
+  for (const bool included : {false, true}) {
+    const auto menuToday = QDate::currentDate();
+    controller->setToday(menuToday);
+    auto initial = fields();
+    initial.m_myDay = included ? menuToday : menuToday.addDays(1);
+    QVERIFY(controller->updateTask(key, initial));
+    const auto offeredSource = window->getLatestContent();
+    QPointer<QMenu> rolloverMenu = openTaskMenu(window, key);
+    const auto closeMenu = qScopeGuard([&] {
+      if (rolloverMenu)
+        rolloverMenu->close();
+    });
+    QVERIFY(rolloverMenu);
+    auto *action = control<QAction>(rolloverMenu, "todoToggleMyDayAction");
+    QVERIFY(action);
+    const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+    // Deliver the offered action after the projection's clock rolls over, without a new focus
+    // event.
+    controller->setToday(menuToday.addDays(1));
+    action->trigger();
+    if (included) {
+      QVERIFY(!fields().m_myDay.isValid());
+      window->undo();
+      QCOMPARE(window->getLatestContent(), offeredSource);
+    } else {
+      QCOMPARE(fields().m_myDay, menuToday.addDays(1));
+      QCOMPARE(window->getLatestContent(), offeredSource);
+      QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+    }
+    rolloverMenu->close();
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    window->undo();
+    QCOMPARE(window->getLatestContent(), original);
+  }
+}
+
+void TestTodoViewWindow::taskMenuMoveOwnershipAndAdmission() {
+  createArea();
+  const auto source = c_source + "\n# Hidden & Empty\n<!-- todo-group: {\"id\":\"hidden\"} -->\n\n"
+                                 "## Empty & Ready\n<!-- todo-list: {\"id\":\"empty\"} -->\n";
+  QVERIFY(openNote(QStringLiteral("task-menu-move.todo"), source).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::All));
+  auto *controller = window->getController();
+  controller->setGroupExpanded(QStringLiteral("id:hidden"), false);
+  QVERIFY(openTask(window, QStringLiteral("id:gamma")));
+  QPointer<QMenu> menu = openTaskMenu(window, QStringLiteral("id:alpha"));
+  const auto closePopup = qScopeGuard([&] {
+    if (menu)
+      menu->close();
+  });
+  QVERIFY(menu);
+  QCOMPARE(controller->getSelectedItemKey(), QStringLiteral("id:alpha"));
+  auto *move = control<QAction>(menu, "todoMoveTaskAction");
+  QVERIFY(move && move->isEnabled() && move->menu());
+  QStringList destinations;
+  for (auto *action : move->menu()->actions())
+    destinations.append(action->data().toString());
+  destinations.sort();
+  QCOMPARE(destinations, QStringList({QStringLiteral("id:empty"), QStringLiteral("id:personal")}));
+
+  // An own edit/undo returns to the same gesture state; source revision alone is not ownership.
+  auto changed = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  changed.m_title = QStringLiteral("Temporary own edit");
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), changed));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QCOMPARE(controller->getSelectedItemKey(), QStringLiteral("id:alpha"));
+  QVERIFY(chooseOpenTaskDestination(QStringLiteral("id:empty")));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_listKey,
+           QStringLiteral("id:empty"));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:beta"))->m_listKey,
+           QStringLiteral("id:work"));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_listKey,
+           QStringLiteral("id:personal"));
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(window->save());
+  QVERIFY(!window->isModified());
+
+  window->setMode(ViewWindowMode::Read);
+  menu = openTaskMenu(window, QStringLiteral("id:alpha"));
+  QVERIFY(menu);
+  for (const char *name :
+       {"todoToggleMyDayAction", "todoToggleImportantAction", "todoToggleCompletedAction",
+        "todoDueTodayAction", "todoDueTomorrowAction", "todoPickDueDateAction",
+        "todoMoveTaskAction", "todoDeleteTaskAction"}) {
+    auto *action = control<QAction>(menu, name);
+    QVERIFY(action && !action->isEnabled());
+  }
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  menu->close();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+  const QByteArray singleList = "<!-- todo: {\"version\":1} -->\n\n"
+                                "## Only list\n<!-- todo-list: {\"id\":\"only\"} -->\n\n"
+                                "- [ ] Alone\n  <!-- todo-item: {\"id\":\"alone\"} -->\n";
+  QVERIFY(openNote(QStringLiteral("task-menu-no-destination.todo"), singleList).isValid());
+  window = current();
+  QVERIFY(window);
+  menu = openTaskMenu(window, QStringLiteral("id:alone"));
+  QVERIFY(menu);
+  move = control<QAction>(menu, "todoMoveTaskAction");
+  QVERIFY(move && !move->isEnabled());
+  QCOMPARE(window->getLatestContent().toUtf8(), singleList);
+  QVERIFY(!window->isModified());
+}
+
+void TestTodoViewWindow::taskMenuGesturesRejectStaleOwner() {
+  createArea();
+  const auto filename = QStringLiteral("stale-task-menu.todo");
+  const auto source = c_source + "\n# Other group\n<!-- todo-group: {\"id\":\"other\"} -->\n\n"
+                                 "## Empty\n<!-- todo-list: {\"id\":\"empty\"} -->\n";
+  QVERIFY(openNote(filename, source).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  const auto key = QStringLiteral("id:alpha");
+  for (const char *name :
+       {"todoToggleMyDayAction", "todoToggleImportantAction", "todoToggleCompletedAction",
+        "todoDueTodayAction", "todoDueTomorrowAction", "todoPickDueDateAction",
+        "todoMoveTaskAction", "todoDeleteTaskAction"}) {
+    for (int change = 0; change < 5; ++change) {
+      qInfo() << "Stale task menu gesture:" << name << "transition:" << change;
+      QVERIFY(selectView(window, TodoViewKind::All));
+      controller->setSelectedGroupKey(QString());
+      QPointer<QMenu> menu = openTaskMenu(window, key);
+      QPointer<QDialog> dialog;
+      const auto closePopup = qScopeGuard([&] {
+        if (dialog)
+          dialog->reject();
+        if (menu)
+          menu->close();
+      });
+      QVERIFY(menu);
+      QPointer<QAction> action = control<QAction>(menu, name);
+      QVERIFY(action && action->isEnabled());
+      const bool picker = qstrcmp(name, "todoPickDueDateAction") == 0;
+      if (picker) {
+        QVERIFY(chooseOpenMenu(name));
+        QTRY_VERIFY(qobject_cast<QDialog *>(QApplication::activeModalWidget()));
+        dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+        auto *calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+        QVERIFY(calendar);
+        calendar->setSelectedDate(QDate(2040, 2, 29));
+      } else if (qstrcmp(name, "todoMoveTaskAction") == 0) {
+        QVERIFY(action->menu());
+        auto *submenu = action->menu();
+        action.clear();
+        for (auto *destination : submenu->actions()) {
+          if (destination->data().toString() == QLatin1String("id:personal"))
+            action = destination;
+        }
+        QVERIFY(action && action->isEnabled());
+      }
+
+      auto expected = source;
+      if (change == 0) {
+        expected.replace("Alpha", "Foreign replacement Alpha");
+        QVERIFY(writeBytes(absolute(filename), expected));
+        QVERIFY(window->reload());
+      } else if (change == 1) {
+        controller->setSelectedItemKey(QStringLiteral("id:beta"));
+      } else if (change == 2) {
+        controller->setSelectedGroupKey(QStringLiteral("id:other"));
+        QCOMPARE(controller->getSelectedItemKey(), key);
+      } else if (change == 3) {
+        window->setMode(ViewWindowMode::Read);
+      } else {
+        auto fields = controller->getDocument().findItem(key)->m_fields;
+        fields.m_title = QStringLiteral("Changed while task menu was open");
+        QVERIFY(controller->updateTask(key, fields));
+        expected = window->getLatestContent().toUtf8();
+      }
+      const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+      bool prompted = false;
+      {
+        DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+        if (picker && dialog)
+          dialog->accept();
+        else if (action)
+          action->trigger();
+      }
+      QVERIFY(!prompted);
+      QCOMPARE(window->getLatestContent().toUtf8(), expected);
+      QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+      if (dialog)
+        dialog->reject();
+      if (menu)
+        menu->close();
+      QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
+      if (change == 0) {
+        QVERIFY(writeBytes(absolute(filename), source));
+        QVERIFY(window->reload());
+      } else if (change == 3) {
+        window->setMode(ViewWindowMode::Edit);
+      } else if (change == 4) {
+        window->undo();
+        // Undo restores bytes, not necessarily the buffer's dirty flag.
+        QVERIFY(window->save());
+      }
+      controller->setSelectedGroupKey(QString());
+      QCOMPARE(window->getLatestContent().toUtf8(), source);
+      QCOMPARE(readBytes(absolute(filename)), source);
+      QVERIFY(!window->isModified());
+    }
+  }
+}
+
+void TestTodoViewWindow::taskMenuAndListShortcuts() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("task-menu-shortcuts.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::All));
+  auto *controller = window->getController();
+  auto *tasks = control<QListView>(window, "todoTasks");
+  QVERIFY(tasks);
+  const auto key = QStringLiteral("id:alpha");
+  controller->setCompletedExpanded(true);
+  const auto original = window->getLatestContent();
+  const QKeySequence myDayKey(Qt::CTRL | Qt::Key_T);
+  QList<QPointer<QShortcut>> disabledShortcuts;
+  for (auto *shortcut : window->findChildren<QShortcut *>()) {
+    if (shortcut->isEnabled() && shortcut->keys().contains(myDayKey)) {
+      disabledShortcuts.append(shortcut);
+      shortcut->setEnabled(false);
+    }
+  }
+  const auto restoreShortcuts = qScopeGuard([&] {
+    for (const auto &shortcut : disabledShortcuts) {
+      if (shortcut)
+        shortcut->setEnabled(true);
+    }
+  });
+  // Declare the parent conflict explicitly; isolated profiles need not bind EditRead to Ctrl+T.
+  QShortcut parentShortcut(myDayKey, window);
+  parentShortcut.setContext(Qt::WidgetWithChildrenShortcut);
+  QSignalSpy parentActivated(&parentShortcut, &QShortcut::activated);
+  QSignalSpy parentAmbiguous(&parentShortcut, &QShortcut::activatedAmbiguously);
+  QPointer<QMenu> menu;
+  const auto closePopup = qScopeGuard([&] {
+    if (menu)
+      menu->close();
+  });
+  const auto press = [&](Qt::Key p_key, Qt::KeyboardModifiers p_modifiers, bool p_popup) {
+    if (p_popup) {
+      menu = openTaskMenu(window, key);
+      if (!menu)
+        return false;
+      QTest::keyClick(menu, p_key, p_modifiers);
+      return QTest::qWaitFor([&] { return !menu || !menu->isVisible(); });
+    }
+    if (!openTask(window, key) || !activate(tasks))
+      return false;
+    QTest::keyClick(tasks, p_key, p_modifiers);
+    return true;
+  };
+
+  for (const bool popup : {false, true}) {
+    for (const auto shortcut : {Qt::Key_T, Qt::Key_D}) {
+      QVERIFY(press(shortcut, Qt::ControlModifier, popup));
+      const auto enabled = controller->getDocument().findItem(key)->m_fields;
+      QCOMPARE(enabled.m_myDay,
+               shortcut == Qt::Key_T ? controller->getProjection().m_today : QDate());
+      QCOMPARE(enabled.m_checked, shortcut == Qt::Key_D);
+      const auto enabledSource = window->getLatestContent();
+      QVERIFY(press(shortcut, Qt::ControlModifier, popup));
+      QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_myDay.isValid());
+      QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_checked);
+      window->undo();
+      QCOMPARE(window->getLatestContent(), enabledSource);
+      window->undo();
+      QCOMPARE(window->getLatestContent(), original);
+      QCOMPARE(window->getMode(), ViewWindowMode::Edit);
+      QCOMPARE(parentActivated.count(), 0);
+      QCOMPARE(parentAmbiguous.count(), 0);
+    }
+    for (const auto response : {QMessageBox::No, QMessageBox::Yes}) {
+      DialogAnswers answer({response});
+      QVERIFY(press(Qt::Key_Delete, Qt::NoModifier, popup));
+      QVERIFY(answer.accepted());
+      if (response == QMessageBox::Yes) {
+        QVERIFY(!controller->getDocument().findItem(key));
+        window->undo();
+      } else {
+        QVERIFY(controller->getDocument().findItem(key));
+      }
+      QCOMPARE(window->getLatestContent(), original);
+    }
+  }
+
+  const auto pressAll = [&] {
+    QTest::keyClick(tasks, Qt::Key_T, Qt::ControlModifier);
+    QTest::keyClick(tasks, Qt::Key_D, Qt::ControlModifier);
+    QTest::keyClick(tasks, Qt::Key_Delete);
+  };
+  QVERIFY(openTask(window, key) && activate(tasks));
+  tasks->setCurrentIndex(
+      controller->getTaskModel()->index(controller->getTaskModel()->getActiveCount()));
+  QVERIFY(tasks->currentIndex().data(TodoTaskModel::SectionRole).toBool());
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    pressAll();
+    QVERIFY(!prompted);
+  }
+  QCOMPARE(window->getLatestContent(), original);
+  tasks->setCurrentIndex(QModelIndex());
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    pressAll();
+    QVERIFY(!prompted);
+  }
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(window->save());
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(openTask(window, key) && activate(tasks));
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    pressAll();
+    QVERIFY(!prompted);
+  }
+  QCOMPARE(window->getLatestContent(), original);
+  QCOMPARE(window->getMode(), ViewWindowMode::Read);
+  QCOMPARE(parentActivated.count(), 0);
+  QCOMPARE(parentAmbiguous.count(), 0);
+  QVERIFY(!window->isModified());
+}
+
+void TestTodoViewWindow::taskShortcutsStayScoped() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("task-shortcut-scope.todo")).isValid());
+  auto *window = current();
+  const auto key = QStringLiteral("id:alpha");
+  QVERIFY(window && openTask(window, key));
+  auto *controller = window->getController();
+  auto *tasks = control<QListView>(window, "todoTasks");
+  QVERIFY(tasks);
+  const auto original = window->getLatestContent();
+  const QKeySequence myDayKey(Qt::CTRL | Qt::Key_T);
+  QList<QPointer<QShortcut>> disabledShortcuts;
+  for (auto *shortcut : window->findChildren<QShortcut *>()) {
+    if (shortcut->isEnabled() && shortcut->keys().contains(myDayKey)) {
+      disabledShortcuts.append(shortcut);
+      shortcut->setEnabled(false);
+    }
+  }
+  const auto restoreShortcuts = qScopeGuard([&] {
+    for (const auto &shortcut : disabledShortcuts) {
+      if (shortcut)
+        shortcut->setEnabled(true);
+    }
+  });
+  // Declare the parent conflict explicitly; isolated profiles need not bind EditRead to Ctrl+T.
+  QShortcut parentShortcut(myDayKey, window);
+  parentShortcut.setContext(Qt::WidgetWithChildrenShortcut);
+  QSignalSpy parentActivated(&parentShortcut, &QShortcut::activated);
+  QSignalSpy parentAmbiguous(&parentShortcut, &QShortcut::activatedAmbiguously);
+  QVERIFY(activate(tasks));
+  QTest::keyClick(tasks, Qt::Key_T, Qt::ControlModifier);
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_myDay,
+           controller->getProjection().m_today);
+  QCOMPARE(parentActivated.count(), 0);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+  QPointer<QMenu> menu = openTaskMenu(window, key);
+  QPointer<QDialog> dialog;
+  const auto closePopup = qScopeGuard([&] {
+    if (dialog)
+      dialog->reject();
+    if (menu)
+      menu->close();
+  });
+  QVERIFY(menu);
+  QTest::keyClick(menu, Qt::Key_T, Qt::ControlModifier);
+  QTRY_VERIFY(!menu || !menu->isVisible());
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_myDay,
+           controller->getProjection().m_today);
+  QCOMPARE(parentActivated.count(), 0);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+
+  menu = openTaskMenu(window, key);
+  QVERIFY(menu);
+  auto *move = control<QAction>(menu, "todoMoveTaskAction");
+  QVERIFY(move && move->isEnabled() && move->menu());
+  QPointer<QMenu> submenu = move->menu();
+  menu->setActiveAction(move);
+  QTest::keyClick(menu, Qt::Key_Right);
+  QTRY_VERIFY(submenu && submenu->isVisible());
+  QTest::keyClick(submenu, Qt::Key_T, Qt::ControlModifier);
+  QTRY_VERIFY(!submenu || !submenu->isVisible());
+  QTRY_VERIFY(!menu || !menu->isVisible());
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_myDay,
+           controller->getProjection().m_today);
+  QCOMPARE(parentActivated.count(), 0);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+
+  for (const char *name : {"todoTitle", "todoStepTitle_1", "todoSearch", "todoAddTask"}) {
+    QVERIFY(openTask(window, key));
+    auto *field = control<QLineEdit>(window, name);
+    QVERIFY(field && activate(field));
+    field->deselect();
+    field->setCursorPosition(field->text().size());
+    const int activations = parentActivated.count();
+    QTest::keyClick(field, Qt::Key_T, Qt::ControlModifier);
+    QCOMPARE(parentActivated.count(), activations + 1);
+    QTest::keyClick(field, Qt::Key_D, Qt::ControlModifier);
+    bool prompted = false;
+    {
+      DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+      QTest::keyClick(field, Qt::Key_Delete);
+    }
+    QVERIFY(!prompted);
+    QVERIFY(controller->getDocument().findItem(key));
+    QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_myDay.isValid());
+    QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_checked);
+    QCOMPARE(window->getLatestContent(), original);
+  }
+
+  QVERIFY(openTask(window, key));
+  auto *note = control<SimpleMarkdownEditor>(window, "todoNote");
+  QVERIFY(note && activate(note->getTextEdit()));
+  auto cursor = note->getTextEdit()->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  note->getTextEdit()->setTextCursor(cursor);
+  const auto beforeNoteShortcut = parentActivated.count();
+  QTest::keyClick(note->getTextEdit(), Qt::Key_T, Qt::ControlModifier);
+  QCOMPARE(parentActivated.count(), beforeNoteShortcut + 1);
+  QTest::keyClick(note->getTextEdit(), Qt::Key_D, Qt::ControlModifier);
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    QTest::keyClick(note->getTextEdit(), Qt::Key_Delete);
+    QVERIFY(!prompted);
+  }
+  QVERIFY(controller->getDocument().findItem(key));
+  QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_myDay.isValid());
+  QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_checked);
+
+  QVERIFY(selectView(window, TodoViewKind::All));
+  auto *lists = control<QListView>(window, "todoLists");
+  QVERIFY(lists && activate(lists));
+  const auto beforeSidebarShortcut = parentActivated.count();
+  const auto beforeSidebar = window->getLatestContent();
+  QTest::keyClick(lists, Qt::Key_T, Qt::ControlModifier);
+  QCOMPARE(parentActivated.count(), beforeSidebarShortcut + 1);
+  QTest::keyClick(lists, Qt::Key_D, Qt::ControlModifier);
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    QTest::keyClick(lists, Qt::Key_Delete);
+    QVERIFY(!prompted);
+  }
+  QCOMPARE(window->getLatestContent(), beforeSidebar);
+
+  QVERIFY(chooseTaskMenu(window, key, "todoPickDueDateAction"));
+  QTRY_VERIFY(qobject_cast<QDialog *>(QApplication::activeModalWidget()));
+  dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+  auto *calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+  QVERIFY(calendar && activate(calendar));
+  const auto beforeModal = window->getLatestContent();
+  const auto beforeModalShortcut = parentActivated.count();
+  QTest::keyClick(calendar, Qt::Key_T, Qt::ControlModifier);
+  QTest::keyClick(calendar, Qt::Key_D, Qt::ControlModifier);
+  {
+    bool prompted = false;
+    DialogAnswers unexpected({QMessageBox::No}, [&](QMessageBox *) { prompted = true; });
+    QTest::keyClick(calendar, Qt::Key_Delete);
+    QVERIFY(!prompted);
+  }
+  QCOMPARE(window->getLatestContent(), beforeModal);
+  QCOMPARE(parentActivated.count(), beforeModalShortcut);
+  QCOMPARE(parentAmbiguous.count(), 0);
+  QVERIFY(dialog && dialog->isVisible());
+  auto *cancel = control<QPushButton>(dialog, "todoDueDateCancel");
+  QVERIFY(cancel);
+  QTest::mouseClick(cancel, Qt::LeftButton);
+  QTRY_VERIFY(!dialog || !dialog->isVisible());
 }
 
 void TestTodoViewWindow::listIconsPersistAndUndo() {
