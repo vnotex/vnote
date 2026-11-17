@@ -829,7 +829,9 @@ or a click/focus outside the panel dismisses it; owned menus/dialogs remain inte
 Ctrl+F first leaves narrow details, then opens and focuses sidebar search; Enter exposes the
 filtered tasks. Escape leaves active search IME composition to the input. Hiding/rebinding the
 editor clears the overlay, and widening docks the same sidebar again. The overlay follows the
-splitter's leading edge in RTL and uses the theme's normal base background, including Native.
+splitter's leading edge in RTL. Sidebar and list backgrounds use normal widget/theme styling,
+without a sidebar-specific palette or background stylesheet. Auto-fill keeps the Native overlay
+opaque without selecting a custom color.
 Task details use a stacked page at narrow widths; the same close icon returns to tasks.
 Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
 and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day

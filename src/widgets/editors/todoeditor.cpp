@@ -654,8 +654,7 @@ void TodoEditor::createUi() {
   m_splitter->setHandleWidth(4);
   root->addWidget(m_splitter, 1);
   m_sidebar = named(new QWidget(m_splitter), "todoSidebar", tr("Lists and search"));
-  m_sidebar->setAttribute(Qt::WA_StyledBackground);
-  m_sidebar->setStyleSheet(QStringLiteral("QWidget#todoSidebar { background: palette(base); }"));
+  m_sidebar->setAutoFillBackground(true);
   auto *sidebar = new QVBoxLayout(m_sidebar);
   spacing(sidebar);
   auto *searchWidget = new QWidget(m_sidebar);
@@ -688,8 +687,6 @@ void TodoEditor::createUi() {
   m_lists->setFrameShape(QFrame::NoFrame);
   m_lists->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_lists->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-  m_lists->setStyleSheet(
-      QStringLiteral("QListView#todoLists { background: transparent; border: none; }"));
   sidebar->addWidget(m_lists, 1);
   auto *creationWidget =
       named(new QWidget(m_sidebar), "todoCreationArea", tr("Create lists and groups"));
@@ -713,10 +710,6 @@ void TodoEditor::createUi() {
   creation->addWidget(m_newGroup);
   sidebar->addWidget(creationWidget);
   const auto refreshIcons = [this, theme, searchAction]() {
-    auto sidebarPalette = m_sidebar->palette();
-    sidebarPalette.setColor(QPalette::Base,
-                            QColor(theme->paletteColor(QStringLiteral("base#normal#bg"))));
-    m_sidebar->setPalette(sidebarPalette);
     searchAction->setIcon(IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("search.svg"))));
     m_newList->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
