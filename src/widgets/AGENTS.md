@@ -157,6 +157,8 @@ when read-only is changed through the base editor or `getTextEdit()`. It offers 
 headings, inline formatting, lists, code, quotes, links and tables. Image import and both math
 buttons are omitted: there is no asset workflow or image/formula rendering. Existing image and
 math source remains intact. Heading choices remain reachable through the narrow-width overflow.
+The overflow button uses the main Markdown toolbar's zero-margin, zero-padding, borderless
+styling so its themed icon fits the narrow native extension; theme colors remain inherited.
 Link and table actions reuse the insertion dialogs, kept outside the host widget hierarchy so
 Todo's document-wide shortcuts cannot intercept dialog input. Insertion rechecks editability
 after the dialog closes. Formatting buttons and shortcut bindings share

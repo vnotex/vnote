@@ -71,6 +71,13 @@ void SimpleMarkdownEditor::setupToolBar() {
   m_toolBar->setContentsMargins(0, 0, 0, 0);
   m_toolBar->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
+  if (auto *extension = m_toolBar->findChild<QToolButton *>(QStringLiteral("qt_toolbar_ext_button"),
+                                                            Qt::FindDirectChildrenOnly)) {
+    // Match the main Markdown toolbar: leave room for the narrow extension's icon.
+    extension->setStyleSheet(
+        QStringLiteral("#qt_toolbar_ext_button { margin: 0; padding: 0; border: none; }"));
+  }
+
   auto *mainLayout = qobject_cast<QBoxLayout *>(layout());
   Q_ASSERT(mainLayout);
   auto *textLayout = new QHBoxLayout;
