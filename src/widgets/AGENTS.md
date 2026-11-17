@@ -788,8 +788,15 @@ dates, steps, notes and tags remain in the secondary line; without any remaining
 is vertically centered. Row heights and checkbox/star hitboxes do not change.
 The Completed section shows its count in a trailing `TreeChildCountDelegate` badge instead of
 parenthesized title text. Its chevron, title and badge mirror in RTL; accessible text and tooltips
-retain the count. Expansion and count/filter behavior are unchanged. These presentation changes
-need no document or configuration migration.
+retain the count. Single click, Enter and Space toggle only the completed row range, leaving Qt's
+current/selected separator and task-view focus intact. The controller does not rebuild the sidebar
+or restore a remembered task on this toggle. Explicit Back/source navigation can still reveal and
+select its requested task. The separator alone uses `Qt::PointingHandCursor`; task rows, empty space
+and leaving the viewport restore the inherited cursor, including after scrolling or filtering.
+`TodoTaskModel` retains sorted completed descriptors while collapsed, but index/item/key/drop lookup
+exposes only visible rows. Insert/remove notifications keep active/separator persistent indexes;
+removed completed indexes stay invalid. A separate drag generation rejects MIME captured before a
+toggle without invalidating the surviving indexes. No document or configuration migration is needed.
 Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
 not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
 The sidebar paints its own rounded selection with the theme's active list-item foreground and

@@ -5,11 +5,13 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDrag>
 #include <QDropEvent>
+#include <QEnterEvent>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QInputMethodEvent>
@@ -713,6 +715,11 @@ void TodoEditor::createUi() {
   m_tasks->setDragDropOverwriteMode(false);
   m_tasks->setDropIndicatorShown(true);
   m_tasks->setContextMenuPolicy(Qt::CustomContextMenu);
+  m_tasks->setMouseTracking(true);
+  connect(m_tasks->verticalScrollBar(), &QScrollBar::valueChanged, this,
+          &TodoEditor::updateTaskCursor);
+  connect(m_tasks->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+          &TodoEditor::updateTaskCursor);
   tasksLayout->addWidget(m_tasks, 1);
   m_destination =
       named(new QComboBox(m_taskPane), "todoDestination", tr("New task destination list"));
@@ -1027,6 +1034,7 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   }
   endTyping();
   if (m_controller) {
+    disconnect(m_controller->getTaskModel(), nullptr, this, nullptr);
     disconnect(m_controller, nullptr, this, nullptr);
   }
   if (m_tasks->selectionModel()) {
@@ -1037,6 +1045,12 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   m_lists->setModel(p_controller ? p_controller->getListModel() : nullptr);
   m_tasks->setModel(p_controller ? p_controller->getTaskModel() : nullptr);
   if (p_controller) {
+    connect(p_controller->getTaskModel(), &QAbstractItemModel::modelReset, this,
+            &TodoEditor::updateTaskCursor);
+    connect(p_controller->getTaskModel(), &QAbstractItemModel::rowsInserted, this,
+            &TodoEditor::updateTaskCursor);
+    connect(p_controller->getTaskModel(), &QAbstractItemModel::rowsRemoved, this,
+            &TodoEditor::updateTaskCursor);
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
     connect(p_controller, &TodoViewWindowController::selectionChanged, this, [this]() {
       if (m_controller && m_detailsKey != m_controller->getSelectedItemKey()) {
@@ -1103,6 +1117,7 @@ void TodoEditor::refresh() {
     m_tagFilter->hide();
     refreshDetails();
     refreshQuickAdd();
+    updateTaskCursor();
     return;
   }
   const auto &projection = m_controller->getProjection();
@@ -1173,6 +1188,7 @@ void TodoEditor::refresh() {
   m_destination->setCurrentIndex(destinationIndex < 0 ? 0 : destinationIndex);
   refreshDetails();
   refreshQuickAdd();
+  updateTaskCursor();
 }
 
 void TodoEditor::refreshDetails() {
@@ -1328,6 +1344,25 @@ void TodoEditor::refreshQuickAdd() {
                             : QString());
 }
 
+void TodoEditor::updateTaskCursor() {
+  const auto *viewport = m_tasks->viewport();
+  setTaskCursor(viewport->underMouse() ? m_tasks->indexAt(viewport->mapFromGlobal(QCursor::pos()))
+                                       : QModelIndex());
+}
+
+void TodoEditor::setTaskCursor(const QModelIndex &p_index) {
+  auto *viewport = m_tasks->viewport();
+  const bool completed =
+      m_controller && m_tasks->isEnabled() && p_index.data(TodoTaskModel::SectionRole).toBool();
+  if (completed) {
+    if (viewport->cursor().shape() != Qt::PointingHandCursor) {
+      viewport->setCursor(Qt::PointingHandCursor);
+    }
+  } else if (viewport->testAttribute(Qt::WA_SetCursor)) {
+    viewport->unsetCursor();
+  }
+}
+
 void TodoEditor::updateLayout() {
   const bool narrow = width() < 840;
   if (narrow != m_narrow) {
@@ -1457,7 +1492,7 @@ void TodoEditor::closeDetails() {
     // Reveal the originating completed row before restoring keyboard focus.
     m_controller->setCompletedExpanded(true);
   }
-  focusTasks();
+  focusTasks(true);
 }
 
 void TodoEditor::focusSearch() {
@@ -1505,7 +1540,7 @@ void TodoEditor::focusCurrent() {
   }
 }
 
-void TodoEditor::focusTasks() {
+void TodoEditor::focusTasks(bool p_restoreTaskSelection) {
   setSidebarOpen(false);
   m_groupFocused = false;
   if (m_controller) {
@@ -1514,6 +1549,13 @@ void TodoEditor::focusTasks() {
     const int row = model->rowForView(projection.m_view, projection.m_listKey);
     if (row >= 0 && !m_lists->isRowHidden(row)) {
       m_lists->setCurrentIndex(model->index(row, 0));
+    }
+    if (p_restoreTaskSelection) {
+      auto *tasks = m_controller->getTaskModel();
+      const auto selected = tasks->index(tasks->rowForKey(m_controller->getSelectedItemKey()));
+      if (selected.isValid() && m_tasks->currentIndex() != selected) {
+        m_tasks->setCurrentIndex(selected);
+      }
     }
   }
   if (m_narrow && m_detailsOpen) {
@@ -2424,6 +2466,17 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   }
   if (!widget || (widget != this && !isAncestorOf(widget)) || widget->window() != window()) {
     return QWidget::eventFilter(p_object, p_event);
+  }
+  if (widget == m_tasks->viewport()) {
+    if (p_event->type() == QEvent::MouseMove) {
+      setTaskCursor(m_tasks->indexAt(static_cast<QMouseEvent *>(p_event)->position().toPoint()));
+    } else if (p_event->type() == QEvent::Enter) {
+      setTaskCursor(m_tasks->indexAt(static_cast<QEnterEvent *>(p_event)->position().toPoint()));
+    } else if (p_event->type() == QEvent::Resize) {
+      updateTaskCursor();
+    } else if (p_event->type() == QEvent::Leave) {
+      setTaskCursor({});
+    }
   }
   if (p_event->type() == QEvent::FocusOut && widget == m_typingField) {
     endTyping();

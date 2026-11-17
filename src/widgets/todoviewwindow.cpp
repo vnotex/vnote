@@ -641,7 +641,7 @@ void TodoViewWindow::applyFileOpenSettings(const FileOpenSettings &p_settings) {
       m_controller->setCompletedExpanded(true);
     }
     m_controller->setSelectedItemKey(itemKey);
-    m_todoEditor->focusTasks();
+    m_todoEditor->focusTasks(true);
     return;
   }
   for (const auto &group : document.m_groups) {

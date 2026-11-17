@@ -35,7 +35,7 @@ public:
   void setEditable(bool p_editable);
   void focusSearch();
   void focusCurrent();
-  void focusTasks();
+  void focusTasks(bool p_restoreTaskSelection = false);
   void focusGroup(const QString &p_key);
   QString selectedGroupKey() const;
   void closeDetails();
@@ -70,6 +70,8 @@ private:
   void refreshSteps(const TodoItem *p_item);
   void refreshTags(const TodoItem *p_item);
   void refreshQuickAdd();
+  void updateTaskCursor();
+  void setTaskCursor(const QModelIndex &p_index);
   void updateLayout();
   void updateSidebarGeometry();
   void setSidebarOpen(bool p_open);

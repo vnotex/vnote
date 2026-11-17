@@ -1,8 +1,11 @@
 #include <QtTest>
 
+#include <QAbstractItemModelTester>
 #include <QDateTime>
+#include <QItemSelectionModel>
 #include <QJsonArray>
 #include <QMimeData>
+#include <QPersistentModelIndex>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -162,6 +165,7 @@ private slots:
   void stableSortingAndCounts();
   void timestampSorting_data();
   void timestampSorting();
+  void completedExpansionPreservesIndexes();
   void modelRolesAndIntents();
   void nativeDragUsesMoveCommand();
   void dragCompletionGroupsAndStaleness();
@@ -2287,6 +2291,64 @@ void TestTodoViewWindowController::timestampSorting() {
   QCOMPARE(m_document->toPlainText(), editedSource);
 }
 
+void TestTodoViewWindowController::completedExpansionPreservesIndexes() {
+  const auto source = projectionSource();
+  QVERIFY(load(source));
+  auto *model = m_controller->getTaskModel();
+  QAbstractItemModelTester tester(model, QAbstractItemModelTester::FailureReportingMode::QtTest);
+  m_controller->setView(TodoViewKind::List, key("work"));
+  m_controller->setSelectedItemKey(key("b"));
+  const QPersistentModelIndex active(model->index(model->rowForKey(key("a"))));
+  const QPersistentModelIndex section(model->index(model->getActiveCount()));
+  QItemSelectionModel selection(model);
+  selection.setCurrentIndex(section, QItemSelectionModel::ClearAndSelect);
+  const int collapsedCount = model->rowCount();
+  QCOMPARE(model->rowForKey(key("c")), -1);
+  QVERIFY(!model->itemAt(collapsedCount));
+  m_controller->setCompletedExpanded(true);
+  QCOMPARE(model->rowCount(), collapsedCount + model->getCompletedCount());
+  QVERIFY(active.isValid() && section.isValid());
+  QCOMPARE(active.data(TodoTaskModel::IdRole).toString(), key("a"));
+  QCOMPARE(selection.currentIndex(), QModelIndex(section));
+  QCOMPARE(selection.selectedIndexes(), QModelIndexList{section});
+  const QPersistentModelIndex completed(model->index(model->rowForKey(key("c"))));
+  QVERIFY(completed.isValid());
+  m_controller->setCompletedExpanded(false);
+  QCOMPARE(model->rowCount(), collapsedCount);
+  QVERIFY(active.isValid() && section.isValid());
+  QVERIFY(!completed.isValid());
+  QCOMPARE(selection.currentIndex(), QModelIndex(section));
+  QCOMPARE(selection.selectedIndexes(), QModelIndexList{section});
+  QCOMPARE(model->rowForKey(key("c")), -1);
+  QVERIFY(!model->itemAt(collapsedCount));
+  QVERIFY(!model->index(collapsedCount).isValid());
+  QCOMPARE(m_controller->getSelectedItemKey(), key("b"));
+  m_controller->setCompletedExpanded(true);
+  QVERIFY(!completed.isValid());
+  QCOMPARE(selection.currentIndex(), QModelIndex(section));
+  QCOMPARE(model->index(model->rowForKey(key("c"))).data(TodoTaskModel::IdRole).toString(),
+           key("c"));
+
+  m_controller->setSearch(QStringLiteral("Completed"));
+  m_controller->setCompletedExpanded(false);
+  QCOMPARE(model->rowCount(), 1);
+  const QPersistentModelIndex onlySection(model->index(0));
+  selection.setCurrentIndex(onlySection, QItemSelectionModel::ClearAndSelect);
+  m_controller->setCompletedExpanded(true);
+  QCOMPARE(model->rowCount(), 2);
+  QCOMPARE(selection.currentIndex(), QModelIndex(onlySection));
+  m_controller->setCompletedExpanded(false);
+  QCOMPARE(selection.currentIndex(), QModelIndex(onlySection));
+  m_controller->setSearch(QStringLiteral("no matching task"));
+  m_controller->setCompletedExpanded(true);
+  QCOMPARE(model->rowCount(), 0);
+  m_controller->setCompletedExpanded(false);
+  QCOMPARE(model->rowCount(), 0);
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
 void TestTodoViewWindowController::modelRolesAndIntents() {
   QVERIFY(load(projectionSource()));
   auto *model = m_controller->getTaskModel();
@@ -2638,10 +2700,8 @@ void TestTodoViewWindowController::dragCompletionGroupsAndStaleness() {
   QVERIFY(!other.canDropMimeData(mime.get(), Qt::MoveAction, 0, 0, {}));
   QVERIFY(!model->canDropMimeData(mime.get(), Qt::CopyAction, 0, 0, {}));
   QVERIFY(!model->canDropMimeData(mime.get(), Qt::MoveAction, 0, 0, model->index(0)));
-  const auto oldIndex = model->index(0);
   m_controller->setCompletedExpanded(true);
   QVERIFY(!model->canDropMimeData(mime.get(), Qt::MoveAction, 0, 0, {}));
-  QVERIFY(!oldIndex.data(TodoTaskModel::IdRole).isValid());
 }
 
 void TestTodoViewWindowController::normalizedCrLfAndUnicode() {

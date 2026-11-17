@@ -162,6 +162,7 @@ public:
 
   void setSnapshot(const TodoDocument &p_document, const TodoProjection &p_projection,
                    bool p_editable, int p_revision);
+  void setCompletedExpanded(bool p_expanded);
   int rowForKey(const QString &p_key) const;
   // Header/out-of-range rows return nullptr. Pointers expire at setSnapshot().
   const TodoItem *itemAt(int p_row) const;
@@ -195,6 +196,7 @@ private:
   QHash<QString, int> m_rowsByKey;
   QUuid m_dragIdentity = QUuid::createUuid();
   quint64 m_snapshot = 0;
+  quint64 m_dragSnapshot = 0;
   int m_activeCount = 0;
   int m_completedCount = 0;
   int m_revision = -1;

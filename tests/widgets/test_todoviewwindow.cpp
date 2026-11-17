@@ -13,6 +13,7 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDateEdit>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
@@ -25,6 +26,7 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QInputMethodEvent>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -36,6 +38,7 @@
 #include <QMimeData>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QPersistentModelIndex>
 #include <QPointer>
 #include <QPushButton>
 #include <QScopeGuard>
@@ -157,6 +160,13 @@ bool activate(QWidget *p_widget) {
 
 template <typename T> T *control(QObject *p_parent, const char *p_name) {
   return p_parent->findChild<T *>(QString::fromLatin1(p_name));
+}
+
+void movePointer(QWidget *p_widget, const QPoint &p_position) {
+  const auto global = p_widget->mapToGlobal(p_position);
+  QCursor::setPos(global);
+  auto *window = p_widget->window();
+  QTest::mouseMove(window->windowHandle(), window->mapFromGlobal(global));
 }
 
 bool chooseCombo(QComboBox *p_combo, int p_row) {
@@ -601,6 +611,8 @@ private slots:
   void nativeTypingSharesSourceUndo();
   void immediateNotesDatesTagsAndSteps();
   void filteringSortingAndDayRollover();
+  void completedToggleKeepsNativeSelection_data();
+  void completedToggleKeepsNativeSelection();
   void nativeMoveReorderAndDeletion();
   void nativeListActions();
   void descriptionDialogRejectsStaleOwner_data();
@@ -1350,6 +1362,93 @@ void TestTodoViewWindow::filteringSortingAndDayRollover() {
   QCOMPARE(controller->getProjection().m_today, QDate::currentDate());
   QCOMPARE(window->getLatestContent(), before);
   QCOMPARE(window->getSourceEditor()->document()->revision(), revision);
+}
+
+void TestTodoViewWindow::completedToggleKeepsNativeSelection_data() {
+  QTest::addColumn<bool>("readOnly");
+  QTest::addColumn<int>("width");
+  QTest::newRow("editable-wide") << false << 1000;
+  QTest::newRow("editable-narrow") << false << 600;
+  QTest::newRow("readonly-wide") << true << 1000;
+  QTest::newRow("readonly-narrow") << true << 600;
+}
+
+void TestTodoViewWindow::completedToggleKeepsNativeSelection() {
+  QFETCH(bool, readOnly);
+  QFETCH(int, width);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("completed-focus.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  m_area->resize(width, 760);
+  auto *controller = window->getController();
+  auto *model = controller->getTaskModel();
+  auto *tasks = control<QListView>(window, "todoTasks");
+  QVERIFY(tasks && activate(tasks));
+  controller->setSelectedItemKey(QStringLiteral("id:alpha"));
+  if (readOnly)
+    window->setMode(ViewWindowMode::Read);
+  const auto source = window->getLatestContent();
+  const auto selectedTask = controller->getSelectedItemKey();
+  const QPersistentModelIndex section(model->index(model->getActiveCount()));
+  // Settle mode/model geometry before choosing the pointer's target row.
+  QCoreApplication::processEvents();
+  tasks->doItemsLayout();
+  tasks->scrollTo(section);
+  QCoreApplication::processEvents();
+  movePointer(tasks->viewport(), tasks->visualRect(section).center());
+  QTRY_COMPARE(tasks->viewport()->cursor().shape(), Qt::PointingHandCursor);
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tasks->visualRect(section).center());
+  QVERIFY(controller->getProjection().m_completedExpanded);
+  QCOMPARE(tasks->currentIndex(), QModelIndex(section));
+  QCOMPARE(tasks->selectionModel()->selectedIndexes(), QModelIndexList{section});
+  QVERIFY(tasks->hasFocus());
+  for (const auto key : {Qt::Key_Return, Qt::Key_Space, Qt::Key_Enter}) {
+    const bool expanded = controller->getProjection().m_completedExpanded;
+    QTest::keyClick(tasks, key);
+    QCOMPARE(controller->getProjection().m_completedExpanded, !expanded);
+    QCOMPARE(tasks->currentIndex(), QModelIndex(section));
+    QCOMPARE(tasks->selectionModel()->selectedIndexes(), QModelIndexList{section});
+    QCOMPARE(controller->getSelectedItemKey(), selectedTask);
+    QVERIFY(tasks->hasFocus());
+  }
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tasks->visualRect(section).center());
+  QCOMPARE(tasks->currentIndex(), QModelIndex(section));
+  QVERIFY(tasks->hasFocus());
+  const auto alpha = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  movePointer(tasks->viewport(), tasks->visualRect(alpha).center());
+  QTRY_COMPARE(tasks->viewport()->cursor().shape(), Qt::ArrowCursor);
+  movePointer(tasks->viewport(),
+              QPoint(tasks->viewport()->width() / 2, tasks->viewport()->height() - 8));
+  QTRY_COMPARE(tasks->viewport()->cursor().shape(), Qt::ArrowCursor);
+  movePointer(tasks->viewport(), tasks->visualRect(section).center());
+  QTRY_COMPARE(tasks->viewport()->cursor().shape(), Qt::PointingHandCursor);
+  controller->setSearch(QStringLiteral("Alpha"));
+  QTRY_COMPARE(tasks->viewport()->cursor().shape(), Qt::ArrowCursor);
+  controller->setSearch({});
+
+  // Back and explicit file navigation still restore their requested task, not the section.
+  controller->setCompletedExpanded(true);
+  QVERIFY(openTask(window, QStringLiteral("id:done")));
+  controller->setCompletedExpanded(false);
+  window->getTodoEditor()->closeDetails();
+  QCOMPARE(tasks->currentIndex().data(TodoTaskModel::IdRole).toString(), QStringLiteral("id:done"));
+  QVERIFY(tasks->hasFocus());
+  const auto currentSection = model->index(model->getActiveCount());
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tasks->visualRect(currentSection).center());
+  QVERIFY(!controller->getProjection().m_completedExpanded);
+  QCOMPARE(tasks->currentIndex(), currentSection);
+  FileOpenSettings navigation;
+  navigation.m_cursorOffset = source.indexOf(QStringLiteral("- [x] Done"));
+  window->applyFileOpenSettings(navigation);
+  QCOMPARE(tasks->currentIndex().data(TodoTaskModel::IdRole).toString(), QStringLiteral("id:done"));
+  QVERIFY(tasks->hasFocus());
+  QCOMPARE(window->getLatestContent(), source);
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
 }
 
 void TestTodoViewWindow::nativeMoveReorderAndDeletion() {

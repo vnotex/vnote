@@ -580,7 +580,7 @@ void TodoViewWindowController::setCompletedExpanded(bool p_expanded) {
   if (m_projection.m_completedExpanded != p_expanded) {
     endCoalescing();
     m_projection.m_completedExpanded = p_expanded;
-    refreshModels(-1, true);
+    m_taskModel->setCompletedExpanded(p_expanded);
   }
 }
 

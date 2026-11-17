@@ -501,19 +501,21 @@ TodoTaskModel::TodoTaskModel(ServiceLocator &p_services, QObject *p_parent)
 }
 
 QModelIndex TodoTaskModel::index(int p_row, int p_column, const QModelIndex &p_parent) const {
-  if (p_parent.isValid() || p_column != 0 || p_row < 0 || p_row >= m_rows.size()) {
+  if (p_parent.isValid() || p_column != 0 || p_row < 0 || p_row >= rowCount()) {
     return {};
   }
   return createIndex(p_row, p_column, static_cast<quintptr>(m_snapshot));
 }
 
 int TodoTaskModel::rowCount(const QModelIndex &p_parent) const {
-  return p_parent.isValid() ? 0 : static_cast<int>(m_rows.size());
+  return p_parent.isValid() ? 0
+                            : static_cast<int>(m_rows.size()) -
+                                  (m_projection.m_completedExpanded ? 0 : m_completedCount);
 }
 
 bool TodoTaskModel::isOwnIndex(const QModelIndex &p_index) const {
   return p_index.isValid() && p_index.model() == this && p_index.column() == 0 &&
-         p_index.row() >= 0 && p_index.row() < m_rows.size() &&
+         p_index.row() >= 0 && p_index.row() < rowCount() &&
          p_index.internalId() == static_cast<quintptr>(m_snapshot);
 }
 
@@ -712,6 +714,7 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
                         m_document.findList(m_projection.m_listKey);
   m_revision = p_revision;
   ++m_snapshot;
+  ++m_dragSnapshot;
   m_rows.clear();
   m_rowsByKey.clear();
   m_activeCount = 0;
@@ -736,9 +739,6 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
         }
         if (item.m_fields.m_checked) {
           ++m_completedCount;
-          if (!m_projection.m_completedExpanded) {
-            continue;
-          }
         } else {
           ++m_activeCount;
         }
@@ -793,18 +793,48 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
     }
     m_rowsByKey.reserve(m_rows.size());
     for (int row = 0; row < m_rows.size(); ++row) {
-      if (const auto *item = itemAt(row)) {
-        m_rowsByKey.insert(item->m_key, row);
+      const auto &entry = m_rows.at(row);
+      if (entry.m_item >= 0) {
+        m_rowsByKey.insert(lists.at(entry.m_list).m_items.at(entry.m_item).m_key, row);
       }
     }
   }
   endResetModel();
 }
 
-int TodoTaskModel::rowForKey(const QString &p_key) const { return m_rowsByKey.value(p_key, -1); }
+void TodoTaskModel::setCompletedExpanded(bool p_expanded) {
+  if (m_projection.m_completedExpanded == p_expanded) {
+    return;
+  }
+  if (m_completedCount > 0) {
+    const int first = m_activeCount + 1;
+    const int last = first + m_completedCount - 1;
+    if (p_expanded) {
+      beginInsertRows({}, first, last);
+    } else {
+      beginRemoveRows({}, first, last);
+    }
+  }
+  m_projection.m_completedExpanded = p_expanded;
+  ++m_dragSnapshot;
+  if (m_completedCount > 0) {
+    if (p_expanded) {
+      endInsertRows();
+    } else {
+      endRemoveRows();
+    }
+    const auto section = index(m_activeCount);
+    emit dataChanged(section, section, {ExpandedRole, Qt::AccessibleTextRole, Qt::ToolTipRole});
+  }
+}
+
+int TodoTaskModel::rowForKey(const QString &p_key) const {
+  const int row = m_rowsByKey.value(p_key, -1);
+  return row < rowCount() ? row : -1;
+}
 
 const TodoItem *TodoTaskModel::itemAt(int p_row) const {
-  if (p_row < 0 || p_row >= m_rows.size()) {
+  if (p_row < 0 || p_row >= rowCount()) {
     return nullptr;
   }
   const auto &row = m_rows.at(p_row);
@@ -829,7 +859,7 @@ QMimeData *TodoTaskModel::mimeData(const QModelIndexList &p_indexes) const {
   QByteArray bytes;
   QDataStream stream(&bytes, QIODevice::WriteOnly);
   stream.setVersion(QDataStream::Qt_6_0);
-  stream << DragFormatVersion << m_dragIdentity << m_snapshot << m_revision << item->m_listKey
+  stream << DragFormatVersion << m_dragIdentity << m_dragSnapshot << m_revision << item->m_listKey
          << item->m_key;
   auto *mime = new QMimeData();
   mime->setData(TaskMimeType, bytes);
@@ -841,7 +871,7 @@ bool TodoTaskModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
                                QString *p_beforeKey) const {
   if (!isReorderingEnabled() || p_action != Qt::MoveAction || !p_data ||
       !p_data->hasFormat(TaskMimeType) || p_parent.isValid() || (p_column != -1 && p_column != 0) ||
-      p_row < -1 || p_row > m_rows.size()) {
+      p_row < -1 || p_row > rowCount()) {
     return false;
   }
 
@@ -855,7 +885,7 @@ bool TodoTaskModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
   QString key;
   stream >> version >> identity >> snapshot >> revision >> listKey >> key;
   if (stream.status() != QDataStream::Ok || !stream.atEnd() || version != DragFormatVersion ||
-      identity != m_dragIdentity || snapshot != m_snapshot || revision != m_revision ||
+      identity != m_dragIdentity || snapshot != m_dragSnapshot || revision != m_revision ||
       listKey != m_projection.m_listKey) {
     return false;
   }
@@ -868,7 +898,7 @@ bool TodoTaskModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
   if (p_row >= 0) {
     // Completion groups are a projection, not source order. Inserting at the
     // active/completed boundary must not use an earlier physical completed task.
-    for (int row = p_row; row < m_rows.size(); ++row) {
+    for (int row = p_row; row < rowCount(); ++row) {
       const auto *before = itemAt(row);
       if (before && before->m_fields.m_checked == item->m_fields.m_checked) {
         beforeKey = before->m_key;
