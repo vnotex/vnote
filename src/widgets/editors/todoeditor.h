@@ -87,6 +87,7 @@ private:
   void showListMenu(const QString &p_key, const QPoint &p_globalPosition);
   void showTaskMenu(const QString &p_key, const QPoint &p_globalPosition);
   void renameList(const QString &p_key);
+  void editListDescription(const QString &p_key);
   void chooseListIcon();
   void refreshListIcon();
   void deleteList(const QString &p_key);
@@ -127,7 +128,7 @@ private:
   QPushButton *m_listIcon = nullptr;
   QLineEdit *m_listTitle = nullptr;
   QLabel *m_viewTitle = nullptr;
-  SimpleMarkdownEditor *m_description = nullptr;
+  QLabel *m_description = nullptr;
   QPushButton *m_listMore = nullptr;
   QComboBox *m_sort = nullptr;
   QPushButton *m_tagFilter = nullptr;

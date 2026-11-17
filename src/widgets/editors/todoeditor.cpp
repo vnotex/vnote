@@ -47,6 +47,7 @@
 #include <m3/qt/emoji_line_edit.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
+#include <widgets/plaintextedit.h>
 
 #include "simplemarkdowneditor.h"
 
@@ -639,12 +640,12 @@ void TodoEditor::createUi() {
   connect(theme, &ThemeService::themeChanged, this, refreshIcons);
   heading->addWidget(m_listMore);
   tasksLayout->addLayout(heading);
-  m_description = named(new SimpleMarkdownEditor(m_services, m_taskPane), "todoListDescription",
-                        tr("List description in Markdown"));
-  named(m_description->getTextEdit(), "todoDescriptionTextEdit",
-        tr("List description in Markdown"));
-  m_description->getTextEdit()->setUndoRedoEnabled(false);
-  m_description->setMinimumHeight(60);
+  m_description = named(new QLabel(m_taskPane), "todoListDescription", tr("List description"));
+  m_description->setTextFormat(Qt::PlainText);
+  m_description->setWordWrap(true);
+  m_description->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  m_description->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_description->setMinimumWidth(0);
   m_description->setMaximumHeight(104);
   tasksLayout->addWidget(m_description);
   auto *tools = new QHBoxLayout;
@@ -774,14 +775,6 @@ void TodoEditor::createUi() {
     if (!m_updating && m_controller) {
       const auto key = m_controller->getProjection().m_listKey;
       command([this, key, p_text]() { return m_controller->renameList(key, p_text); }, m_listTitle);
-    }
-  });
-  connect(m_description, &SimpleMarkdownEditor::textChanged, this, [this]() {
-    if (!m_updating && m_controller) {
-      const auto key = m_controller->getProjection().m_listKey;
-      const auto text = m_description->toPlainText();
-      command([this, key, text]() { return m_controller->setListDescription(key, text); },
-              m_description->getTextEdit());
     }
   });
   connect(m_destination, &QComboBox::activated, this,
@@ -1060,7 +1053,6 @@ void TodoEditor::refresh() {
   m_lists->setDragEnabled(writable);
   m_lists->setAcceptDrops(writable);
   m_listTitle->setReadOnly(!writable);
-  m_description->setReadOnly(!writable);
   if (!m_controller) {
     m_listTitle->hide();
     m_listIcon->hide();
@@ -1105,7 +1097,7 @@ void TodoEditor::refresh() {
   m_listIcon->setVisible(list != nullptr);
   m_listIcon->setEnabled(writable);
   refreshListIcon();
-  m_description->setVisible(list != nullptr);
+  m_description->setVisible(list && !list->m_description.isEmpty());
   m_listMore->setVisible(list != nullptr);
   m_listMore->setEnabled(writable);
   m_viewTitle->setVisible(!list);
@@ -1113,9 +1105,8 @@ void TodoEditor::refresh() {
     if (!preservesField(m_listTitle) && m_listTitle->text() != list->m_title) {
       m_listTitle->setText(list->m_title);
     }
-    if (!preservesField(m_description->getTextEdit()) &&
-        m_description->toPlainText() != list->m_description) {
-      m_description->setPlainText(list->m_description);
+    if (m_description->text() != list->m_description) {
+      m_description->setText(list->m_description);
     }
   } else {
     m_viewTitle->setText(filtered ? tr("Search results")
@@ -1872,6 +1863,41 @@ void TodoEditor::renameList(const QString &p_key) {
   m_listTitle->selectAll();
 }
 
+void TodoEditor::editListDescription(const QString &p_key) {
+  if (!canMutate()) {
+    return;
+  }
+  const QString key(p_key);
+  const auto *list = m_controller->getDocument().findList(key);
+  if (!list) {
+    return;
+  }
+  endTyping();
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  // Keep local editing shortcuts outside the TODO window's source-history routing.
+  QDialog dialog;
+  named(&dialog, "todoListDescriptionDialog", tr("Edit Description"));
+  dialog.setWindowTitle(tr("Edit Description"));
+  auto *layout = new QVBoxLayout(&dialog);
+  spacing(layout);
+  auto *input =
+      named(new PlainTextEdit(&dialog), "todoDescriptionTextEdit", tr("List description"));
+  input->setPlainText(list->m_description);
+  layout->addWidget(input);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  connect(this, &QObject::destroyed, &dialog, &QDialog::reject);
+  dialog.resize(QSize(480, 280).boundedTo(dialog.screen()->availableGeometry().size()));
+  input->setFocus();
+  if (dialog.exec() == QDialog::Accepted && self && accepts(token)) {
+    const auto text = input->toPlainText();
+    command([this, key, text]() { return m_controller->setListDescription(key, text); });
+  }
+}
+
 void TodoEditor::refreshListIcon() {
   const auto *list =
       m_controller ? m_controller->getDocument().findList(m_controller->getProjection().m_listKey)
@@ -2141,6 +2167,8 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
     return action;
   };
   add(menu, tr("Rename"), "todoRenameListAction", [this, p_key]() { renameList(p_key); });
+  add(menu, tr("Edit Description"), "todoEditListDescriptionAction",
+      [this, p_key]() { editListDescription(p_key); });
   if (group->m_isDefault) {
     auto *destinations = menu->addMenu(tr("Move List To Group"));
     destinations->menuAction()->setObjectName(QStringLiteral("todoMoveListGroupAction"));
@@ -2213,8 +2241,7 @@ void TodoEditor::showTextMenu(QWidget *p_widget, const QPoint &p_position) {
   endTyping();
   const auto token = gesture();
   const bool projected = line == m_title || line == m_listTitle || line == m_stepTitle ||
-                         text == m_note->getTextEdit() || text == m_description->getTextEdit() ||
-                         m_due->isAncestorOf(p_widget);
+                         text == m_note->getTextEdit() || m_due->isAncestorOf(p_widget);
   auto *menu = new QMenu(this);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   auto *undo = menu->addAction(tr("Undo"));
@@ -2479,7 +2506,6 @@ void TodoEditor::zoom(int p_delta) {
   }
   setFont(nextFont);
   m_note->zoom(change);
-  m_description->zoom(change);
   m_tasks->doItemsLayout();
   m_lists->doItemsLayout();
 }

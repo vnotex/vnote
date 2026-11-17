@@ -618,9 +618,16 @@ Tasks/Source switch. Printing and encrypted-note support are not advertised or e
 One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 `QTextDocument` and its undo history. It is an internal document engine, never a visible fallback.
 `TodoEditor` renders `TodoListModel` / `TodoTaskModel`; `TodoViewWindowController` validates
-and applies source commands without widgets or storage writes. Projected notes/descriptions
-use separate `SimpleMarkdownEditor` inputs with local undo disabled and source-history routing.
+and applies source commands without widgets or storage writes. Projected task notes use a
+separate `SimpleMarkdownEditor` input with local undo disabled and source-history routing.
 Typing coalesces by field until focus, selection, mode or another command ends the group.
+Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
+cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
+**Edit Description** opens a `PlainTextEdit` dialog with local undo and OK/Cancel; only acceptance
+applies one source-history command to the captured list. The dialog stays outside the TODO
+widget ancestry so source shortcuts cannot intercept its input, and rejects stale source,
+selection, read-only or destroyed-owner results. Existing description blocks are unchanged;
+no document or configuration migration is needed.
 
 `core/tododocument` uses public cmark AST/source APIs, never vtextedit private headers. Each
 document-child H1 is a group and each H2 is a list; direct unordered checkbox items under an
@@ -680,9 +687,9 @@ Group menus contain Rename, New List and Ungroup Lists. Ungroup Lists dissolves 
 into Default without deleting its lists/tasks; Default itself cannot be ungrouped. Group comments
 move to Default's pre-list region, not into another list. Without Default, the dissolved group's
 heading becomes a fresh Default in place. The command is one source transaction/undo step.
-List menus contain Rename, either Remove from Group (custom-group lists) or Move List To Group
-(Default lists, submenu of all custom groups), Duplicate and Delete. The move submenu is disabled
-when no custom group exists. The icon-only **List Options** button uses the themed three-dot
+List menus contain Rename, Edit Description, either Remove from Group (custom-group lists) or
+Move List To Group (Default lists, submenu of all custom groups), Duplicate and Delete. The move
+submenu is disabled when no custom group exists. The icon-only **List Options** button uses the themed three-dot
 `menu.svg`, retains a List Options tooltip/accessibility label, and opens the same menu.
 Duplicate inserts a copy beside its source, retaining descriptions, notes, steps, completion/date/tag
 fields, comments and unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy
