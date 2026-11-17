@@ -1231,11 +1231,11 @@ void TestTodoViewWindow::immediateNotesDatesAndSteps() {
   QTest::keyClick(note->getTextEdit(), Qt::Key_Y, Qt::ControlModifier);
   QCOMPARE(fields().m_note, markdown);
   auto *due = control<QPushButton>(window, "todoDue");
-  auto *myDay = control<QCheckBox>(window, "todoMyDay");
+  auto *myDay = control<QPushButton>(window, "todoMyDay");
   QVERIFY(due && myDay);
   QVERIFY(chooseButtonMenu(due, "todoDueTomorrowAction"));
   QCOMPARE(fields().m_due, controller->getProjection().m_today.addDays(1));
-  myDay->setChecked(true);
+  myDay->click();
   QCOMPARE(fields().m_myDay, controller->getProjection().m_today);
   QVERIFY(chooseButtonMenu(due, "todoClearDueAction"));
   QVERIFY(!fields().m_due.isValid());
@@ -3940,7 +3940,7 @@ void TestTodoViewWindow::storedMyDayRemainsVisible() {
   auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
   fields.m_myDay = today.addDays(-1);
   QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
-  auto *day = control<QCheckBox>(window, "todoMyDay");
+  auto *day = control<QPushButton>(window, "todoMyDay");
   QVERIFY(day);
   QVERIFY(!day->isChecked());
   const auto oldDay = QLocale().toString(fields.m_myDay, QLocale::ShortFormat);
@@ -3952,12 +3952,12 @@ void TestTodoViewWindow::storedMyDayRemainsVisible() {
   QVERIFY(day->accessibleDescription().contains(oldDay));
   QCOMPARE(window->getSourceEditor()->toPlainText(), before);
   controller->setToday(today);
-  day->setChecked(true);
+  day->click();
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay, today);
   const auto storedToday = QLocale().toString(today, QLocale::ShortFormat);
   QVERIFY(day->toolTip().contains(storedToday));
   QVERIFY(day->accessibleDescription().contains(storedToday));
-  day->setChecked(false);
+  day->click();
   QVERIFY(
       !controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay.isValid());
   QVERIFY(!day->toolTip().contains(storedToday));

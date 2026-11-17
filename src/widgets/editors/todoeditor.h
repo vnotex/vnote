@@ -143,7 +143,7 @@ private:
   QLineEdit *m_title = nullptr;
   QCheckBox *m_checked = nullptr;
   QToolButton *m_important = nullptr;
-  QCheckBox *m_myDay = nullptr;
+  QPushButton *m_myDay = nullptr;
   QPushButton *m_due = nullptr;
   struct StepRow {
     QWidget *m_widget;

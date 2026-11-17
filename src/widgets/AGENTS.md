@@ -625,8 +625,10 @@ The details panel has a right-aligned close icon, then completion/title/star, in
 Add a step, Add to My Day, due date and Markdown note, in that order. The note placeholder is
 "Add note (markdown supported)". Task and step completion share the central list's circular
 outline/checkmark drawing, but retain independent, reversible checkbox interaction and
-accessibility. The theme accent supplies a visible keyboard focus ring. My Day and quick-add
-due controls remain ordinary checkboxes. Step rows have a 16px leading inset (mirrored in RTL);
+accessibility. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
+button displaying "Add to My Day" when off and "Added to My Day" when on; clicking it again
+removes membership. Quick-add due controls remain ordinary checkboxes. Step rows have a 16px
+leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Step rows retain their input widgets through typing echoes;
 structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
@@ -640,8 +642,8 @@ native editing/filter controls or row badges; existing tag metadata remains loss
 button uses the themed calendar icon and keeps icon/text together at the physical left edge,
 including in RTL. The footer displays the immutable creation timestamp as a locale-formatted
 local date; legacy tasks show "Creation date unknown" without backfilling metadata. Its trash
-icon reuses task deletion's default-No confirmation and stale-gesture guards. The footer's
-separator follows the theme border, and its date wraps rather than pushing the icon offscreen.
+icon reuses task deletion's default-No confirmation and stale-gesture guards. The date wraps
+rather than pushing the icon offscreen; no separator is drawn above the footer.
 Task move and deletion remain available in the task context menu; there is no move footer button.
 Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
 cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
@@ -790,7 +792,7 @@ owned comment JSON. Normal notebook content search still reads raw `.todo` sourc
 metadata. Sort/filter/Completed expansion never reorder or dirty source. The visible window
 refreshes today's date on activation and each minute, without reminders or persisted UI state.
 Quick-add due controls appear and apply only in unfiltered Planned; a remembered choice never
-leaks into another view or filtered result. The Add to My Day checkbox tooltip and accessible
+leaks into another view or filtered result. The My Day toggle button tooltip and accessible
 description retain the stored date even when it is not today, before a user replaces it. Step
 rows fit the 320px details pane without outer horizontal scrolling. These presentation changes
 reuse existing document fields and require no document or configuration migration.

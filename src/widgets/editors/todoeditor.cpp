@@ -935,8 +935,9 @@ void TodoEditor::createDetails() {
   m_addStep = named(new QLineEdit(m_details), "todoAddStep", tr("Add a step; press Enter"));
   m_addStep->setPlaceholderText(tr("Add a step"));
   layout->addWidget(m_addStep);
-  m_myDay = named(new QCheckBox(tr("Add to My Day"), m_details), "todoMyDay",
-                  tr("Include task in My Day"));
+  m_myDay =
+      named(new QPushButton(tr("Add to My Day"), m_details), "todoMyDay", tr("Add to My Day"));
+  m_myDay->setCheckable(true);
   layout->addWidget(m_myDay);
   m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
   m_due->setIconSize(QSize(20, 20));
@@ -952,10 +953,6 @@ void TodoEditor::createDetails() {
   m_note->getTextEdit()->setUndoRedoEnabled(false);
   m_note->setMinimumHeight(136);
   layout->addWidget(m_note, 1);
-  auto *separator = new QFrame(m_details);
-  separator->setFrameShape(QFrame::HLine);
-  separator->setFrameShadow(QFrame::Plain);
-  layout->addWidget(separator);
   auto *footer = new QHBoxLayout;
   m_createdDate = named(new QLabel(m_details), "todoCreatedDate", tr("Task creation date"));
   m_createdDate->setTextFormat(Qt::PlainText);
@@ -972,11 +969,7 @@ void TodoEditor::createDetails() {
   layout->addLayout(footer);
 
   auto *theme = m_services.get<ThemeService>();
-  const auto refreshIcons = [this, theme, separator]() {
-    auto separatorPalette = separator->palette();
-    separatorPalette.setColor(QPalette::WindowText,
-                              QColor(theme->paletteColor(QStringLiteral("base#normal#border"))));
-    separator->setPalette(separatorPalette);
+  const auto refreshIcons = [this, theme]() {
     m_due->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("calendar.svg"))));
     m_deleteTask->setIcon(
@@ -1036,7 +1029,7 @@ void TodoEditor::createDetails() {
   connect(m_important, &QToolButton::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_important = p_checked; });
   });
-  connect(m_myDay, &QCheckBox::toggled, this, [this](bool p_checked) {
+  connect(m_myDay, &QPushButton::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) {
       p_fields.m_myDay = p_checked ? m_controller->getProjection().m_today : QDate();
     });
@@ -1258,6 +1251,8 @@ void TodoEditor::refreshDetails() {
   m_important->setToolTip(fields.m_important ? tr("Remove importance") : tr("Mark as important"));
   m_myDay->setChecked(m_controller && fields.m_myDay.isValid() &&
                       fields.m_myDay == m_controller->getProjection().m_today);
+  m_myDay->setText(m_myDay->isChecked() ? tr("Added to My Day") : tr("Add to My Day"));
+  m_myDay->setAccessibleName(m_myDay->text());
   const auto dayDescription =
       fields.m_myDay.isValid()
           ? tr("My Day: %1").arg(QLocale().toString(fields.m_myDay, QLocale::ShortFormat))
