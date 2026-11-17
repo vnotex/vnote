@@ -727,6 +727,7 @@ void TodoEditor::createUi() {
     m_listMore->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg"))));
     refreshListIcon();
+    refreshHeadingFont();
   };
 
   m_pages = named(new QStackedWidget(m_splitter), "todoNativePages", tr("Tasks or details"));
@@ -735,28 +736,30 @@ void TodoEditor::createUi() {
   auto *tasksLayout = new QVBoxLayout(m_taskPane);
   spacing(tasksLayout);
   auto *heading = new QHBoxLayout;
+  heading->setContentsMargins(0, 4, 0, 4);
   heading->setSpacing(4);
   m_listIcon = named(new QPushButton(m_taskPane), "todoListIcon", tr("Add list icon"));
-  m_listIcon->setIconSize(QSize(20, 20));
+  m_listIcon->setIconSize(QSize(24, 24));
   m_listIcon->setFlat(true);
-  m_listIcon->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 6px; }"));
+  m_listIcon->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 8px; }"));
   auto iconFont = m_listIcon->font();
-  iconFont.setPixelSize(20);
+  iconFont.setPixelSize(24);
   m_listIcon->setFont(iconFont);
-  heading->addWidget(m_listIcon);
+  heading->addWidget(m_listIcon, 0, Qt::AlignVCenter);
   m_listTitle = named(new QLineEdit(m_taskPane), "todoListTitle", tr("List title"));
   m_listTitle->setPlaceholderText(tr("Untitled list"));
+  m_listTitle->setStyleSheet(QStringLiteral("QLineEdit { padding: 6px 8px; min-height: 32px; }"));
   m_viewTitle = named(new QLabel(m_taskPane), "todoViewTitle", tr("Current view"));
   heading->addWidget(m_listTitle, 1);
   heading->addWidget(m_viewTitle, 1);
   m_listMore = named(new QPushButton(m_taskPane), "todoListMore", tr("List Options"));
   m_listMore->setToolTip(tr("List Options"));
-  m_listMore->setIconSize(QSize(20, 20));
+  m_listMore->setIconSize(QSize(24, 24));
   m_listMore->setFlat(true);
-  m_listMore->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 6px; }"));
+  m_listMore->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 8px; }"));
   refreshIcons();
   connect(theme, &ThemeService::themeChanged, this, refreshIcons);
-  heading->addWidget(m_listMore);
+  heading->addWidget(m_listMore, 0, Qt::AlignVCenter);
   tasksLayout->addLayout(heading);
   m_description = named(new QLabel(m_taskPane), "todoListDescription", tr("List description"));
   m_description->setTextFormat(Qt::PlainText);
@@ -888,6 +891,18 @@ void TodoEditor::createUi() {
   connect(m_addButton, &QPushButton::clicked, this, &TodoEditor::addTask);
 }
 
+void TodoEditor::refreshHeadingFont() {
+  auto headingFont = font();
+  if (headingFont.pointSizeF() > 0) {
+    headingFont.setPointSizeF(qMax(1.0, headingFont.pointSizeF() * 1.35));
+  } else {
+    headingFont.setPixelSize(qMax(1, qRound(headingFont.pixelSize() * 1.35)));
+  }
+  m_listTitle->setFont(headingFont);
+  m_viewTitle->setFont(headingFont);
+  m_viewTitle->setMinimumHeight(m_listTitle->sizeHint().height());
+}
+
 void TodoEditor::createDetails() {
   m_detailsScroll = named(new QScrollArea(m_splitter), "todoDetailsScroll", tr("Task details"));
   m_detailsScroll->setWidgetResizable(true);
@@ -942,9 +957,11 @@ void TodoEditor::createDetails() {
   m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
   m_due->setIconSize(QSize(20, 20));
   // Keep the icon and text together at the requested physical left edge, including in RTL.
-  m_due->setLayoutDirection(Qt::LeftToRight);
-  m_due->setStyleSheet(
-      QStringLiteral("QPushButton { text-align: left; padding-left: 8px; padding-right: 8px; }"));
+  for (auto *button : {m_myDay, m_due}) {
+    button->setLayoutDirection(Qt::LeftToRight);
+    button->setStyleSheet(
+        QStringLiteral("QPushButton { text-align: left; padding-left: 8px; padding-right: 8px; }"));
+  }
   layout->addWidget(m_due);
   m_note = named(new SimpleMarkdownEditor(m_services, m_details), "todoNote",
                  tr("Task note in Markdown"));
@@ -2716,6 +2733,7 @@ void TodoEditor::zoom(int p_delta) {
     nextFont.setPixelSize(qMax(1, nextFont.pixelSize() + change));
   }
   setFont(nextFont);
+  refreshHeadingFont();
   m_note->zoom(change);
   m_tasks->doItemsLayout();
   m_lists->doItemsLayout();

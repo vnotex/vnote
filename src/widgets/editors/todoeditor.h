@@ -95,6 +95,7 @@ private:
   void editListDescription(const QString &p_key);
   void chooseListIcon();
   void refreshListIcon();
+  void refreshHeadingFont();
   void deleteList(const QString &p_key);
   void deleteTask(const QString &p_key);
   void moveTaskToList(const QString &p_key);

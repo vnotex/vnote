@@ -626,9 +626,9 @@ Add a step, Add to My Day, due date and Markdown note, in that order. The note p
 "Add note (markdown supported)". Task and step completion share the central list's circular
 outline/checkmark drawing, but retain independent, reversible checkbox interaction and
 accessibility. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
-button displaying "Add to My Day" when off and "Added to My Day" when on; clicking it again
-removes membership. Quick-add due controls remain ordinary checkboxes. Step rows have a 16px
-leading inset (mirrored in RTL);
+button with left-aligned text: "Add to My Day" when off and "Added to My Day" when on;
+clicking it again removes membership. Quick-add due controls remain ordinary checkboxes.
+Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Step rows retain their input widgets through typing echoes;
 structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
@@ -645,6 +645,10 @@ local date; legacy tasks show "Creation date unknown" without backfilling metada
 icon reuses task deletion's default-No confirmation and stale-gesture guards. The date wraps
 rather than pushing the icon offscreen; no separator is drawn above the footer.
 Task move and deletion remain available in the task context menu; there is no move footer button.
+The central list/smart-view heading uses 1.35 times the editor's current font size, with
+24px leading/options icons and extra vertical spacing. Theme refresh and zoom derive that size
+from the editor font rather than repeatedly enlarging the heading. Inline list renaming remains
+unchanged, and task rows keep their existing typography.
 Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
 cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
 **Edit Description** opens a `PlainTextEdit` dialog with local undo and OK/Cancel; only acceptance
