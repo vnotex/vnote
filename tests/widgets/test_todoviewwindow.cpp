@@ -697,8 +697,8 @@ private slots:
   void invalidSourceRecovery();
   void repeatedSaveAutosaveAndReopen_data();
   void repeatedSaveAutosaveAndReopen();
-  void closeDecisions_data();
-  void closeDecisions();
+  void autosaveIgnoresGlobalPolicy_data();
+  void autosaveIgnoresGlobalPolicy();
   void saveAndReloadFailuresRetainDraft();
   void dirtyReplacement_data();
   void dirtyReplacement();
@@ -805,6 +805,10 @@ void TestTodoViewWindow::init() {
   m_notebooks->setNotebookIoGate(m_gate.get());
   m_buffers =
       std::make_unique<BufferService>(m_context, m_hooks.get(), m_gate.get(), AutoSavePolicy::None);
+  // Gesture/undo tests drive saves explicitly, avoiding a timer boundary during typing.
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(60 * 60 * 1000);
   m_buffers->setSyncWorkQueueManager(m_queues.get());
   m_workspaces = std::make_unique<WorkspaceCoreService>(m_context);
   m_workspaces->setHookManager(m_hooks.get());
@@ -2949,8 +2953,13 @@ void TestTodoViewWindow::sidebarMenusAndDuplication() {
   QVERIFY(typeText(control<QLineEdit>(window, "todoTitle"), QStringLiteral("Independent copy")));
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_title,
            QStringLiteral("Alpha"));
-  window->undo();
-  window->undo();
+  // Autosave may separate typing groups; undo must still reach the pre-copy document.
+  while (window->getLatestContent() != beforeCopy &&
+         window->getSourceEditor()->document()->isUndoAvailable()) {
+    const auto beforeUndo = window->getLatestContent();
+    window->undo();
+    QVERIFY(window->getLatestContent() != beforeUndo);
+  }
   QCOMPARE(window->getLatestContent(), beforeCopy);
 
   window->setMode(ViewWindowMode::Read);
@@ -3846,40 +3855,55 @@ void TestTodoViewWindow::repeatedSaveAutosaveAndReopen() {
       fields.m_title);
 }
 
-void TestTodoViewWindow::closeDecisions_data() {
-  QTest::addColumn<int>("answer");
-  QTest::newRow("cancel-keeps-window") << int(QMessageBox::Cancel);
-  QTest::newRow("discard-keeps-disk") << int(QMessageBox::Discard);
-  QTest::newRow("save-persists-and-closes") << int(QMessageBox::Save);
+void TestTodoViewWindow::autosaveIgnoresGlobalPolicy_data() {
+  QTest::addColumn<bool>("memory");
+  QTest::newRow("file") << false;
+  QTest::newRow("memory-save-callback") << true;
 }
 
-void TestTodoViewWindow::closeDecisions() {
-  QFETCH(int, answer);
-  createArea();
-  const auto buffer = openNote(QStringLiteral("close.todo"));
-  QVERIFY(buffer.isValid());
-  QPointer<TodoViewWindow> window(current());
-  QVERIFY(window);
-  focusTasks(window);
-  QVERIFY(quickAdd(window, QStringLiteral("Unsaved close task")));
-  const auto edited = window->getLatestContent();
-  bool named = false;
-  DialogAnswers dialog({static_cast<QMessageBox::StandardButton>(answer)}, [&](QMessageBox *box) {
-    named = box->text().contains(QStringLiteral("close.todo"));
+void TestTodoViewWindow::autosaveIgnoresGlobalPolicy() {
+  QFETCH(bool, memory);
+  // No view owns the ordinary buffer: exercise the same service without opting in.
+  const auto ordinary = openNote(QStringLiteral("ordinary.txt"), QByteArray("Original"));
+  QVERIFY(ordinary.isValid());
+  QString ordinaryDraft;
+  m_buffers->registerActiveWriter(ordinary.id(), reinterpret_cast<quintptr>(this),
+                                  [&]() { return ordinaryDraft; });
+  const auto unregister = qScopeGuard([&]() {
+    m_buffers->unregisterActiveWriter(ordinary.id(), reinterpret_cast<quintptr>(this));
   });
-  const bool closed = m_area->getController()->closeViewWindow(window->getViewWindowId(), false);
-  QVERIFY(dialog.accepted());
-  QVERIFY(named);
-  QCOMPARE(closed, answer != int(QMessageBox::Cancel));
-  if (!closed) {
-    QVERIFY(window && window->isModified());
-    QCOMPARE(window->getLatestContent(), edited);
-  } else {
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
-    QVERIFY(window.isNull());
+  createArea();
+  auto store = std::make_shared<Store>();
+  const auto buffer = memory ? m_buffers->openMemoryBuffer(storedSource(store))
+                             : openNote(QStringLiteral("autosave.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *timer = m_buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  timer->setInterval(3000);
+  focusTasks(window);
+  // Changes after opening the TODO must not remove its policy override or affect others.
+  for (int policy : {0, 2, 0}) {
+    m_buffers->syncAutoSavePolicy(policy);
+    ordinaryDraft += QStringLiteral("Ordinary edit");
+    m_buffers->markDirty(ordinary.id());
+    QVERIFY(quickAdd(window, QStringLiteral("Automatically saved task %1").arg(policy)));
+    const auto expected = window->getLatestContent().toUtf8();
+    QVERIFY(expected.contains("Automatically saved task"));
+    QTRY_COMPARE_WITH_TIMEOUT(memory ? store->snapshot()
+                                     : readBytes(absolute(QStringLiteral("autosave.todo"))),
+                              expected, 10000);
+    QTRY_VERIFY(!window->isModified());
+    QVERIFY(m_buffers->syncNow(ordinary.id()));
+    QCOMPARE(readBytes(absolute(QStringLiteral("ordinary.txt"))), QByteArray("Original"));
+    if (!memory)
+      QVERIFY(!QFileInfo::exists(BufferCoreService(m_context).getBackupPath(buffer.id())));
   }
-  QCOMPARE(readBytes(absolute(QStringLiteral("close.todo"))),
-           answer == int(QMessageBox::Save) ? edited.toUtf8() : c_source);
+  QPointer<TodoViewWindow> retired(window);
+  QVERIFY(m_area->getController()->closeViewWindow(window->getViewWindowId(), false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(retired.isNull());
 }
 
 void TestTodoViewWindow::saveAndReloadFailuresRetainDraft() {

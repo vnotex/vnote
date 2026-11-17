@@ -67,7 +67,6 @@ private slots:
   void handleBufferPublicationChanged(const QString &p_bufferId);
 
 private:
-  void setupToolBar();
   void updateEditability();
   void updateDiagnostics();
   void updateToday();
@@ -84,8 +83,6 @@ private:
   SimpleMarkdownEditor *m_sourceEditor = nullptr;
   TodoEditor *m_todoEditor = nullptr;
   InlineBanner *m_diagnosticBanner = nullptr;
-  QAction *m_undoAction = nullptr;
-  QAction *m_redoAction = nullptr;
   QTimer *m_dayTimer = nullptr;
   QString m_boundBufferId;
   quint64 m_boundGeneration = 0;

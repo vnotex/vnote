@@ -1,6 +1,5 @@
 #include "todoviewwindow.h"
 
-#include <QAction>
 #include <QApplication>
 #include <QHideEvent>
 #include <QKeyEvent>
@@ -12,7 +11,6 @@
 #include <QTextBlock>
 #include <QTextDocument>
 #include <QTimer>
-#include <QToolBar>
 
 #include <stdexcept>
 
@@ -20,6 +18,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
 #include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/textutils.h>
 #include <vtextedit/theme.h>
@@ -28,7 +27,6 @@
 #include "editors/simplemarkdowneditor.h"
 #include "editors/todoeditor.h"
 #include "inlinebanner.h"
-#include "textviewwindowhelper.h"
 
 using namespace vnotex;
 
@@ -70,7 +68,6 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
   setCentralWidget(m_todoEditor);
   setFocusProxy(m_todoEditor);
 
-  setupToolBar();
   m_diagnosticBanner = new InlineBanner(this);
   m_diagnosticBanner->setObjectName(QStringLiteral("todoDiagnosticBanner"));
   m_diagnosticBanner->setAccessibleName(tr("TODO source diagnostic"));
@@ -83,10 +80,6 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
       onEditorContentsChanged();
     }
   });
-  connect(textEdit->document(), &QTextDocument::undoAvailable, this,
-          [this]() { updateEditability(); });
-  connect(textEdit->document(), &QTextDocument::redoAvailable, this,
-          [this]() { updateEditability(); });
   connect(m_controller, &TodoViewWindowController::documentChanged, this, [this]() {
     if (!m_loading) {
       updateDiagnostics();
@@ -140,22 +133,6 @@ TodoViewWindow::~TodoViewWindow() {
   }
 }
 
-void TodoViewWindow::setupToolBar() {
-  auto *bar = createToolBar(this);
-  bar->setObjectName(QStringLiteral("todoToolBar"));
-  addToolBar(bar);
-  addLeftCommonToolBarActions(bar);
-
-  const auto actions = TextViewWindowHelper::addUndoRedoActions(bar, getServices(), this);
-  m_undoAction = actions.first;
-  m_redoAction = actions.second;
-  m_undoAction->setObjectName(QStringLiteral("todoUndoAction"));
-  m_redoAction->setObjectName(QStringLiteral("todoRedoAction"));
-  connect(m_undoAction, &QAction::triggered, this, &TodoViewWindow::undo);
-  connect(m_redoAction, &QAction::triggered, this, &TodoViewWindow::redo);
-  addRightCommonToolBarActions(bar, false);
-}
-
 void TodoViewWindow::configureLiteralSource() {
   if (!m_sourceEditor) {
     return;
@@ -182,6 +159,7 @@ void TodoViewWindow::registerSnapshotWriter() {
   m_buffers->revokeSnapshotWriter(m_snapshotWriterToken);
   m_snapshotWriterToken = 0;
   if (!m_boundBufferId.isEmpty()) {
+    m_buffers->forceAutoSave(m_boundBufferId);
     m_snapshotWriterToken = m_buffers->registerSnapshotWriter(
         m_boundBufferId, this, reinterpret_cast<quintptr>(this),
         [this]() { return m_sourceAvailable ? m_sourceBufferRevision : -1; });
@@ -241,12 +219,14 @@ void TodoViewWindow::syncEditorFromBuffer() {
   if (!m_buffers)
     return;
   const auto before = m_buffers->snapshotPublication(m_boundBufferId, m_snapshotWriterToken);
+  // Focus can return after our worker publishes but before its GUI notifications.
+  // An admitted own publication must not reload the document or retire its undo history.
+  if (reconcileBufferRevision()) {
+    m_lastKnownRevision = m_sourceBufferRevision;
+    updateEditability();
+    return;
+  }
   if (before.live && before.busy) {
-    if (reconcileBufferRevision()) {
-      m_lastKnownRevision = m_sourceBufferRevision;
-      updateEditability();
-      return;
-    }
     m_waitingForSource = true;
     m_refreshPending = true;
     m_loading = false;
@@ -360,7 +340,7 @@ bool TodoViewWindow::canEditSource() const {
 }
 
 void TodoViewWindow::updateEditability() {
-  if (!m_controller || !m_todoEditor || !m_undoAction || m_updatingEditability) {
+  if (!m_controller || !m_todoEditor || m_updatingEditability) {
     return;
   }
   const QScopedValueRollback<bool> updating(m_updatingEditability, true);
@@ -390,9 +370,6 @@ void TodoViewWindow::updateEditability() {
   const bool tasksEditable = editable && m_controller->getDocument().isValid();
   m_controller->setEditable(tasksEditable);
   m_todoEditor->setEditable(tasksEditable);
-  auto *document = m_sourceEditor->getTextEdit()->document();
-  m_undoAction->setEnabled(editable && document->isUndoAvailable());
-  m_redoAction->setEnabled(editable && document->isRedoAvailable());
 }
 
 bool TodoViewWindow::admitMutation() {

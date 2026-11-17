@@ -89,6 +89,9 @@ public:
   // Set the auto-save policy directly.
   void setAutoSavePolicy(AutoSavePolicy p_policy);
 
+  // Force AutoSave for an open ordinary/memory buffer until it closes, ignoring global policy.
+  void forceAutoSave(const QString &p_bufferId);
+
   // Inject the shared GUI-owned maintenance coordinator before protected opens.
   void setSyncWorkQueueManager(SyncWorkQueueManager *p_queues);
 
@@ -566,7 +569,7 @@ private:
   QSet<QString> m_virtualBufferIds;
   std::unique_ptr<MemoryBuffers> m_memoryBuffers;
 
-  enum BufferFlag : quint8 { ReadOnly = 1, Encrypted = 2, Converting = 4 };
+  enum BufferFlag : quint8 { ReadOnly = 1, Encrypted = 2, Converting = 4, ForceAutoSave = 8 };
   // Replaces the previous resolved/read-only sets; one cached lookup carries
   // both facts. A plain buffer never participates in the protected roster.
   QHash<QString, quint8> m_bufferFlags;

@@ -1201,6 +1201,12 @@ void BufferService::finishContentReplacement(int p_token, bool p_changed, bool p
 
 void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) { m_autoSavePolicy = p_policy; }
 
+void BufferService::forceAutoSave(const QString &p_bufferId) {
+  auto it = m_bufferFlags.find(p_bufferId);
+  if (it != m_bufferFlags.end())
+    it.value() |= ForceAutoSave;
+}
+
 void BufferService::setSyncWorkQueueManager(SyncWorkQueueManager *p_queues) {
   Q_ASSERT(QThread::currentThread() == thread());
   m_syncWorkQueues = p_queues;
@@ -4066,6 +4072,9 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
     return true;
   }
 
+  const auto policy = (m_bufferFlags.value(p_bufferId) & ForceAutoSave) != 0
+                          ? AutoSavePolicy::AutoSave
+                          : m_autoSavePolicy;
   if (const auto *state = memoryBufferState(p_bufferId)) {
     if (!pullActiveWriterContent(p_bufferId)) {
       if (p_snapshotOk)
@@ -4076,7 +4085,7 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
     }
     // BackupFile has no filesystem target for memory content. Keep the shared
     // draft without acknowledging durability or nonexistent backup success.
-    if (m_autoSavePolicy != AutoSavePolicy::AutoSave || !state->canSave || state->manualSaving)
+    if (policy != AutoSavePolicy::AutoSave || !state->canSave || state->manualSaving)
       return true;
     m_dirtyBuffers.insert(p_bufferId);
     if (m_saveFailureCounts.value(p_bufferId) >= c_maxSaveFailures)
@@ -4097,7 +4106,7 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
 
   // None/Backup must never mutate core behind an admitted ordinary job.
   const bool ordinaryBusy = !writer.encrypted && ordinarySaveBusy(p_bufferId);
-  if (ordinaryBusy && m_autoSavePolicy != AutoSavePolicy::AutoSave) {
+  if (ordinaryBusy && policy != AutoSavePolicy::AutoSave) {
     m_dirtyBuffers.insert(p_bufferId);
     if (p_snapshotOk)
       *p_snapshotOk = false;
@@ -4140,7 +4149,7 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
   // to current.
   const quint64 capturedRev = snapshot.editorRevision;
 
-  switch (m_autoSavePolicy) {
+  switch (policy) {
   case AutoSavePolicy::None: {
     // Sync to in-memory vxcore buffer only — no disk write, fast.
     if (installWriterSnapshot(p_bufferId, encodeContent(p_bufferId, content), snapshot, false)) {

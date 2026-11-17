@@ -616,6 +616,13 @@ and `test_pdfvieweradapter_viewer` covers new-document versus same-document repl
 `editorType="todo"`. Ordinary opens default to Edit; forced Read and an existing tab's mode
 remain authoritative. Tasks is the sole visible surface; there is no raw Source mode or
 Tasks/Source switch. Printing and encrypted-note support are not advertised or extended.
+The view window has no toolbar; task controls and keyboard undo/redo remain available.
+Every bound TODO buffer opts into `BufferService::forceAutoSave()`, overriding global None
+and BackupFile policies for timer and focus-loss synchronization. The transient override
+belongs to the buffer, survives split/focus changes, is applied again on tab replacement,
+and is cleared when the buffer closes. File writes use the existing save queue; save-capable
+memory buffers use their save callback. Read-only and unsavable buffers retain their guards.
+Other editors and saved settings are unchanged; no configuration migration is needed.
 
 One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 `QTextDocument` and its undo history. It is an internal document engine, never a visible fallback.
