@@ -1390,6 +1390,11 @@ void TodoEditor::refreshSteps(const TodoItem *p_item, bool p_reset) {
     row.m_checked->setEnabled(writable);
     row.m_checked->setChecked(step.m_checked);
     row.m_title->setReadOnly(!writable);
+    if (row.m_title->font().strikeOut() != step.m_checked) {
+      QFont font;
+      font.setStrikeOut(step.m_checked);
+      row.m_title->setFont(font);
+    }
     if (!preservesField(row.m_title) && row.m_title->text() != step.m_title) {
       row.m_title->setText(step.m_title);
     }

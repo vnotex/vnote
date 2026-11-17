@@ -642,6 +642,8 @@ The dynamic step layout enforces its minimum content size. Opening a wide detail
 its 320px allocation only if the hidden splitter pane retained zero width; nonzero user sizes stay.
 Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
+Completed step titles use strikethrough, including on initial load and in Read mode. Completion
+changes and undo/redo keep it in sync; only strikeout is overridden so theme/zoom fonts still inherit.
 Step rows retain their input widgets through typing echoes;
 structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
 Delete, and Promote to Task only for incomplete steps. Promotion appends a fresh task to the same

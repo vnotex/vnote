@@ -167,7 +167,7 @@ template <typename T> T *control(QObject *p_parent, const char *p_name) {
 
 void movePointer(QWidget *p_widget, const QPoint &p_position) {
   const auto global = p_widget->mapToGlobal(p_position);
-  QCursor::setPos(global);
+  // Use one QPA stream; native cursor moves can arrive after newer synthetic events.
   auto *window = p_widget->window();
   QTest::mouseMove(window->windowHandle(), window->mapFromGlobal(global));
 }
@@ -1380,6 +1380,9 @@ void TestTodoViewWindow::inlineStepTypingAndActions() {
   auto *controller = window->getController();
   const auto original = window->getLatestContent();
   QPointer<QLineEdit> title = control<QLineEdit>(window, "todoStepTitle_1");
+  auto *completedTitle = control<QLineEdit>(window, "todoStepTitle_0");
+  QVERIFY(completedTitle && completedTitle->font().strikeOut());
+  QVERIFY(title && !title->font().strikeOut());
   QVERIFY(typeText(title, QStringLiteral("Typed inline step")));
   QCOMPARE(control<QLineEdit>(window, "todoStepTitle_1"), title.data());
   QCOMPARE(title->cursorPosition(), int(QStringLiteral("Typed inline step").size()));
@@ -1401,6 +1404,11 @@ void TestTodoViewWindow::inlineStepTypingAndActions() {
   QVERIFY(chooseButtonMenu(control<QToolButton>(window, "todoStepMore_1"),
                            "todoToggleStepCompletedAction"));
   QVERIFY(controller->getDocument().findItem(key)->m_steps[1].m_checked);
+  QVERIFY(title && title->font().strikeOut());
+  window->undo();
+  QVERIFY(title && !title->font().strikeOut());
+  window->redo();
+  QVERIFY(title && title->font().strikeOut());
   QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_checked);
   auto *more = control<QToolButton>(window, "todoStepMore_1");
   QVERIFY(more && activate(more));
@@ -1411,6 +1419,7 @@ void TestTodoViewWindow::inlineStepTypingAndActions() {
   QVERIFY(!promote || !promote->isEnabled());
   QVERIFY(chooseOpenMenu("todoToggleStepCompletedAction"));
   QVERIFY(!controller->getDocument().findItem(key)->m_steps[1].m_checked);
+  QVERIFY(title && !title->font().strikeOut());
   QCOMPARE(window->getLatestContent(), typed);
 
   QVERIFY(chooseButtonMenu(control<QToolButton>(window, "todoStepMore_0"), "todoDeleteStepAction"));
