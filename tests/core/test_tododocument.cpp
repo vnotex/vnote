@@ -82,6 +82,9 @@ private slots:
   void quoteRoundTrip();
   void atomicEditValidation();
   void sourceBlockMoves();
+  void completedTaskArchive_data();
+  void completedTaskArchive();
+  void archiveRejectsInvalidOrIncomplete();
 };
 
 void TestTodoDocument::canonicalOwnership() {
@@ -1160,6 +1163,88 @@ void TestTodoDocument::groupSourceMoves() {
            implicit.text(implicit.m_lists[0].m_range));
   QCOMPARE(movedDefault.m_commentRanges.size(), 1);
   QVERIFY(moved.startsWith(preamble));
+}
+
+void TestTodoDocument::completedTaskArchive_data() {
+  QTest::addColumn<bool>("crlf");
+  QTest::addColumn<bool>("finalNewline");
+  QTest::newRow("lf-eof") << false << true;
+  QTest::newRow("lf-no-eof") << false << false;
+  QTest::newRow("crlf-eof") << true << true;
+  QTest::newRow("crlf-no-eof") << true << false;
+}
+
+void TestTodoDocument::completedTaskArchive() {
+  QFETCH(bool, crlf);
+  QFETCH(bool, finalNewline);
+  QString source = QString::fromUtf8(
+      "<!-- file comment -->\n\n## Root\n\n"
+      "- [ ] Keep\n  - [x] Only a completed step\n\n"
+      "+ [X] Done root\n  <!-- todo-item: {\"id\":\"root-done\",\"opaque\":\"α\"} -->\n\n"
+      "  > Preserve **notes** [link](other.md)\n\n  - [ ] Unfinished step\n\n"
+      "# Empty group\n\n## Empty list\n\n"
+      "# Projects\n<!-- todo-group: {\"id\":\"projects\",\"opaque\":42} -->\n\n"
+      "## Done list\n<!-- todo-list: {\"id\":\"done-list\",\"icon\":\"x\"} -->\n\n"
+      "> Keep the description\n\n- [x] Done last\n"
+      "  <!-- todo-item: {\"id\":\"last-done\",\"createdAt\":\"2026-11-18T00:00:00Z\"} -->");
+  if (finalNewline)
+    source += QLatin1Char('\n');
+  if (crlf)
+    source.replace(QLatin1String("\n"), QLatin1String("\r\n"));
+  const auto original = TodoDocument::parse(source);
+  QVERIFY2(original.isValid(), qPrintable(diagnostics(original)));
+  QCOMPARE(original.getCompletedTaskCount(), 2);
+  QString archived, remaining;
+  QVector<TodoSourceEdit> removals;
+  QVERIFY(original.buildCompletedTaskArchive(&archived, &removals));
+  QCOMPARE(removals.size(), 2);
+  QVERIFY(TodoDocument::applyEdits(source, removals, &remaining));
+  const auto destination = TodoDocument::parse(archived);
+  const auto kept = TodoDocument::parse(remaining);
+  QVERIFY2(destination.isValid(), qPrintable(diagnostics(destination)));
+  QVERIFY2(kept.isValid(), qPrintable(diagnostics(kept)));
+  QCOMPARE(destination.m_groups.size(), 2);
+  QCOMPARE(destination.m_lists.size(), 2);
+  QCOMPARE(destination.getCompletedTaskCount(), 2);
+  QCOMPARE(kept.getCompletedTaskCount(), 0);
+  QCOMPARE(kept.m_groups.size(), original.m_groups.size());
+  QCOMPARE(kept.m_lists.size(), original.m_lists.size());
+  QCOMPARE(kept.m_lists.first().m_items.first().m_fields.m_title, QStringLiteral("Keep"));
+  QVERIFY(kept.m_lists.first().m_items.first().m_steps.first().m_checked);
+  QVERIFY(kept.m_lists.last().m_items.isEmpty());
+  for (int i = 0; i < original.m_groups.size(); ++i) {
+    QCOMPARE(kept.text(kept.m_groups[i].m_headingRange),
+             original.text(original.m_groups[i].m_headingRange));
+    QCOMPARE(kept.m_groups[i].m_properties, original.m_groups[i].m_properties);
+  }
+  for (int i = 0; i < original.m_lists.size(); ++i) {
+    QCOMPARE(kept.text(kept.m_lists[i].m_headingRange),
+             original.text(original.m_lists[i].m_headingRange));
+    QCOMPARE(kept.m_lists[i].m_properties, original.m_lists[i].m_properties);
+    QCOMPARE(kept.m_lists[i].m_description, original.m_lists[i].m_description);
+  }
+  for (const auto &id : {QStringLiteral("id:root-done"), QStringLiteral("id:last-done")}) {
+    QVERIFY(destination.findItem(id));
+    QCOMPARE(destination.text(destination.findItem(id)->m_range),
+             original.text(original.findItem(id)->m_range));
+  }
+  QCOMPARE(destination.findItem(QStringLiteral("id:root-done"))->m_steps.size(), 1);
+  QVERIFY(!destination.findItem(QStringLiteral("id:root-done"))->m_steps.first().m_checked);
+  QCOMPARE(archived.endsWith(QLatin1Char('\n')), finalNewline);
+  if (crlf)
+    QVERIFY(!QString(archived).remove(QLatin1String("\r\n")).contains(QLatin1Char('\n')));
+}
+
+void TestTodoDocument::archiveRejectsInvalidOrIncomplete() {
+  for (const auto &source : {QString(), QStringLiteral("## Tasks\n\n- [ ] Keep\n  - [x] Step"),
+                             QStringLiteral("Invalid unowned prose")}) {
+    const auto document = TodoDocument::parse(source);
+    QString archive = QStringLiteral("untouched");
+    QVector<TodoSourceEdit> removals{{{0, 0}, {}, QStringLiteral("sentinel")}};
+    QVERIFY(!document.buildCompletedTaskArchive(&archive, &removals));
+    QCOMPARE(archive, QStringLiteral("untouched"));
+    QCOMPARE(removals.first().m_replacement, QStringLiteral("sentinel"));
+  }
 }
 
 } // namespace tests

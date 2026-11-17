@@ -30,6 +30,7 @@
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QItemSelectionModel>
+#include <QJsonDocument>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -42,6 +43,7 @@
 #include <QMutexLocker>
 #include <QPersistentModelIndex>
 #include <QPointer>
+#include <QProcess>
 #include <QPushButton>
 #include <QScopeGuard>
 #include <QScrollArea>
@@ -66,6 +68,8 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <core/hookcontext.h>
+#include <core/hooknames.h>
 #include <core/mainconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -75,6 +79,7 @@
 #include <core/services/memorybuffersource.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <core/services/noteoperationservice.h>
 #include <core/services/snippetcoreservice.h>
 #include <core/services/syncworkqueuemanager.h>
 #include <core/services/templateservice.h>
@@ -99,6 +104,7 @@
 #include <cmath>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 
 using namespace vnotex;
@@ -723,6 +729,17 @@ private slots:
   void foreignMemoryPublicationRetiresHistory_data();
   void foreignMemoryPublicationRetiresHistory();
   void ownMemoryCompletionKeepsNewerEdits();
+  void archiveCompletedTasks_data();
+  void archiveCompletedTasks();
+  void archiveCancellationAndStaleConfirmation_data();
+  void archiveCancellationAndStaleConfirmation();
+  void archiveAdmissionAndFailures_data();
+  void archiveAdmissionAndFailures();
+  void archiveOwnerRetirement_data();
+  void archiveOwnerRetirement();
+  void archiveSkipsDanglingDestination_data();
+  void archiveSkipsDanglingDestination();
+  void archiveNameExhaustion();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
@@ -4939,6 +4956,338 @@ void TestTodoViewWindow::ownMemoryCompletionKeepsNewerEdits() {
   QCOMPARE(window->getLatestContent(), published);
   window->undo();
   QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+}
+
+void TestTodoViewWindow::archiveCompletedTasks_data() {
+  QTest::addColumn<int>("kind");
+  QTest::addColumn<bool>("crlf");
+  QTest::addColumn<bool>("latin1Override");
+  QTest::newRow("bundled") << 0 << false << false;
+  QTest::newRow("crlf-no-final-newline") << 0 << true << false;
+  QTest::newRow("latin1-crlf-despite-notebook-lf") << 0 << true << true;
+  QTest::newRow("raw-notebook") << 1 << false << false;
+  QTest::newRow("standalone-file") << 2 << false << false;
+}
+
+void TestTodoViewWindow::archiveCompletedTasks() {
+  QFETCH(int, kind);
+  QFETCH(bool, crlf);
+  QFETCH(bool, latin1Override);
+  if (kind == 1) {
+    QVERIFY(m_notebooks->closeNotebook(m_notebook));
+    m_notebook =
+        m_notebooks->createNotebook(m_directory->filePath(QStringLiteral("raw")),
+                                    QStringLiteral("{\"name\":\"Raw\"}"), NotebookType::Raw);
+    QVERIFY(!m_notebook.isEmpty());
+  }
+  QString text =
+      QString::fromUtf8(c_source) +
+      QString::fromUtf8(
+          "\n# Archived group\n<!-- todo-group: {\"id\":\"archive-group\",\"opaque\":7} -->\n\n"
+          "## Finished list\n<!-- todo-list: {\"id\":\"finished-list\",\"icon\":\"x\"} -->\n\n"
+          "> Description retained\n\n- [x] Done café\n"
+          "  <!-- todo-item: {\"id\":\"second-done\",\"important\":true} -->\n\n"
+          "  > Note with [link](other.md)\n\n  - [ ] Unfinished child");
+  if (crlf)
+    text.replace(QLatin1String("\n"), QLatin1String("\r\n"));
+  createArea();
+  Buffer2 buffer;
+  QString sourcePath;
+  if (kind == 2) {
+    sourcePath = m_directory->filePath(QStringLiteral("planner.todo"));
+    QVERIFY(writeBytes(sourcePath, text.toUtf8()));
+    buffer = m_buffers->openBuffer({{}, sourcePath});
+  } else {
+    buffer = openNote(QStringLiteral("planner.todo"), text.toUtf8());
+    sourcePath = absolute(QStringLiteral("planner.todo"));
+  }
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  if (latin1Override) {
+    QVERIFY(buffer.setEncoding(QStringLiteral("ISO-8859-1")));
+    auto config = m_notebooks->getNotebookConfig(m_notebook);
+    auto metadata = config.value(QStringLiteral("metadata")).toObject();
+    metadata[QStringLiteral("lineEnding")] = QStringLiteral("lf");
+    config[QStringLiteral("metadata")] = metadata;
+    QVERIFY(m_notebooks->updateNotebookConfig(m_notebook,
+                                              QString::fromUtf8(QJsonDocument(config).toJson())));
+  }
+  const auto collision =
+      QFileInfo(sourcePath).dir().filePath(QStringLiteral("planner.archived.todo"));
+  const QByteArray sentinel("Existing archive must not be overwritten");
+  QVERIFY(writeBytes(collision, sentinel));
+  auto *controller = window->getController();
+  const auto original = controller->getDocument();
+  QCOMPARE(original.getCompletedTaskCount(), 2);
+  controller->setSearch(QStringLiteral("Alpha"));
+  QVERIFY(!taskTitles(window).contains(QStringLiteral("Done")));
+  QVERIFY(showLists(window));
+  auto *button = control<QPushButton>(window, "todoArchiveCompleted");
+  QVERIFY(button && button->isEnabled());
+  QSignalSpy archived(controller, &TodoViewWindowController::tasksArchived);
+  {
+    DialogAnswers dialog({QMessageBox::Yes}, [](QMessageBox *p_box) {
+      QCOMPARE(p_box->defaultButton(), p_box->button(QMessageBox::No));
+    });
+    QTest::mouseClick(button, Qt::LeftButton);
+    QVERIFY(dialog.accepted());
+  }
+  QCOMPARE(archived.count(), 1);
+  const auto archiveName = archived.first().first().toString();
+  const auto archivePath = kind == 2 ? archiveName : absolute(archiveName);
+  QVERIFY(archivePath != collision);
+  QCOMPARE(QFileInfo(archivePath).absolutePath(), QFileInfo(sourcePath).absolutePath());
+  QVERIFY(QFileInfo(archivePath).fileName().startsWith(QLatin1String("planner.archived")));
+  QVERIFY(archivePath.endsWith(QLatin1String(".todo")));
+  QCOMPARE(readBytes(collision), sentinel);
+  const auto archiveBytes = readBytes(archivePath);
+  const auto archive = TodoDocument::parse(buffer.decode(archiveBytes));
+  QVERIFY(archive.isValid());
+  QCOMPARE(archive.getCompletedTaskCount(), 2);
+  QCOMPARE(archive.m_groups.size(), 2);
+  QCOMPARE(archive.m_lists.size(), 2);
+  QVERIFY(archive.findItem(QStringLiteral("id:done")));
+  const auto *done = archive.findItem(QStringLiteral("id:second-done"));
+  QVERIFY(done);
+  QCOMPARE(done->m_fields.m_title, QString::fromUtf8("Done café"));
+  QCOMPARE(done->m_steps.size(), 1);
+  QVERIFY(!done->m_steps.first().m_checked);
+  QVERIFY(!archive.findItem(QStringLiteral("id:alpha")));
+  QVERIFY(!archiveBytes.endsWith('\n'));
+  if (crlf) {
+    QVERIFY(archiveBytes.contains("\r\n"));
+    QVERIFY(!QByteArray(archiveBytes).replace("\r\n", "").contains('\n'));
+  }
+  if (latin1Override) {
+    QVERIFY(archiveBytes.contains(QByteArray("caf\xe9")));
+    QVERIFY(!readBytes(sourcePath).contains('\r'));
+  }
+  const auto remaining = TodoDocument::parse(buffer.decode(readBytes(sourcePath)));
+  QVERIFY(remaining.isValid());
+  QCOMPARE(remaining.getCompletedTaskCount(), 0);
+  QCOMPARE(remaining.m_groups.size(), original.m_groups.size());
+  QCOMPARE(remaining.m_lists.size(), original.m_lists.size());
+  QCOMPARE(remaining.findList(QStringLiteral("id:finished-list"))->m_description,
+           QStringLiteral("Description retained"));
+  QVERIFY(remaining.findList(QStringLiteral("id:finished-list"))->m_items.isEmpty());
+  QVERIFY(remaining.findItem(QStringLiteral("id:alpha"))->m_steps.first().m_checked);
+  QVERIFY(!window->isModified());
+  QVERIFY(!button->isEnabled());
+  window->undo();
+  QCOMPARE(controller->getDocument().getCompletedTaskCount(), 2);
+  QCOMPARE(readBytes(archivePath), archiveBytes);
+}
+
+void TestTodoViewWindow::archiveCancellationAndStaleConfirmation_data() {
+  QTest::addColumn<bool>("stale");
+  QTest::newRow("no-keeps-tasks") << false;
+  QTest::newRow("stale-yes-keeps-new-source") << true;
+}
+
+void TestTodoViewWindow::archiveCancellationAndStaleConfirmation() {
+  QFETCH(bool, stale);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("cancel.todo")).isValid());
+  auto *window = current();
+  auto *controller = window->getController();
+  QVERIFY(showLists(window));
+  auto *button = control<QPushButton>(window, "todoArchiveCompleted");
+  QVERIFY(button && button->isEnabled());
+  DialogAnswers dialog({stale ? QMessageBox::Yes : QMessageBox::No}, [&](QMessageBox *) {
+    if (stale) {
+      auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+      fields.m_title = QStringLiteral("Changed while confirming");
+      QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+    }
+  });
+  QTest::mouseClick(button, Qt::LeftButton);
+  QVERIFY(dialog.accepted());
+  QCOMPARE(controller->getDocument().getCompletedTaskCount(), 1);
+  if (stale)
+    QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_title,
+             QStringLiteral("Changed while confirming"));
+  QVERIFY(QDir(QFileInfo(absolute(QStringLiteral("cancel.todo"))).absolutePath())
+              .entryList({QStringLiteral("*.archived*.todo")}, QDir::Files)
+              .isEmpty());
+}
+
+void TestTodoViewWindow::archiveAdmissionAndFailures_data() {
+  QTest::addColumn<QString>("failure");
+  for (const auto *name : {"read-only", "memory-only", "wrong-writer", "before-create",
+                           "after-create", "first-save", "source-save", "busy-gate"})
+    QTest::newRow(name) << QString::fromLatin1(name);
+}
+
+void TestTodoViewWindow::archiveAdmissionAndFailures() {
+  QFETCH(QString, failure);
+  createArea();
+  const auto buffer = failure == QLatin1String("memory-only")
+                          ? m_buffers->openMemoryBuffer(memorySource(QStringLiteral("Memory")))
+                          : openNote(QStringLiteral("failure.todo"));
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  auto *controller = window->getController();
+  if (failure == QLatin1String("read-only"))
+    window->setMode(ViewWindowMode::Read);
+  if (failure == QLatin1String("wrong-writer"))
+    m_buffers->registerActiveWriter(buffer.id(), 1, [] { return QString::fromUtf8(c_source); });
+  int hook = 0;
+  std::unique_ptr<SaveGateBarrier> barrier;
+  if (failure == QLatin1String("before-create"))
+    hook = m_hooks->addAction(HookNames::NodeBeforeCreate,
+                              [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); });
+  if (failure == QLatin1String("after-create"))
+    hook = m_hooks->addAction(HookNames::NodeAfterCreate, [](HookContext &, const QVariantMap &) {
+      throw std::runtime_error("archive hook");
+    });
+  if (failure == QLatin1String("first-save") || failure == QLatin1String("source-save"))
+    hook =
+        m_hooks->addAction(HookNames::FileBeforeSave, [&](HookContext &p_ctx, const QVariantMap &) {
+          if (failure == QLatin1String("first-save") ||
+              !controller->getDocument().getCompletedTaskCount())
+            p_ctx.cancel();
+        });
+  if (failure == QLatin1String("busy-gate"))
+    hook = m_hooks->addAction(HookNames::NodeBeforeCreate, [&](HookContext &, const QVariantMap &) {
+      barrier = std::make_unique<SaveGateBarrier>(*m_gate, m_notebook);
+    });
+  const auto cleanup = qScopeGuard([&]() {
+    barrier.reset();
+    if (hook)
+      m_hooks->removeAction(hook);
+    m_buffers->registerActiveWriter(buffer.id(), reinterpret_cast<quintptr>(window),
+                                    [window] { return window->getLatestContent(); });
+  });
+  QVERIFY(!controller->archiveCompletedTasks());
+  barrier.reset();
+  const auto archivedPath = absolute(QStringLiteral("failure.archived.todo"));
+  const bool created =
+      failure == QLatin1String("after-create") || failure == QLatin1String("source-save");
+  QCOMPARE(QFileInfo::exists(archivedPath), created);
+  if (created) {
+    const auto archived = TodoDocument::parse(QString::fromUtf8(readBytes(archivedPath)));
+    QVERIFY(archived.isValid());
+    QVERIFY(archived.findItem(QStringLiteral("id:done")));
+  }
+  QCOMPARE(controller->getDocument().getCompletedTaskCount(),
+           failure == QLatin1String("source-save") ? 0 : 1);
+  if (failure == QLatin1String("source-save"))
+    QVERIFY(window->isModified());
+  if (failure != QLatin1String("memory-only"))
+    QCOMPARE(readBytes(absolute(QStringLiteral("failure.todo"))), c_source);
+}
+
+void TestTodoViewWindow::archiveOwnerRetirement_data() {
+  QTest::addColumn<bool>("afterCreation");
+  QTest::newRow("before-save") << false;
+  QTest::newRow("after-archive-write") << true;
+}
+
+void TestTodoViewWindow::archiveOwnerRetirement() {
+  QFETCH(bool, afterCreation);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("retired.todo")).isValid());
+  QPointer<TodoViewWindow> window(current());
+  QVERIFY(window);
+  focusTasks(window);
+  auto *controller = window->getController();
+  const auto id = window->getViewWindowId();
+  const auto retire = [&]() {
+    QVERIFY(m_area->getController()->closeViewWindow(id, true));
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  };
+  if (afterCreation) {
+    m_hooks->addAction(HookNames::NodeAfterCreate,
+                       [&](HookContext &, const QVariantMap &) { retire(); });
+  } else {
+    connect(controller, &TodoViewWindowController::archiveStateChanged, this, retire);
+  }
+  QVERIFY(!controller->archiveCompletedTasks());
+  QVERIFY(window.isNull());
+  QCOMPARE(readBytes(absolute(QStringLiteral("retired.todo"))), c_source);
+  const auto destination = absolute(QStringLiteral("retired.archived.todo"));
+  QCOMPARE(QFileInfo::exists(destination), afterCreation);
+  if (afterCreation) {
+    const auto archive = TodoDocument::parse(QString::fromUtf8(readBytes(destination)));
+    QVERIFY(archive.findItem(QStringLiteral("id:done")));
+  }
+}
+
+void TestTodoViewWindow::archiveSkipsDanglingDestination_data() {
+  QTest::addColumn<bool>("external");
+  QTest::newRow("notebook") << false;
+  QTest::newRow("standalone") << true;
+}
+
+void TestTodoViewWindow::archiveSkipsDanglingDestination() {
+  QFETCH(bool, external);
+  createArea();
+  QString path;
+  if (external) {
+    path = m_directory->filePath(QStringLiteral("linked.todo"));
+    QVERIFY(writeBytes(path, c_source));
+    QVERIFY(m_buffers->openBuffer({{}, path}).isValid());
+  } else {
+    QVERIFY(openNote(QStringLiteral("linked.todo")).isValid());
+    path = absolute(QStringLiteral("linked.todo"));
+  }
+  auto *window = current();
+  QVERIFY(window);
+  focusTasks(window);
+  const auto destination = QFileInfo(path).dir().filePath(QStringLiteral("linked.archived.todo"));
+  const auto target = m_directory->filePath(QStringLiteral("vanishing"));
+  QVERIFY(QDir().mkpath(target));
+#ifdef Q_OS_WIN
+  QCOMPARE(QProcess::execute(QStringLiteral("cmd.exe"),
+                             {QStringLiteral("/d"), QStringLiteral("/c"), QStringLiteral("mklink"),
+                              QStringLiteral("/J"), QDir::toNativeSeparators(destination),
+                              QDir::toNativeSeparators(target)}),
+           0);
+#else
+  QVERIFY(QFile::link(target, destination));
+#endif
+  const auto cleanup = qScopeGuard([&]() {
+#ifdef Q_OS_WIN
+    QDir().rmdir(destination);
+#else
+    QFile::remove(destination);
+#endif
+  });
+  QVERIFY(QDir().rmdir(target));
+  QVERIFY(QFileInfo(destination).isSymbolicLink() || QFileInfo(destination).isJunction());
+  QSignalSpy archived(window->getController(), &TodoViewWindowController::tasksArchived);
+  QVERIFY(window->getController()->archiveCompletedTasks());
+  QCOMPARE(archived.count(), 1);
+  const auto result = archived.first().first().toString();
+  const auto archivePath = external ? result : absolute(result);
+  QCOMPARE(QFileInfo(archivePath).fileName(), QStringLiteral("linked.archived_1.todo"));
+  QVERIFY(QFileInfo(destination).isSymbolicLink() || QFileInfo(destination).isJunction());
+  const auto archive = TodoDocument::parse(QString::fromUtf8(readBytes(archivePath)));
+  QVERIFY(archive.findItem(QStringLiteral("id:done")));
+  QCOMPARE(window->getController()->getDocument().getCompletedTaskCount(), 0);
+}
+
+void TestTodoViewWindow::archiveNameExhaustion() {
+  const auto folder = m_directory->filePath(QStringLiteral("occupied"));
+  QVERIFY(QDir().mkpath(folder));
+  const QDir directory(folder);
+  for (int suffix = 0; suffix <= 10000; ++suffix) {
+    const auto name = suffix == 0 ? QStringLiteral("tasks.archived.todo")
+                                  : QStringLiteral("tasks.archived_%1.todo").arg(suffix);
+    QFile file(directory.filePath(name));
+    QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::NewOnly));
+  }
+  const auto result = m_notebooks->createFileWithContent(
+      {}, folder, QStringLiteral("tasks.archived.todo"), QByteArray("Must not overwrite"));
+  QVERIFY(!result.committed && !result.saved);
+  QCOMPARE(result.errorCode, QStringLiteral("invalid_name"));
+  QCOMPARE(QFileInfo(directory.filePath(QStringLiteral("tasks.archived.todo"))).size(), 0);
+  QCOMPARE(QFileInfo(directory.filePath(QStringLiteral("tasks.archived_10000.todo"))).size(), 0);
+  QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("tasks.archived_10001.todo"))));
 }
 
 } // namespace tests

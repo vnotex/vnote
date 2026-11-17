@@ -83,6 +83,7 @@ private:
   void addTask();
   void addList(const QString &p_groupKey = {});
   void addGroup();
+  void archiveCompletedTasks();
   void renameGroup(const QString &p_key);
   void moveGroup(const QString &p_key, int p_direction);
   void showGroupMenu(const QString &p_key, const QPoint &p_globalPosition);
@@ -128,6 +129,7 @@ private:
   QListView *m_lists = nullptr;
   QPushButton *m_listsButton = nullptr;
   QPushButton *m_newGroup = nullptr;
+  QPushButton *m_archiveCompleted = nullptr;
   QPushButton *m_newList = nullptr;
   QPushButton *m_listIcon = nullptr;
   QLineEdit *m_listTitle = nullptr;

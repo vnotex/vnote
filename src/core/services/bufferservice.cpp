@@ -3858,6 +3858,13 @@ bool BufferService::fetchEditorContent(const ContentFetchCallback &p_callback, Q
   return false;
 }
 
+bool BufferService::isActiveWriter(const QString &p_bufferId, quintptr p_writerKey) const {
+  if (QThread::currentThread() != thread() || !p_writerKey)
+    return false;
+  const auto writer = m_activeWriters.constFind(p_bufferId);
+  return writer != m_activeWriters.cend() && writer->key == p_writerKey && bool(writer->callback);
+}
+
 bool BufferService::captureActiveWriterContent(const QString &p_bufferId, QString *p_outText,
                                                bool *p_hasWriter) const {
   if (p_hasWriter)

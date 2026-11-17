@@ -629,7 +629,7 @@ Other editors and saved settings are unchanged; no configuration migration is ne
 One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 `QTextDocument` and its undo history. It is an internal document engine, never a visible fallback.
 `TodoEditor` renders `TodoListModel` / `TodoTaskModel`; `TodoViewWindowController` validates
-and applies source commands without widgets or storage writes. Projected task notes use a
+and applies source commands without widgets or direct storage writes. Projected task notes use a
 separate `SimpleMarkdownEditor` input with local undo disabled and source-history routing.
 Typing coalesces by field until focus, selection, mode or another command ends the group.
 The details panel has a right-aligned close icon, then completion/title/star, inline steps,
@@ -830,6 +830,23 @@ search ignores collapse state. New Group/New List use post-commit output keys, n
 last list. Sidebar presentation is transient; the new commands reuse the existing source schema.
 No document or config migration is needed.
 
+**Archive Completed Tasks** is the icon-only `file_archive.svg` control immediately after
+New Group (Lucide file-archive, recolored by `IconUtils`). A default-No confirmation applies to
+all completed root tasks in the file, independent of filters, selection or collapsed rows.
+Completed steps alone do not qualify; moved tasks retain their notes, steps, IDs and opaque
+metadata. The sibling `name.archived.todo` receives a nonconflicting suffix when needed and
+copies only the containing groups/lists, including their descriptions and metadata. Source
+edits remove only the completed task spans: every group/list remains, including empty ones.
+The control requires a writable file-backed document with completed tasks; memory-only TODOs
+have no sibling location. Bundled/raw notebooks and standalone files are supported.
+The controller admits only its active writer, saves/drains the original, then holds a sync
+maintenance lease while the service writes the archive before removing/saving source tasks.
+The window supplies codec-only encoding with its detected line ending; source removal offsets
+always refer to the LF editor snapshot, never encoded bytes. Creation/hook/stale-owner failure
+leaves source tasks intact. A failed final source save retains the archive and reports an
+incomplete move. There is no cross-file atomicity claim; undo restores tasks in the source but
+does not delete the archive. No document/config migration or global preference change is needed.
+
 My Day is explicit `myDay == today`, independent of due dates. Important and Planned are
 current-file projections; search and exact-tag filters compose across this file and ignore
 owned comment JSON. Normal notebook content search still reads raw `.todo` source, including
@@ -884,7 +901,7 @@ tint; do not use Native's inactive/hover alternate-base tokens here, since an al
 color can resolve to opaque black through palette backfill. Cached colors/icons refresh on
 theme changes; title elision reserves room for badges/chevrons and mirrors geometry in RTL.
 
-Only the base writer/save/reload/close lifecycle persists content. Foreign buffer revisions
+Source saves use BufferService and the existing save queue. Foreign buffer revisions
 reject the captured gesture before reloading; autosave notifications alone do not establish
 that an inactive view loaded the new source. The window registers a binding-scoped opaque writer
 token and uses BufferService's actual publication/queue-owner facts, never text-equality or

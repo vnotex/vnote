@@ -535,6 +535,13 @@ public:
   // File operations (8 methods).
   QString createFile(const QString &p_notebookId, const QString &p_folderPath,
                      const QString &p_fileName);
+  // Native initial-body creation. Caller holds the notebook maintenance lease.
+  // Uses a conflict-free name and a checked atomic body write under a bounded IO gate.
+  // Empty notebook ID denotes an absolute external folder. Never overwrites an existing file.
+  NoteOperationResult createFileWithContent(const QString &p_notebookId,
+                                            const QString &p_folderPath,
+                                            const QString &p_desiredName,
+                                            const QByteArray &p_content);
   // Delete a file. Fires NodeBeforeDelete hook (cancellable) before deletion.
   // Returns false if cancelled by hook or if deletion fails.
   bool deleteFile(const QString &p_notebookId, const QString &p_filePath);

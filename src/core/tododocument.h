@@ -126,6 +126,10 @@ public:
                          QString *p_result, QString *p_error = nullptr);
 
   bool isValid() const { return m_diagnostics.isEmpty(); }
+  int getCompletedTaskCount() const;
+  // Copy completed roots with their containing hierarchy; source edits remove only those roots.
+  // Both outputs remain untouched for invalid documents or when no roots are completed.
+  bool buildCompletedTaskArchive(QString *p_archive, QVector<TodoSourceEdit> *p_removals) const;
   const TodoGroup *findGroup(const QString &p_key) const;
   const TodoGroup *defaultGroup() const;
   const TodoGroup *groupForList(const TodoList &p_list) const;

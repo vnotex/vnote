@@ -15,7 +15,7 @@ namespace vnotex {
 class BufferService;
 class ServiceLocator;
 
-// Owns projections and source transactions, never storage or editor widgets.
+// Owns projections/source transactions and archive orchestration; services own storage.
 class TodoViewWindowController : public QObject {
   Q_OBJECT
 public:
@@ -28,6 +28,11 @@ public:
   // Suspend parsing while loading or waiting for an authoritative source snapshot.
   void setSourceRefreshEnabled(bool p_enabled);
   void setMutationGuard(std::function<bool()> p_guard);
+  void setArchiveContext(quintptr p_writerKey,
+                         std::function<QByteArray(const QString &)> p_encodeArchive);
+  bool canArchiveCompletedTasks() const;
+  bool isArchiving() const { return m_archiving; }
+  bool archiveCompletedTasks();
 
   const TodoDocument &getDocument() const { return m_snapshot; }
   TodoListModel *getListModel() const { return m_listModel; }
@@ -78,6 +83,8 @@ signals:
   void projectionChanged();
   void selectionChanged();
   void operationRejected(const QString &p_message);
+  void archiveStateChanged();
+  void tasksArchived(const QString &p_path);
 
 private:
   struct Change;
@@ -100,6 +107,7 @@ private:
                       const QString &p_indent = {}) const;
   bool admitModelIntent(int p_revision, int p_publishedRevision);
 
+  ServiceLocator &m_services;
   QPointer<QTextDocument> m_document;
   BufferService *m_buffers;
   Buffer2 m_buffer;
@@ -112,6 +120,9 @@ private:
   QString m_coalescingKey;
   QString m_lastCoalescingKey;
   std::function<bool()> m_mutationGuard;
+  std::function<QByteArray(const QString &)> m_encodeArchive;
+  quintptr m_archiveWriterKey = 0;
+  bool m_archiving = false;
   int m_revision = -1;
   int m_bufferGeneration = 0;
   bool m_editable = false;

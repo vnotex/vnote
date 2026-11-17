@@ -9,6 +9,7 @@
 #include <QScrollBar>
 #include <QShowEvent>
 #include <QTextBlock>
+#include <QTextCodec>
 #include <QTextDocument>
 #include <QTimer>
 
@@ -63,6 +64,16 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
 
   m_controller = new TodoViewWindowController(p_services, textEdit->document(), p_buffer, this);
   m_controller->setMutationGuard([this]() { return admitMutation(); });
+  m_controller->setArchiveContext(reinterpret_cast<quintptr>(this), [this](const QString &p_text) {
+    QString text = p_text;
+    vte::TextUtils::transformLineEnding(text, vte::LineEnding::LF, m_lineEnding);
+    // Initial archive bytes retain this file's ending/codec, not notebook/git save overrides.
+    const auto encoding = getBuffer().encoding();
+    if (encoding.compare(QLatin1String("UTF-8"), Qt::CaseInsensitive) == 0)
+      return text.toUtf8();
+    auto *codec = QTextCodec::codecForName(encoding.toUtf8());
+    return codec ? codec->fromUnicode(text) : text.toUtf8();
+  });
   m_todoEditor = new TodoEditor(p_services, this);
   m_todoEditor->setObjectName(QStringLiteral("todoEditor"));
   m_todoEditor->bindController(m_controller);
@@ -89,6 +100,14 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
   });
   connect(m_controller, &TodoViewWindowController::operationRejected, this,
           [this](const QString &p_message) { showMessage(p_message); });
+  connect(m_controller, &TodoViewWindowController::tasksArchived, this,
+          [this](const QString &p_path) {
+            // The controller reports success only after this writer's durable source save.
+            m_editorDirty = false;
+            setModified(false);
+            emit statusChanged();
+            showMessage(tr("Completed tasks archived to %1").arg(p_path));
+          });
   connect(m_todoEditor, &TodoEditor::undoRequested, this, &TodoViewWindow::undo);
   connect(m_todoEditor, &TodoEditor::redoRequested, this, &TodoViewWindow::redo);
   connect(this, &ViewWindow2::statusChanged, this, [this]() { updateEditability(); });

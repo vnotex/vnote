@@ -2,8 +2,10 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QFileInfo>
 #include <QHash>
 #include <QJsonArray>
+#include <QScopeGuard>
 #include <QTextCursor>
 #include <QUuid>
 #include <algorithm>
@@ -11,6 +13,9 @@
 
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/noteoperationservice.h>
+#include <core/services/syncworkqueuemanager.h>
 
 using namespace vnotex;
 
@@ -194,8 +199,9 @@ struct TodoViewWindowController::Change {
 TodoViewWindowController::TodoViewWindowController(ServiceLocator &p_services,
                                                    QTextDocument *p_document,
                                                    const Buffer2 &p_buffer, QObject *p_parent)
-    : QObject(p_parent), m_document(p_document), m_buffers(p_services.get<BufferService>()),
-      m_buffer(p_buffer), m_listModel(new TodoListModel(p_services, this)),
+    : QObject(p_parent), m_services(p_services), m_document(p_document),
+      m_buffers(p_services.get<BufferService>()), m_buffer(p_buffer),
+      m_listModel(new TodoListModel(p_services, this)),
       m_taskModel(new TodoTaskModel(p_services, this)) {
   m_projection.m_today = QDate::currentDate();
   if (m_document) {
@@ -302,6 +308,115 @@ void TodoViewWindowController::setMutationGuard(std::function<bool()> p_guard) {
   m_mutationGuard = std::move(p_guard);
 }
 
+void TodoViewWindowController::setArchiveContext(
+    quintptr p_writerKey, std::function<QByteArray(const QString &)> p_encodeArchive) {
+  m_archiveWriterKey = p_writerKey;
+  m_encodeArchive = std::move(p_encodeArchive);
+}
+
+bool TodoViewWindowController::canArchiveCompletedTasks() const {
+  return !m_archiving && m_editable && m_archiveWriterKey && m_encodeArchive &&
+         m_buffer.isFileBacked() && !m_buffer.isEncrypted() && bufferIsWritable() &&
+         m_snapshot.isValid() && m_snapshot.getCompletedTaskCount() > 0 &&
+         m_services.get<NotebookCoreService>() && m_services.get<SyncWorkQueueManager>();
+}
+
+bool TodoViewWindowController::archiveCompletedTasks() {
+  if (!canArchiveCompletedTasks() || !admit())
+    return false;
+  QString archive;
+  Change change;
+  if (!m_snapshot.buildCompletedTaskArchive(&archive, &change.m_edits))
+    return reject(tr("There are no completed tasks to archive."));
+  const auto source = m_snapshot.m_source;
+  const auto generation = m_bufferGeneration;
+  auto buffer = m_buffer;
+  const QPointer<TodoViewWindowController> self(this);
+  const auto current = [&]() {
+    if (!self || generation != m_bufferGeneration || !m_document || m_buffer.id() != buffer.id() ||
+        !m_editable || !snapshotIsCurrent() || !bufferIsWritable() ||
+        m_snapshot.m_source != source ||
+        !m_buffers->isActiveWriter(buffer.id(), m_archiveWriterKey))
+      return false;
+    QString text;
+    return m_buffers->captureActiveWriterContent(buffer.id(), &text) && self &&
+           normalizedMarkdown(text) == source &&
+           m_buffers->isActiveWriter(buffer.id(), m_archiveWriterKey);
+  };
+  const bool admitted = current();
+  if (!self)
+    return false;
+  if (!admitted)
+    return reject(tr("The TODO document changed in another view. Try archiving again."));
+  m_archiving = true;
+  endCoalescing();
+  const auto finish = qScopeGuard([self]() {
+    if (self) {
+      self->m_archiving = false;
+      self->refreshModels(-1, true);
+      if (self)
+        emit self->archiveStateChanged();
+    }
+  });
+  refreshModels(-1, true);
+  if (!self)
+    return false;
+  emit archiveStateChanged();
+  if (!self)
+    return false;
+  // A real save receipt drains any older autosave before the archive can exist.
+  const bool saved = buffer.save();
+  if (!self)
+    return false;
+  const bool savedCurrent = saved && !m_buffers->isSaveQueueBusy(buffer.id()) && current();
+  if (!self)
+    return false;
+  if (!savedCurrent)
+    return reject(tr("Unable to save the current TODO document. No tasks were archived."));
+  const auto resolved = m_buffers->getBufferHandle(buffer.id());
+  const auto node = resolved.nodeId();
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *queues = m_services.get<SyncWorkQueueManager>();
+  auto maintenance = queues->tryAcquireMaintenance({node.notebookId});
+  if (!node.notebookId.isEmpty() && !maintenance)
+    return reject(tr("The notebook is busy syncing. Try archiving after sync finishes."));
+  const QFileInfo file(resolved.resolvedPath());
+  const auto folder = node.notebookId.isEmpty()
+                          ? file.absolutePath()
+                          : node.relativePath.left(qMax(0, node.relativePath.lastIndexOf('/')));
+  const auto name = file.completeBaseName() + QStringLiteral(".archived.todo");
+  const auto encoded = m_encodeArchive(archive);
+  const auto created = notebooks->createFileWithContent(node.notebookId, folder, name, encoded);
+  if (!self)
+    return false;
+  if (!created.saved || created.recoveryRequired || !created.errorCode.isEmpty()) {
+    return reject(tr("Tasks were left in the original document. Archive destination: %1\n%2")
+                      .arg(created.relativePath, created.errorMessage));
+  }
+  const auto unchanged = current() && !m_buffers->isSaveQueueBusy(buffer.id()) &&
+                         m_buffers->getBufferHandle(buffer.id()).nodeId() == node;
+  if (!self)
+    return false;
+  const bool changed = unchanged && commit(change);
+  if (!self)
+    return false;
+  if (!changed)
+    return reject(tr("The archive was written to %1, but the original document changed. "
+                     "Its tasks were not removed.")
+                      .arg(created.relativePath));
+  const bool sourceSaved = buffer.save();
+  if (!self)
+    return false;
+  if (!sourceSaved || generation != m_bufferGeneration || m_buffers->isSaveQueueBusy(buffer.id()) ||
+      !m_buffers->isActiveWriter(buffer.id(), m_archiveWriterKey)) {
+    return reject(tr("The archive was written to %1, but the original document could not be "
+                     "saved. The move is incomplete; save the original document to finish.")
+                      .arg(created.relativePath));
+  }
+  emit tasksArchived(created.relativePath);
+  return true;
+}
+
 bool TodoViewWindowController::snapshotIsCurrent() const {
   return m_document && m_revision == m_document->revision();
 }
@@ -318,7 +433,7 @@ bool TodoViewWindowController::reject(const QString &p_message) {
 }
 
 bool TodoViewWindowController::admit() {
-  if (m_applying || !m_editable || !bufferIsWritable()) {
+  if (m_applying || m_archiving || !m_editable || !bufferIsWritable()) {
     return reject(tr("The TODO document is unavailable or read-only."));
   }
   if (!snapshotIsCurrent()) {
@@ -436,7 +551,7 @@ void TodoViewWindowController::publishSnapshot(TodoDocument p_document, const QS
 }
 
 void TodoViewWindowController::refreshModels(int p_nearestRow, bool p_preserveHiddenSelection) {
-  const bool editable = m_editable && snapshotIsCurrent() && bufferIsWritable();
+  const bool editable = !m_archiving && m_editable && snapshotIsCurrent() && bufferIsWritable();
   m_listModel->setSnapshot(m_snapshot, m_projection, editable, m_revision);
   m_taskModel->setSnapshot(m_snapshot, m_projection, editable, m_revision);
   if (p_preserveHiddenSelection && m_snapshot.findItem(m_selectedItemKey)) {

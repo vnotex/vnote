@@ -1,9 +1,13 @@
 #include "notebookcoreservice.h"
 
+#include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QMetaObject>
+#include <QPointer>
+#include <QSaveFile>
 #include <QVariantMap>
 #include <QtConcurrent>
 
@@ -1810,6 +1814,103 @@ QString NotebookCoreService::createFile(const QString &p_notebookId, const QStri
   request.name = p_fileName;
   NoteOperationResult result;
   return commitFileMutation(request, &result) == VXCORE_OK ? result.nodeId : QString();
+}
+
+NoteOperationResult NotebookCoreService::createFileWithContent(const QString &p_notebookId,
+                                                               const QString &p_folderPath,
+                                                               const QString &p_desiredName,
+                                                               const QByteArray &p_content) {
+  NoteOperationResult result;
+  result.notebookId = p_notebookId;
+  const auto fail = [&](const QString &p_code, const QString &p_message) {
+    result.errorCode = p_code;
+    result.errorMessage = p_message;
+    return result;
+  };
+  const bool external = p_notebookId.isEmpty();
+  if (!checkContext() || !m_ioGate || p_desiredName.isEmpty() ||
+      QFileInfo(p_desiredName).fileName() != p_desiredName ||
+      (external && !QDir::isAbsolutePath(p_folderPath)))
+    return fail(QStringLiteral("unavailable"), tr("The destination folder is unavailable."));
+  if (!external && isNotebookReadOnly(p_notebookId))
+    return fail(QStringLiteral("read_only"), tr("The notebook is read-only."));
+  const auto folder = external ? p_folderPath : buildAbsolutePath(p_notebookId, p_folderPath);
+  const auto availableName = [&]() {
+    const QDir directory(folder);
+    const QFileInfo desired(p_desiredName);
+    const auto base = desired.completeBaseName();
+    const auto extension =
+        desired.suffix().isEmpty() ? QString() : QLatin1Char('.') + desired.suffix();
+    // Match the core's suffix ceiling, but also reserve dangling link/junction names.
+    for (int suffix = 0; suffix <= 10000; ++suffix) {
+      const auto name = suffix == 0 ? p_desiredName
+                                    : base + QLatin1Char('_') + QString::number(suffix) + extension;
+      const QFileInfo candidate(directory.filePath(name));
+      if (!candidate.exists() && !candidate.isSymbolicLink() && !candidate.isJunction())
+        return name;
+    }
+    return QString();
+  };
+  NoteOperationRequest request;
+  request.kind = NoteOperationKind::Create;
+  request.notebookId = p_notebookId;
+  request.relativePath = p_folderPath;
+  request.name = availableName();
+  if (request.name.isEmpty())
+    return fail(QStringLiteral("invalid_name"), tr("Unable to choose an archive file name."));
+  result.relativePath =
+      p_folderPath.isEmpty() ? request.name : p_folderPath + QLatin1Char('/') + request.name;
+  const QPointer<NotebookCoreService> self(this);
+  if (!beforeFileMutation(request) || !self)
+    return fail(QStringLiteral("cancelled"), tr("Creation of the archive was cancelled."));
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, p_notebookId, 50);
+    if (!lock.isLocked())
+      return fail(QStringLiteral("resource_busy"), tr("The notebook is busy. Try again shortly."));
+    const auto path = QDir(folder).filePath(request.name);
+    const QFileInfo before(path);
+    if ((!external && isNotebookReadOnly(p_notebookId)) || availableName() != request.name ||
+        before.exists() || before.isSymbolicLink() || before.isJunction())
+      return fail(QStringLiteral("precondition_failed"), tr("The archive destination changed."));
+    if (external) {
+      QFile reservation(path);
+      if (!reservation.open(QIODevice::WriteOnly | QIODevice::NewOnly))
+        return fail(QStringLiteral("create_failed"), reservation.errorString());
+      reservation.close();
+      result.committed = true;
+    } else {
+      const auto error = commitFileMutation(request, &result);
+      // A metadata-only empty create is not a saved archive body.
+      result.saved = false;
+      if (error != VXCORE_OK) {
+        result.committed = result.committed || QFileInfo::exists(path);
+        result.recoveryRequired = result.committed;
+        return fail(QStringLiteral("create_failed"),
+                    QString::fromUtf8(vxcore_error_message(error)));
+      }
+    }
+    const QFileInfo created(path);
+    if (!created.isFile() || created.isSymbolicLink() || created.isJunction() ||
+        created.size() != 0 ||
+        (!external && (result.nodeId.isEmpty() ||
+                       getNodePathById(p_notebookId, result.nodeId) != result.relativePath))) {
+      result.recoveryRequired = true;
+      return fail(QStringLiteral("precondition_failed"),
+                  tr("The created archive needs recovery; its contents were not overwritten."));
+    }
+    QSaveFile file(path);
+    file.setDirectWriteFallback(false);
+    if (!file.open(QIODevice::WriteOnly) || file.write(p_content) != p_content.size() ||
+        !file.commit()) {
+      result.recoveryRequired = true;
+      return fail(QStringLiteral("write_failed"), file.errorString());
+    }
+    result.saved = true;
+  }
+  if (!afterFileMutation(request))
+    return fail(QStringLiteral("after_hook_failed"),
+                tr("The archive was written, but an after-create hook failed."));
+  return result;
 }
 
 bool NotebookCoreService::deleteFile(const QString &p_notebookId, const QString &p_filePath) {

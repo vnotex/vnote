@@ -715,8 +715,7 @@ void TodoEditor::createUi() {
   m_lists->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_lists->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
   sidebar->addWidget(m_lists, 1);
-  auto *creationWidget =
-      named(new QWidget(m_sidebar), "todoCreationArea", tr("Create lists and groups"));
+  auto *creationWidget = named(new QWidget(m_sidebar), "todoCreationArea", tr("Lists actions"));
   auto *creation = new QHBoxLayout(creationWidget);
   creation->setContentsMargins(8, 4, 8, 4);
   creation->setSpacing(4);
@@ -724,7 +723,10 @@ void TodoEditor::createUi() {
   m_newGroup = named(new QPushButton(creationWidget), "todoNewGroup", tr("New group"));
   m_newGroup->setToolTip(tr("New group"));
   m_newGroup->setFixedWidth(40);
-  for (auto *button : {m_newList, m_newGroup}) {
+  m_archiveCompleted =
+      named(new QPushButton(creationWidget), "todoArchiveCompleted", tr("Archive Completed Tasks"));
+  m_archiveCompleted->setFixedWidth(40);
+  for (auto *button : {m_newList, m_newGroup, m_archiveCompleted}) {
     button->setFlat(true);
     button->setIconSize(QSize(20, 20));
     button->setStyleSheet(
@@ -735,6 +737,7 @@ void TodoEditor::createUi() {
   }
   creation->addWidget(m_newList, 1);
   creation->addWidget(m_newGroup);
+  creation->addWidget(m_archiveCompleted);
   sidebar->addWidget(creationWidget);
   const auto refreshIcons = [this, theme, searchAction]() {
     searchAction->setIcon(IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("search.svg"))));
@@ -742,6 +745,8 @@ void TodoEditor::createUi() {
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
     m_newGroup->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_group.svg"))));
+    m_archiveCompleted->setIcon(IconUtils::fetchIconWithDisabledState(
+        theme->getIconFile(QStringLiteral("file_archive.svg"))));
     m_listsButton->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("list_tree.svg"))));
     m_listMore->setIcon(
@@ -853,6 +858,7 @@ void TodoEditor::createUi() {
   });
   connect(m_newList, &QPushButton::clicked, this, [this]() { addList(); });
   connect(m_newGroup, &QPushButton::clicked, this, &TodoEditor::addGroup);
+  connect(m_archiveCompleted, &QPushButton::clicked, this, &TodoEditor::archiveCompletedTasks);
   connect(m_lists, &QListView::clicked, this, [this](const QModelIndex &p_index) {
     if (p_index.data(TodoListModel::GroupRole).toBool()) {
       focusGroup(p_index.data(TodoListModel::GroupIdRole).toString());
@@ -1136,6 +1142,8 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
     connect(p_controller->getTaskModel(), &QAbstractItemModel::rowsRemoved, this,
             &TodoEditor::updateTaskCursor);
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
+    connect(p_controller, &TodoViewWindowController::archiveStateChanged, this,
+            &TodoEditor::refresh);
     connect(p_controller, &TodoViewWindowController::selectionChanged, this, [this]() {
       if (m_controller && m_detailsKey != m_controller->getSelectedItemKey()) {
         refresh();
@@ -1169,7 +1177,7 @@ void TodoEditor::setEditable(bool p_editable) {
 
 bool TodoEditor::canMutate() const {
   return m_editable && isEnabled() && m_controller && m_controller->getSnapshotRevision() >= 0 &&
-         m_controller->getDocument().isValid();
+         !m_controller->isArchiving() && m_controller->getDocument().isValid();
 }
 
 const TodoItem *TodoEditor::selectedItem() const {
@@ -1189,6 +1197,12 @@ void TodoEditor::refresh() {
   const bool writable = canMutate();
   m_newList->setEnabled(writable);
   m_newGroup->setEnabled(writable);
+  const bool archiveEnabled = writable && m_controller->canArchiveCompletedTasks();
+  m_archiveCompleted->setEnabled(archiveEnabled);
+  m_archiveCompleted->setToolTip(
+      archiveEnabled
+          ? tr("Archive Completed Tasks")
+          : tr("Archive Completed Tasks (requires completed tasks in an editable file)"));
   m_lists->setDragEnabled(writable);
   m_lists->setAcceptDrops(writable);
   m_listTitle->setReadOnly(!writable);
@@ -1976,6 +1990,24 @@ void TodoEditor::addGroup() {
       }) &&
       self && m_controller == controller) {
     focusGroup(createdKey);
+  }
+}
+
+void TodoEditor::archiveCompletedTasks() {
+  if (!canMutate() || !m_controller->canArchiveCompletedTasks())
+    return;
+  endTyping();
+  const auto token = gesture();
+  const QPointer<TodoEditor> self(this);
+  const auto answer = QMessageBox::question(
+      this, tr("Archive Completed Tasks"),
+      tr("Archive all completed tasks in this file?\n\n"
+         "They will be moved, with their group and list hierarchy, to a new .archived.todo "
+         "file in the same folder. All groups and lists will remain in this file, even if empty."),
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+  if (self && answer == QMessageBox::Yes && accepts(token)) {
+    const QPointer<TodoViewWindowController> controller(m_controller);
+    command([controller]() { return controller && controller->archiveCompletedTasks(); });
   }
 }
 

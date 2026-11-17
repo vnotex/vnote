@@ -376,6 +376,8 @@ public:
   // Unregister the active writer for a buffer.
   // Only unregisters if @p_writerKey matches the current active writer.
   void unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey);
+  // Owner-thread identity check; suspended writers do not authorize a new operation.
+  bool isActiveWriter(const QString &p_bufferId, quintptr p_writerKey) const;
 
   // Capture the active or temporarily suspended writer without changing buffer content.
   // Returns false if no writer is available or its snapshot capture fails.

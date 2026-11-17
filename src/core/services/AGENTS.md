@@ -424,6 +424,20 @@ folder, using notebook identity and path-component boundaries. Coverage lives in
 `test_searchservice`, `test_buffer`, `test_buffer_save_queue`, `test_searchresultmodel`, and
 `test_searchcontroller`.
 
+## Native initial-body creation
+
+`NotebookCoreService::createFileWithContent()` creates a nonconflicting sibling with checked
+`QSaveFile` write/commit, no direct-write fallback, and a bounded `NotebookIoGate` lock. The caller
+holds the notebook maintenance lease through creation and subsequent source saves; there is no
+event-loop pump between the empty create and body commit. Only the newly created, still-empty,
+non-linked file may receive the body. Empty notebook IDs denote absolute external folders and
+use an exclusive file reservation. Hooks run outside the gate. `saved` acknowledges the body,
+not the empty metadata create; partial failures preserve recovery facts and after-hook errors
+retain committed/saved facts. TODO archiving leaves source tasks intact on either failure.
+Notebook and standalone naming both skip files, symlinks and junctions (including dangling
+ones), trying the original name and `_1` through `_10000` before returning `invalid_name`.
+This native path does not expand the HTTP/domain operation allowlist below.
+
 ## Domain note operations
 
 `NoteOperationService` is owner-thread application orchestration, with domain-only

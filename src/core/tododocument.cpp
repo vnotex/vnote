@@ -948,6 +948,52 @@ bool TodoDocument::applyEdits(const QString &p_source, const QVector<TodoSourceE
   return true;
 }
 
+int TodoDocument::getCompletedTaskCount() const {
+  int count = 0;
+  for (const auto &list : m_lists)
+    for (const auto &item : list.m_items)
+      count += item.m_fields.m_checked;
+  return count;
+}
+
+bool TodoDocument::buildCompletedTaskArchive(QString *p_archive,
+                                             QVector<TodoSourceEdit> *p_removals) const {
+  if (!p_archive || !p_removals || !isValid() || m_groups.isEmpty())
+    return false;
+  const QStringView source(m_source);
+  QString archive = m_source.left(m_groups.first().m_range.m_start);
+  QVector<TodoSourceEdit> removals;
+  for (const auto &group : m_groups) {
+    bool copiedGroup = false;
+    for (int index = group.m_firstList; index < group.m_firstList + group.m_listCount; ++index) {
+      const auto &list = m_lists.at(index);
+      if (std::none_of(list.m_items.cbegin(), list.m_items.cend(),
+                       [](const TodoItem &p_item) { return p_item.m_fields.m_checked; }))
+        continue;
+      if (!copiedGroup) {
+        archive += source.mid(group.m_range.m_start, m_lists.at(group.m_firstList).m_range.m_start -
+                                                         group.m_range.m_start);
+        copiedGroup = true;
+      }
+      int position = list.m_range.m_start;
+      for (const auto &item : list.m_items) {
+        archive += source.mid(position, item.m_range.m_start - position);
+        if (item.m_fields.m_checked) {
+          archive += source.mid(item.m_range.m_start, item.m_range.length());
+          removals.append(edit(item.m_range, {}));
+        }
+        position = item.m_range.m_end;
+      }
+      archive += source.mid(position, list.m_range.m_end - position);
+    }
+  }
+  if (removals.isEmpty() || !parse(archive).isValid())
+    return false;
+  *p_archive = std::move(archive);
+  *p_removals = std::move(removals);
+  return true;
+}
+
 const TodoGroup *TodoDocument::findGroup(const QString &p_key) const {
   for (const auto &group : m_groups) {
     if (group.m_key == p_key) {
