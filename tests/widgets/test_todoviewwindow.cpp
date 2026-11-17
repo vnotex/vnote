@@ -400,6 +400,34 @@ bool chooseButtonMenu(QPushButton *p_button, const char *p_actionName) {
   return chooseOpenMenu(p_actionName);
 }
 
+bool chooseOpenSort(const char *p_actionName) {
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  auto *sort = menu ? control<QAction>(menu, "todoSortByAction") : nullptr;
+  if (!sort || !sort->isEnabled() || !sort->menu())
+    return false;
+  auto *submenu = sort->menu();
+  menu->setActiveAction(sort);
+  QTest::keyClick(menu, menu->layoutDirection() == Qt::RightToLeft ? Qt::Key_Left : Qt::Key_Right);
+  if (!QTest::qWaitFor([=] { return submenu->isVisible(); }))
+    return false;
+  auto *action = control<QAction>(submenu, p_actionName);
+  if (!action || !action->isEnabled()) {
+    menu->close();
+    return false;
+  }
+  QTest::mouseClick(submenu, Qt::LeftButton, Qt::NoModifier,
+                    submenu->actionGeometry(action).center());
+  return true;
+}
+
+bool chooseSortMenu(TodoViewWindow *p_window, const char *p_actionName) {
+  auto *button = control<QPushButton>(p_window, "todoListMore");
+  if (!button || !button->isEnabled() || !activate(button))
+    return false;
+  QTest::mouseClick(button, Qt::LeftButton);
+  return chooseOpenSort(p_actionName);
+}
+
 bool showLists(TodoViewWindow *p_window) {
   auto *lists = control<QListView>(p_window, "todoLists");
   auto *button = control<QPushButton>(p_window, "todoListsButton");
@@ -1271,14 +1299,22 @@ void TestTodoViewWindow::filteringSortingAndDayRollover() {
   QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:personal"));
   QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
   QVERIFY(selectView(window, TodoViewKind::All));
-  auto *sort = control<QComboBox>(window, "todoSort");
-  QVERIFY(sort);
-  QVERIFY(chooseCombo(sort, int(TodoSortOrder::Importance)));
+  QVERIFY(chooseSortMenu(window, "todoSortImportanceAction"));
   QCOMPARE(taskTitles(window).first(), QStringLiteral("Beta"));
   QVERIFY(!controller->getTaskModel()->isReorderingEnabled());
-  QVERIFY(chooseCombo(sort, int(TodoSortOrder::Title)));
+  QVERIFY(chooseSortMenu(window, "todoSortNameAction"));
   QCOMPARE(taskTitles(window),
            QStringList({QStringLiteral("Alpha"), QStringLiteral("Beta"), QStringLiteral("Gamma")}));
+  QVERIFY(chooseSortMenu(window, "todoSortNameAction"));
+  QCOMPARE(controller->getProjection().m_sort, TodoSortOrder::Manual);
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  QVERIFY(controller->getTaskModel()->isReorderingEnabled());
+  QVERIFY(selectView(window, TodoViewKind::All));
+  QVERIFY(typeText(search, QStringLiteral("Alpha")));
+  QVERIFY(chooseSortMenu(window, "todoSortMyDayAction"));
+  QCOMPARE(controller->getProjection().m_search, QStringLiteral("Alpha"));
+  QCOMPARE(controller->getProjection().m_view, TodoViewKind::All);
+  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
   QVERIFY(typeText(search, QStringLiteral("Done")));
   auto *model = controller->getTaskModel();
   QCOMPARE(model->getActiveCount(), 0);
@@ -1907,9 +1943,16 @@ void TestTodoViewWindow::sidebarMenusAndDuplication() {
   controller->setGroupExpanded(projectKey, true);
   menu = openListMenu(QStringLiteral("id:work"));
   QVERIFY(menu);
-  for (auto *action : menu->actions())
-    QVERIFY(!action->isEnabled());
-  menu->close();
+  auto *sort = control<QAction>(menu, "todoSortByAction");
+  QVERIFY(sort && sort->isEnabled());
+  for (auto *action : menu->actions()) {
+    if (action != sort)
+      QVERIFY(!action->isEnabled());
+  }
+  QVERIFY(chooseOpenSort("todoSortImportanceAction"));
+  QCOMPARE(controller->getProjection().m_sort, TodoSortOrder::Importance);
+  QCOMPARE(taskTitles(window).first(), QStringLiteral("Beta"));
+  QVERIFY(!controller->getTaskModel()->isReorderingEnabled());
   QCOMPARE(window->getLatestContent(), beforeCopy);
 }
 

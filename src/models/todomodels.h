@@ -13,7 +13,7 @@ namespace vnotex {
 class ServiceLocator;
 
 enum class TodoViewKind { List, MyDay, Important, Planned, All };
-enum class TodoSortOrder { Manual, Importance, DueDate, Title };
+enum class TodoSortOrder { Manual, Importance, DueDate, Title, AddedToMyDay, CreationDate };
 
 struct TodoProjection {
   TodoViewKind m_view = TodoViewKind::All;

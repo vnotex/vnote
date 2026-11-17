@@ -1,5 +1,6 @@
 #include "todoeditor.h"
 
+#include <QActionGroup>
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
@@ -536,8 +537,11 @@ void TodoEditor::createUi() {
   m_navigation = named(new QWidget(this), "todoNarrowNavigation", tr("List navigation"));
   auto *navigation = new QHBoxLayout(m_navigation);
   navigation->setContentsMargins(8, 0, 8, 0);
-  m_listsButton = named(new QPushButton(tr("Lists"), m_navigation), "todoListsButton",
-                        tr("Show lists and search"));
+  m_listsButton =
+      named(new QPushButton(m_navigation), "todoListsButton", tr("Show lists and search"));
+  m_listsButton->setIconSize(QSize(20, 20));
+  m_listsButton->setFlat(true);
+  m_listsButton->setStyleSheet(QStringLiteral("QPushButton { min-width: 0; padding: 6px; }"));
   m_listsButton->setCheckable(true);
   m_listsButton->setToolTip(tr("Show lists and search"));
   navigation->addWidget(m_listsButton);
@@ -618,6 +622,8 @@ void TodoEditor::createUi() {
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("add.svg"))));
     m_newGroup->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("new_group.svg"))));
+    m_listsButton->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("list_tree.svg"))));
     m_listMore->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg"))));
     refreshListIcon();
@@ -660,18 +666,8 @@ void TodoEditor::createUi() {
   m_description->setMinimumWidth(0);
   m_description->setMaximumHeight(104);
   tasksLayout->addWidget(m_description);
-  auto *tools = new QHBoxLayout;
-  tools->setSpacing(4);
-  m_sort = named(new QComboBox(m_taskPane), "todoSort", tr("Sort tasks"));
-  m_sort->addItem(tr("Manual order"), static_cast<int>(TodoSortOrder::Manual));
-  m_sort->addItem(tr("Importance"), static_cast<int>(TodoSortOrder::Importance));
-  m_sort->addItem(tr("Due date"), static_cast<int>(TodoSortOrder::DueDate));
-  m_sort->addItem(tr("Title"), static_cast<int>(TodoSortOrder::Title));
-  tools->addWidget(m_sort);
   m_tagFilter = named(new QPushButton(m_taskPane), "todoTagFilter", tr("Clear exact tag filter"));
-  tools->addWidget(m_tagFilter);
-  tools->addStretch();
-  tasksLayout->addLayout(tools);
+  tasksLayout->addWidget(m_tagFilter, 0, Qt::AlignLeft);
   m_tasks = named(new QListView(m_taskPane), "todoTasks",
                   tr("Tasks; Enter opens details, Space completes"));
   m_tasks->setItemDelegate(new TaskDelegate(m_services, m_tasks));
@@ -764,12 +760,6 @@ void TodoEditor::createUi() {
     showTaskMenu(index.data(TodoTaskModel::IdRole).toString(),
                  m_tasks->viewport()->mapToGlobal(p_position));
   });
-  connect(m_sort, &QComboBox::activated, this, [this](int p_index) {
-    if (m_controller) {
-      endTyping();
-      m_controller->setSortOrder(static_cast<TodoSortOrder>(p_index));
-    }
-  });
   connect(m_tagFilter, &QPushButton::clicked, this, [this]() {
     if (m_controller) {
       endTyping();
@@ -779,8 +769,12 @@ void TodoEditor::createUi() {
   connect(m_listIcon, &QPushButton::clicked, this, &TodoEditor::chooseListIcon);
   connect(m_listMore, &QPushButton::clicked, this, [this]() {
     if (m_controller) {
-      showListMenu(m_controller->getProjection().m_listKey,
-                   m_listMore->mapToGlobal(QPoint(0, m_listMore->height())));
+      const auto &projection = m_controller->getProjection();
+      const auto key = projection.m_view == TodoViewKind::List && projection.m_search.isEmpty() &&
+                               projection.m_tag.isEmpty()
+                           ? projection.m_listKey
+                           : QString();
+      showListMenu(key, m_listMore->mapToGlobal(QPoint(0, m_listMore->height())));
     }
   });
   connect(m_listTitle, &QLineEdit::textEdited, this, [this](const QString &p_text) {
@@ -1098,7 +1092,6 @@ void TodoEditor::refresh() {
   if (m_search->text() != projection.m_search) {
     m_search->setText(projection.m_search);
   }
-  m_sort->setCurrentIndex(static_cast<int>(projection.m_sort));
   m_tagFilter->setText(tr("Tag: %1 (clear)").arg(projection.m_tag));
   m_tagFilter->setVisible(!projection.m_tag.isEmpty());
   const bool filtered = !projection.m_search.isEmpty() || !projection.m_tag.isEmpty();
@@ -1110,8 +1103,9 @@ void TodoEditor::refresh() {
   m_listIcon->setEnabled(writable);
   refreshListIcon();
   m_description->setVisible(list && !list->m_description.isEmpty());
-  m_listMore->setVisible(list != nullptr);
-  m_listMore->setEnabled(writable);
+  m_listMore->show();
+  m_listMore->setEnabled(m_controller->getDocument().isValid() &&
+                         m_controller->getSnapshotRevision() >= 0);
   m_viewTitle->setVisible(!list);
   if (list) {
     if (!preservesField(m_listTitle) && m_listTitle->text() != list->m_title) {
@@ -2159,7 +2153,7 @@ void TodoEditor::duplicateList(const QString &p_key) {
 void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPosition) {
   const auto *list = m_controller ? m_controller->getDocument().findList(p_key) : nullptr;
   const auto *group = list ? m_controller->getDocument().groupForList(*list) : nullptr;
-  if (!group) {
+  if (!m_controller || !m_controller->getDocument().isValid() || (!p_key.isEmpty() && !group)) {
     return;
   }
   endTyping();
@@ -2178,28 +2172,78 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
     });
     return action;
   };
-  add(menu, tr("Rename"), "todoRenameListAction", [this, p_key]() { renameList(p_key); });
-  add(menu, tr("Edit Description"), "todoEditListDescriptionAction",
-      [this, p_key]() { editListDescription(p_key); });
-  if (group->m_isDefault) {
-    auto *destinations = menu->addMenu(tr("Move List To Group"));
-    destinations->menuAction()->setObjectName(QStringLiteral("todoMoveListGroupAction"));
-    for (const auto &destination : m_controller->getDocument().m_groups) {
-      if (!destination.m_isDefault) {
-        const auto key = destination.m_key;
-        auto *action =
-            add(destinations, groupName(destination).replace(QLatin1Char('&'), QLatin1String("&&")),
-                "todoMoveListToGroupAction", [this, p_key, key]() { moveListToGroup(p_key, key); });
-        action->setData(key);
-      }
-    }
-    destinations->menuAction()->setEnabled(canMutate() && !destinations->isEmpty());
-  } else {
-    add(menu, tr("Remove from Group"), "todoRemoveListFromGroupAction",
-        [this, p_key]() { moveListToGroup(p_key, {}); });
+  if (group) {
+    add(menu, tr("Rename"), "todoRenameListAction", [this, p_key]() { renameList(p_key); });
+    add(menu, tr("Edit Description"), "todoEditListDescriptionAction",
+        [this, p_key]() { editListDescription(p_key); });
   }
-  add(menu, tr("Duplicate"), "todoDuplicateListAction", [this, p_key]() { duplicateList(p_key); });
-  add(menu, tr("Delete"), "todoDeleteListAction", [this, p_key]() { deleteList(p_key); });
+  auto *sort = menu->addMenu(tr("Sort by"));
+  sort->menuAction()->setObjectName(QStringLiteral("todoSortByAction"));
+  auto *sortGroup = new QActionGroup(sort);
+  sortGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::ExclusiveOptional);
+  const auto addSort = [&](TodoSortOrder p_order, const QString &p_label, const char *p_name) {
+    auto *action = sort->addAction(p_label);
+    action->setObjectName(QString::fromLatin1(p_name));
+    action->setCheckable(true);
+    sortGroup->addAction(action);
+    action->setChecked(m_controller->getProjection().m_sort == p_order);
+    connect(action, &QAction::triggered, this, [this, token, p_key, p_order](bool p_checked) {
+      if (!acceptsNavigation(token)) {
+        return;
+      }
+      const QPointer<TodoEditor> self(this);
+      const QPointer<TodoViewWindowController> controller(m_controller);
+      if (!p_key.isEmpty()) {
+        m_groupFocused = false;
+        const auto &projection = controller->getProjection();
+        if (projection.m_view != TodoViewKind::List || projection.m_listKey != p_key) {
+          controller->setView(TodoViewKind::List, p_key);
+        }
+        if (!self || !controller || m_controller != controller) {
+          return;
+        }
+        controller->setSearch({});
+        if (!self || !controller || m_controller != controller) {
+          return;
+        }
+        controller->setTagFilter({});
+        if (!self || !controller || m_controller != controller) {
+          return;
+        }
+      }
+      controller->setSortOrder(p_checked ? p_order : TodoSortOrder::Manual);
+      if (self && controller && m_controller == controller && m_narrow) {
+        closeDetails();
+      }
+    });
+  };
+  addSort(TodoSortOrder::Importance, tr("Importance"), "todoSortImportanceAction");
+  addSort(TodoSortOrder::DueDate, tr("Due Date"), "todoSortDueDateAction");
+  addSort(TodoSortOrder::AddedToMyDay, tr("Added to My Day"), "todoSortMyDayAction");
+  addSort(TodoSortOrder::Title, tr("Name"), "todoSortNameAction");
+  addSort(TodoSortOrder::CreationDate, tr("Creation Date"), "todoSortCreationDateAction");
+  if (group) {
+    if (group->m_isDefault) {
+      auto *destinations = menu->addMenu(tr("Move List To Group"));
+      destinations->menuAction()->setObjectName(QStringLiteral("todoMoveListGroupAction"));
+      for (const auto &destination : m_controller->getDocument().m_groups) {
+        if (!destination.m_isDefault) {
+          const auto key = destination.m_key;
+          auto *action = add(
+              destinations, groupName(destination).replace(QLatin1Char('&'), QLatin1String("&&")),
+              "todoMoveListToGroupAction", [this, p_key, key]() { moveListToGroup(p_key, key); });
+          action->setData(key);
+        }
+      }
+      destinations->menuAction()->setEnabled(canMutate() && !destinations->isEmpty());
+    } else {
+      add(menu, tr("Remove from Group"), "todoRemoveListFromGroupAction",
+          [this, p_key]() { moveListToGroup(p_key, {}); });
+    }
+    add(menu, tr("Duplicate"), "todoDuplicateListAction",
+        [this, p_key]() { duplicateList(p_key); });
+    add(menu, tr("Delete"), "todoDeleteListAction", [this, p_key]() { deleteList(p_key); });
+  }
   menu->popup(p_globalPosition);
 }
 

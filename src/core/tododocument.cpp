@@ -216,6 +216,7 @@ struct Comment {
   CommentKind m_kind = CommentKind::Invalid;
   TodoSourceRange m_range;
   QJsonObject m_properties;
+  QDateTime m_createdAt;
   int m_line = 1;
 };
 
@@ -390,7 +391,7 @@ private:
     return comment;
   }
 
-  void validateProperties(const Comment &p_comment) {
+  void validateProperties(Comment &p_comment) {
     const auto &properties = p_comment.m_properties;
     if (p_comment.m_kind == CommentKind::File) {
       const auto version = properties.value(QStringLiteral("version"));
@@ -428,6 +429,21 @@ private:
       const auto date = QDate::fromString(value.toString(), Qt::ISODate);
       if (!value.isString() || !date.isValid() || date.toString(Qt::ISODate) != value.toString()) {
         error(p_comment.m_line, "Task dates must be valid calendar dates in YYYY-MM-DD form.");
+      }
+    }
+    if (properties.contains(QStringLiteral("createdAt"))) {
+      const auto value = properties.value(QStringLiteral("createdAt"));
+      const auto text = value.toString();
+      static const QRegularExpression timestamp(
+          QStringLiteral("\\A[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
+                         "(?:\\.[0-9]{1,3})?(?:Z|[+-](?:[01][0-9]|2[0-3]):[0-5][0-9])\\z"));
+      if (value.isString() && timestamp.match(text).hasMatch()) {
+        p_comment.m_createdAt = QDateTime::fromString(text, Qt::ISODateWithMs);
+      }
+      if (!p_comment.m_createdAt.isValid()) {
+        error(p_comment.m_line,
+              "Task creation timestamps must be valid ISO 8601 dates and times with an explicit "
+              "UTC or numeric offset.");
       }
     }
     if (properties.contains(QStringLiteral("tags"))) {
@@ -664,6 +680,7 @@ private:
           }
           item.m_metadataRange = comment.m_range;
           item.m_properties = comment.m_properties;
+          item.m_createdAt = comment.m_createdAt;
           item.m_noteInsertion = comment.m_range.m_end;
         } else if (comment.m_kind != CommentKind::Invalid) {
           error(child, "Task metadata must immediately follow its title and occur only once.");

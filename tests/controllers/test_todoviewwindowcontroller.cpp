@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QDateTime>
 #include <QJsonArray>
 #include <QMimeData>
 #include <QSignalSpy>
@@ -159,6 +160,8 @@ private slots:
   void smartViewsAndMidnight();
   void searchAndTagComposition();
   void stableSortingAndCounts();
+  void timestampSorting_data();
+  void timestampSorting();
   void modelRolesAndIntents();
   void nativeDragUsesMoveCommand();
   void dragCompletionGroupsAndStaleness();
@@ -537,7 +540,9 @@ void TestTodoViewWindowController::emptyQuickAddAtomic() {
   fields.m_myDay = QDate(2026, 11, 12);
   fields.m_tags = {QStringLiteral("work")};
   fields.m_note = QStringLiteral("A [link](proposal.md)");
+  const auto beforeCreation = QDateTime::currentDateTimeUtc();
   QVERIFY(m_controller->addTask({}, fields));
+  const auto afterCreation = QDateTime::currentDateTimeUtc();
   const auto &document = m_controller->getDocument();
   QVERIFY(document.isValid());
   QCOMPARE(document.m_groups.size(), 1);
@@ -548,6 +553,10 @@ void TestTodoViewWindowController::emptyQuickAddAtomic() {
   QCOMPARE(document.groupForList(document.m_lists.first()), document.defaultGroup());
   QCOMPARE(document.m_lists.first().m_title, QStringLiteral("Tasks"));
   const auto added = document.m_lists.first().m_items.first();
+  QVERIFY(added.m_createdAt.isValid());
+  QVERIFY(added.m_createdAt >= beforeCreation && added.m_createdAt <= afterCreation);
+  QCOMPARE(added.m_properties.value(QStringLiteral("createdAt")).toString(),
+           added.m_createdAt.toUTC().toString(Qt::ISODateWithMs));
   QCOMPARE(added.m_fields.m_title, fields.m_title);
   QVERIFY(added.m_fields.m_checked);
   QVERIFY(added.m_fields.m_important);
@@ -566,6 +575,7 @@ void TestTodoViewWindowController::emptyQuickAddAtomic() {
   m_document->redo();
   QCOMPARE(m_document->toPlainText(), text);
   QVERIFY(m_controller->getDocument().findItem(added.m_key));
+  QCOMPARE(m_controller->getDocument().findItem(added.m_key)->m_createdAt, added.m_createdAt);
 }
 
 void TestTodoViewWindowController::defaultGroupMaterialization() {
@@ -873,7 +883,8 @@ void TestTodoViewWindowController::duplicatePreservesOwnedData() {
                      "> Description **bold**\n>\n> Second paragraph\n\n<!-- list comment -->\n\n"
                      "* [X] First\n  <!-- todo-item: "
                      "{\"id\":\"first\",\"important\":true,\"due\":\"2026-11-11\",\"myDay\":\"2026-"
-                     "11-12\",\"tags\":[\"one\",\"two words\"],\"extra\":{\"nested\":true}} -->\n\n"
+                     "11-12\",\"tags\":[\"one\",\"two words\"],\"extra\":{\"nested\":true},"
+                     "\"createdAt\":\"2020-01-02T03:04:05.6+02:00\"} -->\n\n"
                      "  <!-- task comment -->\n\n  > Keep **note**\n  >\n  > More note\n\n"
                      "  + [X] Done step\n  - [ ] Open step\n\n"
                      "- [ ] Second\n  <!-- todo-item: {\"extra\":[1,2]} -->\n\n"
@@ -892,7 +903,9 @@ void TestTodoViewWindowController::duplicatePreservesOwnedData() {
   const auto selection = m_controller->getSelectedItemKey();
   QSignalSpy changed(m_controller.get(), &TodoViewWindowController::documentChanged);
   QString created = QStringLiteral("old-output");
+  const auto beforeDuplication = QDateTime::currentDateTimeUtc();
   QVERIFY(m_controller->duplicateList(original.m_key, &created));
+  const auto afterDuplication = QDateTime::currentDateTimeUtc();
   QCOMPARE(changed.count(), 1);
   const auto &after = m_controller->getDocument();
   const auto *copy = after.findList(created);
@@ -918,15 +931,24 @@ void TestTodoViewWindowController::duplicatePreservesOwnedData() {
                     QStringLiteral("unrelated"), QStringLiteral("first")};
   QVERIFY(!ids.contains(copy->m_id));
   ids.insert(copy->m_id);
+  const auto duplicatedAt = copy->m_items.first().m_createdAt;
+  QVERIFY(duplicatedAt.isValid());
+  QVERIFY(duplicatedAt >= beforeDuplication && duplicatedAt <= afterDuplication);
+  QVERIFY(duplicatedAt != original.m_items.first().m_createdAt);
   for (int i = 0; i < original.m_items.size(); ++i) {
     const auto &a = original.m_items.at(i);
     const auto &b = copy->m_items.at(i);
     QVERIFY(!b.m_id.isEmpty() && !ids.contains(b.m_id));
     ids.insert(b.m_id);
+    QCOMPARE(b.m_createdAt, duplicatedAt);
+    QCOMPARE(b.m_properties.value(QStringLiteral("createdAt")).toString(),
+             duplicatedAt.toUTC().toString(Qt::ISODateWithMs));
     auto properties = b.m_properties;
     properties.remove(QStringLiteral("id"));
+    properties.remove(QStringLiteral("createdAt"));
     auto expected = a.m_properties;
     expected.remove(QStringLiteral("id"));
+    expected.remove(QStringLiteral("createdAt"));
     QCOMPARE(properties, expected);
     QCOMPARE(b.m_fields.m_title, a.m_fields.m_title);
     QCOMPARE(b.m_fields.m_checked, a.m_fields.m_checked);
@@ -947,6 +969,7 @@ void TestTodoViewWindowController::duplicatePreservesOwnedData() {
   QVERIFY(m_controller->updateTask(copyTask, fields));
   QCOMPARE(item("first").m_fields.m_title, QStringLiteral("First"));
   QCOMPARE(m_controller->getDocument().findItem(copyTask)->m_fields.m_title, fields.m_title);
+  QCOMPARE(m_controller->getDocument().findItem(copyTask)->m_createdAt, duplicatedAt);
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), result);
   m_document->undo();
@@ -955,6 +978,7 @@ void TestTodoViewWindowController::duplicatePreservesOwnedData() {
   m_document->redo();
   QCOMPARE(m_document->toPlainText(), result);
   QVERIFY(m_controller->getDocument().findList(created));
+  QCOMPARE(m_controller->getDocument().findItem(copyTask)->m_createdAt, duplicatedAt);
 }
 
 void TestTodoViewWindowController::duplicateIdlessOwnersAndEof() {
@@ -970,7 +994,9 @@ void TestTodoViewWindowController::duplicateIdlessOwnersAndEof() {
       m_controller->setSelectedItemKey(original.m_items.last().m_key);
     }
     QString created;
+    const auto beforeDuplication = QDateTime::currentDateTimeUtc();
     QVERIFY(m_controller->duplicateList(original.m_key, &created));
+    const auto afterDuplication = QDateTime::currentDateTimeUtc();
     const auto &after = m_controller->getDocument();
     QVERIFY(after.isValid());
     QCOMPARE(after.m_groups.size(), 1);
@@ -990,6 +1016,14 @@ void TestTodoViewWindowController::duplicateIdlessOwnersAndEof() {
     for (int i = 0; i < retained.m_items.size(); ++i) {
       QVERIFY(retained.m_items.at(i).m_id.isEmpty());
       QVERIFY(!copy->m_items.at(i).m_id.isEmpty());
+      QVERIFY(!retained.m_items.at(i).m_createdAt.isValid());
+      QVERIFY(!retained.m_items.at(i).m_properties.contains(QStringLiteral("createdAt")));
+      const auto &copied = copy->m_items.at(i);
+      QVERIFY(copied.m_createdAt.isValid());
+      QVERIFY(copied.m_createdAt >= beforeDuplication && copied.m_createdAt <= afterDuplication);
+      QCOMPARE(copied.m_createdAt, copy->m_items.first().m_createdAt);
+      QCOMPARE(copied.m_properties.value(QStringLiteral("createdAt")).toString(),
+               copied.m_createdAt.toUTC().toString(Qt::ISODateWithMs));
       QCOMPARE(copy->m_items.at(i).m_fields.m_checked, retained.m_items.at(i).m_fields.m_checked);
       QCOMPARE(copy->m_items.at(i).m_properties.value(QStringLiteral("extra")),
                retained.m_items.at(i).m_properties.value(QStringLiteral("extra")));
@@ -1590,8 +1624,11 @@ void TestTodoViewWindowController::taskFieldsAndUnknownMetadata() {
       QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
                      "- [ ] A\n  <!-- todo-item: "
                      "{\"id\":\"a\",\"important\":false,\"tags\":[],\"negative\":-12,\"exponent\":"
-                     "1e-9,\"large\":9007199254740993,\"object\":{\"untouched\":[1,true]}} -->")));
+                     "1e-9,\"large\":9007199254740993,\"object\":{\"untouched\":[1,true]},"
+                     "\"createdAt\":\"2020-01-02T03:04:05.6+02:00\"} -->")));
   const auto oldMetadata = m_controller->getDocument().text(item("a").m_metadataRange);
+  const auto createdAt = item("a").m_createdAt;
+  QVERIFY(createdAt.isValid());
   auto fields = item("a").m_fields;
   fields.m_title = QStringLiteral("Title a-->b <tag>");
   QVERIFY(m_controller->updateTask(key("a"), fields));
@@ -1604,6 +1641,9 @@ void TestTodoViewWindowController::taskFieldsAndUnknownMetadata() {
                    QString::fromUtf8("\xe4\xb8\xad\xe6\x96\x87")};
   QVERIFY(m_controller->updateTask(key("a"), fields));
   QCOMPARE(item("a").m_id, QStringLiteral("a"));
+  QCOMPARE(item("a").m_createdAt, createdAt);
+  QCOMPARE(item("a").m_properties.value(QStringLiteral("createdAt")).toString(),
+           QStringLiteral("2020-01-02T03:04:05.6+02:00"));
   QCOMPARE(item("a").m_properties.value(QStringLiteral("negative")).toInt(), -12);
   QCOMPARE(item("a").m_properties.value(QStringLiteral("exponent")).toDouble(), 1e-9);
   QCOMPARE(item("a").m_properties.value(QStringLiteral("large")).toInteger(),
@@ -1629,6 +1669,9 @@ void TestTodoViewWindowController::taskFieldsAndUnknownMetadata() {
                            QStringLiteral("myDay"), QStringLiteral("tags")}) {
     QVERIFY(!item("a").m_properties.contains(name));
   }
+  QCOMPARE(item("a").m_createdAt, createdAt);
+  QCOMPARE(item("a").m_properties.value(QStringLiteral("createdAt")).toString(),
+           QStringLiteral("2020-01-02T03:04:05.6+02:00"));
 }
 
 void TestTodoViewWindowController::notesAndTags() {
@@ -1662,6 +1705,8 @@ void TestTodoViewWindowController::notesAndTags() {
   QVERIFY(m_controller->updateTask(key("a"), fields));
   QCOMPARE(item("a").m_fields.m_tags,
            QStringList({QStringLiteral(" Work "), QStringLiteral("work"), QStringLiteral("WORK")}));
+  QVERIFY(!item("a").m_createdAt.isValid());
+  QVERIFY(!item("a").m_properties.contains(QStringLiteral("createdAt")));
 }
 
 void TestTodoViewWindowController::taskAddRemoveUndo() {
@@ -1670,14 +1715,27 @@ void TestTodoViewWindowController::taskAddRemoveUndo() {
   TodoTaskFields fields;
   fields.m_title = QStringLiteral("All-view task");
   QVERIFY(!m_controller->addTask({}, fields));
+  const auto beforeCreation = QDateTime::currentDateTimeUtc();
   QVERIFY(m_controller->addTask(key("home"), fields));
+  const auto afterCreation = QDateTime::currentDateTimeUtc();
   const auto added = list("home").m_items.last();
   QCOMPARE(added.m_fields.m_title, fields.m_title);
+  QVERIFY(added.m_createdAt.isValid());
+  QVERIFY(added.m_createdAt >= beforeCreation && added.m_createdAt <= afterCreation);
+  QCOMPARE(added.m_properties.value(QStringLiteral("createdAt")).toString(),
+           added.m_createdAt.toUTC().toString(Qt::ISODateWithMs));
   const auto beforeDelete = m_document->toPlainText();
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), projectionSource());
+  QVERIFY(!m_controller->getDocument().findItem(added.m_key));
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), beforeDelete);
+  QCOMPARE(m_controller->getDocument().findItem(added.m_key)->m_createdAt, added.m_createdAt);
   QVERIFY(m_controller->removeTask(added.m_key));
   QVERIFY(!m_controller->getDocument().findItem(added.m_key));
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), beforeDelete);
+  QCOMPARE(m_controller->getDocument().findItem(added.m_key)->m_createdAt, added.m_createdAt);
   m_document->redo();
   QVERIFY(!m_controller->getDocument().findItem(added.m_key));
   QVERIFY(m_controller->removeTask(key("a")));
@@ -1732,21 +1790,23 @@ void TestTodoViewWindowController::stepCompletionIsIndependent() {
 }
 
 void TestTodoViewWindowController::movesRetainOwnedBlocks() {
-  const auto source =
-      QStringLiteral("<!-- File stays first -->\n\n") + groupedHeader() +
-      QStringLiteral("## A\n<!-- todo-list: {\"id\":\"work\",\"extra\":-7} -->\n\n"
-                     "<!-- List A comment -->\n\n"
-                     "- [ ] One\n  <!-- todo-item: {\"id\":\"a\",\"extra\":1e-9} -->\n\n"
-                     "  <!-- Task comment -->\n\n  > Note\n\n  + [X] Step\n\n"
-                     "* [ ] Two\n  <!-- todo-item: {\"id\":\"b\"} -->\n\n"
-                     "<!-- Boundary comment -->\n\n"
-                     "+ [ ] Three\n  <!-- todo-item: {\"id\":\"c\"} -->\n\n"
-                     "## B\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
-                     "- [ ] Four\n  <!-- todo-item: {\"id\":\"d\"} -->");
+  const auto source = QStringLiteral("<!-- File stays first -->\n\n") + groupedHeader() +
+                      QStringLiteral("## A\n<!-- todo-list: {\"id\":\"work\",\"extra\":-7} -->\n\n"
+                                     "<!-- List A comment -->\n\n"
+                                     "- [ ] One\n  <!-- todo-item: {\"id\":\"a\",\"extra\":1e-9,"
+                                     "\"createdAt\":\"2020-01-02T03:04:05.6+02:00\"} -->\n\n"
+                                     "  <!-- Task comment -->\n\n  > Note\n\n  + [X] Step\n\n"
+                                     "* [ ] Two\n  <!-- todo-item: {\"id\":\"b\"} -->\n\n"
+                                     "<!-- Boundary comment -->\n\n"
+                                     "+ [ ] Three\n  <!-- todo-item: {\"id\":\"c\"} -->\n\n"
+                                     "## B\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
+                                     "- [ ] Four\n  <!-- todo-item: {\"id\":\"d\"} -->");
   QVERIFY(load(source));
   QVERIFY(m_controller->getDocument().isValid());
   QCOMPARE(list("work").m_items.size(), 3);
   const auto owned = m_controller->getDocument().text(item("a").m_range);
+  const auto createdAt = item("a").m_createdAt;
+  QVERIFY(createdAt.isValid());
   m_controller->setSelectedItemKey(key("a"));
   QVERIFY(m_controller->moveTask(key("a"), key("home"), key("d")));
   QCOMPARE(itemTitles(list("work")), QStringList({QStringLiteral("Two"), QStringLiteral("Three")}));
@@ -1767,9 +1827,13 @@ void TestTodoViewWindowController::movesRetainOwnedBlocks() {
   QCOMPARE(m_controller->getDocument().m_lists.first().m_key, key("home"));
   QVERIFY(m_document->toPlainText().startsWith(QStringLiteral("<!-- File stays first -->")));
   QCOMPARE(item("a").m_id, QStringLiteral("a"));
+  QCOMPARE(item("a").m_createdAt, createdAt);
+  QCOMPARE(item("a").m_properties.value(QStringLiteral("createdAt")).toString(),
+           QStringLiteral("2020-01-02T03:04:05.6+02:00"));
   QCOMPARE(list("work").m_properties.value(QStringLiteral("extra")).toInt(), -7);
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), beforeListMove);
+  QCOMPARE(item("a").m_createdAt, createdAt);
 }
 
 void TestTodoViewWindowController::movesAtUnterminatedEof() {
@@ -1788,6 +1852,10 @@ void TestTodoViewWindowController::movesAtUnterminatedEof() {
            QStringList({QStringLiteral("One"), QStringLiteral("Two")}));
   QVERIFY(!m_controller->getDocument().m_lists.last().m_id.isEmpty());
   QVERIFY(!m_controller->getDocument().m_lists.last().m_items.last().m_id.isEmpty());
+  for (const auto &task : m_controller->getDocument().m_lists.last().m_items) {
+    QVERIFY(!task.m_createdAt.isValid());
+    QVERIFY(!task.m_properties.contains(QStringLiteral("createdAt")));
+  }
 }
 
 void TestTodoViewWindowController::sourceSelectionRemapping() {
@@ -2098,6 +2166,12 @@ void TestTodoViewWindowController::stableSortingAndCounts() {
   m_controller->setSortOrder(TodoSortOrder::Importance);
   QCOMPARE(visibleKeys(m_controller->getTaskModel()),
            QStringList({key("a"), key("b"), key("d"), key("e"), key("c")}));
+  m_controller->setSortOrder(TodoSortOrder::AddedToMyDay);
+  QCOMPARE(visibleKeys(m_controller->getTaskModel()),
+           QStringList({key("d"), key("a"), key("b"), key("e"), key("c")}));
+  m_controller->setSortOrder(TodoSortOrder::CreationDate);
+  QCOMPARE(visibleKeys(m_controller->getTaskModel()),
+           QStringList({key("a"), key("b"), key("d"), key("e"), key("c")}));
   auto *sidebar = m_controller->getListModel();
   const auto count = [sidebar](TodoViewKind p_view, const QString &p_key = QString()) {
     return sidebar->index(sidebar->rowForView(p_view, p_key))
@@ -2117,6 +2191,100 @@ void TestTodoViewWindowController::stableSortingAndCounts() {
   m_controller->setTagFilter(QStringLiteral("work-plan"));
   QCOMPARE(count(TodoViewKind::All), 0);
   QCOMPARE(m_document->toPlainText(), projectionSource());
+  QVERIFY(!m_document->isUndoAvailable());
+}
+
+void TestTodoViewWindowController::timestampSorting_data() {
+  QTest::addColumn<TodoSortOrder>("order");
+  QTest::addColumn<QStringList>("completedKeys");
+  QTest::newRow("my-day") << TodoSortOrder::AddedToMyDay
+                          << QStringList({key("h"), key("i"), key("j"), key("g")});
+  QTest::newRow("creation-instant")
+      << TodoSortOrder::CreationDate << QStringList({key("i"), key("j"), key("h"), key("g")});
+}
+
+void TestTodoViewWindowController::timestampSorting() {
+  QFETCH(TodoSortOrder, order);
+  QFETCH(QStringList, completedKeys);
+  const auto source = groupedHeader() + QStringLiteral(R"TODO(## Work
+<!-- todo-list: {"id":"work"} -->
+
+- [ ] Missing first
+  <!-- todo-item: {"id":"a"} -->
+
+- [ ] Older
+  <!-- todo-item: {"id":"b","myDay":"2026-11-11","createdAt":"2026-11-11T00:00:00Z"} -->
+
+- [ ] Equal offset first
+  <!-- todo-item: {"id":"c","myDay":"2026-11-12","createdAt":"2026-11-12T02:00:00.1+02:00"} -->
+
+- [ ] Newest
+  <!-- todo-item: {"id":"d","myDay":"2026-11-13","createdAt":"2026-11-12T00:00:00.101Z"} -->
+
+- [ ] Equal UTC second
+  <!-- todo-item: {"id":"e","myDay":"2026-11-12","createdAt":"2026-11-12T00:00:00.100Z"} -->
+
+- [ ] Missing second
+  <!-- todo-item: {"id":"f"} -->
+
+- [x] Completed missing
+  <!-- todo-item: {"id":"g"} -->
+
+- [x] Completed older creation, newest My Day
+  <!-- todo-item: {"id":"h","myDay":"2026-11-16","createdAt":"2026-11-14T00:00:00Z"} -->
+
+- [x] Completed newest first
+  <!-- todo-item: {"id":"i","myDay":"2026-11-15","createdAt":"2026-11-15T00:00:00Z"} -->
+
+- [x] Completed newest equal offset
+  <!-- todo-item: {"id":"j","myDay":"2026-11-15","createdAt":"2026-11-14T19:00:00-05:00"} -->
+)TODO");
+  QVERIFY(load(source));
+  m_controller->setView(TodoViewKind::List, key("work"));
+  auto *model = m_controller->getTaskModel();
+  QVERIFY(model->isReorderingEnabled());
+  auto fields = item("b").m_fields;
+  fields.m_title = QStringLiteral("Edited before sorting");
+  QVERIFY(m_controller->updateTask(key("b"), fields));
+  const auto editedSource = m_document->toPlainText();
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(m_document->isRedoAvailable());
+  const int undoSteps = m_document->availableUndoSteps();
+  QSignalSpy changed(m_document.get(), &QTextDocument::contentsChanged);
+
+  m_controller->setSelectedItemKey(key("c"));
+  m_controller->setCompletedExpanded(true);
+  m_controller->setSortOrder(order);
+  QVERIFY(!model->isReorderingEnabled());
+  const QStringList activeKeys{key("d"), key("c"), key("e"), key("b"), key("a"), key("f")};
+  QCOMPARE(visibleKeys(model), activeKeys + completedKeys);
+  QCOMPARE(model->getActiveCount(), 6);
+  QCOMPARE(model->getCompletedCount(), 4);
+  QCOMPARE(model->rowCount(), 11);
+  QVERIFY(!model->itemAt(6));
+  QCOMPARE(m_controller->getSelectedItemKey(), key("c"));
+  m_controller->setView(TodoViewKind::All);
+  QCOMPARE(visibleKeys(model), activeKeys + completedKeys);
+  m_controller->setCompletedExpanded(false);
+  QCOMPARE(visibleKeys(model), activeKeys);
+  QCOMPARE(model->rowCount(), 7);
+  QCOMPARE(model->getCompletedCount(), 4);
+  m_controller->setCompletedExpanded(true);
+  QCOMPARE(visibleKeys(model), activeKeys + completedKeys);
+
+  m_controller->setSortOrder(TodoSortOrder::Manual);
+  QCOMPARE(visibleKeys(model), QStringList({key("a"), key("b"), key("c"), key("d"), key("e"),
+                                            key("f"), key("g"), key("h"), key("i"), key("j")}));
+  QVERIFY(!model->isReorderingEnabled());
+  m_controller->setView(TodoViewKind::List, key("work"));
+  QVERIFY(model->isReorderingEnabled());
+  QCOMPARE(changed.count(), 0);
+  QCOMPARE(m_document->toPlainText(), source);
+  QCOMPARE(m_document->availableUndoSteps(), undoSteps);
+  QVERIFY(m_document->isRedoAvailable());
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), editedSource);
 }
 
 void TestTodoViewWindowController::modelRolesAndIntents() {

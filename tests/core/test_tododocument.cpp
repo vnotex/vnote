@@ -2,6 +2,7 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QTimeZone>
 
 #include <core/tododocument.h>
 
@@ -71,6 +72,8 @@ private slots:
   void strictGrammar_data();
   void strictGrammar();
   void metadataValuesAndNamespaces();
+  void createdAtMetadata_data();
+  void createdAtMetadata();
   void metadataStringEscaping();
   void listIconMetadata();
   void targetedEdits();
@@ -417,6 +420,9 @@ void TestTodoDocument::emptyAndMetadataFree() {
   QVERIFY(!list.m_items[0].m_metadataRange.isValid());
   QVERIFY(!list.m_items[0].m_noteRange.isValid());
   QVERIFY(!list.m_items[0].m_fields.m_due.isValid());
+  QVERIFY(!list.m_items[0].m_createdAt.isValid());
+  QVERIFY(!list.m_items[1].m_createdAt.isValid());
+  QVERIFY(!list.m_items[0].m_properties.contains(QStringLiteral("createdAt")));
   QCOMPARE(document.m_source, source);
 }
 
@@ -678,6 +684,43 @@ void TestTodoDocument::strictGrammar_data() {
   addField("tags-string", QStringLiteral("\"tags\":\"work\""));
   addField("tags-empty-entry", QStringLiteral("\"tags\":[\"\"]"));
   addField("tags-nonstring", QStringLiteral("\"tags\":[1]"));
+  addField("created-at-null", QStringLiteral("\"createdAt\":null"));
+  addField("created-at-boolean", QStringLiteral("\"createdAt\":true"));
+  addField("created-at-number", QStringLiteral("\"createdAt\":42"));
+  addField("created-at-array", QStringLiteral("\"createdAt\":[]"));
+  addField("created-at-object", QStringLiteral("\"createdAt\":{}"));
+  addField("created-at-empty", QStringLiteral("\"createdAt\":\"\""));
+  addField("created-at-date-only", QStringLiteral("\"createdAt\":\"2026-11-16\""));
+  addField("created-at-local", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10\""));
+  addField("created-at-local-fraction",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10.123\""));
+  addField("created-at-space-separator", QStringLiteral("\"createdAt\":\"2026-11-16 08:09:10Z\""));
+  addField("created-at-short-time", QStringLiteral("\"createdAt\":\"2026-11-16T08:09Z\""));
+  addField("created-at-lowercase-t", QStringLiteral("\"createdAt\":\"2026-11-16t08:09:10Z\""));
+  addField("created-at-lowercase-z", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10z\""));
+  addField("created-at-invalid-day", QStringLiteral("\"createdAt\":\"2026-02-30T08:09:10Z\""));
+  addField("created-at-nonleap-day", QStringLiteral("\"createdAt\":\"2026-02-29T08:09:10Z\""));
+  addField("created-at-invalid-month", QStringLiteral("\"createdAt\":\"2026-13-16T08:09:10Z\""));
+  addField("created-at-invalid-year", QStringLiteral("\"createdAt\":\"0000-11-16T08:09:10Z\""));
+  addField("created-at-hour-24", QStringLiteral("\"createdAt\":\"2026-11-16T24:00:00Z\""));
+  addField("created-at-invalid-minute", QStringLiteral("\"createdAt\":\"2026-11-16T08:60:10Z\""));
+  addField("created-at-invalid-second", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:60Z\""));
+  addField("created-at-invalid-zone-hour",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10+24:00\""));
+  addField("created-at-invalid-zone-minute",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10+05:60\""));
+  addField("created-at-short-zone", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10+05\""));
+  addField("created-at-zone-without-colon",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10+0530\""));
+  addField("created-at-named-zone", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10UTC\""));
+  addField("created-at-empty-fraction", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10.Z\""));
+  addField("created-at-long-fraction",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10.1234Z\""));
+  addField("created-at-comma-fraction",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10,123Z\""));
+  addField("created-at-trailing-space", QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10Z \""));
+  addField("created-at-trailing-newline",
+           QStringLiteral("\"createdAt\":\"2026-11-16T08:09:10Z\\n\""));
 }
 
 void TestTodoDocument::strictGrammar() {
@@ -717,6 +760,59 @@ void TestTodoDocument::metadataValuesAndNamespaces() {
            -3);
   QVERIFY(list.m_items[1].m_properties.contains(QStringLiteral("tags")));
   QCOMPARE(document.m_source, source);
+}
+
+void TestTodoDocument::createdAtMetadata_data() {
+  QTest::addColumn<QString>("timestamp");
+  QTest::addColumn<QDateTime>("expected");
+  const QDateTime instant(QDate(2026, 11, 16), QTime(8, 9, 10), QTimeZone::UTC);
+  QTest::newRow("missing") << QString() << QDateTime();
+  QTest::newRow("utc-seconds") << QStringLiteral("2026-11-16T08:09:10Z") << instant;
+  QTest::newRow("utc-milliseconds")
+      << QStringLiteral("2026-11-16T08:09:10.123Z") << instant.addMSecs(123);
+  QTest::newRow("utc-tenths") << QStringLiteral("2026-11-16T08:09:10.1Z") << instant.addMSecs(100);
+  QTest::newRow("utc-hundredths") << QStringLiteral("2026-11-16T08:09:10.12Z")
+                                  << instant.addMSecs(120);
+  QTest::newRow("utc-padded-hundredths")
+      << QStringLiteral("2026-11-16T08:09:10.120Z") << instant.addMSecs(120);
+  QTest::newRow("positive-offset")
+      << QStringLiteral("2026-11-16T13:39:10.123+05:30") << instant.addMSecs(123);
+  QTest::newRow("negative-offset")
+      << QStringLiteral("2026-11-16T04:09:10.123-04:00") << instant.addMSecs(123);
+  QTest::newRow("offset-date-boundary")
+      << QStringLiteral("2026-11-15T22:09:10.123-10:00") << instant.addMSecs(123);
+  QTest::newRow("zero-offset") << QStringLiteral("2026-11-16T08:09:10.123+00:00")
+                               << instant.addMSecs(123);
+  QTest::newRow("leap-day") << QStringLiteral("2024-02-29T23:59:59.999Z")
+                            << QDateTime(QDate(2024, 2, 29), QTime(23, 59, 59, 999),
+                                         QTimeZone::UTC);
+}
+
+void TestTodoDocument::createdAtMetadata() {
+  QFETCH(QString, timestamp);
+  QFETCH(QDateTime, expected);
+  QJsonObject properties{{QStringLiteral("future"), QJsonArray{1, true}}};
+  if (!timestamp.isNull()) {
+    properties.insert(QStringLiteral("createdAt"), timestamp);
+  }
+  const auto source =
+      QStringLiteral("<!-- todo: {\"version\":1,\"createdAt\":false} -->\n"
+                     "# Group\n<!-- todo-group: {\"createdAt\":42} -->\n"
+                     "## List\n<!-- todo-list: {\"createdAt\":null} -->\n- [ ] Task\n  ") +
+      TodoDocument::encodeMetadata(QStringLiteral("todo-item"), properties) + QLatin1Char('\n');
+  const auto document = TodoDocument::parse(source);
+  QVERIFY2(document.isValid(), qPrintable(diagnostics(document)));
+  QCOMPARE(document.m_source, source);
+  QCOMPARE(document.m_lists.size(), 1);
+  QCOMPARE(document.m_lists[0].m_items.size(), 1);
+  const auto &item = document.m_lists[0].m_items[0];
+  QCOMPARE(item.m_createdAt.isValid(), expected.isValid());
+  QCOMPARE(item.m_createdAt, expected);
+  QCOMPARE(item.m_properties, properties);
+  if (expected.isValid()) {
+    QCOMPARE(item.m_createdAt.toUTC(), expected);
+    QCOMPARE(item.m_properties.value(QStringLiteral("createdAt")).toString(), timestamp);
+  }
 }
 
 void TestTodoDocument::listIconMetadata() {

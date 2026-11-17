@@ -130,7 +130,6 @@ private:
   QLabel *m_viewTitle = nullptr;
   QLabel *m_description = nullptr;
   QPushButton *m_listMore = nullptr;
-  QComboBox *m_sort = nullptr;
   QPushButton *m_tagFilter = nullptr;
   QListView *m_tasks = nullptr;
   QComboBox *m_destination = nullptr;

@@ -755,8 +755,10 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
     }
     if (m_projection.m_sort != TodoSortOrder::Manual) {
       const auto less = [this, &lists](const Row &p_left, const Row &p_right) {
-        const auto &left = lists.at(p_left.m_list).m_items.at(p_left.m_item).m_fields;
-        const auto &right = lists.at(p_right.m_list).m_items.at(p_right.m_item).m_fields;
+        const auto &leftItem = lists.at(p_left.m_list).m_items.at(p_left.m_item);
+        const auto &rightItem = lists.at(p_right.m_list).m_items.at(p_right.m_item);
+        const auto &left = leftItem.m_fields;
+        const auto &right = rightItem.m_fields;
         switch (m_projection.m_sort) {
         case TodoSortOrder::Importance:
           return left.m_important && !right.m_important;
@@ -767,6 +769,16 @@ void TodoTaskModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
           return left.m_due.isValid() && left.m_due < right.m_due;
         case TodoSortOrder::Title:
           return QString::compare(left.m_title, right.m_title, Qt::CaseInsensitive) < 0;
+        case TodoSortOrder::AddedToMyDay:
+          if (left.m_myDay.isValid() != right.m_myDay.isValid()) {
+            return left.m_myDay.isValid();
+          }
+          return left.m_myDay.isValid() && left.m_myDay > right.m_myDay;
+        case TodoSortOrder::CreationDate:
+          if (leftItem.m_createdAt.isValid() != rightItem.m_createdAt.isValid()) {
+            return leftItem.m_createdAt.isValid();
+          }
+          return leftItem.m_createdAt.isValid() && leftItem.m_createdAt > rightItem.m_createdAt;
         case TodoSortOrder::Manual:
           return false;
         }

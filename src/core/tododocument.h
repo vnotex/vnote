@@ -2,6 +2,7 @@
 #define VNOTEX_TODODOCUMENT_H
 
 #include <QDate>
+#include <QDateTime>
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
@@ -54,6 +55,7 @@ struct TodoItem {
   QString m_id;  // Empty only when the metadata has no id key.
   QString m_listKey;
   TodoTaskFields m_fields;
+  QDateTime m_createdAt; // Immutable creation instant; invalid for legacy tasks without one.
   QJsonObject m_properties;
   QVector<TodoStep> m_steps;
   TodoSourceRange m_range; // Whole physical lines, including contained opaque comments.

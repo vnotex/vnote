@@ -1,6 +1,7 @@
 #include "todoviewwindowcontroller.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QHash>
 #include <QJsonArray>
 #include <QTextCursor>
@@ -154,7 +155,9 @@ int mappedPosition(const QVector<TodoSourceEdit> &p_edits, int p_position,
 }
 
 QString taskBlock(const TodoTaskFields &p_fields, const QString &p_id) {
-  QJsonObject properties{{QStringLiteral("id"), p_id}};
+  QJsonObject properties{
+      {QStringLiteral("id"), p_id},
+      {QStringLiteral("createdAt"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)}};
   setOptional(properties, QStringLiteral("important"), true, p_fields.m_important);
   setOptional(properties, QStringLiteral("due"), p_fields.m_due.toString(Qt::ISODate),
               p_fields.m_due.isValid());
@@ -1116,9 +1119,11 @@ bool TodoViewWindowController::duplicateList(const QString &p_listKey, QString *
   properties.insert(QStringLiteral("id"), id);
   appendMetadata(copied, QStringLiteral("todo-list"), properties, list->m_metadataRange,
                  list->m_metadataInsertion);
+  const auto createdAt = QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs);
   for (const auto &item : list->m_items) {
     auto itemProperties = item.m_properties;
     itemProperties.insert(QStringLiteral("id"), newId());
+    itemProperties.insert(QStringLiteral("createdAt"), createdAt);
     appendMetadata(copied, QStringLiteral("todo-item"), itemProperties, item.m_metadataRange,
                    item.m_metadataInsertion, item.m_continuationIndent);
   }

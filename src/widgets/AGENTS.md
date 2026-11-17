@@ -687,14 +687,30 @@ Group menus contain Rename, New List and Ungroup Lists. Ungroup Lists dissolves 
 into Default without deleting its lists/tasks; Default itself cannot be ungrouped. Group comments
 move to Default's pre-list region, not into another list. Without Default, the dissolved group's
 heading becomes a fresh Default in place. The command is one source transaction/undo step.
-List menus contain Rename, Edit Description, either Remove from Group (custom-group lists) or
-Move List To Group (Default lists, submenu of all custom groups), Duplicate and Delete. The move
-submenu is disabled when no custom group exists. The icon-only **List Options** button uses the themed three-dot
-`menu.svg`, retains a List Options tooltip/accessibility label, and opens the same menu.
-Duplicate inserts a copy beside its source, retaining descriptions, notes, steps, completion/date/tag
-fields, comments and unknown metadata, but assigning fresh list/task IDs. It expands/selects the copy
-and is one undo
-step. Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
+List menus contain Rename, Edit Description, Sort by, either Remove from Group (custom-group
+lists) or Move List To Group (Default lists, submenu of all custom groups), Duplicate and Delete.
+The move submenu is disabled when no custom group exists. The icon-only **List Options** button
+uses the themed three-dot `menu.svg`, retains a List Options tooltip/accessibility label, and
+opens the same menu. In smart or filtered views it offers only Sort by; sorting remains available
+in Read mode while list mutations stay disabled.
+
+**Sort by** replaces the toolbar combo and offers Importance, Due Date, Added to My Day, Name,
+and Creation Date. Reselecting the checked choice restores manual order and permits dragging in
+an unfiltered editable list. Importance puts marked tasks first; Due Date is earliest-first;
+Added to My Day and Creation Date are newest-first; Name compares raw titles case-insensitively.
+Missing dates sort last and ties retain source order, separately within active/completed tasks.
+Sorting is transient for the document's projection, never a source edit. A sidebar list-menu
+choice targets that list and clears filters; the three-dot menu preserves smart/filtered views.
+
+Tasks may carry immutable `todo-item.createdAt` metadata: an ISO timestamp with `T`, seconds,
+optional 1–3 fractional digits, and an explicit `Z` or numeric offset. New tasks write UTC with
+milliseconds. Legacy tasks without it remain unknown; opening, sorting, editing or moving them
+does not backfill a guessed creation date. Existing timestamp strings survive unrelated edits.
+This optional version-1 field requires no document/config migration.
+Duplicate inserts a copy beside its source, retaining descriptions, notes, steps, completion,
+due/My Day/tag fields, comments and unknown metadata, but assigning fresh list/task IDs and one
+new creation timestamp to all copied tasks. It expands/selects the copy and is one undo step.
+Nonempty list deletion still asks confirmation; there is no destructive group-delete action.
 
 The unassigned **Add list icon** state uses Lucide's `face_slightly_smiling_plus.svg`,
 recolored through `IconUtils` for normal and disabled states. Assigned emoji replace this glyph.
@@ -755,8 +771,10 @@ Quick-add due controls appear and apply only in unfiltered Planned; a remembered
 leaks into another view or filtered result. Details show the stored My Day date even when it is
 not today, before a user replaces it. Step actions fit the 320px details pane without outer
 horizontal scrolling.
-Below 840 logical pixels, a top-leading Lists button opens the existing sidebar over the task
-area without resizing it. Search, smart views, groups, lists and creation controls stay together;
+Below 840 logical pixels, a top-leading icon-only Lists toggle uses Lucide's `list_tree.svg`
+and opens the existing sidebar over the task area without resizing it. Its tooltip and accessible
+name remain "Show lists and search"; the icon follows theme changes and the checked/open state.
+Search, smart views, groups, lists and creation controls stay together;
 there are no separate compact-navigation combos. List selection, Escape, another Lists click,
 or a click/focus outside the panel dismisses it; owned menus/dialogs remain interactive.
 Ctrl+F first leaves narrow details, then opens and focuses sidebar search; Enter exposes the
