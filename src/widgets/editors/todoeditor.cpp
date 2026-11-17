@@ -347,14 +347,12 @@ private:
 };
 
 void paintCompletionIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
-                              const QPalette &p_palette, QPalette::ColorGroup p_group,
                               const QColor &p_foreground) {
   p_painter->setPen(QPen(p_foreground, 1.5));
-  p_painter->setBrush(p_checked ? QBrush(p_palette.color(p_group, QPalette::Highlight))
-                                : Qt::NoBrush);
+  p_painter->setBrush(Qt::NoBrush);
   p_painter->drawEllipse(p_rect.adjusted(2, 2, -2, -2));
   if (p_checked) {
-    p_painter->setPen(QPen(p_palette.color(p_group, QPalette::HighlightedText), 2));
+    p_painter->setPen(QPen(p_foreground, 2));
     const QPoint middle(p_rect.left() + p_rect.width() * 4 / 10,
                         p_rect.top() + p_rect.height() * 7 / 10);
     p_painter->drawLine(QPoint(p_rect.left() + p_rect.width() / 4, p_rect.center().y()), middle);
@@ -396,7 +394,7 @@ protected:
                                                ? QStringLiteral("widgets#qlistview#item#hover#fg")
                                                : QStringLiteral("widgets#qlistview#fg")))
             : palette().color(group, QPalette::Text);
-    paintCompletionIndicator(&painter, circle, isChecked(), palette(), group, foreground);
+    paintCompletionIndicator(&painter, circle, isChecked(), foreground);
     if (hasFocus()) {
       painter.setPen(QPen(QColor(m_theme->paletteColor(QStringLiteral("base#master#bg"))), 1.5));
       painter.setBrush(Qt::NoBrush);
@@ -537,7 +535,7 @@ public:
     }
     const QRect circle = checkRect(option);
     const bool checked = p_index.data(TodoTaskModel::CheckedRole).toBool();
-    paintCompletionIndicator(p_painter, circle, checked, option.palette, group, textColor);
+    paintCompletionIndicator(p_painter, circle, checked, textColor);
     const QRect star = starRect(option);
     QPainterPath path;
     constexpr double pi = 3.14159265358979323846;

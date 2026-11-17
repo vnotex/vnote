@@ -627,7 +627,9 @@ The details panel has a right-aligned close icon, then completion/title/star, in
 Add a step, Add to My Day, due date and Markdown note, in that order. The note placeholder is
 "Add note (markdown supported)". Task and step completion share the central list's circular
 outline/checkmark drawing, but retain independent, reversible checkbox interaction and
-accessibility. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
+accessibility. The circle stays unfilled when checked; the tick uses the same theme-resolved
+foreground as its outline (including selected/disabled states), never the palette's highlight
+fill/text pair. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
 button with a themed Lucide `sun.svg` and left-aligned text: "Add to My Day" when off and
 "Added to My Day" when on; clicking it again removes membership. Quick-add due controls remain
 ordinary checkboxes.

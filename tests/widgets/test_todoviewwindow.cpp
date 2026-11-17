@@ -660,6 +660,7 @@ private slots:
   void smartQuickAdd_data();
   void smartQuickAdd();
   void nativeTypingSharesSourceUndo();
+  void completionCheckmarkContrast();
   void immediateNotesDatesAndSteps();
   void inlineStepTypingAndActions();
   void dueDateMenuAndPicker();
@@ -1233,6 +1234,72 @@ void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
   QVERIFY(title->hasFocus());
   window->undo();
   QCOMPARE(window->getLatestContent().toUtf8(), source);
+}
+
+void TestTodoViewWindow::completionCheckmarkContrast() {
+  qApp->setStyleSheet(m_theme->fetchQtStyleSheet());
+  connect(m_theme.get(), &ThemeService::themeChanged, this,
+          [this]() { qApp->setStyleSheet(m_theme->fetchQtStyleSheet()); });
+  createArea();
+  QVERIFY(openNote(QStringLiteral("checkmark.todo")).isValid());
+  auto *window = current();
+  const auto key = QStringLiteral("id:alpha");
+  QVERIFY(window && openTask(window, key));
+  auto *checked = control<QCheckBox>(window, "todoChecked");
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  auto *details = control<QWidget>(window, "todoDetails");
+  QVERIFY(checked && title && details);
+  const auto source = window->getLatestContent();
+  const auto luminance = [](const QColor &p_color) {
+    const auto linear = [](double p_value) {
+      return p_value <= 0.04045 ? p_value / 12.92 : std::pow((p_value + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * linear(p_color.redF()) + 0.7152 * linear(p_color.greenF()) +
+           0.0722 * linear(p_color.blueF());
+  };
+  for (const auto &theme :
+       {QStringLiteral("pure"), QStringLiteral("everforest-dark"), QStringLiteral("native")}) {
+    m_theme->switchTheme(theme);
+    QVERIFY(activate(title));
+    movePointer(title, title->rect().center());
+    // Composite the transparent checkbox over its actual themed parent, not an isolated grab.
+    const auto background = details->grab().toImage();
+    const auto center = checked->mapTo(details, checked->rect().center());
+    const qreal scale = background.devicePixelRatio();
+    const auto backgroundColor =
+        background.pixelColor(qRound(center.x() * scale), qRound(center.y() * scale));
+    const auto originalPalette = checked->palette();
+    auto palette = originalPalette;
+    // A native/stylesheet palette can provide no usable highlight contrast.
+    palette.setColor(QPalette::Highlight, backgroundColor);
+    palette.setColor(QPalette::HighlightedText, backgroundColor);
+    checked->setPalette(palette);
+    const auto uncheckedImage = details->grab().toImage();
+    QTest::mouseClick(checked, Qt::LeftButton);
+    QVERIFY(window->getController()->getDocument().findItem(key)->m_fields.m_checked);
+    QVERIFY(activate(title));
+    movePointer(title, title->rect().center());
+    const auto checkedImage = details->grab().toImage();
+    // Only the center quarter: the outline and outer keyboard focus ring cannot satisfy this.
+    const int radius = qMin(checked->width(), checked->height()) / 8;
+    const QRect interior(qRound((center.x() - radius) * scale),
+                         qRound((center.y() - radius) * scale), qRound(2 * radius * scale),
+                         qRound(2 * radius * scale));
+    double contrast = 1;
+    for (int y = interior.top(); y <= interior.bottom(); ++y) {
+      for (int x = interior.left(); x <= interior.right(); ++x) {
+        const auto before = luminance(uncheckedImage.pixelColor(x, y));
+        const auto after = luminance(checkedImage.pixelColor(x, y));
+        contrast = qMax(contrast, (qMax(before, after) + 0.05) / (qMin(before, after) + 0.05));
+      }
+    }
+    QVERIFY2(contrast >= 4.5,
+             qPrintable(QStringLiteral("%1 checkmark contrast: %2").arg(theme).arg(contrast)));
+    window->undo();
+    QVERIFY(!window->getController()->getDocument().findItem(key)->m_fields.m_checked);
+    QCOMPARE(window->getLatestContent(), source);
+    checked->setPalette(originalPalette);
+  }
 }
 
 void TestTodoViewWindow::immediateNotesDatesAndSteps() {
