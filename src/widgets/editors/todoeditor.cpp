@@ -346,6 +346,78 @@ private:
   QColor m_border;
 };
 
+void paintCompletionIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
+                              const QPalette &p_palette, QPalette::ColorGroup p_group,
+                              const QColor &p_foreground) {
+  p_painter->setPen(QPen(p_foreground, 1.5));
+  p_painter->setBrush(p_checked ? QBrush(p_palette.color(p_group, QPalette::Highlight))
+                                : Qt::NoBrush);
+  p_painter->drawEllipse(p_rect.adjusted(2, 2, -2, -2));
+  if (p_checked) {
+    p_painter->setPen(QPen(p_palette.color(p_group, QPalette::HighlightedText), 2));
+    const QPoint middle(p_rect.left() + p_rect.width() * 4 / 10,
+                        p_rect.top() + p_rect.height() * 7 / 10);
+    p_painter->drawLine(QPoint(p_rect.left() + p_rect.width() / 4, p_rect.center().y()), middle);
+    p_painter->drawLine(
+        middle, QPoint(p_rect.right() - p_rect.width() / 4, p_rect.top() + p_rect.height() / 3));
+  }
+}
+
+// Circular presentation, with independent checkbox interaction and accessibility.
+class CompletionCheckBox final : public QCheckBox {
+public:
+  CompletionCheckBox(ThemeService *p_theme, QWidget *p_parent)
+      : QCheckBox(p_parent), m_theme(p_theme) {
+    Q_ASSERT(m_theme);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    connect(m_theme, &ThemeService::themeChanged, this, [this]() { update(); });
+  }
+
+  QSize sizeHint() const override {
+    const int side = qMax(20, fontMetrics().height()) + 8;
+    return QSize(side, side);
+  }
+
+  QSize minimumSizeHint() const override { return sizeHint(); }
+
+protected:
+  bool hitButton(const QPoint &p_position) const override { return rect().contains(p_position); }
+
+  void paintEvent(QPaintEvent *) override {
+    // Do not call CE_CheckBox: theme stylesheets supply a square indicator image.
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    const int side = qMax(20, fontMetrics().height());
+    const QRect circle((width() - side) / 2, (height() - side) / 2, side, side);
+    const auto group = isEnabled() ? QPalette::Active : QPalette::Disabled;
+    const QColor foreground =
+        isEnabled()
+            ? QColor(m_theme->paletteColor(underMouse()
+                                               ? QStringLiteral("widgets#qlistview#item#hover#fg")
+                                               : QStringLiteral("widgets#qlistview#fg")))
+            : palette().color(group, QPalette::Text);
+    paintCompletionIndicator(&painter, circle, isChecked(), palette(), group, foreground);
+    if (hasFocus()) {
+      painter.setPen(QPen(QColor(m_theme->paletteColor(QStringLiteral("base#master#bg"))), 1.5));
+      painter.setBrush(Qt::NoBrush);
+      painter.drawEllipse(QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5));
+    }
+  }
+
+  void enterEvent(QEnterEvent *p_event) override {
+    QCheckBox::enterEvent(p_event);
+    update();
+  }
+
+  void leaveEvent(QEvent *p_event) override {
+    QCheckBox::leaveEvent(p_event);
+    update();
+  }
+
+private:
+  ThemeService *m_theme;
+};
+
 class TaskDelegate : public TreeChildCountDelegate {
 public:
   TaskDelegate(ServiceLocator &p_services, QObject *p_parent)
@@ -437,18 +509,7 @@ public:
     }
 
     const bool checked = p_index.data(TodoTaskModel::CheckedRole).toBool();
-    p_painter->setPen(QPen(textColor, 1.5));
-    p_painter->setBrush(checked ? QBrush(option.palette.color(group, QPalette::Highlight))
-                                : Qt::NoBrush);
-    p_painter->drawEllipse(circle.adjusted(2, 2, -2, -2));
-    if (checked) {
-      p_painter->setPen(QPen(option.palette.color(group, QPalette::HighlightedText), 2));
-      const QPoint middle(circle.left() + circle.width() * 4 / 10,
-                          circle.top() + circle.height() * 7 / 10);
-      p_painter->drawLine(QPoint(circle.left() + circle.width() / 4, circle.center().y()), middle);
-      p_painter->drawLine(
-          middle, QPoint(circle.right() - circle.width() / 4, circle.top() + circle.height() / 3));
-    }
+    paintCompletionIndicator(p_painter, circle, checked, option.palette, group, textColor);
     const QRect star = starRect(option);
     QPainterPath path;
     constexpr double pi = 3.14159265358979323846;
@@ -845,7 +906,8 @@ void TodoEditor::createDetails() {
 
   auto *task = new QHBoxLayout;
   task->setSpacing(4);
-  m_checked = named(new QCheckBox(m_details), "todoChecked", tr("Task completed"));
+  m_checked = named(new CompletionCheckBox(m_services.get<ThemeService>(), m_details),
+                    "todoChecked", tr("Task completed"));
   m_checked->setToolTip(tr("Task completed"));
   m_title = named(new QLineEdit(m_details), "todoTitle", tr("Task title"));
   m_title->setPlaceholderText(tr("Untitled task"));
@@ -853,13 +915,19 @@ void TodoEditor::createDetails() {
   m_important->setCheckable(true);
   m_important->setAutoRaise(true);
   m_important->setIconSize(QSize(20, 20));
-  task->addWidget(m_checked);
+  task->addWidget(m_checked, 0, Qt::AlignVCenter);
   task->addWidget(m_title, 1);
   task->addWidget(m_important);
   layout->addLayout(task);
 
   m_steps = named(new QWidget(m_details), "todoSteps", tr("Task steps"));
-  m_stepLayout = new QVBoxLayout(m_steps);
+  auto *stepIndent = new QHBoxLayout(m_steps);
+  stepIndent->setContentsMargins(0, 0, 0, 0);
+  stepIndent->setSpacing(0);
+  stepIndent->addSpacing(16);
+  auto *stepRows = new QWidget(m_steps);
+  stepIndent->addWidget(stepRows, 1);
+  m_stepLayout = new QVBoxLayout(stepRows);
   m_stepLayout->setContentsMargins(0, 0, 0, 0);
   m_stepLayout->setSpacing(4);
   m_steps->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
@@ -871,6 +939,11 @@ void TodoEditor::createDetails() {
                   tr("Include task in My Day"));
   layout->addWidget(m_myDay);
   m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
+  m_due->setIconSize(QSize(20, 20));
+  // Keep the icon and text together at the requested physical left edge, including in RTL.
+  m_due->setLayoutDirection(Qt::LeftToRight);
+  m_due->setStyleSheet(
+      QStringLiteral("QPushButton { text-align: left; padding-left: 8px; padding-right: 8px; }"));
   layout->addWidget(m_due);
   m_note = named(new SimpleMarkdownEditor(m_services, m_details), "todoNote",
                  tr("Task note in Markdown"));
@@ -879,9 +952,35 @@ void TodoEditor::createDetails() {
   m_note->getTextEdit()->setUndoRedoEnabled(false);
   m_note->setMinimumHeight(136);
   layout->addWidget(m_note, 1);
+  auto *separator = new QFrame(m_details);
+  separator->setFrameShape(QFrame::HLine);
+  separator->setFrameShadow(QFrame::Plain);
+  layout->addWidget(separator);
+  auto *footer = new QHBoxLayout;
+  m_createdDate = named(new QLabel(m_details), "todoCreatedDate", tr("Task creation date"));
+  m_createdDate->setTextFormat(Qt::PlainText);
+  m_createdDate->setAlignment(Qt::AlignCenter);
+  m_createdDate->setWordWrap(true);
+  m_createdDate->setMinimumWidth(0);
+  m_createdDate->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_deleteTask = named(new QToolButton(m_details), "todoDeleteTask", tr("Delete task"));
+  m_deleteTask->setAutoRaise(true);
+  m_deleteTask->setIconSize(QSize(20, 20));
+  m_deleteTask->setToolTip(tr("Delete task"));
+  footer->addWidget(m_createdDate, 1);
+  footer->addWidget(m_deleteTask, 0, Qt::AlignVCenter);
+  layout->addLayout(footer);
 
   auto *theme = m_services.get<ThemeService>();
-  const auto refreshIcons = [this, theme]() {
+  const auto refreshIcons = [this, theme, separator]() {
+    auto separatorPalette = separator->palette();
+    separatorPalette.setColor(QPalette::WindowText,
+                              QColor(theme->paletteColor(QStringLiteral("base#normal#border"))));
+    separator->setPalette(separatorPalette);
+    m_due->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("calendar.svg"))));
+    m_deleteTask->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("delete.svg"))));
     m_back->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("close.svg"))));
     // Match the outline/filled stars in the task list, including disabled states.
@@ -927,6 +1026,7 @@ void TodoEditor::createDetails() {
   refreshIcons();
   connect(theme, &ThemeService::themeChanged, this, refreshIcons);
   connect(m_back, &QToolButton::clicked, this, &TodoEditor::closeDetails);
+  connect(m_deleteTask, &QToolButton::clicked, this, [this]() { deleteTask(m_detailsKey); });
   connect(m_title, &QLineEdit::textEdited, this, [this](const QString &p_text) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_title = p_text; }, m_title);
   });
@@ -1142,6 +1242,13 @@ void TodoEditor::refreshDetails() {
   m_important->setEnabled(writable);
   m_myDay->setEnabled(writable);
   m_due->setEnabled(writable);
+  m_deleteTask->setEnabled(writable);
+  m_createdDate->setText(item && item->m_createdAt.isValid()
+                             ? tr("Created on %1")
+                                   .arg(QLocale().toString(item->m_createdAt.toLocalTime().date(),
+                                                           QLocale::LongFormat))
+                             : tr("Creation date unknown"));
+  m_createdDate->setAccessibleDescription(m_createdDate->text());
   m_addStep->setEnabled(writable);
   if (!preservesField(m_title) && m_title->text() != fields.m_title) {
     m_title->setText(fields.m_title);
@@ -1194,7 +1301,7 @@ void TodoEditor::refreshSteps(const TodoItem *p_item, bool p_reset) {
         auto *layout = new QHBoxLayout(widget);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(4);
-        auto *checked = new QCheckBox(widget);
+        auto *checked = new CompletionCheckBox(m_services.get<ThemeService>(), widget);
         checked->setObjectName(QStringLiteral("todoStepChecked_%1").arg(i));
         auto *title = new QLineEdit(widget);
         title->setObjectName(QStringLiteral("todoStepTitle_%1").arg(i));
@@ -1206,7 +1313,7 @@ void TodoEditor::refreshSteps(const TodoItem *p_item, bool p_reset) {
         more->setIconSize(QSize(20, 20));
         more->setAutoRaise(true);
         more->setToolTip(tr("Step options"));
-        layout->addWidget(checked);
+        layout->addWidget(checked, 0, Qt::AlignVCenter);
         layout->addWidget(title, 1);
         layout->addWidget(more);
         m_stepLayout->addWidget(widget);

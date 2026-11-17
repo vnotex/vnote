@@ -156,6 +156,8 @@ private:
   QVector<StepRow> m_stepRows;
   QLineEdit *m_addStep = nullptr;
   SimpleMarkdownEditor *m_note = nullptr;
+  QLabel *m_createdDate = nullptr;
+  QToolButton *m_deleteTask = nullptr;
   QString m_detailsKey;
   QString m_lastDestination;
   QPointer<QWidget> m_typingField;

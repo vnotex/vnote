@@ -623,7 +623,12 @@ separate `SimpleMarkdownEditor` input with local undo disabled and source-histor
 Typing coalesces by field until focus, selection, mode or another command ends the group.
 The details panel has a right-aligned close icon, then completion/title/star, inline steps,
 Add a step, Add to My Day, due date and Markdown note, in that order. The note placeholder is
-"Add note (markdown supported)". Step rows retain their input widgets through typing echoes;
+"Add note (markdown supported)". Task and step completion share the central list's circular
+outline/checkmark drawing, but retain independent, reversible checkbox interaction and
+accessibility. The theme accent supplies a visible keyboard focus ring. My Day and quick-add
+due controls remain ordinary checkboxes. Step rows have a 16px leading inset (mirrored in RTL);
+the empty list hides that inset too, while Add a step stays at the panel margin.
+Step rows retain their input widgets through typing echoes;
 structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
 Delete, and Promote to Task only for incomplete steps. Promotion appends a fresh task to the same
 list, transfers only the nonblank step title, and removes the step in one source/undo transaction;
@@ -631,8 +636,13 @@ parent selection, unrelated source and existing metadata survive. Blank titles r
 Due-date menus use projection today for Today, Tomorrow (+1 day) and Next Week (+7 days), plus
 Pick A Date and, when set, Remove Due Date. The calendar commits only on OK; menu actions and
 picker acceptance reject stale source, selection, binding and read-only state. Task tags have no
-native editing/filter controls or row badges; existing tag metadata remains lossless. Task move
-and deletion remain in the task context menu, not as details-panel buttons.
+native editing/filter controls or row badges; existing tag metadata remains lossless. The due
+button uses the themed calendar icon and keeps icon/text together at the physical left edge,
+including in RTL. The footer displays the immutable creation timestamp as a locale-formatted
+local date; legacy tasks show "Creation date unknown" without backfilling metadata. Its trash
+icon reuses task deletion's default-No confirmation and stale-gesture guards. The footer's
+separator follows the theme border, and its date wraps rather than pushing the icon offscreen.
+Task move and deletion remain available in the task context menu; there is no move footer button.
 Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
 cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
 **Edit Description** opens a `PlainTextEdit` dialog with local undo and OK/Cancel; only acceptance
