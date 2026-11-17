@@ -149,6 +149,10 @@ private slots:
   void notesAndTags();
   void taskAddRemoveUndo();
   void stepCommands();
+  void promoteStepPreservesOwnedSource();
+  void promoteStepMaterializesOwners_data();
+  void promoteStepMaterializesOwners();
+  void promoteStepAdmission();
   void stepCompletionIsIndependent();
   void movesRetainOwnedBlocks();
   void movesAtUnterminatedEof();
@@ -1778,6 +1782,200 @@ void TestTodoViewWindowController::stepCommands() {
   QVERIFY(m_controller->removeStep(key("a"), 1));
   QVERIFY(m_controller->removeStep(key("a"), 0));
   QVERIFY(item("a").m_steps.isEmpty());
+}
+
+void TestTodoViewWindowController::promoteStepPreservesOwnedSource() {
+  const auto source =
+      groupedHeader() +
+      QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\",\"extra\":-7} -->\n\n"
+                     "> List description\n\n"
+                     "- [X] Parent\n"
+                     "  <!-- todo-item: {\"id\":\"a\",\"important\":true,"
+                     "\"due\":\"2026-11-11\",\"myDay\":\"2026-11-12\","
+                     "\"tags\":[\"Work\"],\"hidden\":{\"keep\":true},"
+                     "\"createdAt\":\"2020-01-02T03:04:05.6+02:00\"} -->\n\n"
+                     "  <!-- Parent comment -->\n\n"
+                     "  > Parent **note**\n\n"
+                     "  - [x] Done\n"
+                     "  - [ ] Promote **bold** \\[literal\\] &amp; text\n"
+                     "  - [ ] Remaining\n\n"
+                     "- [ ] Sibling\n  <!-- todo-item: {\"id\":\"b\"} -->\n\n"
+                     "<!-- List boundary comment -->\n\n"
+                     "# Other\n<!-- todo-group: {\"id\":\"other\"} -->\n\n"
+                     "## Home\n<!-- todo-list: {\"id\":\"home\"} -->\n\n"
+                     "- [ ] Unrelated\n  <!-- todo-item: {\"id\":\"c\"} -->");
+  QVERIFY(load(source));
+  QVERIFY(m_controller->getDocument().isValid());
+  m_controller->setView(TodoViewKind::All);
+  m_controller->setSelectedItemKey(key("a"));
+  const auto step = item("a").m_steps[1];
+  const int insertion = list("work").m_taskInsertion;
+  const auto beforeCreation = QDateTime::currentDateTimeUtc();
+  QVERIFY(m_controller->promoteStep(key("a"), 1));
+  const auto afterCreation = QDateTime::currentDateTimeUtc();
+  QCOMPARE(itemTitles(list("work")),
+           QStringList({QStringLiteral("Parent"), QStringLiteral("Sibling"),
+                        QStringLiteral("Promote bold [literal] & text")}));
+  const auto promoted = list("work").m_items.last();
+  QCOMPARE(promoted.m_listKey, key("work"));
+  QVERIFY(!QUuid(promoted.m_id).isNull());
+  QVERIFY(promoted.m_key != key("a") && promoted.m_key != key("b"));
+  QVERIFY(promoted.m_createdAt >= beforeCreation && promoted.m_createdAt <= afterCreation);
+  const QJsonObject expectedProperties{
+      {QStringLiteral("id"), promoted.m_id},
+      {QStringLiteral("createdAt"), promoted.m_createdAt.toUTC().toString(Qt::ISODateWithMs)}};
+  QCOMPARE(promoted.m_properties, expectedProperties);
+  QVERIFY(!promoted.m_fields.m_checked);
+  QVERIFY(!promoted.m_fields.m_important);
+  QVERIFY(!promoted.m_fields.m_due.isValid());
+  QVERIFY(!promoted.m_fields.m_myDay.isValid());
+  QVERIFY(promoted.m_fields.m_tags.isEmpty());
+  QVERIFY(promoted.m_fields.m_note.isEmpty());
+  QVERIFY(promoted.m_steps.isEmpty());
+  QCOMPARE(stepTitles(item("a")),
+           QStringList({QStringLiteral("Done"), QStringLiteral("Remaining")}));
+  QVERIFY(item("a").m_steps.first().m_checked);
+  QCOMPARE(m_controller->getSelectedItemKey(), key("a"));
+
+  auto expected = source;
+  const auto block = QStringLiteral("- [ ] ") + TodoDocument::escapeTitle(step.m_title) +
+                     QStringLiteral("\n  ") +
+                     TodoDocument::encodeMetadata(QStringLiteral("todo-item"), expectedProperties) +
+                     QStringLiteral("\n\n");
+  expected.insert(insertion, block);
+  expected.remove(step.m_range.m_start, step.m_range.length());
+  QCOMPARE(m_document->toPlainText(), expected);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), expected);
+  QCOMPARE(m_controller->getSelectedItemKey(), key("a"));
+  QCOMPARE(m_controller->getDocument().findItem(promoted.m_key)->m_createdAt, promoted.m_createdAt);
+}
+
+void TestTodoViewWindowController::promoteStepMaterializesOwners_data() {
+  QTest::addColumn<QString>("source");
+  QTest::newRow("implicit-at-unterminated-eof")
+      << QStringLiteral("## Inbox\n\n- [ ] Parent\n  - [ ] Promote");
+  QTest::newRow("implicit-before-next-list")
+      << QStringLiteral("## Inbox\n- [ ] Parent\n  - [ ] Promote\n\n"
+                        "## Other\n- [ ] Unrelated");
+  QTest::newRow("explicit-idless-with-properties")
+      << QStringLiteral("# Team\n<!-- todo-group: {\"future\":[1,true]} -->\n"
+                        "## Inbox\n<!-- todo-list: {\"future\":null} -->\n"
+                        "- [ ] Parent\n  <!-- todo-item: {\"future\":{\"keep\":true}} -->\n"
+                        "  - [ ] Promote\n");
+}
+
+void TestTodoViewWindowController::promoteStepMaterializesOwners() {
+  QFETCH(QString, source);
+  QVERIFY(load(source));
+  QVERIFY(m_controller->getDocument().isValid());
+  const auto originalList = m_controller->getDocument().m_lists.first();
+  const auto originalGroup = *m_controller->getDocument().groupForList(originalList);
+  const auto originalParent = originalList.m_items.first();
+  m_controller->setView(TodoViewKind::List, originalList.m_key);
+  m_controller->setSelectedItemKey(originalParent.m_key);
+  QVERIFY(m_controller->promoteStep(originalParent.m_key, 0));
+  const auto &snapshot = m_controller->getDocument();
+  const auto &owner = snapshot.m_lists.first();
+  const auto *group = snapshot.groupForList(owner);
+  QVERIFY(group);
+  QVERIFY(!group->m_implicit);
+  QCOMPARE(group->m_isDefault, originalGroup.m_isDefault);
+  QCOMPARE(group->m_title, originalGroup.m_title);
+  QVERIFY(!QUuid(group->m_id).isNull());
+  QVERIFY(!QUuid(owner.m_id).isNull());
+  QCOMPARE(itemTitles(owner), QStringList({QStringLiteral("Parent"), QStringLiteral("Promote")}));
+  const auto parent = owner.m_items.first();
+  const auto promoted = owner.m_items.last();
+  QVERIFY(!QUuid(parent.m_id).isNull());
+  QVERIFY(!QUuid(promoted.m_id).isNull());
+  QVERIFY(parent.m_id != promoted.m_id);
+  QCOMPARE(parent.m_listKey, owner.m_key);
+  QCOMPARE(promoted.m_listKey, owner.m_key);
+  QVERIFY(parent.m_steps.isEmpty());
+  QVERIFY(promoted.m_createdAt.isValid());
+  QVERIFY(!parent.m_createdAt.isValid());
+  QCOMPARE(m_controller->getSelectedItemKey(), parent.m_key);
+  QCOMPARE(m_controller->getProjection().m_listKey, owner.m_key);
+  QCOMPARE(m_controller->getProjection().m_groupKey, group->m_key);
+  auto groupProperties = originalGroup.m_properties;
+  groupProperties.insert(QStringLiteral("id"), group->m_id);
+  if (originalGroup.m_implicit) {
+    groupProperties.insert(QStringLiteral("default"), true);
+  }
+  QCOMPARE(group->m_properties, groupProperties);
+  auto listProperties = originalList.m_properties;
+  listProperties.insert(QStringLiteral("id"), owner.m_id);
+  QCOMPARE(owner.m_properties, listProperties);
+  auto parentProperties = originalParent.m_properties;
+  parentProperties.insert(QStringLiteral("id"), parent.m_id);
+  QCOMPARE(parent.m_properties, parentProperties);
+  if (snapshot.m_lists.size() > 1) {
+    const auto &other = snapshot.m_lists.last();
+    QCOMPARE(snapshot.text(other.m_range), QStringLiteral("## Other\n- [ ] Unrelated"));
+    QVERIFY(other.m_id.isEmpty());
+    QVERIFY(other.m_items.first().m_id.isEmpty());
+  }
+  const auto promotedSource = m_document->toPlainText();
+  const auto reloaded = TodoDocument::parse(promotedSource);
+  QVERIFY(reloaded.isValid());
+  QCOMPARE(reloaded.findItem(parent.m_key)->m_listKey, owner.m_key);
+  QCOMPARE(reloaded.findItem(promoted.m_key)->m_listKey, owner.m_key);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+  m_document->redo();
+  QCOMPARE(m_document->toPlainText(), promotedSource);
+}
+
+void TestTodoViewWindowController::promoteStepAdmission() {
+  const auto source = projectionSource();
+  QVERIFY(load(source));
+  QVERIFY(!m_controller->promoteStep(key("a"), 0));
+  QVERIFY(!m_controller->promoteStep(key("a"), -1));
+  QVERIFY(!m_controller->promoteStep(key("a"), 2));
+  QVERIFY(!m_controller->promoteStep(key("missing"), 0));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  for (const auto &title : {QString(), QStringLiteral("&#32;&#9;&#32;")}) {
+    const auto blankSource = QStringLiteral("## Inbox\n- [ ] Parent\n  - [ ] ") + title;
+    QVERIFY(load(blankSource));
+    QVERIFY(m_controller->getDocument().isValid());
+    const auto parent = m_controller->getDocument().m_lists.first().m_items.first();
+    QCOMPARE(parent.m_steps.size(), 1);
+    QVERIFY(parent.m_steps.first().m_title.trimmed().isEmpty());
+    QVERIFY(!m_controller->promoteStep(parent.m_key, 0));
+    QCOMPARE(m_document->toPlainText(), blankSource);
+    QVERIFY(!m_document->isModified());
+    QVERIFY(!m_document->isUndoAvailable());
+  }
+
+  QVERIFY(load(source, true));
+  QVERIFY(!m_controller->promoteStep(key("a"), 1));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+  QVERIFY(load(source));
+  m_controller->setEditable(false);
+  QVERIFY(!m_controller->promoteStep(key("a"), 1));
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+
+  m_controller->setEditable(true);
+  m_controller->setSourceRefreshEnabled(false);
+  QTextCursor cursor(m_document.get());
+  cursor.movePosition(QTextCursor::End);
+  cursor.insertText(QStringLiteral("\n<!-- external -->\n"));
+  const auto staleSource = m_document->toPlainText();
+  QVERIFY(!m_controller->promoteStep(key("a"), 1));
+  QCOMPARE(m_document->toPlainText(), staleSource);
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
 }
 
 void TestTodoViewWindowController::stepCompletionIsIndependent() {

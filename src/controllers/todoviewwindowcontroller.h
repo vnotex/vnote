@@ -70,6 +70,7 @@ public:
   bool addStep(const QString &p_itemId, const QString &p_title);
   bool updateStep(const QString &p_itemId, int p_index, const QString &p_title, bool p_checked);
   bool removeStep(const QString &p_itemId, int p_index);
+  bool promoteStep(const QString &p_itemId, int p_index);
   bool moveStep(const QString &p_itemId, int p_from, int p_to);
 
 signals:

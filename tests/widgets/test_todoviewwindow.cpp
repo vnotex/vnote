@@ -6,9 +6,11 @@
 #include <QtCore/qt_windows.h>
 #endif
 
+#include <QAbstractButton>
 #include <QAbstractTextDocumentLayout>
 #include <QAction>
 #include <QApplication>
+#include <QCalendarWidget>
 #include <QCheckBox>
 #include <QClipboard>
 #include <QComboBox>
@@ -16,6 +18,7 @@
 #include <QCursor>
 #include <QDateEdit>
 #include <QDesktopServices>
+#include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDragEnterEvent>
@@ -31,7 +34,6 @@
 #include <QLayout>
 #include <QLineEdit>
 #include <QListView>
-#include <QListWidget>
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
@@ -403,10 +405,23 @@ bool chooseOpenMenu(const char *p_actionName) {
   return false;
 }
 
-bool chooseButtonMenu(QPushButton *p_button, const char *p_actionName) {
+bool chooseButtonMenu(QAbstractButton *p_button, const char *p_actionName) {
   if (!p_button || !p_button->isEnabled() || !activate(p_button))
     return false;
   QTest::mouseClick(p_button, Qt::LeftButton);
+  return chooseOpenMenu(p_actionName);
+}
+
+bool chooseTaskMenu(TodoViewWindow *p_window, const QString &p_key, const char *p_actionName) {
+  auto *tasks = control<QListView>(p_window, "todoTasks");
+  auto *model = p_window->getController()->getTaskModel();
+  const auto index = model->index(model->rowForKey(p_key));
+  if (!tasks || !index.isValid() || !activate(tasks))
+    return false;
+  tasks->scrollTo(index);
+  const auto point = tasks->visualRect(index).center();
+  QContextMenuEvent event(QContextMenuEvent::Mouse, point, tasks->viewport()->mapToGlobal(point));
+  QCoreApplication::sendEvent(tasks->viewport(), &event);
   return chooseOpenMenu(p_actionName);
 }
 
@@ -609,7 +624,10 @@ private slots:
   void smartQuickAdd_data();
   void smartQuickAdd();
   void nativeTypingSharesSourceUndo();
-  void immediateNotesDatesTagsAndSteps();
+  void immediateNotesDatesAndSteps();
+  void inlineStepTypingAndActions();
+  void dueDateMenuAndPicker();
+  void detailsGesturesRejectStaleOwner();
   void filteringSortingAndDayRollover();
   void completedToggleKeepsNativeSelection_data();
   void completedToggleKeepsNativeSelection();
@@ -1157,7 +1175,7 @@ void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
   QVERIFY(controller->getDocument().findItem(key)->m_fields.m_title.isEmpty());
   window->undo();
   QCOMPARE(window->getLatestContent(), typed);
-  auto *important = control<QCheckBox>(window, "todoImportant");
+  auto *important = control<QToolButton>(window, "todoImportant");
   QVERIFY(important && activate(important));
   QTest::keyClick(important, Qt::Key_Space);
   QVERIFY(controller->getDocument().findItem(key)->m_fields.m_important);
@@ -1176,7 +1194,7 @@ void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
   QCOMPARE(window->getLatestContent().toUtf8(), source);
 }
 
-void TestTodoViewWindow::immediateNotesDatesTagsAndSteps() {
+void TestTodoViewWindow::immediateNotesDatesAndSteps() {
   createArea();
   auto source = c_source;
   source.replace("[\"work\"]", "[\"work\",\"WORK\",\" spaced \" ]");
@@ -1212,58 +1230,306 @@ void TestTodoViewWindow::immediateNotesDatesTagsAndSteps() {
   QVERIFY(note->getTextEdit()->hasFocus());
   QTest::keyClick(note->getTextEdit(), Qt::Key_Y, Qt::ControlModifier);
   QCOMPARE(fields().m_note, markdown);
-  auto *hasDue = control<QCheckBox>(window, "todoHasDue");
-  auto *due = control<QDateEdit>(window, "todoDue");
-  auto *clearDue = control<QPushButton>(window, "todoClearDue");
+  auto *due = control<QPushButton>(window, "todoDue");
   auto *myDay = control<QCheckBox>(window, "todoMyDay");
-  QVERIFY(hasDue && due && clearDue && myDay);
-  hasDue->setChecked(true);
-  due->setDate(QDate(2026, 11, 20));
-  QCOMPARE(fields().m_due, QDate(2026, 11, 20));
+  QVERIFY(due && myDay);
+  QVERIFY(chooseButtonMenu(due, "todoDueTomorrowAction"));
+  QCOMPARE(fields().m_due, controller->getProjection().m_today.addDays(1));
   myDay->setChecked(true);
   QCOMPARE(fields().m_myDay, controller->getProjection().m_today);
-  clearDue->click();
+  QVERIFY(chooseButtonMenu(due, "todoClearDueAction"));
   QVERIFY(!fields().m_due.isValid());
   QCOMPARE(fields().m_myDay, controller->getProjection().m_today);
-  auto *tags = control<QLineEdit>(window, "todoTagInput");
-  QVERIFY(typeText(tags, QStringLiteral("  team, planning  ")));
-  QTest::keyClick(tags, Qt::Key_Return);
-  QVERIFY(tags->text().isEmpty());
-  QCOMPARE(fields().m_tags, QStringList({QStringLiteral("work"), QStringLiteral("spaced"),
-                                         QStringLiteral("team, planning")}));
-  QVERIFY(typeText(tags, QStringLiteral("WORK")));
-  QTest::keyClick(tags, Qt::Key_Return);
-  QCOMPARE(fields().m_tags.size(), 3);
-  auto *removeTag = control<QToolButton>(window, "todoTagRemove_2");
-  QVERIFY(removeTag);
-  removeTag->click();
-  QCOMPARE(fields().m_tags.size(), 2);
   auto *addStep = control<QLineEdit>(window, "todoAddStep");
   QVERIFY(typeText(addStep, QStringLiteral("Third step")));
   QTest::keyClick(addStep, Qt::Key_Return);
-  auto *steps = control<QListWidget>(window, "todoSteps");
-  auto *stepTitle = control<QLineEdit>(window, "todoStepTitle");
-  auto *stepChecked = control<QCheckBox>(window, "todoStepChecked");
-  auto *up = control<QPushButton>(window, "todoStepUp");
-  auto *down = control<QPushButton>(window, "todoStepDown");
-  auto *remove = control<QPushButton>(window, "todoStepDelete");
-  QVERIFY(steps && stepTitle && stepChecked && up && down && remove);
-  QCOMPARE(steps->count(), 3);
-  steps->setCurrentRow(2);
+  auto *steps = control<QWidget>(window, "todoSteps");
+  QVERIFY(steps);
+  auto *stepTitle = control<QLineEdit>(steps, "todoStepTitle_2");
+  auto *stepChecked = control<QCheckBox>(steps, "todoStepChecked_2");
+  QVERIFY(stepTitle && stepChecked);
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 3);
   QVERIFY(typeText(stepTitle, QStringLiteral("Renamed step")));
   stepChecked->setChecked(true);
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.last().m_title,
            QStringLiteral("Renamed step"));
   QVERIFY(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.last().m_checked);
   QVERIFY(!fields().m_checked);
-  up->click();
-  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps[1].m_title,
-           QStringLiteral("Renamed step"));
-  down->click();
-  remove->click();
+  QVERIFY(chooseButtonMenu(control<QToolButton>(steps, "todoStepMore_2"), "todoDeleteStepAction"));
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 2);
   window->undo();
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 3);
+  QCOMPARE(fields().m_tags, QStringList({QStringLiteral("work"), QStringLiteral("WORK"),
+                                         QStringLiteral(" spaced ")}));
+}
+
+void TestTodoViewWindow::inlineStepTypingAndActions() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("inline-steps.todo")).isValid());
+  auto *window = current();
+  const auto key = QStringLiteral("id:alpha");
+  QVERIFY(window && openTask(window, key));
+  auto *controller = window->getController();
+  const auto original = window->getLatestContent();
+  QPointer<QLineEdit> title = control<QLineEdit>(window, "todoStepTitle_1");
+  QVERIFY(typeText(title, QStringLiteral("Typed inline step")));
+  QCOMPARE(control<QLineEdit>(window, "todoStepTitle_1"), title.data());
+  QCOMPARE(title->cursorPosition(), int(QStringLiteral("Typed inline step").size()));
+  QVERIFY(title->hasFocus());
+  QCOMPARE(controller->getDocument().findItem(key)->m_steps[1].m_title,
+           QStringLiteral("Typed inline step"));
+  const auto typed = window->getLatestContent();
+  QTest::keyClick(title, Qt::Key_Z, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent(), original);
+  QVERIFY(title && title->hasFocus());
+  QCOMPARE(title->text(), QStringLiteral("Second step"));
+  QTest::keyClick(title, Qt::Key_Y, Qt::ControlModifier);
+  QCOMPARE(window->getLatestContent(), typed);
+  QVERIFY(activate(control<QLineEdit>(window, "todoTitle")));
+  QVERIFY(typeText(title, QStringLiteral("Separate typing group")));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), typed);
+
+  QVERIFY(chooseButtonMenu(control<QToolButton>(window, "todoStepMore_1"),
+                           "todoToggleStepCompletedAction"));
+  QVERIFY(controller->getDocument().findItem(key)->m_steps[1].m_checked);
+  QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_checked);
+  auto *more = control<QToolButton>(window, "todoStepMore_1");
+  QVERIFY(more && activate(more));
+  QTest::mouseClick(more, Qt::LeftButton);
+  QTRY_VERIFY(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
+  auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+  auto *promote = control<QAction>(menu, "todoPromoteStepAction");
+  QVERIFY(!promote || !promote->isEnabled());
+  QVERIFY(chooseOpenMenu("todoToggleStepCompletedAction"));
+  QVERIFY(!controller->getDocument().findItem(key)->m_steps[1].m_checked);
+  QCOMPARE(window->getLatestContent(), typed);
+
+  QVERIFY(chooseButtonMenu(control<QToolButton>(window, "todoStepMore_0"), "todoDeleteStepAction"));
+  QCOMPARE(controller->getDocument().findItem(key)->m_steps.size(), 1);
+  QCOMPARE(controller->getDocument().findItem(key)->m_steps[0].m_title,
+           QStringLiteral("Typed inline step"));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), typed);
+
+  const auto parentFields = controller->getDocument().findItem(key)->m_fields;
+  const auto taskCount =
+      controller->getDocument().findList(QStringLiteral("id:work"))->m_items.size();
+  QVERIFY(
+      chooseButtonMenu(control<QToolButton>(window, "todoStepMore_1"), "todoPromoteStepAction"));
+  const auto *parent = controller->getDocument().findItem(key);
+  QVERIFY(parent);
+  QCOMPARE(parent->m_steps.size(), 1);
+  QCOMPARE(parent->m_steps[0].m_title, QStringLiteral("First step"));
+  QCOMPARE(parent->m_fields.m_note, parentFields.m_note);
+  QCOMPARE(parent->m_fields.m_tags, parentFields.m_tags);
+  QCOMPARE(controller->getSelectedItemKey(), key);
+  const auto *list = controller->getDocument().findList(QStringLiteral("id:work"));
+  QCOMPARE(list->m_items.size(), taskCount + 1);
+  const auto &promoted = list->m_items.last();
+  QCOMPARE(promoted.m_fields.m_title, QStringLiteral("Typed inline step"));
+  QVERIFY(!promoted.m_id.isEmpty() && promoted.m_id != parent->m_id);
+  QVERIFY(promoted.m_createdAt.isValid());
+  QVERIFY(!promoted.m_fields.m_checked && !promoted.m_fields.m_important);
+  QVERIFY(!promoted.m_fields.m_due.isValid() && !promoted.m_fields.m_myDay.isValid());
+  QVERIFY(promoted.m_fields.m_note.isEmpty() && promoted.m_fields.m_tags.isEmpty());
+  QVERIFY(promoted.m_steps.isEmpty());
+  const auto promotedSource = window->getLatestContent();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), typed);
+  window->redo();
+  QCOMPARE(window->getLatestContent(), promotedSource);
+  QCOMPARE(controller->getSelectedItemKey(), key);
+}
+
+void TestTodoViewWindow::dueDateMenuAndPicker() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("due-picker.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
+  auto *controller = window->getController();
+  const auto dueDate = [&] {
+    return controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_due;
+  };
+  auto *due = control<QPushButton>(window, "todoDue");
+  QVERIFY(due);
+  const auto original = window->getLatestContent();
+  const QDate today(2040, 2, 28);
+  controller->setToday(today);
+  const char *presets[] = {"todoDueTodayAction", "todoDueTomorrowAction", "todoDueNextWeekAction"};
+  const int offsets[] = {0, 1, 7};
+  for (int i = 0; i < 3; ++i) {
+    QVERIFY(chooseButtonMenu(due, presets[i]));
+    QCOMPARE(dueDate(), today.addDays(offsets[i]));
+    window->undo();
+    QCOMPARE(window->getLatestContent(), original);
+  }
+  controller->setToday(today.addDays(1));
+  QVERIFY(chooseButtonMenu(due, "todoDueTodayAction"));
+  QCOMPARE(dueDate(), today.addDays(1));
+  QVERIFY(chooseButtonMenu(due, "todoClearDueAction"));
+  QVERIFY(!dueDate().isValid());
+  window->undo();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+
+  const auto openPicker = [&]() -> QDialog * {
+    if (!chooseButtonMenu(due, "todoPickDueDateAction"))
+      return nullptr;
+    if (!QTest::qWaitFor([] {
+          auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+          return dialog && dialog->objectName() == QLatin1String("todoDueDateDialog");
+        }))
+      return nullptr;
+    return qobject_cast<QDialog *>(QApplication::activeModalWidget());
+  };
+  QPointer<QDialog> dialog = openPicker();
+  const auto closePicker = qScopeGuard([&] {
+    if (dialog)
+      dialog->reject();
+  });
+  QVERIFY(dialog);
+  auto *calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+  auto *cancel = control<QPushButton>(dialog, "todoDueDateCancel");
+  QVERIFY(calendar && cancel);
+  QCOMPARE(calendar->selectedDate(), today.addDays(1));
+  const QDate picked(2041, 12, 31);
+  calendar->setSelectedDate(picked);
+  QCOMPARE(window->getLatestContent(), original);
+  const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+  QTest::mouseClick(cancel, Qt::LeftButton);
+  QTRY_VERIFY(!dialog || !dialog->isVisible());
+  QCOMPARE(window->getLatestContent(), original);
+  QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+
+  dialog = openPicker();
+  QVERIFY(dialog);
+  calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+  auto *accept = control<QPushButton>(dialog, "todoDueDateAccept");
+  QVERIFY(calendar && accept);
+  calendar->setSelectedDate(picked);
+  QCOMPARE(window->getLatestContent(), original);
+  QTest::mouseClick(accept, Qt::LeftButton);
+  QTRY_VERIFY(!dialog || !dialog->isVisible());
+  QCOMPARE(dueDate(), picked);
+  const auto dated = window->getLatestContent();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), original);
+  window->redo();
+  QCOMPARE(window->getLatestContent(), dated);
+
+  dialog = openPicker();
+  QVERIFY(dialog);
+  calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+  cancel = control<QPushButton>(dialog, "todoDueDateCancel");
+  QVERIFY(calendar && cancel);
+  QCOMPARE(calendar->selectedDate(), picked);
+  calendar->setSelectedDate(picked.addDays(10));
+  QTest::mouseClick(cancel, Qt::LeftButton);
+  QTRY_VERIFY(!dialog || !dialog->isVisible());
+  QCOMPARE(window->getLatestContent(), dated);
+  QVERIFY(chooseButtonMenu(due, "todoClearDueAction"));
+  QVERIFY(!dueDate().isValid());
+  window->undo();
+  QCOMPARE(window->getLatestContent(), dated);
+}
+
+void TestTodoViewWindow::detailsGesturesRejectStaleOwner() {
+  createArea();
+  const auto filename = QStringLiteral("stale-details.todo");
+  QVERIFY(openNote(filename).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  // Reuse the isolated profile; each scenario restores its source and editability.
+  for (const char *name :
+       {"todoToggleStepCompletedAction", "todoPromoteStepAction", "todoDeleteStepAction",
+        "todoDueTomorrowAction", "todoPickDueDateAction"}) {
+    const auto actionName = QString::fromLatin1(name);
+    for (int change = 0; change < 4; ++change) {
+      qInfo() << "Stale details gesture:" << actionName << "transition:" << change;
+      QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+      const bool picker = actionName == QLatin1String("todoPickDueDateAction");
+      const bool step = actionName.contains(QLatin1String("Step"));
+      QPointer<QAction> action;
+      QPointer<QMenu> menu;
+      QPointer<QDialog> dialog;
+      const auto closePopup = qScopeGuard([&] {
+        if (dialog)
+          dialog->reject();
+        if (menu)
+          menu->close();
+      });
+      if (picker) {
+        QVERIFY(chooseButtonMenu(control<QPushButton>(window, "todoDue"), "todoPickDueDateAction"));
+        QTRY_VERIFY(qobject_cast<QDialog *>(QApplication::activeModalWidget()));
+        dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+        auto *calendar = control<QCalendarWidget>(dialog, "todoDueCalendar");
+        QVERIFY(calendar);
+        calendar->setSelectedDate(QDate(2040, 2, 29));
+      } else {
+        QAbstractButton *button =
+            step ? static_cast<QAbstractButton *>(control<QToolButton>(window, "todoStepMore_1"))
+                 : static_cast<QAbstractButton *>(control<QPushButton>(window, "todoDue"));
+        QVERIFY(button && activate(button));
+        QTest::mouseClick(button, Qt::LeftButton);
+        QTRY_VERIFY(qobject_cast<QMenu *>(QApplication::activePopupWidget()));
+        menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+        action = menu->findChild<QAction *>(actionName);
+        QVERIFY(action && action->isEnabled());
+      }
+      auto expected = c_source;
+      if (change == 0) {
+        expected.replace("Second step", "Foreign replacement step");
+        QVERIFY(writeBytes(absolute(filename), expected));
+        QVERIFY(window->reload());
+      } else if (change == 1) {
+        controller->setSelectedItemKey(QStringLiteral("id:beta"));
+      } else if (change == 2) {
+        window->setMode(ViewWindowMode::Read);
+      } else {
+        auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+        fields.m_title = QStringLiteral("Changed while details gesture was open");
+        QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+        expected = window->getLatestContent().toUtf8();
+      }
+      const auto undoSteps = window->getSourceEditor()->document()->availableUndoSteps();
+      if (picker && dialog) {
+        // Even a queued acceptance must not authorize the obsolete gesture.
+        dialog->accept();
+      } else if (action) {
+        action->trigger();
+      }
+      QCOMPARE(window->getLatestContent().toUtf8(), expected);
+      QCOMPARE(window->getSourceEditor()->document()->availableUndoSteps(), undoSteps);
+      QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_steps.size(), 2);
+      QVERIFY(!controller->getDocument()
+                   .findItem(QStringLiteral("id:alpha"))
+                   ->m_fields.m_due.isValid());
+      QVERIFY(
+          !controller->getDocument().findItem(QStringLiteral("id:beta"))->m_fields.m_due.isValid());
+      if (change != 3)
+        QVERIFY(!window->isModified());
+      if (dialog)
+        dialog->reject();
+      if (menu)
+        menu->close();
+      QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+      if (change == 0) {
+        QVERIFY(writeBytes(absolute(filename), c_source));
+        QVERIFY(window->reload());
+      } else if (change == 2) {
+        window->setMode(ViewWindowMode::Edit);
+      } else if (change == 3) {
+        window->undo();
+      }
+      QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+      if (change == 3)
+        QVERIFY(window->save());
+      QCOMPARE(readBytes(absolute(filename)), c_source);
+      QVERIFY(!window->isModified());
+    }
+  }
 }
 
 void TestTodoViewWindow::filteringSortingAndDayRollover() {
@@ -1291,19 +1557,7 @@ void TestTodoViewWindow::filteringSortingAndDayRollover() {
   QVERIFY(typeText(search, QStringLiteral("First step")));
   QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
   QVERIFY(openTask(window, QStringLiteral("id:alpha")));
-  auto *chip = control<QToolButton>(window, "todoTagChip_0");
-  QVERIFY(chip);
-  chip->click();
-  QCOMPARE(controller->getProjection().m_tag, QStringLiteral("work"));
-  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
   QVERIFY(typeText(search, QStringLiteral("Gamma")));
-  QVERIFY(taskTitles(window).isEmpty());
-  search->clear();
-  QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Alpha")}));
-  QVERIFY(typeText(search, QStringLiteral("Gamma")));
-  auto *clearTag = control<QPushButton>(window, "todoTagFilter");
-  QVERIFY(clearTag);
-  clearTag->click();
   QCOMPARE(taskTitles(window), QStringList({QStringLiteral("Gamma")}));
   QCOMPARE(controller->getProjection().m_search, QStringLiteral("Gamma"));
   search->clear();
@@ -1458,8 +1712,6 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
   QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
   auto *controller = window->getController();
   const auto original = *controller->getDocument().findItem(QStringLiteral("id:alpha"));
-  auto *move = control<QPushButton>(window, "todoMoveTask");
-  QVERIFY(move);
   bool movedThroughPicker = false;
   QTimer picker;
   QElapsedTimer pickerDeadline;
@@ -1490,7 +1742,7 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
     }
   });
   picker.start();
-  move->click();
+  QVERIFY(chooseTaskMenu(window, QStringLiteral("id:alpha"), "todoMoveTaskAction"));
   QVERIFY(movedThroughPicker);
   const auto *moved = controller->getDocument().findItem(QStringLiteral("id:alpha"));
   QVERIFY(moved);
@@ -1519,14 +1771,12 @@ void TestTodoViewWindow::nativeMoveReorderAndDeletion() {
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.first().m_key,
            QStringLiteral("id:alpha"));
   QVERIFY(openTask(window, QStringLiteral("id:alpha")));
-  auto *remove = control<QPushButton>(window, "todoDeleteTask");
-  QVERIFY(remove);
   bool named = false;
   {
     DialogAnswers answer({QMessageBox::Yes}, [&](QMessageBox *box) {
       named = box->text().contains(QStringLiteral("Alpha"));
     });
-    remove->click();
+    QVERIFY(chooseTaskMenu(window, QStringLiteral("id:alpha"), "todoDeleteTaskAction"));
     QVERIFY(answer.accepted());
   }
   QVERIFY(named);
@@ -2780,8 +3030,6 @@ void TestTodoViewWindow::deletionConfirmationRejectsForeignReload() {
   QVERIFY(window && openTask(window, QStringLiteral("id:alpha")));
   auto authoritative = c_source;
   authoritative.replace("Alpha", "Changed while confirmation was open");
-  auto *remove = control<QPushButton>(window, "todoDeleteTask");
-  QVERIFY(remove);
   bool reloaded = false;
   DialogAnswers dialog({QMessageBox::Yes}, [&](QMessageBox *) {
     {
@@ -2790,7 +3038,7 @@ void TestTodoViewWindow::deletionConfirmationRejectsForeignReload() {
     }
     reloaded = window->reload();
   });
-  remove->click();
+  QVERIFY(chooseTaskMenu(window, QStringLiteral("id:alpha"), "todoDeleteTaskAction"));
   QVERIFY(dialog.accepted());
   QVERIFY(reloaded);
   QCOMPARE(window->getLatestContent().toUtf8(), authoritative);
@@ -3083,7 +3331,7 @@ void TestTodoViewWindow::readOnlyNavigation() {
   QVERIFY(openTask(window, QStringLiteral("id:alpha")));
   auto *title = control<QLineEdit>(window, "todoTitle");
   auto *add = control<QLineEdit>(window, "todoAddTask");
-  auto *important = control<QCheckBox>(window, "todoImportant");
+  auto *important = control<QToolButton>(window, "todoImportant");
   auto *note = control<SimpleMarkdownEditor>(window, "todoNote");
   QVERIFY(title && add && important && note);
   QVERIFY(title->isReadOnly() || !title->isEnabled());
@@ -3262,7 +3510,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   auto *listsButton = control<QPushButton>(window, "todoListsButton");
   auto *tasks = control<QListView>(window, "todoTasks");
   auto *splitter = control<QSplitter>(window, "todoSplitter");
-  auto *back = control<QPushButton>(window, "todoBack");
+  auto *back = control<QToolButton>(window, "todoBack");
   QVERIFY(sidebar && listsButton && tasks && splitter && back);
   QTRY_VERIFY(sidebar->isVisible());
   QVERIFY(window->getTodoEditor()->width() >= 840);
@@ -3278,8 +3526,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   auto *detailsScroll = control<QScrollArea>(window, "todoDetailsScroll");
   QVERIFY(detailsScroll);
   QTRY_COMPARE(detailsScroll->horizontalScrollBar()->maximum(), 0);
-  for (const char *name :
-       {"todoStepUp", "todoStepDown", "todoStepDelete", "todoDue", "todoClearDue"}) {
+  for (const char *name : {"todoStepChecked_0", "todoStepTitle_0", "todoStepMore_0", "todoDue"}) {
     auto *action = control<QWidget>(window, name);
     QVERIFY(action);
     const auto left = action->mapTo(detailsScroll->viewport(), QPoint()).x();
@@ -3694,28 +3941,32 @@ void TestTodoViewWindow::storedMyDayRemainsVisible() {
   fields.m_myDay = today.addDays(-1);
   QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
   auto *day = control<QCheckBox>(window, "todoMyDay");
-  auto *stored = control<QLabel>(window, "todoMyDayDate");
-  QVERIFY(day && stored);
+  QVERIFY(day);
   QVERIFY(!day->isChecked());
-  QTRY_VERIFY(stored->isVisible());
   const auto oldDay = QLocale().toString(fields.m_myDay, QLocale::ShortFormat);
-  QVERIFY(stored->text().contains(oldDay));
+  QVERIFY(day->toolTip().contains(oldDay));
+  QVERIFY(day->accessibleDescription().contains(oldDay));
   const auto before = window->getSourceEditor()->toPlainText();
   controller->setToday(today.addDays(1));
-  QVERIFY(stored->text().contains(oldDay));
+  QVERIFY(day->toolTip().contains(oldDay));
+  QVERIFY(day->accessibleDescription().contains(oldDay));
   QCOMPARE(window->getSourceEditor()->toPlainText(), before);
   controller->setToday(today);
   day->setChecked(true);
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay, today);
-  QVERIFY(stored->text().contains(QLocale().toString(today, QLocale::ShortFormat)));
+  const auto storedToday = QLocale().toString(today, QLocale::ShortFormat);
+  QVERIFY(day->toolTip().contains(storedToday));
+  QVERIFY(day->accessibleDescription().contains(storedToday));
   day->setChecked(false);
   QVERIFY(
       !controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay.isValid());
-  QVERIFY(!stored->isVisible());
+  QVERIFY(!day->toolTip().contains(storedToday));
+  QVERIFY(!day->accessibleDescription().contains(storedToday));
   window->undo();
   window->undo();
   QCOMPARE(window->getSourceEditor()->toPlainText(), before);
-  QVERIFY(stored->text().contains(oldDay));
+  QVERIFY(day->toolTip().contains(oldDay));
+  QVERIFY(day->accessibleDescription().contains(oldDay));
 }
 
 void TestTodoViewWindow::ownPendingSaveKeepsNewerEdits() {

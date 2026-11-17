@@ -621,6 +621,18 @@ One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 and applies source commands without widgets or storage writes. Projected task notes use a
 separate `SimpleMarkdownEditor` input with local undo disabled and source-history routing.
 Typing coalesces by field until focus, selection, mode or another command ends the group.
+The details panel has a right-aligned close icon, then completion/title/star, inline steps,
+Add a step, Add to My Day, due date and Markdown note, in that order. The note placeholder is
+"Add note (markdown supported)". Step rows retain their input widgets through typing echoes;
+structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
+Delete, and Promote to Task only for incomplete steps. Promotion appends a fresh task to the same
+list, transfers only the nonblank step title, and removes the step in one source/undo transaction;
+parent selection, unrelated source and existing metadata survive. Blank titles reject unchanged.
+Due-date menus use projection today for Today, Tomorrow (+1 day) and Next Week (+7 days), plus
+Pick A Date and, when set, Remove Due Date. The calendar commits only on OK; menu actions and
+picker acceptance reject stale source, selection, binding and read-only state. Task tags have no
+native editing/filter controls or row badges; existing tag metadata remains lossless. Task move
+and deletion remain in the task context menu, not as details-panel buttons.
 Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
 cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
 **Edit Description** opens a `PlainTextEdit` dialog with local undo and OK/Cancel; only acceptance
@@ -768,9 +780,10 @@ owned comment JSON. Normal notebook content search still reads raw `.todo` sourc
 metadata. Sort/filter/Completed expansion never reorder or dirty source. The visible window
 refreshes today's date on activation and each minute, without reminders or persisted UI state.
 Quick-add due controls appear and apply only in unfiltered Planned; a remembered choice never
-leaks into another view or filtered result. Details show the stored My Day date even when it is
-not today, before a user replaces it. Step actions fit the 320px details pane without outer
-horizontal scrolling.
+leaks into another view or filtered result. The Add to My Day checkbox tooltip and accessible
+description retain the stored date even when it is not today, before a user replaces it. Step
+rows fit the 320px details pane without outer horizontal scrolling. These presentation changes
+reuse existing document fields and require no document or configuration migration.
 Below 840 logical pixels, a top-leading icon-only Lists toggle uses Lucide's `list_tree.svg`
 and opens the existing sidebar over the task area without resizing it. Its tooltip and accessible
 name remain "Show lists and search"; the icon follows theme changes and the checked/open state.
@@ -781,11 +794,11 @@ Ctrl+F first leaves narrow details, then opens and focuses sidebar search; Enter
 filtered tasks. Escape leaves active search IME composition to the input. Hiding/rebinding the
 editor clears the overlay, and widening docks the same sidebar again. The overlay follows the
 splitter's leading edge in RTL and uses the theme's normal base background, including Native.
-Task details still use a Back-enabled stacked page at narrow widths.
+Task details use a stacked page at narrow widths; the same close icon returns to tasks.
 Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
 and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day
-dates, steps, notes and tags remain in the secondary line; without any remaining details the title
-is vertically centered. Row heights and checkbox/star hitboxes do not change.
+dates, steps and note indicators remain in the secondary line; without any remaining details the
+title is vertically centered. Row heights and checkbox/star hitboxes do not change.
 The Completed section shows its count in a trailing `TreeChildCountDelegate` badge instead of
 parenthesized title text. Its chevron, title and badge mirror in RTL; accessible text and tooltips
 retain the count. Single click, Enter and Space toggle only the completed row range, leaving Qt's

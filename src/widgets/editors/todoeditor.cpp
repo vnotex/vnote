@@ -2,6 +2,7 @@
 
 #include <QActionGroup>
 #include <QApplication>
+#include <QCalendarWidget>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
@@ -21,13 +22,13 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
-#include <QListWidget>
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPixmap>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScopedValueRollback>
@@ -40,6 +41,7 @@
 #include <QTextDocument>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QtMath>
 #include <cmath>
 #include <functional>
 
@@ -48,6 +50,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <gui/utils/treechildcountdelegate.h>
+#include <gui/utils/widgetutils.h>
 #include <m3/qt/emoji_line_edit.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
@@ -495,7 +498,6 @@ public:
     if (!p_index.data(TodoTaskModel::NoteRole).toString().isEmpty()) {
       summaries.append(TodoEditor::tr("Note"));
     }
-    summaries.append(p_index.data(TodoTaskModel::TagsRole).toStringList());
     p_painter->setFont(titleFont);
     p_painter->setPen(textColor);
     p_painter->drawText(textRect,
@@ -703,8 +705,6 @@ void TodoEditor::createUi() {
   m_description->setMinimumWidth(0);
   m_description->setMaximumHeight(104);
   tasksLayout->addWidget(m_description);
-  m_tagFilter = named(new QPushButton(m_taskPane), "todoTagFilter", tr("Clear exact tag filter"));
-  tasksLayout->addWidget(m_tagFilter, 0, Qt::AlignLeft);
   m_tasks = named(new QListView(m_taskPane), "todoTasks",
                   tr("Tasks; Enter opens details, Space completes"));
   m_tasks->setItemDelegate(new TaskDelegate(m_services, m_tasks));
@@ -802,12 +802,6 @@ void TodoEditor::createUi() {
     showTaskMenu(index.data(TodoTaskModel::IdRole).toString(),
                  m_tasks->viewport()->mapToGlobal(p_position));
   });
-  connect(m_tagFilter, &QPushButton::clicked, this, [this]() {
-    if (m_controller) {
-      endTyping();
-      m_controller->setTagFilter({});
-    }
-  });
   connect(m_listIcon, &QPushButton::clicked, this, &TodoEditor::chooseListIcon);
   connect(m_listMore, &QPushButton::clicked, this, [this]() {
     if (m_controller) {
@@ -841,116 +835,105 @@ void TodoEditor::createDetails() {
   m_detailsScroll->setWidget(m_details);
   auto *layout = new QVBoxLayout(m_details);
   spacing(layout);
-  m_back = named(new QPushButton(tr("Back to tasks"), m_details), "todoBack",
-                 tr("Close details and return to tasks"));
-  layout->addWidget(m_back);
+  auto *header = new QHBoxLayout;
+  header->addStretch();
+  m_back = named(new QToolButton(m_details), "todoBack", tr("Close details and return to tasks"));
+  WidgetUtils::setupCloseToolButton(m_back);
+  m_back->setToolTip(tr("Close"));
+  header->addWidget(m_back, 0, Qt::AlignRight);
+  layout->addLayout(header);
+
+  auto *task = new QHBoxLayout;
+  task->setSpacing(4);
+  m_checked = named(new QCheckBox(m_details), "todoChecked", tr("Task completed"));
+  m_checked->setToolTip(tr("Task completed"));
   m_title = named(new QLineEdit(m_details), "todoTitle", tr("Task title"));
   m_title->setPlaceholderText(tr("Untitled task"));
-  layout->addWidget(m_title);
-  auto *state = new QHBoxLayout;
-  state->setSpacing(4);
-  m_checked = named(new QCheckBox(tr("Completed"), m_details), "todoChecked", tr("Task completed"));
-  m_important =
-      named(new QCheckBox(tr("Important"), m_details), "todoImportant", tr("Task important"));
-  state->addWidget(m_checked);
-  state->addWidget(m_important);
-  layout->addLayout(state);
-  m_myDay =
-      named(new QCheckBox(tr("My Day"), m_details), "todoMyDay", tr("Include task in My Day"));
-  layout->addWidget(m_myDay);
-  m_myDayDate = named(new QLabel(m_details), "todoMyDayDate", tr("Stored My Day date"));
-  m_myDayDate->setWordWrap(true);
-  layout->addWidget(m_myDayDate);
-  m_hasDue = named(new QCheckBox(tr("Due"), m_details), "todoHasDue", tr("Task has a due date"));
-  layout->addWidget(m_hasDue);
-  auto *due = new QHBoxLayout;
-  due->setSpacing(4);
-  m_due = named(new QDateEdit(QDate::currentDate(), m_details), "todoDue", tr("Task due date"));
-  m_due->setCalendarPopup(true);
-  m_due->setDisplayFormat(QStringLiteral("yyyy-MM-dd"));
-  m_clearDue =
-      named(new QPushButton(tr("Clear"), m_details), "todoClearDue", tr("Clear task due date"));
-  due->addWidget(m_due, 1);
-  due->addWidget(m_clearDue);
-  layout->addLayout(due);
-  auto *stepLabel = named(new QLabel(tr("Steps"), m_details), "todoStepsLabel", tr("Steps"));
-  m_steps = named(new QListWidget(m_details), "todoSteps", tr("Task steps"));
-  m_steps->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  m_steps->setMinimumHeight(80);
-  m_steps->setMaximumHeight(160);
-  stepLabel->setBuddy(m_steps);
-  layout->addWidget(stepLabel);
+  m_important = named(new QToolButton(m_details), "todoImportant", tr("Task important"));
+  m_important->setCheckable(true);
+  m_important->setAutoRaise(true);
+  m_important->setIconSize(QSize(20, 20));
+  task->addWidget(m_checked);
+  task->addWidget(m_title, 1);
+  task->addWidget(m_important);
+  layout->addLayout(task);
+
+  m_steps = named(new QWidget(m_details), "todoSteps", tr("Task steps"));
+  m_stepLayout = new QVBoxLayout(m_steps);
+  m_stepLayout->setContentsMargins(0, 0, 0, 0);
+  m_stepLayout->setSpacing(4);
+  m_steps->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   layout->addWidget(m_steps);
-  auto *step = new QHBoxLayout;
-  step->setSpacing(4);
-  m_stepTitle = named(new QLineEdit(m_details), "todoStepTitle", tr("Selected step title"));
-  m_stepTitle->setPlaceholderText(tr("Untitled step"));
-  m_stepChecked =
-      named(new QCheckBox(tr("Done"), m_details), "todoStepChecked", tr("Selected step completed"));
-  step->addWidget(m_stepTitle, 1);
-  step->addWidget(m_stepChecked);
-  layout->addLayout(step);
-  auto *stepActions = new QHBoxLayout;
-  stepActions->setSpacing(4);
-  m_stepUp = named(new QPushButton(tr("Up"), m_details), "todoStepUp", tr("Move step up"));
-  m_stepDown = named(new QPushButton(tr("Down"), m_details), "todoStepDown", tr("Move step down"));
-  m_stepDelete =
-      named(new QPushButton(tr("Delete"), m_details), "todoStepDelete", tr("Delete step"));
-  stepActions->addWidget(m_stepUp);
-  stepActions->addWidget(m_stepDown);
-  stepActions->addWidget(m_stepDelete);
-  layout->addLayout(stepActions);
   m_addStep = named(new QLineEdit(m_details), "todoAddStep", tr("Add a step; press Enter"));
   m_addStep->setPlaceholderText(tr("Add a step"));
   layout->addWidget(m_addStep);
-
-  auto *tagsLabel = named(new QLabel(tr("Tags"), m_details), "todoTagsLabel", tr("Tags"));
-  auto *tagScroll = named(new QScrollArea(m_details), "todoTagsScroll", tr("Task tags"));
-  tagScroll->setWidgetResizable(true);
-  tagScroll->setFrameShape(QFrame::NoFrame);
-  tagScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  tagScroll->setMinimumHeight(48);
-  tagScroll->setMaximumHeight(64);
-  m_tagChips = named(new QWidget(tagScroll), "todoTagChips", tr("Click a tag to filter tasks"));
-  m_tagLayout = new QHBoxLayout(m_tagChips);
-  m_tagLayout->setContentsMargins(0, 0, 0, 0);
-  m_tagLayout->setSpacing(4);
-  tagScroll->setWidget(m_tagChips);
-  layout->addWidget(tagsLabel);
-  layout->addWidget(tagScroll);
-  m_tagInput = named(new QLineEdit(m_details), "todoTagInput",
-                     tr("New tag; Enter commits, spaces and commas are literal"));
-  m_tagInput->setPlaceholderText(tr("Add a tag"));
-  tagsLabel->setBuddy(m_tagInput);
-  layout->addWidget(m_tagInput);
-  auto *noteLabel =
-      named(new QLabel(tr("Markdown note"), m_details), "todoNoteLabel", tr("Markdown note"));
+  m_myDay = named(new QCheckBox(tr("Add to My Day"), m_details), "todoMyDay",
+                  tr("Include task in My Day"));
+  layout->addWidget(m_myDay);
+  m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
+  layout->addWidget(m_due);
   m_note = named(new SimpleMarkdownEditor(m_services, m_details), "todoNote",
                  tr("Task note in Markdown"));
   named(m_note->getTextEdit(), "todoNoteTextEdit", tr("Task note in Markdown"));
+  m_note->getTextEdit()->setPlaceholderText(tr("Add note (markdown supported)"));
   m_note->getTextEdit()->setUndoRedoEnabled(false);
   m_note->setMinimumHeight(136);
-  noteLabel->setBuddy(m_note->getTextEdit());
-  layout->addWidget(noteLabel);
   layout->addWidget(m_note, 1);
-  auto *actions = new QHBoxLayout;
-  actions->setSpacing(4);
-  m_move = named(new QPushButton(tr("Move to list"), m_details), "todoMoveTask",
-                 tr("Move task to another list"));
-  m_delete =
-      named(new QPushButton(tr("Delete task"), m_details), "todoDeleteTask", tr("Delete task"));
-  actions->addWidget(m_move);
-  actions->addWidget(m_delete);
-  layout->addLayout(actions);
 
-  connect(m_back, &QPushButton::clicked, this, &TodoEditor::closeDetails);
+  auto *theme = m_services.get<ThemeService>();
+  const auto refreshIcons = [this, theme]() {
+    m_back->setIcon(
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("close.svg"))));
+    // Match the outline/filled stars in the task list, including disabled states.
+    QPainterPath path;
+    constexpr double pi = 3.14159265358979323846;
+    for (int i = 0; i < 10; ++i) {
+      const double angle = -pi / 2 + i * pi / 5;
+      const double radius = i % 2 ? 4 : 9;
+      const QPointF point(10 + std::cos(angle) * radius, 10 + std::sin(angle) * radius);
+      if (i == 0) {
+        path.moveTo(point);
+      } else {
+        path.lineTo(point);
+      }
+    }
+    path.closeSubpath();
+    QIcon star;
+    const qreal scale = devicePixelRatioF();
+    for (const auto mode : {QIcon::Normal, QIcon::Disabled}) {
+      const QColor color(theme->paletteColor(mode == QIcon::Normal
+                                                 ? QStringLiteral("base#normal#fg")
+                                                 : QStringLiteral("base#disabled#fg")));
+      for (const auto state : {QIcon::Off, QIcon::On}) {
+        QPixmap pixmap(qCeil(20 * scale), qCeil(20 * scale));
+        pixmap.setDevicePixelRatio(scale);
+        pixmap.fill(Qt::transparent);
+        QPainter painter(&pixmap);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(color, 1.5));
+        painter.setBrush(state == QIcon::On ? QBrush(color) : Qt::NoBrush);
+        painter.drawPath(path);
+        painter.end();
+        star.addPixmap(pixmap, mode, state);
+      }
+    }
+    m_important->setIcon(star);
+    const auto more =
+        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg")));
+    for (const auto &row : m_stepRows) {
+      row.m_more->setIcon(more);
+    }
+  };
+  refreshIcons();
+  connect(theme, &ThemeService::themeChanged, this, refreshIcons);
+  connect(m_back, &QToolButton::clicked, this, &TodoEditor::closeDetails);
   connect(m_title, &QLineEdit::textEdited, this, [this](const QString &p_text) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_title = p_text; }, m_title);
   });
   connect(m_checked, &QCheckBox::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_checked = p_checked; });
   });
-  connect(m_important, &QCheckBox::toggled, this, [this](bool p_checked) {
+  connect(m_important, &QToolButton::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_important = p_checked; });
   });
   connect(m_myDay, &QCheckBox::toggled, this, [this](bool p_checked) {
@@ -958,59 +941,12 @@ void TodoEditor::createDetails() {
       p_fields.m_myDay = p_checked ? m_controller->getProjection().m_today : QDate();
     });
   });
-  connect(m_hasDue, &QCheckBox::toggled, this, [this](bool p_checked) {
-    updateTask(
-        [&](TodoTaskFields &p_fields) { p_fields.m_due = p_checked ? m_due->date() : QDate(); });
-  });
-  connect(m_due, &QDateEdit::dateChanged, this, [this](const QDate &p_date) {
-    if (m_hasDue->isChecked()) {
-      updateTask([&](TodoTaskFields &p_fields) { p_fields.m_due = p_date; });
-    }
-  });
-  connect(m_clearDue, &QPushButton::clicked, this,
-          [this]() { updateTask([](TodoTaskFields &p_fields) { p_fields.m_due = QDate(); }); });
+  connect(m_due, &QPushButton::clicked, this, &TodoEditor::showDueMenu);
   connect(m_note, &SimpleMarkdownEditor::textChanged, this, [this]() {
     if (!m_updating) {
       const auto text = m_note->toPlainText();
       updateTask([&](TodoTaskFields &p_fields) { p_fields.m_note = text; }, m_note->getTextEdit());
     }
-  });
-  connect(m_steps, &QListWidget::currentRowChanged, this, [this](int p_row) {
-    if (!m_updating) {
-      endTyping();
-      m_stepIndex = p_row;
-      QScopedValueRollback<bool> updating(m_updating, true);
-      refreshSteps(selectedItem());
-    }
-  });
-  connect(m_steps, &QListWidget::itemChanged, this, [this](QListWidgetItem *p_item) {
-    if (m_updating || !canMutate()) {
-      return;
-    }
-    const int row = m_steps->row(p_item);
-    const auto *item = selectedItem();
-    if (!item || row < 0 || row >= item->m_steps.size()) {
-      return;
-    }
-    const auto key = item->m_key;
-    const auto title = item->m_steps[row].m_title;
-    const bool checked = p_item->checkState() == Qt::Checked;
-    command([this, key, row, title, checked]() {
-      return m_controller->updateStep(key, row, title, checked);
-    });
-  });
-  connect(m_stepTitle, &QLineEdit::textEdited, this, [this]() { updateStep(true); });
-  connect(m_stepChecked, &QCheckBox::toggled, this, [this]() { updateStep(false); });
-  connect(m_stepUp, &QPushButton::clicked, this, [this]() { moveStep(-1); });
-  connect(m_stepDown, &QPushButton::clicked, this, [this]() { moveStep(1); });
-  connect(m_stepDelete, &QPushButton::clicked, this, [this]() {
-    const auto *item = selectedItem();
-    if (!item || m_stepIndex < 0) {
-      return;
-    }
-    const auto key = item->m_key;
-    const int row = m_stepIndex;
-    command([this, key, row]() { return m_controller->removeStep(key, row); });
   });
   connect(m_addStep, &QLineEdit::returnPressed, this, [this]() {
     const auto *item = selectedItem();
@@ -1023,9 +959,6 @@ void TodoEditor::createDetails() {
       m_addStep->clear();
     }
   });
-  connect(m_tagInput, &QLineEdit::returnPressed, this, [this]() { editTags(m_tagInput->text()); });
-  connect(m_move, &QPushButton::clicked, this, [this]() { moveTaskToList(m_detailsKey); });
-  connect(m_delete, &QPushButton::clicked, this, [this]() { deleteTask(m_detailsKey); });
 }
 
 void TodoEditor::bindController(TodoViewWindowController *p_controller) {
@@ -1114,7 +1047,6 @@ void TodoEditor::refresh() {
     m_description->hide();
     m_listMore->hide();
     m_viewTitle->setText(tr("All Tasks"));
-    m_tagFilter->hide();
     refreshDetails();
     refreshQuickAdd();
     updateTaskCursor();
@@ -1142,8 +1074,6 @@ void TodoEditor::refresh() {
   if (m_search->text() != projection.m_search) {
     m_search->setText(projection.m_search);
   }
-  m_tagFilter->setText(tr("Tag: %1 (clear)").arg(projection.m_tag));
-  m_tagFilter->setVisible(!projection.m_tag.isEmpty());
   const bool filtered = !projection.m_search.isEmpty() || !projection.m_tag.isEmpty();
   const auto *list = projection.m_view == TodoViewKind::List && !filtered
                          ? m_controller->getDocument().findList(projection.m_listKey)
@@ -1194,10 +1124,9 @@ void TodoEditor::refresh() {
 void TodoEditor::refreshDetails() {
   const auto *item = selectedItem();
   const QString key = item ? item->m_key : QString();
-  if (key != m_detailsKey && !(m_committing && m_typingField)) {
+  const bool changed = key != m_detailsKey && !(m_committing && m_typingField);
+  if (changed) {
     endTyping();
-    m_stepIndex = -1;
-    m_tagInput->clear();
     m_addStep->clear();
   }
   m_detailsKey = key;
@@ -1212,117 +1141,100 @@ void TodoEditor::refreshDetails() {
   m_checked->setEnabled(writable);
   m_important->setEnabled(writable);
   m_myDay->setEnabled(writable);
-  m_hasDue->setEnabled(writable);
-  m_due->setEnabled(writable && fields.m_due.isValid());
-  m_clearDue->setEnabled(writable && fields.m_due.isValid());
-  m_move->setEnabled(writable);
-  m_delete->setEnabled(writable);
+  m_due->setEnabled(writable);
   m_addStep->setEnabled(writable);
-  m_tagInput->setEnabled(writable);
   if (!preservesField(m_title) && m_title->text() != fields.m_title) {
     m_title->setText(fields.m_title);
   }
   m_checked->setChecked(fields.m_checked);
   m_important->setChecked(fields.m_important);
+  m_important->setToolTip(fields.m_important ? tr("Remove importance") : tr("Mark as important"));
   m_myDay->setChecked(m_controller && fields.m_myDay.isValid() &&
                       fields.m_myDay == m_controller->getProjection().m_today);
-  m_myDayDate->setText(
+  const auto dayDescription =
       fields.m_myDay.isValid()
           ? tr("My Day: %1").arg(QLocale().toString(fields.m_myDay, QLocale::ShortFormat))
-          : QString());
-  m_myDayDate->setAccessibleName(m_myDayDate->text());
-  m_myDayDate->setVisible(fields.m_myDay.isValid());
-  m_hasDue->setChecked(fields.m_due.isValid());
-  m_due->setDate(fields.m_due.isValid() ? fields.m_due : QDate::currentDate());
+          : tr("Include task in My Day");
+  m_myDay->setToolTip(dayDescription);
+  m_myDay->setAccessibleDescription(dayDescription);
+  m_due->setText(fields.m_due.isValid() ? QLocale().toString(fields.m_due, QLocale::ShortFormat)
+                                        : tr("Add Due Date"));
+  m_due->setAccessibleDescription(m_due->text());
   if (!preservesField(m_note->getTextEdit()) && m_note->toPlainText() != fields.m_note) {
     m_note->setPlainText(fields.m_note);
   }
-  refreshSteps(item);
-  refreshTags(item);
+  refreshSteps(item, changed);
   updateLayout();
 }
 
-void TodoEditor::refreshSteps(const TodoItem *p_item) {
+void TodoEditor::refreshSteps(const TodoItem *p_item, bool p_reset) {
   const int count = p_item ? int(p_item->m_steps.size()) : 0;
   const bool writable = canMutate() && p_item;
-  // Reuse rows so a typing echo never destroys the focused step editor or scroll position.
-  while (m_steps->count() > count) {
-    delete m_steps->takeItem(m_steps->count() - 1);
+  // Own typing echoes retain the focused field, cursor and IME preedit. Structural
+  // changes retire all row callbacks before indexes are assigned to new controls.
+  if (p_reset || count != m_stepRows.size()) {
+    endTyping();
+    for (const auto &row : m_stepRows) {
+      m_stepLayout->removeWidget(row.m_widget);
+      row.m_widget->hide();
+      row.m_widget->setEnabled(false);
+      for (auto *child : row.m_widget->findChildren<QWidget *>()) {
+        disconnect(child, nullptr, this, nullptr);
+        child->setObjectName({});
+      }
+      row.m_widget->deleteLater();
+    }
+    m_stepRows.clear();
+    if (count) {
+      const auto moreIcon = IconUtils::fetchIconWithDisabledState(
+          m_services.get<ThemeService>()->getIconFile(QStringLiteral("menu.svg")));
+      m_stepRows.reserve(count);
+      for (int i = 0; i < count; ++i) {
+        auto *widget = new QWidget(m_steps);
+        auto *layout = new QHBoxLayout(widget);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(4);
+        auto *checked = new QCheckBox(widget);
+        checked->setObjectName(QStringLiteral("todoStepChecked_%1").arg(i));
+        auto *title = new QLineEdit(widget);
+        title->setObjectName(QStringLiteral("todoStepTitle_%1").arg(i));
+        title->setAccessibleName(tr("Step title"));
+        title->setPlaceholderText(tr("Untitled step"));
+        auto *more = new QToolButton(widget);
+        more->setObjectName(QStringLiteral("todoStepMore_%1").arg(i));
+        more->setIcon(moreIcon);
+        more->setIconSize(QSize(20, 20));
+        more->setAutoRaise(true);
+        more->setToolTip(tr("Step options"));
+        layout->addWidget(checked);
+        layout->addWidget(title, 1);
+        layout->addWidget(more);
+        m_stepLayout->addWidget(widget);
+        m_stepRows.append({widget, checked, title, more});
+        connect(title, &QLineEdit::textEdited, this, [this, i]() { updateStep(i, true); });
+        connect(checked, &QCheckBox::toggled, this, [this, i]() { updateStep(i, false); });
+        connect(more, &QToolButton::clicked, this, [this, i, more]() {
+          showStepMenu(i, more->mapToGlobal(QPoint(0, more->height())));
+        });
+      }
+    }
   }
   for (int i = 0; i < count; ++i) {
     const auto &step = p_item->m_steps[i];
-    auto *row = i < m_steps->count() ? m_steps->item(i) : new QListWidgetItem(m_steps);
+    const auto &row = m_stepRows[i];
     const auto title = step.m_title.trimmed().isEmpty() ? tr("Untitled step") : step.m_title;
-    row->setText(title);
-    row->setData(Qt::AccessibleTextRole,
-                 tr("%1, %2").arg(title, step.m_checked ? tr("completed") : tr("not completed")));
-    row->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled |
-                  (writable ? Qt::ItemIsUserCheckable : Qt::NoItemFlags));
-    row->setCheckState(step.m_checked ? Qt::Checked : Qt::Unchecked);
-  }
-  m_stepIndex = count ? qBound(0, m_stepIndex < 0 ? 0 : m_stepIndex, count - 1) : -1;
-  m_steps->setCurrentRow(m_stepIndex);
-  const auto *step = m_stepIndex >= 0 ? &p_item->m_steps[m_stepIndex] : nullptr;
-  m_stepTitle->setEnabled(step != nullptr);
-  m_stepTitle->setReadOnly(!writable);
-  const QString title = step ? step->m_title : QString();
-  if (!preservesField(m_stepTitle) && m_stepTitle->text() != title) {
-    m_stepTitle->setText(title);
-  }
-  m_stepChecked->setEnabled(writable && step);
-  m_stepChecked->setChecked(step && step->m_checked);
-  m_stepUp->setEnabled(writable && m_stepIndex > 0);
-  m_stepDown->setEnabled(writable && m_stepIndex >= 0 && m_stepIndex + 1 < count);
-  m_stepDelete->setEnabled(writable && step);
-}
-
-void TodoEditor::refreshTags(const TodoItem *p_item) {
-  const QStringList tags = p_item ? p_item->m_fields.m_tags : QStringList();
-  if (tags != m_renderedTags) {
-    m_renderedTags = tags;
-    while (auto *entry = m_tagLayout->takeAt(0)) {
-      if (entry->widget()) {
-        entry->widget()->hide();
-        for (auto *child : entry->widget()->findChildren<QObject *>()) {
-          child->setObjectName({});
-        }
-        entry->widget()->deleteLater();
-      }
-      delete entry;
+    row.m_checked->setAccessibleName(tr("Complete step: %1").arg(title));
+    row.m_checked->setToolTip(row.m_checked->accessibleName());
+    row.m_checked->setEnabled(writable);
+    row.m_checked->setChecked(step.m_checked);
+    row.m_title->setReadOnly(!writable);
+    if (!preservesField(row.m_title) && row.m_title->text() != step.m_title) {
+      row.m_title->setText(step.m_title);
     }
-    for (int i = 0; i < tags.size(); ++i) {
-      auto *chip = new QWidget(m_tagChips);
-      auto *layout = new QHBoxLayout(chip);
-      layout->setContentsMargins(0, 0, 0, 0);
-      layout->setSpacing(0);
-      auto *tag = new QToolButton(chip);
-      tag->setObjectName(QStringLiteral("todoTagChip_%1").arg(i));
-      tag->setText(tags[i]);
-      tag->setAccessibleName(tr("Filter by tag %1").arg(tags[i]));
-      auto *remove = new QToolButton(chip);
-      remove->setObjectName(QStringLiteral("todoTagRemove_%1").arg(i));
-      remove->setText(tr("Remove"));
-      remove->setAccessibleName(tr("Remove tag %1").arg(tags[i]));
-      remove->setProperty("todoTagRemove", true);
-      layout->addWidget(tag);
-      layout->addWidget(remove);
-      m_tagLayout->addWidget(chip);
-      const auto value = tags[i];
-      connect(tag, &QToolButton::clicked, this, [this, value]() {
-        if (m_controller) {
-          endTyping();
-          m_controller->setTagFilter(value);
-        }
-      });
-      connect(remove, &QToolButton::clicked, this, [this, i]() { editTags({}, i); });
-    }
-    m_tagLayout->addStretch();
+    row.m_more->setAccessibleName(tr("Options for step: %1").arg(title));
+    row.m_more->setEnabled(writable);
   }
-  for (auto *button : m_tagChips->findChildren<QToolButton *>()) {
-    if (button->property("todoTagRemove").toBool()) {
-      button->setEnabled(canMutate() && p_item);
-    }
-  }
+  m_steps->setVisible(count > 0);
 }
 
 void TodoEditor::refreshQuickAdd() {
@@ -1391,7 +1303,6 @@ void TodoEditor::updateLayout() {
       }
     }
   }
-  m_back->setText(narrow ? tr("Back to tasks") : tr("Close details"));
   if (narrow) {
     m_pages->setCurrentWidget(m_detailsOpen ? static_cast<QWidget *>(m_detailsScroll) : m_taskPane);
     updateSidebarGeometry();
@@ -1661,64 +1572,122 @@ void TodoEditor::addTask() {
   }
 }
 
-void TodoEditor::updateStep(bool p_typing) {
+void TodoEditor::updateStep(int p_index, bool p_typing) {
   if (m_updating || !canMutate()) {
     return;
   }
   const auto *item = selectedItem();
-  if (!item || m_stepIndex < 0 || m_stepIndex >= item->m_steps.size()) {
+  if (!item || p_index < 0 || p_index >= item->m_steps.size() || p_index >= m_stepRows.size()) {
     return;
   }
   const auto key = item->m_key;
-  const int index = m_stepIndex;
-  const auto title = m_stepTitle->text();
-  const bool checked = m_stepChecked->isChecked();
-  command([this, key, index, title,
-           checked]() { return m_controller->updateStep(key, index, title, checked); },
-          p_typing ? m_stepTitle : nullptr);
+  const auto &row = m_stepRows[p_index];
+  const auto title = row.m_title->text();
+  const bool checked = row.m_checked->isChecked();
+  command([this, key, p_index, title,
+           checked]() { return m_controller->updateStep(key, p_index, title, checked); },
+          p_typing ? row.m_title : nullptr);
 }
 
-void TodoEditor::moveStep(int p_direction) {
+void TodoEditor::showStepMenu(int p_index, const QPoint &p_globalPosition) {
   const auto *item = selectedItem();
-  const int from = m_stepIndex;
-  const int to = from + p_direction;
-  if (!item || from < 0 || to < 0 || to >= item->m_steps.size()) {
+  if (!item || p_index < 0 || p_index >= item->m_steps.size() || !canMutate()) {
     return;
   }
+  endTyping();
+  const auto token = gesture();
   const auto key = item->m_key;
-  m_stepIndex = to;
-  if (!command([this, key, from, to]() { return m_controller->moveStep(key, from, to); })) {
-    m_stepIndex = from;
-    refresh();
-  }
-}
-
-void TodoEditor::editTags(const QString &p_add, int p_remove) {
-  const auto *item = selectedItem();
-  const auto addition = p_add.trimmed();
-  if (!item || !canMutate() || (p_remove < 0 && addition.isEmpty())) {
-    return;
-  }
-  QStringList tags;
-  for (int i = 0; i < item->m_fields.m_tags.size(); ++i) {
-    if (i != p_remove) {
-      const auto &tag = item->m_fields.m_tags[i];
-      if (!tags.contains(tag, Qt::CaseInsensitive)) {
-        tags.append(tag);
+  const auto &step = item->m_steps[p_index];
+  const bool checked = step.m_checked;
+  const auto title = step.m_title;
+  auto *menu = named(new QMenu(this), "todoStepMenu", tr("Step options"));
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+  const auto add = [&](const QString &p_label, const char *p_name,
+                       const std::function<bool()> &p_command) {
+    auto *action = menu->addAction(p_label);
+    action->setObjectName(QString::fromLatin1(p_name));
+    connect(action, &QAction::triggered, this, [this, token, p_command]() {
+      if (accepts(token)) {
+        command(p_command);
       }
+    });
+  };
+  add(checked ? tr("Mark as Not Completed") : tr("Mark as Completed"),
+      "todoToggleStepCompletedAction", [this, key, p_index, title, checked]() {
+        return m_controller->updateStep(key, p_index, title, !checked);
+      });
+  if (!checked) {
+    add(tr("Promote to Task"), "todoPromoteStepAction",
+        [this, key, p_index]() { return m_controller->promoteStep(key, p_index); });
+  }
+  add(tr("Delete"), "todoDeleteStepAction",
+      [this, key, p_index]() { return m_controller->removeStep(key, p_index); });
+  menu->popup(p_globalPosition);
+}
+
+void TodoEditor::showDueMenu() {
+  const auto *item = selectedItem();
+  if (!item || !canMutate()) {
+    return;
+  }
+  endTyping();
+  const auto token = gesture();
+  const auto today = m_controller->getProjection().m_today;
+  auto *menu = named(new QMenu(this), "todoDueMenu", tr("Task due date"));
+  menu->setAttribute(Qt::WA_DeleteOnClose);
+  const auto addDate = [&](const QString &p_label, const char *p_name, const QDate &p_date) {
+    auto *action = menu->addAction(p_label);
+    action->setObjectName(QString::fromLatin1(p_name));
+    connect(action, &QAction::triggered, this, [this, token, p_date]() {
+      if (accepts(token)) {
+        updateTask([&](TodoTaskFields &p_fields) { p_fields.m_due = p_date; });
+      }
+    });
+  };
+  addDate(tr("Today"), "todoDueTodayAction", today);
+  addDate(tr("Tomorrow"), "todoDueTomorrowAction", today.addDays(1));
+  addDate(tr("Next Week"), "todoDueNextWeekAction", today.addDays(7));
+  auto *pick = menu->addAction(tr("Pick A Date"));
+  pick->setObjectName(QStringLiteral("todoPickDueDateAction"));
+  connect(pick, &QAction::triggered, this, [this, token]() {
+    if (accepts(token)) {
+      pickDueDate();
     }
+  });
+  if (item->m_fields.m_due.isValid()) {
+    menu->addSeparator();
+    addDate(tr("Remove Due Date"), "todoClearDueAction", {});
   }
-  if (!addition.isEmpty() && !tags.contains(addition, Qt::CaseInsensitive)) {
-    tags.append(addition);
+  menu->popup(m_due->mapToGlobal(QPoint(0, m_due->height())));
+}
+
+void TodoEditor::pickDueDate() {
+  const auto *item = selectedItem();
+  if (!item || !canMutate()) {
+    return;
   }
-  const auto key = item->m_key;
-  auto fields = item->m_fields;
-  fields.m_tags = tags;
-  const QPointer<TodoEditor> self(this);
-  if (command([this, key, fields]() { return m_controller->updateTask(key, fields); }) && self &&
-      p_remove < 0) {
-    m_tagInput->clear();
-  }
+  const auto token = gesture();
+  auto *dialog = named(new QDialog(this), "todoDueDateDialog", tr("Pick A Date"));
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->setWindowTitle(tr("Pick A Date"));
+  auto *layout = new QVBoxLayout(dialog);
+  auto *calendar = named(new QCalendarWidget(dialog), "todoDueCalendar", tr("Task due date"));
+  calendar->setSelectedDate(item->m_fields.m_due.isValid() ? item->m_fields.m_due
+                                                           : m_controller->getProjection().m_today);
+  layout->addWidget(calendar);
+  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+  named(buttons->button(QDialogButtonBox::Ok), "todoDueDateAccept", tr("Set due date"));
+  named(buttons->button(QDialogButtonBox::Cancel), "todoDueDateCancel", tr("Cancel due date"));
+  layout->addWidget(buttons);
+  connect(buttons, &QDialogButtonBox::accepted, dialog, &QDialog::accept);
+  connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+  connect(dialog, &QDialog::accepted, this, [this, token, calendar]() {
+    if (accepts(token)) {
+      const auto date = calendar->selectedDate();
+      updateTask([&](TodoTaskFields &p_fields) { p_fields.m_due = date; });
+    }
+  });
+  dialog->open();
 }
 
 TodoEditor::Gesture TodoEditor::gesture() const {
@@ -2374,8 +2343,8 @@ void TodoEditor::showTextMenu(QWidget *p_widget, const QPoint &p_position) {
   }
   endTyping();
   const auto token = gesture();
-  const bool projected = line == m_title || line == m_listTitle || line == m_stepTitle ||
-                         text == m_note->getTextEdit() || m_due->isAncestorOf(p_widget);
+  const bool projected = line == m_title || line == m_listTitle ||
+                         m_steps->isAncestorOf(p_widget) || text == m_note->getTextEdit();
   auto *menu = new QMenu(this);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   auto *undo = menu->addAction(tr("Undo"));
@@ -2619,11 +2588,6 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
       }
     }
   }
-  if (widget == m_steps && key->modifiers() == Qt::AltModifier &&
-      (key->key() == Qt::Key_Up || key->key() == Qt::Key_Down)) {
-    moveStep(key->key() == Qt::Key_Up ? -1 : 1);
-    return true;
-  }
   return QWidget::eventFilter(p_object, p_event);
 }
 
@@ -2684,12 +2648,10 @@ void TodoEditor::resetForBuffer() {
   m_groupFocused = false;
   m_detailsKey.clear();
   m_lastDestination.clear();
-  m_stepIndex = -1;
   {
     QScopedValueRollback<bool> updating(m_updating, true);
     m_addTask->clear();
     m_addStep->clear();
-    m_tagInput->clear();
     m_addHasDue->setChecked(false);
     m_addDue->setDate(QDate::currentDate());
   }

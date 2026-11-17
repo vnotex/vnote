@@ -2,6 +2,7 @@
 #define VNOTEX_TODOEDITOR_H
 
 #include <QPointer>
+#include <QVector>
 #include <QWidget>
 
 #include <core/tododocument.h>
@@ -9,16 +10,16 @@
 class QCheckBox;
 class QComboBox;
 class QDateEdit;
-class QHBoxLayout;
 class QLabel;
 class QLineEdit;
 class QListView;
-class QListWidget;
 class QModelIndex;
 class QPushButton;
 class QScrollArea;
 class QSplitter;
 class QStackedWidget;
+class QToolButton;
+class QVBoxLayout;
 
 namespace vnotex {
 class ServiceLocator;
@@ -67,8 +68,10 @@ private:
   void createDetails();
   void refresh();
   void refreshDetails();
-  void refreshSteps(const TodoItem *p_item);
-  void refreshTags(const TodoItem *p_item);
+  void refreshSteps(const TodoItem *p_item, bool p_reset);
+  void showStepMenu(int p_index, const QPoint &p_globalPosition);
+  void showDueMenu();
+  void pickDueDate();
   void refreshQuickAdd();
   void updateTaskCursor();
   void setTaskCursor(const QModelIndex &p_index);
@@ -97,9 +100,7 @@ private:
   void moveTaskToList(const QString &p_key);
   void moveTask(const QString &p_key, int p_direction);
   void moveList(const QString &p_key, int p_direction);
-  void moveStep(int p_direction);
-  void updateStep(bool p_typing);
-  void editTags(const QString &p_add, int p_remove = -1);
+  void updateStep(int p_index, bool p_typing);
   template <typename Update>
   void updateTask(const Update &p_update, QWidget *p_typingField = nullptr);
   template <typename Command>
@@ -132,43 +133,35 @@ private:
   QLabel *m_viewTitle = nullptr;
   QLabel *m_description = nullptr;
   QPushButton *m_listMore = nullptr;
-  QPushButton *m_tagFilter = nullptr;
   QListView *m_tasks = nullptr;
   QComboBox *m_destination = nullptr;
   QCheckBox *m_addHasDue = nullptr;
   QDateEdit *m_addDue = nullptr;
   QLineEdit *m_addTask = nullptr;
   QPushButton *m_addButton = nullptr;
-  QPushButton *m_back = nullptr;
+  QToolButton *m_back = nullptr;
   QLineEdit *m_title = nullptr;
   QCheckBox *m_checked = nullptr;
-  QCheckBox *m_important = nullptr;
+  QToolButton *m_important = nullptr;
   QCheckBox *m_myDay = nullptr;
-  QLabel *m_myDayDate = nullptr;
-  QCheckBox *m_hasDue = nullptr;
-  QDateEdit *m_due = nullptr;
-  QPushButton *m_clearDue = nullptr;
-  QListWidget *m_steps = nullptr;
-  QLineEdit *m_stepTitle = nullptr;
-  QCheckBox *m_stepChecked = nullptr;
-  QPushButton *m_stepUp = nullptr;
-  QPushButton *m_stepDown = nullptr;
-  QPushButton *m_stepDelete = nullptr;
+  QPushButton *m_due = nullptr;
+  struct StepRow {
+    QWidget *m_widget;
+    QCheckBox *m_checked;
+    QLineEdit *m_title;
+    QToolButton *m_more;
+  };
+  QWidget *m_steps = nullptr;
+  QVBoxLayout *m_stepLayout = nullptr;
+  QVector<StepRow> m_stepRows;
   QLineEdit *m_addStep = nullptr;
-  QWidget *m_tagChips = nullptr;
-  QHBoxLayout *m_tagLayout = nullptr;
-  QLineEdit *m_tagInput = nullptr;
   SimpleMarkdownEditor *m_note = nullptr;
-  QPushButton *m_move = nullptr;
-  QPushButton *m_delete = nullptr;
   QString m_detailsKey;
   QString m_lastDestination;
-  QStringList m_renderedTags;
   QPointer<QWidget> m_typingField;
   quint64 m_generation = 0;
   quint64 m_typingSession = 0;
   int m_zoomDelta = 0;
-  int m_stepIndex = -1;
   bool m_editable = false;
   bool m_updating = false;
   bool m_committing = false;

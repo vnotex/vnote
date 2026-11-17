@@ -1434,6 +1434,33 @@ bool TodoViewWindowController::removeStep(const QString &p_itemId, int p_index) 
   return commit(change);
 }
 
+bool TodoViewWindowController::promoteStep(const QString &p_itemId, int p_index) {
+  if (!admit()) {
+    return false;
+  }
+  const TodoList *list = nullptr;
+  const auto *item = m_snapshot.findItem(p_itemId, &list);
+  if (!item || p_index < 0 || p_index >= item->m_steps.size() || item->m_steps[p_index].m_checked) {
+    return reject(tr("Only an existing, incomplete step can be promoted."));
+  }
+  const auto &step = item->m_steps[p_index];
+  if (step.m_title.trimmed().isEmpty() || !singleLine(step.m_title)) {
+    return reject(tr("A new task needs a nonempty, single-line title."));
+  }
+  Change change;
+  ensureHeader(change);
+  ensureListOwners(change, *list);
+  ensureItemIdentity(change, *item);
+  TodoTaskFields fields;
+  fields.m_title = step.m_title;
+  const int position = list->m_taskInsertion;
+  change.m_edits.append(m_snapshot.edit(step.m_range, {}));
+  change.m_edits.append(
+      m_snapshot.edit({position, position},
+                      separatedBlock(m_snapshot.m_source, position, taskBlock(fields, newId()))));
+  return commit(change);
+}
+
 bool TodoViewWindowController::moveStep(const QString &p_itemId, int p_from, int p_to) {
   if (!admit()) {
     return false;
