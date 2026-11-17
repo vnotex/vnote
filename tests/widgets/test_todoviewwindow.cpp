@@ -4202,6 +4202,19 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   QVERIFY(sidebar->isVisible());
   QTRY_VERIFY(
       selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
+  // Native's inactive alternate-base can be transparent black; selection must stay readable.
+  m_theme->switchTheme(QStringLiteral("native"));
+  QVERIFY(activate(tasks));
+  {
+    QLineEdit otherWindow;
+    otherWindow.resize(200, 40);
+    otherWindow.show();
+    QVERIFY(activate(&otherWindow));
+    QTRY_VERIFY(!m_area->isActiveWindow());
+    QTRY_VERIFY(
+        selectedTitleReadable(tasks, model->index(model->rowForKey(QStringLiteral("id:alpha")))));
+  }
+  QVERIFY(activate(tasks));
   m_theme->switchTheme(QStringLiteral("pure"));
   QTRY_COMPARE(window->getSourceEditor()->getTextEdit()->palette().color(QPalette::Text), light);
   QCOMPARE(window->getLatestContent(), source);

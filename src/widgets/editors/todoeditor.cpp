@@ -435,14 +435,19 @@ public:
     }
   }
 
+  static QRect rowRect(const QStyleOptionViewItem &p_option) {
+    return p_option.rect.adjusted(0, 2, 0, -2);
+  }
+
   static QRect checkRect(const QStyleOptionViewItem &p_option) {
     const int side = qMax(20, p_option.fontMetrics.height());
-    return QRect(p_option.rect.left() + 8, p_option.rect.center().y() - side / 2, side, side);
+    const auto row = rowRect(p_option);
+    return QRect(row.left() + 16, row.center().y() - side / 2, side, side);
   }
   static QRect starRect(const QStyleOptionViewItem &p_option) {
     const int side = qMax(20, p_option.fontMetrics.height());
-    return QRect(p_option.rect.right() - side - 8, p_option.rect.center().y() - side / 2, side,
-                 side);
+    const auto row = rowRect(p_option);
+    return QRect(row.right() - side - 16, row.center().y() - side / 2, side, side);
   }
 
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
@@ -453,17 +458,19 @@ public:
     const auto *style = widget ? widget->style() : QApplication::style();
     option.text.clear();
     option.features &= ~QStyleOptionViewItem::HasCheckIndicator;
-    style->drawControl(QStyle::CE_ItemViewItem, &option, p_painter, widget);
+    const bool section = p_index.data(TodoTaskModel::SectionRole).toBool();
+    if (section) {
+      style->drawControl(QStyle::CE_ItemViewItem, &option, p_painter, widget);
+    }
     p_painter->save();
     p_painter->setClipRect(option.rect);
     p_painter->setRenderHint(QPainter::Antialiasing);
     const auto group =
         (option.state & QStyle::State_Enabled) ? QPalette::Active : QPalette::Disabled;
     const bool selected = option.state & QStyle::State_Selected;
-    // QSS paints the item background, but does not rewrite this option's
-    // HighlightedText. Use the same theme tokens as QListView::item:selected.
+    // Match the theme's list-item color pairs, not the OS HighlightedText color.
     const auto foreground =
-        selected ? (option.state & QStyle::State_Active
+        selected ? (!section || (option.state & QStyle::State_Active)
                         ? QStringLiteral("widgets#qlistview#item#selected#active#fg")
                         : QStringLiteral("widgets#qlistview#item#selected#inactive#fg"))
                  : (option.state & QStyle::State_MouseOver
@@ -474,8 +481,9 @@ public:
                                  : QColor(m_theme->paletteColor(foreground));
     p_painter->setPen(textColor);
     p_painter->setFont(option.font);
-    const QRect circle = checkRect(option);
-    if (p_index.data(TodoTaskModel::SectionRole).toBool()) {
+    if (section) {
+      const int side = qMax(20, option.fontMetrics.height());
+      const QRect circle(option.rect.left() + 8, option.rect.center().y() - side / 2, side, side);
       const auto visual = [&](const QRect &p_rect) {
         return QStyle::visualRect(option.direction, option.rect, p_rect);
       };
@@ -508,6 +516,26 @@ public:
       return;
     }
 
+    const auto row = rowRect(option);
+    if (selected || (option.state & QStyle::State_MouseOver)) {
+      auto background = textColor;
+      if (selected) {
+        // Keep the active pair like Lists; Native's inactive alternate-base can be transparent.
+        background = QColor(
+            m_theme->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#bg")));
+      } else {
+        background.setAlpha(18);
+      }
+      p_painter->setPen(Qt::NoPen);
+      p_painter->setBrush(background);
+      p_painter->drawRoundedRect(row, 4, 4);
+    }
+    if (option.state & QStyle::State_HasFocus) {
+      p_painter->setPen(QPen(textColor, 1, Qt::DotLine));
+      p_painter->setBrush(Qt::NoBrush);
+      p_painter->drawRoundedRect(row.adjusted(1, 1, -1, -1), 4, 4);
+    }
+    const QRect circle = checkRect(option);
     const bool checked = p_index.data(TodoTaskModel::CheckedRole).toBool();
     paintCompletionIndicator(p_painter, circle, checked, option.palette, group, textColor);
     const QRect star = starRect(option);
@@ -530,8 +558,6 @@ public:
                                                                             : Qt::NoBrush);
     p_painter->drawPath(path);
 
-    const QRect textRect(circle.right() + 8, option.rect.top() + 4,
-                         qMax(0, star.left() - circle.right() - 16), option.rect.height() - 8);
     auto titleFont = option.font;
     titleFont.setStrikeOut(checked);
     QStringList summaries;
@@ -559,32 +585,35 @@ public:
     if (!p_index.data(TodoTaskModel::NoteRole).toString().isEmpty()) {
       summaries.append(TodoEditor::tr("Note"));
     }
+    auto secondaryFont = option.font;
+    if (secondaryFont.pointSizeF() > 2) {
+      secondaryFont.setPointSizeF(secondaryFont.pointSizeF() - 1);
+    }
+    const QFontMetrics secondaryMetrics(secondaryFont);
+    const int titleHeight = option.fontMetrics.height();
+    const int textHeight = titleHeight + (summaries.isEmpty() ? 0 : secondaryMetrics.height() + 4);
+    const QRect textRect(circle.right() + 14, row.center().y() - textHeight / 2,
+                         qMax(0, star.left() - circle.right() - 28), textHeight);
     p_painter->setFont(titleFont);
     p_painter->setPen(textColor);
-    p_painter->drawText(textRect,
-                        Qt::AlignLeft | (summaries.isEmpty() ? Qt::AlignVCenter : Qt::AlignTop),
+    p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop,
                         QFontMetrics(titleFont).elidedText(p_index.data().toString(),
                                                            Qt::ElideRight, textRect.width()));
     if (!summaries.isEmpty()) {
-      auto secondaryFont = option.font;
-      if (secondaryFont.pointSizeF() > 2) {
-        secondaryFont.setPointSizeF(secondaryFont.pointSizeF() - 1);
-      }
       p_painter->setFont(secondaryFont);
       p_painter->setPen(selected ? textColor
                                  : QColor(m_theme->paletteColor(QStringLiteral("base#muted#fg"))));
-      p_painter->drawText(
-          textRect, Qt::AlignLeft | Qt::AlignBottom,
-          QFontMetrics(secondaryFont)
-              .elidedText(summaries.join(QStringLiteral(" / ")), Qt::ElideRight, textRect.width()));
+      p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignBottom,
+                          secondaryMetrics.elidedText(summaries.join(QStringLiteral(" / ")),
+                                                      Qt::ElideRight, textRect.width()));
     }
     p_painter->restore();
   }
 
   QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const override {
-    return QSize(160, p_option.fontMetrics.height() *
-                              (p_index.data(TodoTaskModel::SectionRole).toBool() ? 1 : 2) +
-                          16);
+    const int height = p_option.fontMetrics.height();
+    return QSize(0, p_index.data(TodoTaskModel::SectionRole).toBool() ? qMax(44, height + 24)
+                                                                      : qMax(56, height * 2 + 24));
   }
 
   bool editorEvent(QEvent *p_event, QAbstractItemModel *p_model,
@@ -727,10 +756,11 @@ void TodoEditor::createUi() {
   m_taskPane = named(new QWidget(m_pages), "todoTaskPane", tr("Tasks"));
   m_pages->addWidget(m_taskPane);
   auto *tasksLayout = new QVBoxLayout(m_taskPane);
-  spacing(tasksLayout);
+  tasksLayout->setContentsMargins(16, 16, 16, 12);
+  tasksLayout->setSpacing(12);
   auto *heading = new QHBoxLayout;
   heading->setContentsMargins(0, 4, 0, 4);
-  heading->setSpacing(4);
+  heading->setSpacing(8);
   m_listIcon = named(new QPushButton(m_taskPane), "todoListIcon", tr("Add list icon"));
   m_listIcon->setIconSize(QSize(24, 24));
   m_listIcon->setFlat(true);
@@ -773,6 +803,9 @@ void TodoEditor::createUi() {
   m_tasks->setDropIndicatorShown(true);
   m_tasks->setContextMenuPolicy(Qt::CustomContextMenu);
   m_tasks->setMouseTracking(true);
+  m_tasks->setFrameShape(QFrame::NoFrame);
+  m_tasks->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_tasks->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
   connect(m_tasks->verticalScrollBar(), &QScrollBar::valueChanged, this,
           &TodoEditor::updateTaskCursor);
   connect(m_tasks->horizontalScrollBar(), &QScrollBar::valueChanged, this,
@@ -796,10 +829,13 @@ void TodoEditor::createUi() {
   addDate->addStretch();
   tasksLayout->addLayout(addDate);
   auto *add = new QHBoxLayout;
-  add->setSpacing(4);
+  add->setSpacing(8);
   m_addTask = named(new QLineEdit(m_taskPane), "todoAddTask", tr("Add a task"));
   m_addTask->setPlaceholderText(tr("Add a task"));
+  m_addTask->setStyleSheet(QStringLiteral("QLineEdit { padding: 10px 12px; min-height: 20px; }"));
   m_addButton = named(new QPushButton(tr("Add"), m_taskPane), "todoAddButton", tr("Add task"));
+  m_addButton->setStyleSheet(
+      QStringLiteral("QPushButton { padding: 10px 16px; min-height: 20px; min-width: 0; }"));
   add->addWidget(m_addTask, 1);
   add->addWidget(m_addButton);
   tasksLayout->addLayout(add);
@@ -903,7 +939,8 @@ void TodoEditor::createDetails() {
   m_details = named(new QWidget(m_detailsScroll), "todoDetails", tr("Task details"));
   m_detailsScroll->setWidget(m_details);
   auto *layout = new QVBoxLayout(m_details);
-  spacing(layout);
+  layout->setContentsMargins(12, 12, 12, 12);
+  layout->setSpacing(12);
   auto *header = new QHBoxLayout;
   header->addStretch();
   m_back = named(new QToolButton(m_details), "todoBack", tr("Close details and return to tasks"));
@@ -913,23 +950,26 @@ void TodoEditor::createDetails() {
   layout->addLayout(header);
 
   auto *task = new QHBoxLayout;
-  task->setSpacing(4);
+  task->setSpacing(8);
   m_checked = named(new CompletionCheckBox(m_services.get<ThemeService>(), m_details),
                     "todoChecked", tr("Task completed"));
   m_checked->setToolTip(tr("Task completed"));
   m_title = named(new QLineEdit(m_details), "todoTitle", tr("Task title"));
   m_title->setPlaceholderText(tr("Untitled task"));
+  m_title->setStyleSheet(QStringLiteral("QLineEdit { padding: 8px 4px; min-height: 24px; }"));
   m_important = named(new QToolButton(m_details), "todoImportant", tr("Task important"));
   m_important->setCheckable(true);
   m_important->setAutoRaise(true);
   m_important->setIconSize(QSize(20, 20));
+  m_important->setStyleSheet(QStringLiteral("QToolButton { padding: 8px; }"));
   task->addWidget(m_checked, 0, Qt::AlignVCenter);
   task->addWidget(m_title, 1);
-  task->addWidget(m_important);
+  task->addWidget(m_important, 0, Qt::AlignVCenter);
   layout->addLayout(task);
 
   m_steps = named(new QWidget(m_details), "todoSteps", tr("Task steps"));
   auto *stepIndent = new QHBoxLayout(m_steps);
+  stepIndent->setSizeConstraint(QLayout::SetMinimumSize);
   stepIndent->setContentsMargins(0, 0, 0, 0);
   stepIndent->setSpacing(0);
   stepIndent->addSpacing(16);
@@ -937,11 +977,12 @@ void TodoEditor::createDetails() {
   stepIndent->addWidget(stepRows, 1);
   m_stepLayout = new QVBoxLayout(stepRows);
   m_stepLayout->setContentsMargins(0, 0, 0, 0);
-  m_stepLayout->setSpacing(4);
+  m_stepLayout->setSpacing(8);
   m_steps->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   layout->addWidget(m_steps);
   m_addStep = named(new QLineEdit(m_details), "todoAddStep", tr("Add a step; press Enter"));
   m_addStep->setPlaceholderText(tr("Add a step"));
+  m_addStep->setStyleSheet(QStringLiteral("QLineEdit { padding: 10px 12px; min-height: 20px; }"));
   layout->addWidget(m_addStep);
   m_myDay =
       named(new QPushButton(tr("Add to My Day"), m_details), "todoMyDay", tr("Add to My Day"));
@@ -954,7 +995,8 @@ void TodoEditor::createDetails() {
   for (auto *button : {m_myDay, m_due}) {
     button->setLayoutDirection(Qt::LeftToRight);
     button->setStyleSheet(
-        QStringLiteral("QPushButton { text-align: left; padding-left: 8px; padding-right: 8px; }"));
+        QStringLiteral("QPushButton { text-align: left; padding: 12px; min-height: 20px; "
+                       "min-width: 0; }"));
   }
   layout->addWidget(m_due);
   m_note = named(new SimpleMarkdownEditor(m_services, m_details), "todoNote",
@@ -962,9 +1004,13 @@ void TodoEditor::createDetails() {
   named(m_note->getTextEdit(), "todoNoteTextEdit", tr("Task note in Markdown"));
   m_note->getTextEdit()->setPlaceholderText(tr("Add note (markdown supported)"));
   m_note->getTextEdit()->setUndoRedoEnabled(false);
-  m_note->setMinimumHeight(136);
-  layout->addWidget(m_note, 1);
+  m_note->setMinimumHeight(144);
+  m_note->setMaximumHeight(240);
+  layout->addWidget(m_note);
+  layout->addStretch(1);
   auto *footer = new QHBoxLayout;
+  footer->setContentsMargins(0, 4, 0, 0);
+  footer->setSpacing(8);
   m_createdDate = named(new QLabel(m_details), "todoCreatedDate", tr("Task creation date"));
   m_createdDate->setTextFormat(Qt::PlainText);
   m_createdDate->setAlignment(Qt::AlignCenter);
@@ -974,6 +1020,7 @@ void TodoEditor::createDetails() {
   m_deleteTask = named(new QToolButton(m_details), "todoDeleteTask", tr("Delete task"));
   m_deleteTask->setAutoRaise(true);
   m_deleteTask->setIconSize(QSize(20, 20));
+  m_deleteTask->setStyleSheet(QStringLiteral("QToolButton { padding: 8px; }"));
   m_deleteTask->setToolTip(tr("Delete task"));
   footer->addWidget(m_createdDate, 1);
   footer->addWidget(m_deleteTask, 0, Qt::AlignVCenter);
@@ -1308,22 +1355,24 @@ void TodoEditor::refreshSteps(const TodoItem *p_item, bool p_reset) {
         auto *widget = new QWidget(m_steps);
         auto *layout = new QHBoxLayout(widget);
         layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(4);
+        layout->setSpacing(8);
         auto *checked = new CompletionCheckBox(m_services.get<ThemeService>(), widget);
         checked->setObjectName(QStringLiteral("todoStepChecked_%1").arg(i));
         auto *title = new QLineEdit(widget);
         title->setObjectName(QStringLiteral("todoStepTitle_%1").arg(i));
         title->setAccessibleName(tr("Step title"));
         title->setPlaceholderText(tr("Untitled step"));
+        title->setStyleSheet(QStringLiteral("QLineEdit { padding: 8px 4px; min-height: 20px; }"));
         auto *more = new QToolButton(widget);
         more->setObjectName(QStringLiteral("todoStepMore_%1").arg(i));
         more->setIcon(moreIcon);
         more->setIconSize(QSize(20, 20));
         more->setAutoRaise(true);
+        more->setStyleSheet(QStringLiteral("QToolButton { padding: 8px; }"));
         more->setToolTip(tr("Step options"));
         layout->addWidget(checked, 0, Qt::AlignVCenter);
         layout->addWidget(title, 1);
-        layout->addWidget(more);
+        layout->addWidget(more, 0, Qt::AlignVCenter);
         m_stepLayout->addWidget(widget);
         m_stepRows.append({widget, checked, title, more});
         connect(title, &QLineEdit::textEdited, this, [this, i]() { updateStep(i, true); });
@@ -1422,7 +1471,17 @@ void TodoEditor::updateLayout() {
     m_pages->setCurrentWidget(m_detailsOpen ? static_cast<QWidget *>(m_detailsScroll) : m_taskPane);
     updateSidebarGeometry();
   } else {
+    const bool opening = m_detailsOpen && m_detailsScroll->isHidden();
     m_detailsScroll->setVisible(m_detailsOpen);
+    if (opening) {
+      auto sizes = m_splitter->sizes();
+      // A pane first shown after hidden layout can retain a zero splitter allocation.
+      if (sizes[2] == 0) {
+        sizes[1] = qMax(1, sizes[1] - 320);
+        sizes[2] = 320;
+        m_splitter->setSizes(sizes);
+      }
+    }
   }
 }
 

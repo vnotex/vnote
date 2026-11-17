@@ -631,6 +631,13 @@ accessibility. The theme accent supplies a visible keyboard focus ring. My Day i
 button with a themed Lucide `sun.svg` and left-aligned text: "Add to My Day" when off and
 "Added to My Day" when on; clicking it again removes membership. Quick-add due controls remain
 ordinary checkboxes.
+Details use 12px outer margins and section gaps, padded title/step inputs and icon actions,
+and full-width My Day/due-date rows with 12px padding. Quick-add uses a matching padded input
+and Add button; control heights are minimums, not fixed text-clipping heights. The Markdown
+note stays between 144px and 240px high, with remaining space before the bottom footer; long
+notes scroll inside the editor and long detail content scrolls in the existing outer pane.
+The dynamic step layout enforces its minimum content size. Opening a wide details pane restores
+its 320px allocation only if the hidden splitter pane retained zero width; nonzero user sizes stay.
 Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Step rows retain their input widgets through typing echoes;
@@ -836,7 +843,12 @@ Task details use a stacked page at narrow widths; the same close icon returns to
 Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
 and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day
 dates, steps and note indicators remain in the secondary line; without any remaining details the
-title is vertically centered. Row heights and checkbox/star hitboxes do not change.
+title is vertically centered. The task pane uses 16px side/top insets and 12px section gaps.
+Rows have a 56px minimum height (growing for two font-height lines), 16px icon insets and a
+14px icon-to-text gap; the title/metadata block is vertically centered with a 4px line gap.
+Painting and hit testing share completion/star rectangles. Rounded selection/hover fills have
+4px vertical separation; the Completed header keeps its separate mirrored geometry and a
+44px minimum height. Rows fit the viewport and elide text rather than forcing horizontal scrolling.
 The Completed section shows its count in a trailing `TreeChildCountDelegate` badge instead of
 parenthesized title text. Its chevron, title and badge mirror in RTL; accessible text and tooltips
 retain the count. Single click, Enter and Space toggle only the completed row range, leaving Qt's
@@ -848,8 +860,11 @@ and leaving the viewport restore the inherited cursor, including after scrolling
 exposes only visible rows. Insert/remove notifications keep active/separator persistent indexes;
 removed completed indexes stay invalid. A separate drag generation rejects MIME captured before a
 toggle without invalidating the surviving indexes. No document or configuration migration is needed.
-Custom task painting uses the same list-item foreground tokens as the theme's QSS background,
-not the OS `HighlightedText` color; secondary text uses the existing muted palette token.
+Custom task painting retains the theme's active list selection foreground/background pair when
+focus leaves the window, like Lists; Native's inactive alternate-base can backfill to black.
+Secondary text uses the existing muted palette token, not the OS `HighlightedText` color.
+Like the sidebar, task hover uses a translucent foreground tint and keyboard focus has an inset
+outline. The Completed header retains native style painting. No fixed background color is added.
 The sidebar paints its own rounded selection with the theme's active list-item foreground and
 background pair, retaining it when focus moves to tasks. Hover uses a translucent foreground
 tint; do not use Native's inactive/hover alternate-base tokens here, since an alpha-zero system
