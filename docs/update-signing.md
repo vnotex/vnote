@@ -103,6 +103,24 @@ produced and audited with a stock tool rather than something invented here.
   success. An immediate exit/secondary-instance handoff is **installed, but not
   reopened**, not success; keep the backup and report manual-launch guidance.
   Failures release the pipe/locks and remain visible in the console for retry.
+- At the end of a successful update, after the observed relaunch, release the
+  pipe/locks and finish temporary-file cleanup before asking the user to test
+  the new version and return to the console. Show the exact old-version backup
+  path and explain that deleting it permanently removes the rollback copy,
+  including its portable config and other files. The English/Chinese prompt
+  defaults to **keep**: only an explicit `y` or `yes` (case-insensitive, with
+  surrounding whitespace ignored) deletes that attempt's backup. Blank, no,
+  unrecognized or unavailable input keeps it; closing the console before
+  confirmation also keeps it. There is no automatic backup pruning or timeout.
+  Keep `scripts/update-vnote.ps1` UTF-8 with BOM so Windows PowerShell 5.1 reads
+  the directly embedded Chinese correctly.
+- After consent, revalidate the exact GUID-named sibling backup and refuse
+  reparse points, live backup processes or locked binaries without retrying or
+  terminating processes. Never delete the current installation or other
+  backups. Cleanup errors do not change the successful update status: stop
+  removal, report the remaining backup path and possible partial deletion,
+  and leave a visible manual-cleanup message. Failed updates or failed
+  relaunches never offer this deletion prompt and retain the recovery backup.
 
 These requirements add no settings, configuration migration, writes or installer
 dependencies to ordinary checks. The root `AGENTS.md` and `src/controllers/AGENTS.md`

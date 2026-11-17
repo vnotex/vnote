@@ -3,7 +3,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$MinisignPath,
-    [ValidateSet('Run', 'Http', 'Mutex', 'Update')][string]$ChildMode = 'Run',
+    [ValidateSet('Run', 'Http', 'Mutex', 'Update', 'Backup')][string]$ChildMode = 'Run',
     [string]$FixtureConfig
 )
 
@@ -96,6 +96,10 @@ if ($ChildMode -ne 'Run') {
         $config = Read-FixtureJson $FixtureConfig
         if ($ChildMode -eq 'Http') { Invoke-HttpFixture $config; exit 0 }
         . $config.Updater
+        if ($ChildMode -eq 'Backup') {
+            Confirm-VNoteBackupCleanup -InstallDir $config.InstallDir -BackupPath $config.BackupPath
+            exit 0
+        }
         if ($ChildMode -eq 'Mutex') {
             $mutex = $null
             try {
@@ -189,7 +193,8 @@ function Quote-FixtureArgument {
 }
 
 function Start-FixtureProcess {
-    param([string]$Executable, [string[]]$Arguments, [string]$Label, [string]$WorkingDirectory = $script:Root)
+    param([string]$Executable, [string[]]$Arguments, [string]$Label, [string]$WorkingDirectory = $script:Root,
+        [string[]]$InputLines = @(''), [switch]$HoldInput)
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = $Executable
     $info.Arguments = (($Arguments | ForEach-Object { Quote-FixtureArgument $_ }) -join ' ')
@@ -208,19 +213,22 @@ function Start-FixtureProcess {
         Error = $process.StandardError.ReadToEndAsync()
     }
     $script:Children.Add($child)
-    # A failed Invoke releases all resources before Read-Host. Feed that prompt
-    # without -NonInteractive (which changes Read-Host into another exception).
-    $process.StandardInput.WriteLine('')
-    $process.StandardInput.Close()
+    # Feed real Read-Host prompts; held input lets the parent inspect the backup
+    # before deciding. An empty array closes input without consenting.
+    if (-not $HoldInput) {
+        foreach ($line in $InputLines) { $process.StandardInput.WriteLine($line) }
+        $process.StandardInput.Close()
+    }
     return $child
 }
 
 function Start-FixtureMode {
-    param([string]$Mode, $Config, [string]$Label)
+    param([string]$Mode, $Config, [string]$Label, [string[]]$InputLines = @(''), [switch]$HoldInput)
     $configPath = Join-Path $script:Root ($Label + '-' + [Guid]::NewGuid().ToString('N') + '.json')
     Write-FixtureJson $configPath $Config
     return (Start-FixtureProcess $script:PowerShell @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', $script:TestScript, '-MinisignPath', $MinisignPath, '-ChildMode', $Mode, '-FixtureConfig', $configPath) $Label)
+        '-File', $script:TestScript, '-MinisignPath', $MinisignPath, '-ChildMode', $Mode, '-FixtureConfig', $configPath) $Label `
+        -InputLines $InputLines -HoldInput:$HoldInput)
 }
 
 function Wait-FixtureExit {
@@ -1377,17 +1385,17 @@ public static class VNoteMappedImageFixture {
     # A rejected helper releases its mutex before the visible failure prompt.
     $releasedMutex = Enter-VNoteUpdateMutex -InstallDir $lifecycleInstall
     $releasedMutex.ReleaseMutex(); $releasedMutex.Dispose()
-    foreach ($packageKind in @('full', 'delta')) {
-        if ($packageKind -eq 'delta') {
+    foreach ($packageKind in @('full', 'delta', 'locked-backup')) {
+        if ($packageKind -ne 'full') {
             $lifecycleInstall = New-FixtureInstall
             $script:RelaunchRoots.Add($lifecycleInstall)
-            $stoppedExpected = New-FixtureDirectory 'expected delta stopped installation'
+            $stoppedExpected = New-FixtureDirectory 'expected stopped installation'
             Copy-FixtureTree $lifecycleInstall $stoppedExpected
             Write-FixtureText (Join-Path $stoppedExpected 'config/local/saved-on-close.bin') 'saved after ACCEPTED'
             $stoppedSnapshot = Get-FixtureSnapshot $stoppedExpected
             $attempt.InstallDir = $lifecycleInstall
-            Publish-FixtureGitHubAssets $script:DeltaPackage
         }
+        if ($packageKind -eq 'delta') { Publish-FixtureGitHubAssets $script:DeltaPackage }
         else { Publish-FixtureGitHubAssets $script:Package }
         $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
         $attempt.ParentProcessId = $parent.Child.Process.Id
@@ -1401,9 +1409,25 @@ public static class VNoteMappedImageFixture {
         [IO.File]::Copy($MinisignPath, (Join-Path $retryDirectory 'minisign.exe'))
         [IO.File]::Copy($license, (Join-Path $retryDirectory 'LICENSE.minisign'))
         $offset = Get-FixtureRequestOffset
-        $helper = Start-FixtureMode Update $attempt ('successful-real-' + $packageKind + '-updater')
+        $answer = if ($packageKind -eq 'delta') { 'yes' } else { '' }
+        $helper = Start-FixtureMode Update $attempt ('successful-real-' + $packageKind + '-updater') `
+            -InputLines @($answer) -HoldInput:($packageKind -eq 'locked-backup')
         Write-FixtureText $parent.HelperFile ([string]$helper.Process.Id)
-        $null = Wait-FixtureExit $helper 0 30000
+        $lock = $null
+        try {
+            if ($packageKind -eq 'locked-backup') {
+                $null = Wait-FixtureFile (Join-Path $lifecycleInstall '.fixture-launched') $helper 'B|' 20000
+                $backups = @([IO.Directory]::GetDirectories([IO.Path]::GetDirectoryName($lifecycleInstall), [IO.Path]::GetFileName($lifecycleInstall) + '.vnote-old-*'))
+                Assert-Fixture ($backups.Count -eq 1) 'No backup available before consent'
+                $lock = [IO.File]::Open((Join-Path $backups[0] 'Qt6Core.dll'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+                $helper.Process.StandardInput.WriteLine('yes')
+                $helper.Process.StandardInput.WriteLine('')
+                $helper.Process.StandardInput.Close()
+            }
+            $null = Wait-FixtureExit $helper 0 30000
+        } finally {
+            if ($null -ne $lock) { $lock.Dispose() }
+        }
         if ($packageKind -eq 'delta') { Assert-FixtureArchiveRequests $offset 1 0 }
         else { Assert-FixtureArchiveRequests $offset 0 1 }
         Assert-Fixture ($parent.Child.Process.HasExited) 'Original VNote did not fully exit'
@@ -1417,11 +1441,16 @@ public static class VNoteMappedImageFixture {
         $script:Children.Add($retainedChild)
         Assert-Fixture (-not $relaunched.HasExited) 'Generation B exited despite successful observation'
         $backups = @([IO.Directory]::GetDirectories([IO.Path]::GetDirectoryName($lifecycleInstall), [IO.Path]::GetFileName($lifecycleInstall) + '.vnote-old-*'))
-        Assert-Fixture ($backups.Count -eq 1) "$packageKind update did not retain exactly one recovery backup"
         $savedPath = 'config/local/saved-on-close.bin'
         Assert-Fixture ([IO.File]::ReadAllText((Join-Path $lifecycleInstall $savedPath)) -ceq 'saved after ACCEPTED') 'Clone preceded the final portable save'
-        Assert-Fixture ([IO.File]::ReadAllText((Join-Path $backups[0] $savedPath)) -ceq 'saved after ACCEPTED') 'Backup lacks stopped-session portable data'
-        Assert-FixtureOverlay $lifecycleInstall $backups[0] $stoppedSnapshot $valid.Manifest
+        if ($packageKind -eq 'delta') {
+            Assert-Fixture ($backups.Count -eq 0) 'Explicit consent did not delete the completed update backup'
+            Assert-FixtureOverlay $lifecycleInstall $stoppedExpected $stoppedSnapshot $valid.Manifest
+        } else {
+            Assert-Fixture ($backups.Count -eq 1) "$packageKind update did not retain exactly one recovery backup"
+            Assert-Fixture ([IO.File]::ReadAllText((Join-Path $backups[0] $savedPath)) -ceq 'saved after ACCEPTED') 'Backup lacks stopped-session portable data'
+            Assert-FixtureOverlay $lifecycleInstall $backups[0] $stoppedSnapshot $valid.Manifest
+        }
         Stop-FixtureChild $retainedChild
         Pass-Fixture "real Invoke $packageKind lifecycle, graceful exit, stopped config clone and observed generation B relaunch"
     }
@@ -1452,6 +1481,85 @@ public static class VNoteMappedImageFixture {
         }
         Pass-Fixture "relaunch $mode reports partial success and retains complete backup"
     }
+    # Exercise the real console input and filesystem cleanup, not a mocked answer.
+    foreach ($case in @(
+        @{ Name = 'blank'; Lines = @(''); Delete = $false },
+        @{ Name = 'no'; Lines = @('no'); Delete = $false },
+        @{ Name = 'invalid'; Lines = @('maybe'); Delete = $false },
+        @{ Name = 'EOF'; Lines = @(); Delete = $false },
+        @{ Name = 'explicit yes'; Lines = @(' YeS '); Delete = $true }
+    )) {
+        $install = New-FixtureInstall
+        $before = Get-FixtureSnapshot $install
+        $backup = $install + '.vnote-old-' + [Guid]::NewGuid().ToString('N')
+        Copy-FixtureTree $install $backup
+        $otherBackup = $install + '.vnote-old-' + [Guid]::NewGuid().ToString('N')
+        [IO.Directory]::CreateDirectory($otherBackup) | Out-Null
+        Write-FixtureText (Join-Path $otherBackup 'sentinel') 'another update backup'
+        $otherBefore = Get-FixtureSnapshot $otherBackup
+        [IO.File]::SetAttributes((Join-Path $backup 'config/app/sentinel.bin'), [IO.FileAttributes]::ReadOnly)
+        $child = Start-FixtureMode Backup @{
+            Updater = $script:UpdaterScript; InstallDir = $install; BackupPath = $backup
+        } ('backup-' + $case.Name) -InputLines $case.Lines
+        $null = Wait-FixtureExit $child 0
+        if ($case.Delete) {
+            Assert-Fixture (-not [IO.Directory]::Exists($backup)) 'Explicit consent did not remove the selected backup'
+        } else {
+            Assert-FixtureSnapshot $backup $before 'Backup without explicit consent'
+        }
+        Assert-FixtureSnapshot $install $before 'Current installation after backup decision'
+        Assert-FixtureSnapshot $otherBackup $otherBefore 'Unselected backup'
+        Pass-Fixture ('backup consent ' + $case.Name)
+    }
+
+    foreach ($hazard in @('active-install', 'unrelated-directory', 'junction', 'locked-binary', 'running-backup', 'locked-data')) {
+        $install = New-FixtureInstall
+        $before = Get-FixtureSnapshot $install
+        $backup = $install + '.vnote-old-' + [Guid]::NewGuid().ToString('N')
+        Copy-FixtureTree $install $backup
+        $target = $backup
+        $lock = $null
+        $junction = $null
+        $oldParent = $null
+        try {
+            switch ($hazard) {
+                'active-install' { $target = $install }
+                'unrelated-directory' { $target = $script:Outside }
+                'junction' {
+                    $junction = Join-Path $backup 'linked user directory'
+                    New-Item -ItemType Junction -Path $junction -Target $script:Outside | Out-Null
+                    $script:Junctions.Add($junction)
+                }
+                'locked-binary' {
+                    $lock = [IO.File]::Open((Join-Path $backup 'Qt6Core.dll'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+                }
+                'running-backup' { $oldParent = Start-FixtureParent $backup 'cancel' }
+                'locked-data' {
+                    $lock = [IO.File]::Open((Join-Path $backup 'unowned file.bin'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+                }
+            }
+            $child = Start-FixtureMode Backup @{
+                Updater = $script:UpdaterScript; InstallDir = $install; BackupPath = $target
+            } ('backup-' + $hazard) -InputLines @('yes', '')
+            $null = Wait-FixtureExit $child 0
+            if ($null -ne $oldParent) {
+                Assert-Fixture (-not $oldParent.Child.Process.HasExited) 'Backup cleanup terminated the old version'
+            }
+        } finally {
+            if ($null -ne $lock) { $lock.Dispose() }
+            if ($null -ne $oldParent) { Stop-FixtureChild $oldParent.Child }
+            if ($null -ne $junction) { [IO.Directory]::Delete($junction) }
+        }
+        if ($hazard -eq 'locked-data') {
+            Assert-Fixture ([IO.File]::ReadAllText((Join-Path $backup 'unowned file.bin')) -ceq "unowned`0keep me") 'Partial cleanup lost the locked file'
+        } else {
+            Assert-FixtureSnapshot $backup $before 'Unsafe backup cleanup refusal'
+        }
+        Assert-FixtureSnapshot $install $before 'Current installation after refused cleanup'
+        Assert-FixtureSnapshot $script:Outside $script:OutsideSnapshot 'Outside backup destination'
+        Pass-Fixture ('backup cleanup refuses ' + $hazard)
+    }
+
     Assert-Fixture (-not ([IO.File]::ReadAllText($httpLog).Contains('/github/tags/'))) 'GitHub updater queried the rate-limited metadata API'
     Pass-Fixture 'GitHub preparation and full lifecycle never request release metadata'
     $success = $true

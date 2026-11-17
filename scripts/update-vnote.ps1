@@ -1,4 +1,4 @@
-# Windows PowerShell 5.1. The deployed updater uses only its bundled verifier.
+﻿# Windows PowerShell 5.1. The deployed updater uses only its bundled verifier.
 # Dot-sourcing defines the updater functions; it never starts an update.
 [CmdletBinding()]
 param(
@@ -1265,7 +1265,7 @@ function Receive-VNotePackage {
         if ($isDelta -and -not (Complete-VNoteDeltaPackage -InstallDir $InstallDir -PackageDir $packagePath -Manifest $Manifest)) {
             # No security or network exception reaches this branch. Discard only
             # our private delta attempt before preflighting/downloading the full ZIP.
-            Remove-VNoteOwnedStage -Path $packagePath
+            Remove-VNoteOwnedTree -Path $packagePath
             Assert-VNoteNoReparse -Path $archivePath
             [IO.File]::Delete($archivePath)
             Write-Host 'Reusable installed files differ from the signed target. Using the signed full package.'
@@ -1529,6 +1529,48 @@ function Start-VNoteAfterUpdate {
     }
 }
 
+function Confirm-VNoteBackupCleanup {
+    param(
+        [Parameter(Mandatory = $true)][string]$InstallDir,
+        [Parameter(Mandatory = $true)][string]$BackupPath
+    )
+
+    try {
+        Write-Host 'Please test the new VNote version, then return to this console to decide whether to keep the old version backup.'
+        Write-Host '请先测试新版 VNote，保留此窗口，然后返回这里决定是否保留旧版本备份。'
+        Write-Host "Old version backup / 旧版本备份：$BackupPath"
+        Write-Host 'Deleting it permanently removes the rollback copy, including its portable config and other files.'
+        Write-Host '删除备份将失去此回退副本，其中的便携配置和其他文件也会被永久删除。'
+        $answer = Read-Host 'After testing, delete this backup? / 测试完成后是否删除备份？输入 y 或 yes 删除，默认保留 [y/N]'
+    } catch {
+        Write-Host "No confirmation received; backup retained / 未收到确认，备份已保留：$BackupPath"
+        return
+    }
+    if ([string]::IsNullOrWhiteSpace($answer) -or $answer.Trim() -inotmatch '\A(?:y|yes)\z') {
+        Write-Host "Recovery backup retained / 恢复备份已保留：$BackupPath"
+        return
+    }
+
+    try {
+        # The user may return much later. Recheck only this attempt's backup,
+        # never the running installation or a wildcard collection of old backups.
+        $root = Get-VNoteInstallRoot -InstallDir $InstallDir
+        $backup = (Get-VNoteDirectoryIdentity -Path $BackupPath).Path
+        if ($backup -inotmatch ('\A' + [regex]::Escape($root) + '\.vnote-old-[0-9a-f]{32}\z')) {
+            throw 'The backup is not a GUID-named sibling of this VNote installation.'
+        }
+        Assert-VNoteNoTargetProcesses -InstallDir $backup
+        Assert-VNoteBinaryFilesUnlocked -InstallDir $backup
+        Remove-VNoteOwnedTree -Path $backup
+        Write-Host "Old version backup deleted / 旧版本备份已删除：$backup"
+    } catch {
+        Write-Host "VNote remains updated, but backup cleanup could not be completed / VNote 已更新，但备份清理未完成：$($_.Exception.Message)"
+        Write-Host "Remaining backup location / 剩余备份位置：$BackupPath"
+        Write-Host 'Cleanup may be partial; inspect this folder before removing it manually. / 可能仅删除了部分内容；请检查此文件夹后再手动清理。'
+        try { $null = Read-Host 'Press Enter to close this updater console / 按回车键关闭此更新窗口' } catch { }
+    }
+}
+
 function Remove-VNoteCopiedHelper {
     param([Parameter(Mandatory = $true)][string]$ScratchDir)
     $scratch = [IO.Path]::GetFullPath($ScratchDir).TrimEnd([char[]]'\/')
@@ -1648,7 +1690,7 @@ function Invoke-VNoteUpdate {
             try { $mutex.ReleaseMutex() } finally { $mutex.Dispose() }
         }
         if ($null -ne $stage) {
-            try { Remove-VNoteOwnedStage -Path $stage }
+            try { Remove-VNoteOwnedTree -Path $stage }
             catch { Write-Host "Temporary update files retained at $stage`: $($_.Exception.Message)" }
         }
         try { Remove-VNoteCopiedHelper -ScratchDir $scratch }
@@ -1661,9 +1703,11 @@ function Invoke-VNoteUpdate {
         if ($null -ne $backup) { Write-Host "Recovery backup retained at: $backup" }
         # All locks and the pipe have been released: this visible prompt cannot
         # keep the application's attempt active or prevent an explicit retry.
-        $null = Read-Host 'Press Enter to close this updater console'
+        $null = Read-Host 'Press Enter to close this updater console / 按回车键关闭此更新窗口'
         return 1
     }
+    # The update is complete and all resources are released before waiting for input.
+    Confirm-VNoteBackupCleanup -InstallDir $root -BackupPath $backup
     return 0
 }
 
@@ -2149,11 +2193,11 @@ function Assert-VNoteCopiedConfig {
     if ($entries.Count -ne 0) { throw 'The staged installation is missing portable config entries.' }
 }
 
-function Remove-VNoteOwnedStage {
+function Remove-VNoteOwnedTree {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    # Called only for a directory this invocation created exclusively and never
-    # successfully installed. Refuse links; delete children non-recursively.
+    # Only uninstalled staging owned by this invocation, or its recovery backup
+    # after explicit user consent. Refuse links; delete children non-recursively.
     Assert-VNoteNoReparse -Path $Path
     $entries = @(Get-VNoteTree -Root $Path)
     for ($index = $entries.Count - 1; $index -ge 0; --$index) {
@@ -2302,7 +2346,7 @@ function Install-VNotePackage {
         return $backup
     } finally {
         if ($stageOwned) {
-            try { Remove-VNoteOwnedStage -Path $staging }
+            try { Remove-VNoteOwnedTree -Path $staging }
             catch { Write-Warning "Could not remove the updater-owned staging directory: $staging. $($_.Exception.Message)" }
         }
     }
@@ -2323,7 +2367,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         exit $result
     } catch {
         Write-Host "Automatic update is unavailable. Use Check Release to update manually. $($_.Exception.Message)" -ForegroundColor Red
-        $null = Read-Host 'Press Enter to close this updater console'
+        $null = Read-Host 'Press Enter to close this updater console / 按回车键关闭此更新窗口'
         exit 1
     }
 }
