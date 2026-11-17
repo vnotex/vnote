@@ -46,6 +46,7 @@ TodoViewWindow::TodoViewWindow(ServiceLocator &p_services, const Buffer2 &p_buff
                                QWidget *p_parent, ViewWindowMode p_mode)
     : ViewWindow2(p_services, p_buffer, p_parent) {
   setObjectName(QStringLiteral("todoViewWindow"));
+  setLayoutMode(ViewWindowLayoutMode::FullWidth);
   m_mode = p_mode;
   m_buffers = p_services.get<BufferService>();
   m_boundBufferId = p_buffer.id();

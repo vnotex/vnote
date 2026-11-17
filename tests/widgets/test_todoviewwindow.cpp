@@ -4194,6 +4194,8 @@ void TestTodoViewWindow::foreignReloadAndSameTypeReplacement() {
 }
 
 void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
+  m_config->getWidgetConfig().setViewWindowLayoutMode(ViewWindowLayoutMode::ReadableWidth);
+  m_config->getWidgetConfig().setReadableWidthMaxPx(600);
   qApp->setStyleSheet(m_theme->fetchQtStyleSheet());
   connect(m_theme.get(), &ThemeService::themeChanged, this,
           [this]() { qApp->setStyleSheet(m_theme->fetchQtStyleSheet()); });
@@ -4209,6 +4211,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   QVERIFY(sidebar && listsButton && tasks && splitter && back);
   QTRY_VERIFY(sidebar->isVisible());
   QVERIFY(window->getTodoEditor()->width() >= 840);
+  QTRY_COMPARE(window->getTodoEditor()->width(), window->contentsRect().width());
   QVERIFY(!listsButton->isVisible());
   auto *taskPane = control<QWidget>(window, "todoTaskPane");
   QVERIFY(taskPane);
@@ -4229,9 +4232,13 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   }
   const auto source = window->getLatestContent();
   const auto selection = window->getController()->getSelectedItemKey();
+  m_config->getWidgetConfig().setViewWindowLayoutMode(ViewWindowLayoutMode::FullWidth);
+  m_config->getWidgetConfig().setReadableWidthMaxPx(480);
+  m_config->getWidgetConfig().setViewWindowLayoutMode(ViewWindowLayoutMode::ReadableWidth);
   m_area->resize(600, 760);
   QTRY_VERIFY(!sidebar->isVisible());
   QVERIFY(window->getTodoEditor()->width() < 840);
+  QTRY_COMPARE(window->getTodoEditor()->width(), window->contentsRect().width());
   QTRY_VERIFY(listsButton->isVisible());
   QVERIFY(back->isVisible());
   QVERIFY(!tasks->isVisible());
@@ -4296,6 +4303,7 @@ void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
   m_theme->refreshCurrentTheme();
   m_area->resize(1000, 760);
   QTRY_VERIFY(sidebar->isVisible() && !listsButton->isVisible());
+  QTRY_COMPARE(window->getTodoEditor()->width(), window->contentsRect().width());
   QVERIFY(!listsButton->isChecked());
   QCOMPARE(splitter->widget(0), sidebar);
   window->getTodoEditor()->focusTasks();
