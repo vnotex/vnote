@@ -729,7 +729,10 @@ Organizational group selection and collapsed keys live only in `TodoProjection`,
 The model retains all list and custom-group rows; the sidebar hides only collapsed custom
 children. The same sidebar at every width places search above icon-leading smart views,
 a separator, root lists, then custom groups and their indented lists; nonzero incomplete counts
-occupy trailing badges. `groupAt()` still resolves a root list's internal Default owner, while
+occupy trailing badges on list and smart-view rows. Custom groups use the notebook explorer's
+`TreeChildCountDelegate` renderer for their child-list count beside the chevron, with title
+clearance mirrored in RTL. Zero counts are hidden; expansion and task filters do not change
+the cached list count. `groupAt()` still resolves a root list's internal Default owner, while
 its presentation `GroupIdRole` / `GroupTitleRole` are empty and `rowForGroup(Default)` is absent.
 New List and the accessible icon-only New Group control stay below the scrolling list. New Group
 uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`

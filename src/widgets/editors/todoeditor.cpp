@@ -44,6 +44,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <gui/utils/treechildcountdelegate.h>
 #include <m3/qt/emoji_line_edit.h>
 #include <models/todomodels.h>
 #include <vtextedit/vtextedit.h>
@@ -130,9 +131,9 @@ protected:
   }
 };
 
-class ListDelegate : public QStyledItemDelegate {
+class ListDelegate : public TreeChildCountDelegate {
 public:
-  ListDelegate(ThemeService *p_theme, QListView *p_view) : QStyledItemDelegate(p_view) {
+  ListDelegate(ThemeService *p_theme, QListView *p_view) : TreeChildCountDelegate(p_view) {
     // Reusable 24px outline glyphs, scaled to the current font in paint().
     auto &list = m_icons[static_cast<int>(TodoViewKind::List)];
     for (int y : {5, 12, 19}) {
@@ -261,6 +262,7 @@ public:
     }
 
     int trailing = row.right() - 12;
+    ChildCountBadge groupBadge;
     p_painter->setFont(option.font);
     if (group) {
       const QRect chevron = visual(QRect(trailing - 12, row.center().y() - 6, 12, 12));
@@ -271,6 +273,15 @@ public:
       p_painter->drawLine(chevron.left(), edgeY, chevron.center().x(), middleY);
       p_painter->drawLine(chevron.center().x(), middleY, chevron.right(), edgeY);
       trailing -= 24;
+      groupBadge = childCountBadge(option, p_index.data(TodoListModel::ListCountRole).toInt());
+      if (!groupBadge.m_rect.isEmpty()) {
+        groupBadge.m_rect.moveTopRight(
+            QPoint(trailing - 1, row.center().y() - groupBadge.m_rect.height() / 2));
+        trailing = groupBadge.m_rect.left() - groupBadge.m_gap;
+        groupBadge.m_rect = visual(groupBadge.m_rect);
+        option.palette.setColor(QPalette::Text, m_foreground);
+        option.palette.setColor(QPalette::Disabled, QPalette::Text, m_disabled);
+      }
     } else {
       const int count = p_index.data(TodoListModel::IncompleteCountRole).toInt();
       if (count > 0) {
@@ -301,6 +312,7 @@ public:
       p_painter->setBrush(Qt::NoBrush);
       p_painter->drawRoundedRect(row.adjusted(1, 1, -1, -1), 4, 4);
     }
+    paintChildCount(p_painter, groupBadge, option);
     if (separator) {
       p_painter->setPen(m_border);
       const int y = option.rect.bottom() - 7;
