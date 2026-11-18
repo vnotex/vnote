@@ -24,6 +24,9 @@ CalendarSticker::CalendarSticker(ServiceLocator &p_services, QWidget *p_parent)
   // (unlike clicked/activated which can double-fire or miss keyboard moves).
   connect(m_calendar, &QCalendarWidget::selectionChanged, this,
           &CalendarSticker::onSelectionChanged);
+  connect(m_calendar, &QCalendarWidget::clicked, this, [this](const QDate &p_date) {
+    broadcastDate(p_date, HookNames::DashboardCalendarDateClicked);
+  });
 }
 
 QString CalendarSticker::typeId() const { return QStringLiteral("calendar"); }
@@ -33,8 +36,7 @@ QString CalendarSticker::titleText() const { return tr("Calendar"); }
 QJsonObject CalendarSticker::saveSettings() const {
   QJsonObject obj;
   if (m_calendar) {
-    obj[QStringLiteral("selectedDate")] =
-        m_calendar->selectedDate().toString(Qt::ISODate);
+    obj[QStringLiteral("selectedDate")] = m_calendar->selectedDate().toString(Qt::ISODate);
   }
   return obj;
 }
@@ -61,16 +63,16 @@ void CalendarSticker::onSelectionChanged() {
   if (!date.isValid()) {
     return;
   }
-  broadcastDate(date);
+  broadcastDate(date, HookNames::DashboardCalendarDateChanged);
   emit settingsChanged();
 }
 
-void CalendarSticker::broadcastDate(const QDate &p_date) {
+void CalendarSticker::broadcastDate(const QDate &p_date, QLatin1String p_hookName) {
   auto *hookMgr = m_services.get<HookManager>();
-  if (!hookMgr) {
+  if (!hookMgr || !p_date.isValid()) {
     return;
   }
   QVariantMap args;
   args[QStringLiteral("date")] = p_date.toString(QStringLiteral("yyyy-MM-dd"));
-  hookMgr->doAction(HookNames::DashboardCalendarDateChanged, args);
+  hookMgr->doAction(p_hookName, args);
 }

@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QPointer>
 #include <QVector>
+#include <optional>
 
 #include <core/nodeidentifier.h>
 #include <core/tododocument.h>
@@ -30,10 +31,15 @@ public:
   TodoViewKind getViewKind() const { return m_view; }
   void setView(TodoViewKind p_view, const QString &p_listKey = {});
   void setToday(const QDate &p_today);
+  void setDueDate(const QDate &p_dueDate);
+  const QDate &getDueDate() const { return m_dueDate; }
   QString getFilePath() const { return m_filePath; }
   const QString &getError() const { return m_error; }
   bool isReady() const { return m_ready; }
   bool isBusy() const { return m_editing || m_refreshing; }
+  bool canEditTasks() const;
+  int addTask(const QString &p_title, const QString &p_destinationKey = {},
+              const QDate &p_due = {});
   void openTask(const QString &p_key);
   void edit();
   bool setFilePath(const QString &p_path);
@@ -44,6 +50,7 @@ public:
 signals:
   void stateChanged();
   void errorOccurred(const QString &p_message);
+  void taskAdditionFinished(int p_token, bool p_created);
 
 private slots:
   void handleBufferChanged(const QString &p_bufferId);
@@ -64,6 +71,7 @@ private:
   void retarget(const QString &p_notebookId, const QString &p_oldPath,
                 const QString &p_newNotebookId, const QString &p_newPath, bool p_folder);
   void setChecked(const QString &p_key, bool p_checked, int p_revision);
+  int applyTaskEdit(const QString &p_key, bool p_checked, std::optional<TodoTaskFields> p_newTask);
 
   ServiceLocator &m_services;
   TodoTaskModel *m_taskModel;
@@ -75,8 +83,10 @@ private:
   QString m_notebookRoot;
   TodoViewKind m_view = TodoViewKind::List;
   QDate m_today = QDate::currentDate();
+  QDate m_dueDate;
   QString m_selectedListKey;
   QString m_pendingListKey;
+  QString m_pendingTaskKey;
   QString m_error;
   QString m_defaultNotebookPathForTest;
   QString m_currentNotebook;

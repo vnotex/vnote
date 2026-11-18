@@ -13777,9 +13777,9 @@ Continue?</source>
         <translation>할 일 불러오는 중...</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="294"/>
-        <source>No TODO lists. Use Edit to add a list.</source>
-        <translation>TODO 목록이 없습니다. 편집을 눌러 목록을 추가하세요.</translation>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="424"/>
+        <source>No TODO lists.</source>
+        <translation>TODO 목록이 없습니다.</translation>
     </message>
     <message>
         <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
@@ -13810,6 +13810,35 @@ Continue?</source>
         <location filename="../../../widgets/dashboard/todosticker.cpp" line="288"/>
         <source>Planned</source>
         <translation>계획</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="191"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="461"/>
+        <source>Add Task</source>
+        <translation>작업 추가</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="193"/>
+        <source>Press Enter to add a task</source>
+        <translation>Enter 키를 눌러 작업 추가</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="349"/>
+        <source>Due Date on %1</source>
+        <translation>마감일: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="469"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="476"/>
+        <source>List</source>
+        <translation>목록</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="482"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="485"/>
+        <source>Due date</source>
+        <translation>마감일</translation>
     </message>
 </context>
 <context>
@@ -14043,6 +14072,24 @@ Continue?</source>
         <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
         <source>The TODO file could not be opened for editing.</source>
         <translation>편집할 TODO 파일을 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="861"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="870"/>
+        <source>Choose an existing destination list.</source>
+        <translation>기존 대상 목록을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="884"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="891"/>
+        <source>Choose a due date for the new task.</source>
+        <translation>새 작업의 마감일을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="963"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="968"/>
+        <source>The task could not be added.</source>
+        <translation>작업을 추가할 수 없습니다.</translation>
     </message>
 </context>
 </TS>

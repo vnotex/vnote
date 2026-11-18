@@ -7,6 +7,7 @@
 #endif
 
 #include <QAbstractButton>
+#include <QAbstractItemView>
 #include <QAbstractTextDocumentLayout>
 #include <QAction>
 #include <QApplication>
@@ -71,6 +72,7 @@
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/hookcontext.h>
+#include <core/hookevents.h>
 #include <core/hooknames.h>
 #include <core/mainconfig.h>
 #include <core/servicelocator.h>
@@ -95,6 +97,7 @@
 #include <vtextedit/vtextedit.h>
 #include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
+#include <widgets/dashboard/calendarsticker.h>
 #include <widgets/dashboard/todosticker.h>
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/editors/simplemarkdowneditor.h>
@@ -756,6 +759,14 @@ private slots:
   void stickerCompletionKeepsLegacyListSelection();
   void stickerSmartViews_data();
   void stickerSmartViews();
+  void stickerQuickAdd_data();
+  void stickerQuickAdd();
+  void stickerQuickAddRetainsRejectedDrafts();
+  void stickerQuickAddPendingState_data();
+  void stickerQuickAddPendingState();
+  void stickerQuickAddReadOnlyAndInvalid_data();
+  void stickerQuickAddReadOnlyAndInvalid();
+  void calendarSelectsStickerDueDate();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
@@ -5790,6 +5801,375 @@ void TestTodoViewWindow::stickerSmartViews() {
     QCOMPARE(keys(), QStringList({QStringLiteral("id:delta")}));
     QVERIFY(controller->getDocument().findItem(QStringLiteral("id:delta"))->m_fields.m_checked);
   }
+}
+
+void TestTodoViewWindow::stickerQuickAdd_data() {
+  QTest::addColumn<TodoViewKind>("view");
+  QTest::addColumn<QString>("sourceKind");
+  QTest::newRow("selected-list") << TodoViewKind::List << QStringLiteral("normal");
+  QTest::newRow("my-day-destination") << TodoViewKind::MyDay << QStringLiteral("normal");
+  QTest::newRow("important-no-due-leak") << TodoViewKind::Important << QStringLiteral("normal");
+  QTest::newRow("planned-destination-and-date")
+      << TodoViewKind::Planned << QStringLiteral("normal");
+  QTest::newRow("calendar-due-date") << TodoViewKind::All << QStringLiteral("normal");
+  QTest::newRow("empty-document") << TodoViewKind::List << QStringLiteral("empty");
+  QTest::newRow("planned-single-list") << TodoViewKind::Planned << QStringLiteral("single");
+  QTest::newRow("planned-empty-document") << TodoViewKind::Planned << QStringLiteral("empty");
+}
+
+void TestTodoViewWindow::stickerQuickAdd() {
+  QFETCH(TodoViewKind, view);
+  QFETCH(QString, sourceKind);
+  const QDate today(2025, 4, 15);
+  const auto source = sourceKind == QLatin1String("normal") ? c_source
+                      : sourceKind == QLatin1String("single")
+                          ? QByteArray("## Only\n<!-- todo-list: {\"id\":\"only\"} -->\n")
+                          : QByteArray();
+  createArea();
+  const auto name = QStringLiteral("quick-sticker.todo");
+  QVERIFY(openNote(name, source).isValid());
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(480, 400);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  QVERIFY(controller && controller->isReady());
+  controller->setToday(today);
+  // Stored calendar state must not leak into ordinary/My Day/Important additions.
+  if (!(view == TodoViewKind::List && sourceKind == QLatin1String("empty")))
+    sticker.setDueDate(today.addDays(4));
+  const auto destination = sourceKind == QLatin1String("normal")   ? QStringLiteral("id:personal")
+                           : sourceKind == QLatin1String("single") ? QStringLiteral("id:only")
+                                                                   : QString();
+  if (view != TodoViewKind::All) {
+    controller->setView(view, view == TodoViewKind::List ? destination : QString());
+  }
+  const auto expectedView = controller->getViewKind();
+  auto *input = control<QLineEdit>(&sticker, "todoStickerAddTask");
+  QVERIFY(input && input->isEnabled());
+  const QString typed = QStringLiteral("  Plan *literal* [task]  ");
+  QVERIFY(typeText(input, typed));
+  QSignalSpy finished(controller, &TodoStickerController::taskAdditionFinished);
+  const auto submit = [&]() { QTest::keyClick(input, Qt::Key_Return); };
+  const bool chooseDestination =
+      expectedView != TodoViewKind::List && sourceKind == QLatin1String("normal");
+  const bool chooseDate = expectedView == TodoViewKind::Planned;
+  const QDate pickedDue = today.addDays(2);
+  if (chooseDestination || chooseDate) {
+    QVERIFY(answerDialog(
+        "todoStickerAddTaskDialog",
+        [&](QDialog *p_dialog) {
+          auto *choices = control<QComboBox>(p_dialog, "todoStickerTaskDestination");
+          auto *date = control<QDateEdit>(p_dialog, "todoStickerDueDate");
+          if (bool(choices) != chooseDestination || bool(date) != chooseDate)
+            return false;
+          if (choices) {
+            const int row = choices->findData(destination);
+            if (row < 0)
+              return false;
+            choices->setCurrentIndex(row);
+          }
+          if (date)
+            date->setDate(pickedDue);
+          auto *buttons = p_dialog->findChild<QDialogButtonBox *>();
+          if (!buttons)
+            return false;
+          buttons->button(QDialogButtonBox::Ok)->click();
+          return true;
+        },
+        submit));
+  } else {
+    submit();
+  }
+  // Busy or already-cleared Enter must not create a duplicate.
+  QTest::keyClick(input, Qt::Key_Return);
+  QTRY_COMPARE(finished.size(), 1);
+  QVERIFY(finished.first().at(1).toBool());
+  QTRY_VERIFY(input->text().isEmpty());
+  QCOMPARE(controller->getViewKind(), expectedView);
+  const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QVERIFY(saved.isValid());
+  const TodoItem *added = nullptr;
+  int matches = 0;
+  for (const auto &list : saved.m_lists) {
+    for (const auto &item : list.m_items) {
+      if (item.m_fields.m_title == typed.trimmed()) {
+        added = &item;
+        ++matches;
+      }
+    }
+  }
+  QCOMPARE(matches, 1);
+  QVERIFY(added);
+  if (!destination.isEmpty())
+    QCOMPARE(added->m_listKey, destination);
+  QVERIFY(saved.findList(added->m_listKey));
+  QCOMPARE(added->m_fields.m_myDay, expectedView == TodoViewKind::MyDay ? today : QDate());
+  QCOMPARE(added->m_fields.m_important, expectedView == TodoViewKind::Important);
+  const auto expectedDue = expectedView == TodoViewKind::Planned ? pickedDue
+                           : expectedView == TodoViewKind::All   ? today.addDays(4)
+                                                                 : QDate();
+  QCOMPARE(added->m_fields.m_due, expectedDue);
+  QVERIFY(controller->getTaskModel()->rowForKey(added->m_key) >= 0);
+  if (sourceKind == QLatin1String("normal"))
+    QCOMPARE(saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_title, QStringLiteral("Alpha"));
+}
+
+void TestTodoViewWindow::stickerQuickAddRetainsRejectedDrafts() {
+  createArea();
+  const auto name = QStringLiteral("reject-add.todo");
+  const auto buffer = openNote(name);
+  QVERIFY(buffer.isValid());
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(480, 400);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *input = control<QLineEdit>(&sticker, "todoStickerAddTask");
+  QVERIFY(controller && input);
+  QSignalSpy finished(controller, &TodoStickerController::taskAdditionFinished);
+  QVERIFY(typeText(input, QStringLiteral("   ")));
+  QTest::keyClick(input, Qt::Key_Return);
+  QCOMPARE(readBytes(absolute(name)), c_source);
+  QCOMPARE(finished.size(), 0);
+  QVERIFY(typeText(input, QStringLiteral("Keep this draft")));
+  controller->setView(TodoViewKind::Important);
+  QVERIFY(answerDialog(
+      "todoStickerAddTaskDialog",
+      [](QDialog *p_dialog) {
+        p_dialog->reject();
+        return true;
+      },
+      [&]() { QTest::keyClick(input, Qt::Key_Return); }));
+  QCOMPARE(input->text(), QStringLiteral("Keep this draft"));
+  QCOMPARE(readBytes(absolute(name)), c_source);
+  QVERIFY(answerDialog(
+      "todoStickerAddTaskDialog",
+      [&](QDialog *p_dialog) {
+        sticker.setDueDate(QDate(2025, 4, 20));
+        p_dialog->accept();
+        return true;
+      },
+      [&]() { QTest::keyClick(input, Qt::Key_Return); }));
+  QCOMPARE(finished.size(), 0);
+  QCOMPARE(input->text(), QStringLiteral("Keep this draft"));
+  QCOMPARE(readBytes(absolute(name)), c_source);
+  controller->setView(TodoViewKind::List, QStringLiteral("id:work"));
+  int cancelHook = m_hooks->addAction<BufferEvent>(
+      HookNames::FileBeforeSave,
+      [id = buffer.id()](HookContext &p_context, const BufferEvent &p_event) {
+        if (p_event.bufferId == id)
+          p_context.cancel();
+      });
+  const auto removeHook = qScopeGuard([&]() {
+    if (cancelHook >= 0)
+      m_hooks->removeAction(cancelHook);
+  });
+  QVERIFY(activate(input));
+  QTest::keyClick(input, Qt::Key_Return);
+  QTRY_COMPARE(finished.size(), 1);
+  QVERIFY(!finished.first().at(1).toBool());
+  QCOMPARE(input->text(), QStringLiteral("Keep this draft"));
+  QCOMPARE(readBytes(absolute(name)), c_source);
+  m_hooks->removeAction(cancelHook);
+  cancelHook = -1;
+  QTest::keyClick(input, Qt::Key_Return);
+  QTRY_COMPARE(finished.size(), 2);
+  QVERIFY(finished.last().at(1).toBool());
+  QVERIFY(input->text().isEmpty());
+  const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  int count = 0;
+  for (const auto &list : saved.m_lists)
+    for (const auto &item : list.m_items)
+      count += item.m_fields.m_title == QLatin1String("Keep this draft");
+  QCOMPARE(count, 1);
+}
+
+void TestTodoViewWindow::stickerQuickAddPendingState_data() {
+  QTest::addColumn<bool>("changeDate");
+  QTest::newRow("preserve-newer-input") << false;
+  QTest::newRow("capture-calendar-date") << true;
+}
+
+void TestTodoViewWindow::stickerQuickAddPendingState() {
+  QFETCH(bool, changeDate);
+  const auto name = QStringLiteral("pending-add.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(
+      writeBytes(absolute(name), QByteArray("## Only\n<!-- todo-list: {\"id\":\"only\"} -->\n")));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(480, 400);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *input = control<QLineEdit>(&sticker, "todoStickerAddTask");
+  QVERIFY(controller && input);
+  const QDate day(2025, 4, 20);
+  if (changeDate)
+    sticker.setDueDate(day);
+  QVERIFY(typeText(input, QStringLiteral("Submitted task")));
+  QSignalSpy finished(controller, &TodoStickerController::taskAdditionFinished);
+  SaveGateBarrier barrier(*m_gate, m_notebook);
+  QTest::keyClick(input, Qt::Key_Return);
+  QVERIFY(controller->isBusy());
+  QVERIFY(input->isEnabled() && input->isReadOnly());
+  if (changeDate)
+    sticker.setDueDate(day.addDays(1));
+  else
+    input->setText(QStringLiteral("Next draft"));
+  QTest::keyClick(input, Qt::Key_Return);
+  barrier.release();
+  QTRY_COMPARE(finished.size(), 1);
+  QVERIFY(finished.first().at(1).toBool());
+  QCOMPARE(input->text(), changeDate ? QString() : QStringLiteral("Next draft"));
+  const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  const auto *list = saved.findList(QStringLiteral("id:only"));
+  QVERIFY(list);
+  QCOMPARE(list->m_items.size(), 1);
+  QCOMPARE(list->m_items.first().m_fields.m_title, QStringLiteral("Submitted task"));
+  QCOMPARE(list->m_items.first().m_fields.m_due, changeDate ? day : QDate());
+  if (changeDate) {
+    QCOMPARE(controller->getDueDate(), day.addDays(1));
+    QCOMPARE(controller->getViewKind(), TodoViewKind::All);
+    QCOMPARE(controller->getTaskModel()->rowForKey(list->m_items.first().m_key), -1);
+  }
+}
+
+void TestTodoViewWindow::stickerQuickAddReadOnlyAndInvalid_data() {
+  QTest::addColumn<bool>("invalid");
+  QTest::newRow("read-only") << false;
+  QTest::newRow("invalid-document") << true;
+}
+
+void TestTodoViewWindow::stickerQuickAddReadOnlyAndInvalid() {
+  QFETCH(bool, invalid);
+  createArea();
+  const auto source = invalid ? QByteArray("Unowned prose\n") : c_source;
+  const auto name = QStringLiteral("unwritable-add.todo");
+  FileOpenSettings settings;
+  settings.m_readOnly = !invalid;
+  QVERIFY(openNote(name, source, settings).isValid());
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *input = control<QLineEdit>(&sticker, "todoStickerAddTask");
+  QVERIFY(controller && input && !input->isEnabled());
+  QCOMPARE(controller->addTask(QStringLiteral("Must not be added"), QStringLiteral("id:work")), 0);
+  QCOMPARE(readBytes(absolute(name)), source);
+}
+
+void TestTodoViewWindow::calendarSelectsStickerDueDate() {
+  const QDate day(2025, 4, 15);
+  const auto source =
+      QStringLiteral(
+          "## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+          "- [ ] First\n  <!-- todo-item: {\"id\":\"first\",\"due\":\"%1\"} -->\n\n"
+          "- [x] Done\n  <!-- todo-item: {\"id\":\"done\",\"due\":\"%1\"} -->\n\n"
+          "- [ ] Other\n  <!-- todo-item: {\"id\":\"other\",\"due\":\"%2\"} -->\n\n"
+          "## Personal\n<!-- todo-list: {\"id\":\"personal-list\"} -->\n\n"
+          "- [ ] Personal\n  <!-- todo-item: {\"id\":\"personal\",\"due\":\"%1\"} -->\n\n"
+          "- [ ] No date\n  <!-- todo-item: {\"id\":\"no-date\"} -->\n")
+          .arg(day.toString(Qt::ISODate), day.addDays(1).toString(Qt::ISODate))
+          .toUtf8();
+  const auto name = QStringLiteral("calendar.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), source));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  int changed = 0, clicked = 0;
+  const int changedHook =
+      m_hooks->addAction(HookNames::DashboardCalendarDateChanged,
+                         [&](HookContext &, const QVariantMap &) { ++changed; });
+  const int clickedHook =
+      m_hooks->addAction(HookNames::DashboardCalendarDateClicked,
+                         [&](HookContext &, const QVariantMap &) { ++clicked; });
+  const auto removeHooks = qScopeGuard([&]() {
+    m_hooks->removeAction(changedHook);
+    m_hooks->removeAction(clickedHook);
+  });
+  CalendarSticker calendar(*m_services);
+  TodoSticker sticker(*m_services);
+  QSignalSpy settings(&calendar, &Sticker::settingsChanged);
+  auto *dates = calendar.findChild<QCalendarWidget *>();
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  QVERIFY(dates && controller);
+  calendar.loadSettings(
+      QJsonObject{{QStringLiteral("selectedDate"), day.addDays(-1).toString(Qt::ISODate)}});
+  QCOMPARE(changed, 0);
+  QCOMPARE(clicked, 0);
+  QCOMPARE(settings.size(), 0);
+  QVERIFY(!controller->getDueDate().isValid());
+  dates->setSelectedDate(day);
+  QCOMPARE(changed, 1);
+  QCOMPARE(settings.size(), 1);
+  QCOMPARE(clicked, 0);
+  QCOMPARE(controller->getDueDate(), day);
+  sticker.resize(480, 400);
+  sticker.show();
+  calendar.resize(420, 320);
+  calendar.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  QVERIFY(QTest::qWaitForWindowExposed(&calendar));
+  QTRY_VERIFY(controller->isReady());
+  QCOMPARE(controller->getViewKind(), TodoViewKind::All);
+  auto *model = controller->getTaskModel();
+  const auto keys = [&]() {
+    QStringList result;
+    for (int row = 0; row < model->rowCount(); ++row) {
+      const auto key = model->index(row).data(TodoTaskModel::IdRole).toString();
+      if (!key.isEmpty())
+        result.append(key);
+    }
+    result.sort();
+    return result;
+  };
+  const QStringList sameDay{QStringLiteral("id:done"), QStringLiteral("id:first"),
+                            QStringLiteral("id:personal")};
+  QCOMPARE(keys(), sameDay);
+  QVERIFY(model->setData(model->index(model->rowForKey(QStringLiteral("id:done"))), Qt::Unchecked,
+                         Qt::CheckStateRole));
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(keys(), sameDay);
+  QCOMPARE(controller->getViewKind(), TodoViewKind::All);
+  controller->setView(TodoViewKind::Important);
+  auto *grid = dates->findChild<QAbstractItemView *>();
+  QVERIFY(grid && activate(grid));
+  const auto selected = grid->currentIndex();
+  QVERIFY(selected.isValid());
+  QTest::mouseClick(grid->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    grid->visualRect(selected).center());
+  QCOMPARE(dates->selectedDate(), day);
+  QCOMPARE(changed, 1);
+  QCOMPARE(clicked, 1);
+  QCOMPARE(settings.size(), 1);
+  QCOMPARE(controller->getViewKind(), TodoViewKind::All);
+  QCOMPARE(keys(), sameDay);
+  QTest::keyClick(grid, Qt::Key_Right);
+  QCOMPARE(dates->selectedDate(), day.addDays(1));
+  QCOMPARE(changed, 2);
+  QCOMPARE(clicked, 1);
+  QCOMPARE(settings.size(), 2);
+  QCOMPARE(controller->getDueDate(), day.addDays(1));
+  QCOMPARE(keys(), QStringList({QStringLiteral("id:other")}));
+  sticker.setDueDate(QDate());
+  QCOMPARE(controller->getDueDate(), day.addDays(1));
+  QCOMPARE(keys(), QStringList({QStringLiteral("id:other")}));
+  auto *lists = control<QComboBox>(&sticker, "todoStickerLists");
+  QVERIFY(lists);
+  int dateEntries = 0;
+  for (int row = 0; row < lists->count(); ++row)
+    dateEntries += lists->itemData(row, TodoListModel::ViewKindRole).value<TodoViewKind>() ==
+                   TodoViewKind::All;
+  QCOMPARE(dateEntries, 1);
+  controller->setView(TodoViewKind::List, QStringLiteral("id:personal-list"));
+  QCOMPARE(keys(), QStringList({QStringLiteral("id:no-date"), QStringLiteral("id:personal")}));
+  QVERIFY(chooseCombo(
+      lists, lists->findData(QVariant::fromValue(TodoViewKind::All), TodoListModel::ViewKindRole)));
+  QCOMPARE(keys(), QStringList({QStringLiteral("id:other")}));
 }
 
 } // namespace tests

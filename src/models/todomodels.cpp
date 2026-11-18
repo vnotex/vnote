@@ -37,6 +37,9 @@ bool matchesView(const TodoItem &p_item, const TodoList &p_list, TodoViewKind p_
 bool matchesFilters(const TodoItem &p_item, const TodoList &p_list, bool p_groupMatches,
                     const TodoProjection &p_projection) {
   const auto &fields = p_item.m_fields;
+  if (p_projection.m_dueDate.isValid() && fields.m_due != p_projection.m_dueDate) {
+    return false;
+  }
   if (!p_projection.m_tag.isEmpty() &&
       !fields.m_tags.contains(p_projection.m_tag, Qt::CaseInsensitive)) {
     return false;
@@ -62,7 +65,8 @@ bool matchesFilters(const TodoItem &p_item, const TodoList &p_list, bool p_group
 }
 
 bool hasFilters(const TodoProjection &p_projection) {
-  return !p_projection.m_search.isEmpty() || !p_projection.m_tag.isEmpty();
+  return !p_projection.m_search.isEmpty() || !p_projection.m_tag.isEmpty() ||
+         p_projection.m_dueDate.isValid();
 }
 
 QString groupTitle(const TodoGroup &p_group) {

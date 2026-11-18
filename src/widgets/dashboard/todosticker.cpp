@@ -1,17 +1,24 @@
 #include "todosticker.h"
 
 #include <QComboBox>
+#include <QDateEdit>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHash>
 #include <QHideEvent>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListView>
+#include <QLocale>
 #include <QMouseEvent>
 #include <QPersistentModelIndex>
 #include <QShowEvent>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QStyle>
 #include <QStyledItemDelegate>
 #include <QTimer>
@@ -19,7 +26,10 @@
 #include <QVBoxLayout>
 
 #include <controllers/todostickercontroller.h>
+#include <core/hookcontext.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
 #include <core/tododocument.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -176,7 +186,13 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   layout->setContentsMargins(0, 0, 0, 0);
   auto *toolbar = new QHBoxLayout();
   toolbar->setContentsMargins(4, 2, 4, 2);
-  toolbar->addStretch();
+  m_addTask = new QLineEdit(this);
+  m_addTask->setObjectName(QStringLiteral("todoStickerAddTask"));
+  m_addTask->setPlaceholderText(tr("Add Task"));
+  m_addTask->setAccessibleName(tr("Add Task"));
+  m_addTask->setToolTip(tr("Press Enter to add a task"));
+  m_addTask->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  toolbar->addWidget(m_addTask, 1);
   m_edit = new QToolButton(this);
   m_edit->setObjectName(QStringLiteral("todoStickerEdit"));
   m_edit->setText(tr("Edit"));
@@ -229,6 +245,7 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   m_message->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_message);
 
+  connect(m_addTask, &QLineEdit::returnPressed, this, &TodoSticker::submitTask);
   connect(m_edit, &QToolButton::clicked, m_controller, &TodoStickerController::edit);
   connect(m_settings, &QToolButton::clicked, this, &TodoSticker::chooseFile);
   connect(m_lists, &QComboBox::currentIndexChanged, this, [this](int p_index) {
@@ -239,14 +256,54 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
       }
     }
   });
+  connect(m_controller, &TodoStickerController::taskAdditionFinished, this,
+          [this](int p_token, bool p_created) {
+            if (p_token != m_addTaskToken) {
+              return;
+            }
+            m_addTaskToken = 0;
+            const bool clearInput = p_created && m_addTask->text() == m_addTaskText;
+            m_addTaskText.clear();
+            if (clearInput) {
+              m_addTask->clear();
+            }
+          });
   connect(m_controller, &TodoStickerController::stateChanged, this, &TodoSticker::updateState);
   connect(m_controller, &TodoStickerController::errorOccurred, this, &TodoSticker::updateState);
+
+  m_hookManager = m_services.get<HookManager>();
+  if (m_hookManager) {
+    const QPointer<TodoSticker> self(this);
+    const auto onCalendarDate = [self](HookContext &, const QVariantMap &p_args) {
+      if (self) {
+        self->setDueDate(
+            QDate::fromString(p_args.value(QStringLiteral("date")).toString(), Qt::ISODate));
+      }
+    };
+    m_dateChangedHookId =
+        m_hookManager->addAction(HookNames::DashboardCalendarDateChanged, onCalendarDate);
+    m_dateClickedHookId =
+        m_hookManager->addAction(HookNames::DashboardCalendarDateClicked, onCalendarDate);
+  }
   updateState();
+}
+
+TodoSticker::~TodoSticker() {
+  if (m_hookManager) {
+    if (m_dateChangedHookId >= 0) {
+      m_hookManager->removeAction(m_dateChangedHookId);
+    }
+    if (m_dateClickedHookId >= 0) {
+      m_hookManager->removeAction(m_dateClickedHookId);
+    }
+  }
 }
 
 QString TodoSticker::typeId() const { return QStringLiteral("todos"); }
 
 QString TodoSticker::titleText() const { return tr("TODOs"); }
+
+void TodoSticker::setDueDate(QDate p_date) { m_controller->setDueDate(p_date); }
 
 void TodoSticker::showEvent(QShowEvent *p_event) {
   Sticker::showEvent(p_event);
@@ -286,7 +343,15 @@ void TodoSticker::updateState() {
     const auto myDay = tr("My Day");
     const auto important = tr("Important");
     const auto planned = tr("Planned");
+    const auto &dueDate = m_controller->getDueDate();
+    const QString dueDateLabel =
+        dueDate.isValid()
+            ? tr("Due Date on %1").arg(QLocale().toString(dueDate, QLocale::ShortFormat))
+            : QString();
     QHash<QString, int> titleCounts{{myDay, 1}, {important, 1}, {planned, 1}};
+    if (dueDate.isValid()) {
+      ++titleCounts[dueDateLabel];
+    }
     for (const auto &list : document.m_lists) {
       ++titleCounts[list.m_title];
     }
@@ -312,6 +377,9 @@ void TodoSticker::updateState() {
     appendEntry(myDay, TodoViewKind::MyDay);
     appendEntry(important, TodoViewKind::Important);
     appendEntry(planned, TodoViewKind::Planned);
+    if (dueDate.isValid()) {
+      appendEntry(dueDateLabel, TodoViewKind::All);
+    }
     for (const auto &list : document.m_lists) {
       QString label = list.m_title.isEmpty() ? tr("Untitled list") : list.m_title;
       const auto *group = document.groupForList(list);
@@ -335,6 +403,8 @@ void TodoSticker::updateState() {
     m_lists->setCurrentIndex(selected);
   }
 
+  m_addTask->setEnabled(m_controller->canEditTasks());
+  m_addTask->setReadOnly(busy);
   m_edit->setEnabled(ready && !busy);
   m_edit->setToolTip(m_controller->getFilePath().isEmpty()
                          ? tr("Edit")
@@ -351,13 +421,97 @@ void TodoSticker::updateState() {
     } else if (!ready) {
       message = tr("Loading TODOs...");
     } else if (document.m_lists.isEmpty()) {
-      message = tr("No TODO lists. Use Edit to add a list.");
+      message = tr("No TODO lists.");
     } else if (m_controller->getTaskModel()->rowCount() == 0) {
       message = tr("No tasks in this list.");
     }
   }
   m_message->setText(message);
   m_message->setVisible(!message.isEmpty());
+}
+
+void TodoSticker::submitTask() {
+  if (m_controller->isBusy() || !m_controller->canEditTasks()) {
+    return;
+  }
+  const QString title = m_addTask->text();
+  if (title.trimmed().isEmpty()) {
+    return;
+  }
+
+  const QPointer<TodoSticker> self(this);
+  const auto kind = m_controller->getViewKind();
+  const QString selectedKey = m_controller->getSelectedListKey();
+  const QDate selectedDate = m_controller->getDueDate();
+  const int listCount = m_controller->getDocument().m_lists.size();
+  QString destination;
+  if (kind == TodoViewKind::List) {
+    destination = selectedKey;
+  } else if (listCount == 1) {
+    destination = m_controller->getDocument().m_lists.first().m_key;
+  }
+  QDate due = kind == TodoViewKind::All ? selectedDate : QDate();
+  const bool chooseDestination = kind != TodoViewKind::List && listCount > 1;
+  if (chooseDestination || kind == TodoViewKind::Planned) {
+    const QString path = m_controller->getFilePath();
+    const QString source = m_controller->getDocument().m_source;
+    // Keep the modal outside the sticker's shortcut and ownership hierarchy.
+    QDialog dialog;
+    dialog.setObjectName(QStringLiteral("todoStickerAddTaskDialog"));
+    dialog.setWindowTitle(tr("Add Task"));
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *form = new QFormLayout();
+    layout->addLayout(form);
+    QComboBox *destinations = nullptr;
+    if (chooseDestination) {
+      destinations = new QComboBox(&dialog);
+      destinations->setObjectName(QStringLiteral("todoStickerTaskDestination"));
+      destinations->setAccessibleName(tr("List"));
+      for (int row = 0; row < m_lists->count(); ++row) {
+        if (m_lists->itemData(row, TodoListModel::ViewKindRole).value<TodoViewKind>() ==
+            TodoViewKind::List) {
+          destinations->addItem(m_lists->itemText(row), m_lists->itemData(row));
+        }
+      }
+      form->addRow(tr("List"), destinations);
+    }
+    QDateEdit *dueDate = nullptr;
+    if (kind == TodoViewKind::Planned) {
+      dueDate = new QDateEdit(QDate::currentDate(), &dialog);
+      dueDate->setObjectName(QStringLiteral("todoStickerDueDate"));
+      dueDate->setAccessibleName(tr("Due date"));
+      dueDate->setCalendarPopup(true);
+      dueDate->setDisplayFormat(QLocale().dateFormat(QLocale::ShortFormat));
+      form->addRow(tr("Due date"), dueDate);
+    }
+    auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(buttons);
+    connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    connect(this, &QObject::destroyed, &dialog, &QDialog::reject);
+    if (dialog.exec() != QDialog::Accepted || !self) {
+      return;
+    }
+    if (m_controller->isBusy() || !m_controller->canEditTasks() ||
+        m_controller->getFilePath() != path || m_controller->getDocument().m_source != source ||
+        m_controller->getViewKind() != kind || m_controller->getSelectedListKey() != selectedKey ||
+        m_controller->getDueDate() != selectedDate) {
+      return;
+    }
+    if (destinations) {
+      destination = destinations->currentData().toString();
+    }
+    if (dueDate) {
+      due = dueDate->date();
+    }
+  }
+
+  // Admission follows controller state, not a possibly cancelled binding's old token.
+  const int token = m_controller->addTask(title, destination, due);
+  if (self) {
+    m_addTaskToken = token;
+    m_addTaskText = token ? title : QString();
+  }
 }
 
 void TodoSticker::chooseFile() {

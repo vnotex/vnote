@@ -25,6 +25,8 @@ struct TodoProjection {
   TodoSortOrder m_sort = TodoSortOrder::Manual;
   QDate m_today;
   bool m_completedExpanded = false;
+  // Optional exact due-date filter; an invalid date leaves due dates unrestricted.
+  QDate m_dueDate;
 };
 
 // Smart views, then always-expanded Default-owned root lists, then custom groups and children.

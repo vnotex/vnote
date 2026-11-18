@@ -328,6 +328,9 @@ inline const QLatin1String ImageHostAfterRemove("vnote.imagehost.after_remove");
 // Payload: { "date": "yyyy-MM-dd" }
 inline const QLatin1String DashboardCalendarDateChanged("vnote.dashboard.calendar.date_changed");
 
+// A calendar click, including a click on the already-selected date. Same payload.
+inline const QLatin1String DashboardCalendarDateClicked("vnote.dashboard.calendar.date_clicked");
+
 } // namespace HookNames
 
 } // namespace vnotex

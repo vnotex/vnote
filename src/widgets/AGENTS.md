@@ -1897,6 +1897,26 @@ another note; an already-open backing note follows normal tab deduplication. Edi
 are icon-only, grouped at the top right, using the bundled `edit_editor.svg` and `settings.svg`.
 Their normal/disabled icon colors follow live theme changes; accessible names and tooltips remain.
 
+The expanding Add Task input sits before those icons. Enter adds to the current real list;
+smart views ask for a destination only when several lists exist. Planned always asks for an
+explicit due date, even with zero or one list. My Day stamps the displayed day, Important sets
+importance, and the calendar-date view uses its selected due date. Other views never inherit
+that stored due date. An empty document uses the editor controller's native initial-list creation.
+Add and completion commands share the same reserved edit lifecycle. The input becomes read-only
+while busy and clears only for its matching confirmed new task, without replacing newer input.
+Cancelled, stale or precommit-rejected additions retain the draft. Installed-but-unsaved tasks
+consume the submitted title to avoid duplicate retry while preserving the normal save error.
+
+`TodoSticker::setDueDate(QDate)` selects one `Due Date on …` entry, updating it on later dates.
+It applies `TodoViewKind::All` plus `TodoProjection::m_dueDate` through the shared task model;
+completed tasks remain visible, and choosing another view leaves the dated entry available but
+inactive. Invalid dates are ignored. The selected date survives lazy initialization and backing
+changes, and a date change during saving cannot retarget the captured task operation.
+The widget subscribes to both `DashboardCalendarDateChanged` and `DashboardCalendarDateClicked`.
+The latter covers clicking the already-selected date; the controller is idempotent for the same
+active date. Calendar restoration emits neither, and only an actual selection change emits
+`settingsChanged` and the Changed hook, preserving History's existing refresh behavior.
+
 `TodoStickerController` owns the global backing path in `SessionConfig::core.todoStickerFilePath`.
 Settings selects an existing `.todo` file; cancellation leaves the path unchanged. Session change
 notifications refresh other stickers. The absent-key default is empty, so no config migration

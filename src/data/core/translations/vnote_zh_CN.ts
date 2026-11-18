@@ -13776,9 +13776,9 @@ Continue?</source>
         <translation>正在加载待办事项…</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="294"/>
-        <source>No TODO lists. Use Edit to add a list.</source>
-        <translation>没有 TODO 列表。点击“编辑”添加列表。</translation>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="424"/>
+        <source>No TODO lists.</source>
+        <translation>没有 TODO 列表。</translation>
     </message>
     <message>
         <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
@@ -13809,6 +13809,35 @@ Continue?</source>
         <location filename="../../../widgets/dashboard/todosticker.cpp" line="288"/>
         <source>Planned</source>
         <translation>计划</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="191"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="461"/>
+        <source>Add Task</source>
+        <translation>添加任务</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="193"/>
+        <source>Press Enter to add a task</source>
+        <translation>按 Enter 添加任务</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="349"/>
+        <source>Due Date on %1</source>
+        <translation>截止日期为 %1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="469"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="476"/>
+        <source>List</source>
+        <translation>列表</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="482"/>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="485"/>
+        <source>Due date</source>
+        <translation>截止日期</translation>
     </message>
 </context>
 <context>
@@ -14042,6 +14071,24 @@ Continue?</source>
         <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
         <source>The TODO file could not be opened for editing.</source>
         <translation>无法打开 TODO 文件进行编辑。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="861"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="870"/>
+        <source>Choose an existing destination list.</source>
+        <translation>请选择已有的目标列表。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="884"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="891"/>
+        <source>Choose a due date for the new task.</source>
+        <translation>请选择新任务的截止日期。</translation>
+    </message>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="963"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="968"/>
+        <source>The task could not be added.</source>
+        <translation>无法添加任务。</translation>
     </message>
 </context>
 </TS>

@@ -4,6 +4,7 @@
 #include "sticker.h"
 
 #include <QDate>
+#include <QString>
 
 class QCalendarWidget;
 
@@ -27,11 +28,11 @@ private slots:
   void onSelectionChanged();
 
 private:
-  // Fire the calendar-date-changed hook. Deliberately fired from the widget
+  // Fire the calendar date intent hook. Deliberately fired from the widget
   // (not a service) as a self-contained exception to the "hooks in services"
   // rule: this is pure inter-sticker communication with no core operation to
   // wrap. See plan / AGENTS.md hook-emission rule.
-  void broadcastDate(const QDate &p_date);
+  void broadcastDate(const QDate &p_date, QLatin1String p_hookName);
 
   QCalendarWidget *m_calendar = nullptr;
 };
