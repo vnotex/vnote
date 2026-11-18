@@ -333,7 +333,7 @@ Trust is remembered until you close this notebook.</source>
         <translation> (編集)</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+119"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+73"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -343,12 +343,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>検索/置換</translation>
     </message>
     <message>
-        <location line="+270"/>
+        <location line="+140"/>
         <source>Print</source>
         <translation>印刷</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-133"/>
         <source>Word Count</source>
         <translation>文字数</translation>
     </message>
@@ -368,7 +368,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>破棄</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+75"/>
         <source>Heading 1</source>
         <translation>見出し1</translation>
     </message>
@@ -378,7 +378,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>見出し %1</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>Clear</source>
         <translation>クリア</translation>
     </message>
@@ -448,22 +448,24 @@ Trust is remembered until you close this notebook.</source>
         <translation>引用</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="+202"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Link</source>
         <translation>リンク</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Image</source>
         <translation>画像</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="+15"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Table</source>
         <translation>表</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+40"/>
         <source>Mind Map</source>
         <translation>マインドマップ</translation>
     </message>
@@ -979,12 +981,14 @@ Trust is remembered until you close this notebook.</source>
         <translation>メニュー</translation>
     </message>
     <message>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="-106"/>
         <location filename="../../../widgets/textviewwindowhelper.h" line="+52"/>
         <source>Undo</source>
         <translation>元に戻す</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="+1"/>
         <source>Redo</source>
         <translation>やり直す</translation>
     </message>
@@ -1091,6 +1095,15 @@ Trust is remembered until you close this notebook.</source>
         <location line="+4"/>
         <source>A password or app password is required to enable WebDAV sync.</source>
         <translation>WebDAV 同期を有効にするにはパスワードまたはアプリパスワードが必要です。</translation>
+    </message>
+</context>
+<context>
+    <name>TodoDocument</name>
+    <message>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+787"/>
+        <location line="+222"/>
+        <source>Default</source>
+        <translation>デフォルト</translation>
     </message>
 </context>
 <context>
@@ -1415,25 +1428,27 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+3120"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+3955"/>
         <source>The note is no longer open.</source>
         <translation>このノートはすでに閉じられています。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+19"/>
         <source>A note was closed while the folder was being prepared.</source>
         <translation>フォルダーの準備中にノートが閉じられました。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-6"/>
+        <location line="+19"/>
         <location line="+25"/>
         <location line="+26"/>
-        <location line="+44"/>
+        <location line="+8"/>
+        <location line="+38"/>
         <source>An open note is still being saved. Try again in a moment.</source>
         <translation>開いているノートを保存中です。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-58"/>
         <source>The note changed while its snapshot was being saved.</source>
         <translation>スナップショットの保存中にノートが変更されました。</translation>
     </message>
@@ -1443,28 +1458,28 @@ Trust is remembered until you close this notebook.</source>
         <translation>開いているノートの最新の内容を読み取れませんでした。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>An open note has unsaved changes but its notebook is read-only.</source>
         <translation>開いているノートに未保存の変更がありますが、そのノートブックは読み取り専用です。</translation>
     </message>
     <message>
-        <location line="-56"/>
-        <location line="+66"/>
+        <location line="-58"/>
+        <location line="+68"/>
         <source>Saving an open note was cancelled.</source>
         <translation>開いているノートの保存がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="-3036"/>
-        <location line="+306"/>
-        <location line="+241"/>
-        <location line="+164"/>
-        <location line="+74"/>
-        <location line="+49"/>
+        <location line="-3801"/>
+        <location line="+328"/>
+        <location line="+400"/>
+        <location line="+178"/>
+        <location line="+107"/>
+        <location line="+51"/>
         <source>Replacement was cancelled.</source>
         <translation>置換がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="-828"/>
+        <location line="-1058"/>
         <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
         <translation>ノートを読み取れないか、検索対象サイズの上限を超えています。</translation>
@@ -1475,17 +1490,19 @@ Trust is remembered until you close this notebook.</source>
         <translation>保存済みのノートが変更されました。</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+5"/>
+        <location line="+595"/>
+        <location line="+335"/>
         <source>The note has a binary or non-round-trippable encoding.</source>
         <translation>ノートはバイナリ形式か、読み書きで元のバイト列を保持できないエンコーディングです。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-921"/>
         <source>Binary content cannot be replaced.</source>
         <translation>バイナリ形式の内容は置換できません。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+29"/>
         <source>The note has unsaved editor changes.</source>
         <translation>ノートにはエディタでの未保存の変更があります。</translation>
     </message>
@@ -1496,70 +1513,63 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+586"/>
-        <location line="+101"/>
+        <location line="+769"/>
+        <location line="+143"/>
         <source>Could not prepare the replacement.</source>
         <translation>置換を準備できませんでした。</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-276"/>
         <source>Replacement is available only for Simple search results.</source>
         <translation>置換は Simple 検索の結果でのみ利用できます。</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+36"/>
+        <location line="+10"/>
+        <location line="+40"/>
         <source>The search target is not an available notebook file.</source>
         <translation>検索対象は、ノートブック内で利用可能なファイルではありません。</translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-33"/>
         <source>The search target has moved or is no longer available.</source>
         <translation>検索対象が移動されたか、利用できなくなっています。</translation>
     </message>
     <message>
         <location line="+5"/>
-        <location line="+285"/>
+        <location line="+341"/>
         <source>The operation is no longer authorized.</source>
         <translation>この操作は許可されなくなりました。</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-555"/>
+        <location line="+9"/>
+        <location line="+211"/>
         <source>The notebook is busy.</source>
         <translation>ノートブックは処理中です。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>The notebook is closed or read-only.</source>
         <translation>ノートブックが閉じられているか、読み取り専用です。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>Protected notes cannot be replaced.</source>
         <translation>保護されたノートは置換できません。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <source>The note path is unavailable.</source>
-        <translation>ノートのパスを利用できません。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Linked note paths are unavailable.</source>
-        <translation>リンクを含むノートのパスは利用できません。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+18"/>
         <source>The note is missing, read-only, or exceeds the search size limit.</source>
         <translation>ノートが見つからないか、読み取り専用か、検索対象サイズの上限を超えています。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="-220"/>
+        <location line="+234"/>
         <source>The note has competing open buffers.</source>
         <translation>このノートを開いている複数のバッファが競合しています。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+19"/>
         <source>The note is unavailable, protected, read-only, or already being replaced.</source>
         <translation>ノートが利用できないか、保護されているか、読み取り専用か、すでに置換中です。</translation>
     </message>
@@ -1569,7 +1579,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>ノートに未保存の変更があります。</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+76"/>
         <source>The note is still being saved. Try again in a moment.</source>
         <translation>ノートはまだ保存中です。しばらくしてから再実行してください。</translation>
     </message>
@@ -1585,18 +1595,20 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+10"/>
-        <location line="+57"/>
-        <location line="+54"/>
+        <location line="+91"/>
+        <location line="+58"/>
         <source>The note changed while preparing the replacement.</source>
         <translation>置換の準備中にノートが変更されました。</translation>
     </message>
     <message>
-        <location line="-104"/>
+        <location line="-479"/>
+        <location line="+24"/>
+        <location line="+313"/>
         <source>Could not capture the current note content.</source>
         <translation>現在のノートの内容を取得できませんでした。</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+102"/>
         <location line="+5"/>
         <source>The replacement cannot be represented in the note&apos;s encoding.</source>
         <translation>置換後の内容は、ノートのエンコーディングでは表現できません。</translation>
@@ -1607,7 +1619,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>置換後の内容の保存がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>A save hook changed the guarded note content.</source>
         <translation>保存フックにより、変更を監視しているノートの内容が変更されました。</translation>
     </message>
@@ -1632,7 +1644,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>ノートは保存されましたが、保存後のフックが失敗しました。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Replacement edits remain unsaved: %1</source>
         <translation>置換による変更が未保存のままです: %1</translation>
     </message>
@@ -1642,17 +1654,38 @@ Trust is remembered until you close this notebook.</source>
         <translation>ノートの操作が正常に完了しませんでした。保存とコミットの状態を確認してください。</translation>
     </message>
     <message>
-        <location line="+1963"/>
+        <location line="+1341"/>
+        <source>Snapshot persistence requires the save worker.</source>
+        <translation>スナップショットの永続化には保存ワーカーが必要です。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The buffer binding was retired.</source>
+        <translation>バッファーの関連付けは解除されました。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+79"/>
+        <source>The editor snapshot is stale. Reload before saving.</source>
+        <translation>エディタのスナップショットが古くなっています。保存する前に再読み込みしてください。</translation>
+    </message>
+    <message>
+        <location line="-54"/>
+        <source>Saving the buffer failed.</source>
+        <translation>バッファーの保存に失敗しました。</translation>
+    </message>
+    <message>
+        <location line="+1111"/>
         <source>The note is being replaced.</source>
         <translation>ノートの内容を置換中です。</translation>
     </message>
     <message>
-        <location line="+119"/>
+        <location line="+123"/>
         <source>The notebook is busy syncing. Try again in a moment.</source>
         <translation>ノートブックを同期中です。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+20"/>
         <source>Could not write an open note to disk.</source>
         <translation>開いているノートをディスクに書き込めませんでした。</translation>
     </message>
@@ -1663,78 +1696,78 @@ Trust is remembered until you close this notebook.</source>
         <translation>エディタの内容を読み取れません</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="305"/>
+        <location line="-3822"/>
         <source>Mixed line endings cannot be edited from a snapshot.</source>
         <translation>改行コードが混在するドキュメントはスナップショットから編集できません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="791"/>
-        <location filename="../../../core/services/bufferservice.cpp" line="850"/>
+        <location line="+486"/>
+        <location line="+59"/>
         <source>The note snapshot is unavailable.</source>
         <translation>ノートのスナップショットを利用できません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="806"/>
+        <location line="-44"/>
         <source>The notebook is closed.</source>
         <translation>ノートブックは閉じられています。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="816"/>
+        <location line="+10"/>
         <source>The note is unavailable or protected.</source>
         <translation>ノートは利用できないか、保護されています。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="819"/>
+        <location line="+3"/>
         <source>Protected notes cannot be read as text snapshots.</source>
         <translation>保護されたノートをテキストスナップショットとして読み取ることはできません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="826"/>
+        <location line="+7"/>
         <source>The note path is unavailable or linked, or the note is too large.</source>
         <translation>ノートのパスが無効またはリンクされているか、ノートが大きすぎます。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="855"/>
+        <location line="+29"/>
         <source>The note is busy. Try again in a moment.</source>
         <translation>ノートは処理中です。しばらくしてから再試行してください。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="859"/>
+        <location line="+4"/>
         <source>The note changed on disk. Reopen it before reading a snapshot.</source>
         <translation>ディスク上のノートが変更されました。スナップショットを読む前に開き直してください。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="871"/>
+        <location line="+12"/>
         <source>The note changed while reading its snapshot.</source>
         <translation>スナップショットの読み取り中にノートが変更されました。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="882"/>
+        <location line="+11"/>
         <source>The note snapshot is not supported.</source>
         <translation>このノートのスナップショットはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1053"/>
+        <location line="+171"/>
         <source>The note path is unavailable or linked.</source>
         <translation>ノートのパスが無効またはリンクされています。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1208"/>
+        <location line="+155"/>
         <source>The note exceeds the snapshot size limit.</source>
         <translation>ノートがスナップショットのサイズ制限を超えています。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1221"/>
+        <location line="+13"/>
         <source>The note changed. Refresh its snapshot before editing.</source>
         <translation>ノートが変更されました。編集する前にスナップショットを更新してください。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1227"/>
+        <location line="+6"/>
         <source>Could not edit the note snapshot.</source>
         <translation>ノートのスナップショットを編集できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1233"/>
+        <location line="+6"/>
         <source>The note changed while editing its snapshot.</source>
         <translation>スナップショットの編集中にノートが変更されました。</translation>
     </message>
@@ -1742,7 +1775,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::CalendarSticker</name>
     <message>
-        <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+31"/>
+        <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+34"/>
         <source>Calendar</source>
         <translation>カレンダー</translation>
     </message>
@@ -4797,7 +4830,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>ツール</translation>
     </message>
     <message>
-        <location line="+305"/>
+        <location line="+307"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>グローバル</translation>
@@ -4855,9 +4888,9 @@ Trust is remembered until you close this notebook.</source>
         <translation>フォルダをインポート</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="-988"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="-990"/>
         <location line="+22"/>
-        <location line="+330"/>
+        <location line="+332"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="+91"/>
         <source>Export</source>
         <translation>エクスポート</translation>
@@ -7591,7 +7624,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+758"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+762"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
     </message>
@@ -7652,52 +7685,52 @@ Trust is remembered until you close this notebook.</source>
         <translation>vxcore コンテキストが初期化されていません</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1837"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1884"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1889"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1903"/>
+        <location line="+188"/>
+        <location line="+47"/>
+        <location line="+5"/>
+        <location line="+14"/>
         <source>The destination folder is unavailable.</source>
         <translation>保存先フォルダーを利用できません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1839"/>
+        <location line="-64"/>
         <source>The notebook is read-only.</source>
         <translation>ノートブックは読み取り専用です。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1863"/>
+        <location line="+24"/>
         <source>Unable to choose a file name.</source>
         <translation>ファイル名を選択できません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1868"/>
+        <location line="+5"/>
         <source>File creation was cancelled.</source>
         <translation>ファイルの作成はキャンセルされました。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1872"/>
+        <location line="+4"/>
         <source>The notebook is busy. Try again shortly.</source>
         <translation>ノートブックは処理中です。しばらくしてから再試行してください。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1878"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1925"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1935"/>
+        <location line="+6"/>
+        <location line="+47"/>
+        <location line="+10"/>
         <source>The file destination changed.</source>
         <translation>ファイルの保存先が変更されました。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1966"/>
+        <location line="+31"/>
         <source>The created file needs recovery; its contents were not overwritten.</source>
         <translation>作成されたファイルは復旧が必要です。内容は上書きしていません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1986"/>
+        <location line="+20"/>
         <source>The file was written, but its notebook identity needs recovery.</source>
         <translation>ファイルは書き込まれましたが、ノートブック内の識別情報は復旧が必要です。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1992"/>
+        <location line="+6"/>
         <source>The file was written, but an after-create hook failed.</source>
         <translation>ファイルは書き込まれましたが、作成後フックに失敗しました。</translation>
     </message>
@@ -11317,15 +11350,15 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../controllers/tagcontroller.cpp" line="+31"/>
         <location line="+10"/>
-        <location line="+62"/>
+        <location line="+66"/>
         <location line="+10"/>
         <location line="+16"/>
         <source>Tags</source>
         <translation>タグ</translation>
     </message>
     <message>
-        <location line="-98"/>
-        <location line="+72"/>
+        <location line="-102"/>
+        <location line="+76"/>
         <location line="+10"/>
         <location line="+16"/>
         <location line="+27"/>
@@ -11334,8 +11367,8 @@ The legacy notebook would be kept for data backup.</source>
         <translation>ノートブックが選択されていません。</translation>
     </message>
     <message>
-        <location line="-148"/>
-        <location line="+99"/>
+        <location line="-152"/>
+        <location line="+103"/>
         <location line="+27"/>
         <location line="+33"/>
         <source>Tag service is not available.</source>
@@ -11392,12 +11425,12 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagExplorer2</name>
     <message>
-        <location filename="../../../widgets/tagexplorer2.cpp" line="+124"/>
+        <location filename="../../../widgets/tagexplorer2.cpp" line="+159"/>
         <source>Open</source>
         <translation>開く</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+2"/>
         <source>Open Location</source>
         <translation>場所を開く</translation>
     </message>
@@ -11422,29 +11455,29 @@ Notebook: %3</source>
 ノートブック: %3</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+62"/>
         <source>Search tags</source>
         <translation>タグを検索</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+81"/>
-        <location line="+28"/>
+        <location line="+3"/>
+        <location line="+110"/>
+        <location line="+26"/>
         <source>New Tag</source>
         <translation>新しいタグ</translation>
     </message>
     <message>
-        <location line="-102"/>
+        <location line="-130"/>
         <source>Clear Selection</source>
         <translation>選択をクリア</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+10"/>
         <source>Two Columns</source>
         <translation>2 列</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+89"/>
         <source>Tag path (e.g. tag1/tag2/tag3):</source>
         <translation>タグのパス (例: tag1/tag2/tag3):</translation>
     </message>
@@ -11454,23 +11487,23 @@ Notebook: %3</source>
         <translation>&quot;%1&quot; の下のタグパス (例: child1/child2):</translation>
     </message>
     <message>
-        <location line="+16"/>
-        <location line="+20"/>
+        <location line="+15"/>
+        <location line="+18"/>
         <source>Delete</source>
         <translation>削除</translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-17"/>
         <source>Are you sure you want to delete tag &quot;%1&quot;?</source>
         <translation>タグ &quot;%1&quot; を削除してもよろしいですか?</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+21"/>
         <source>Move</source>
         <translation>移動</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+2"/>
         <source>Move Tag</source>
         <translation>タグを移動</translation>
     </message>
@@ -11565,7 +11598,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskPanel2</name>
     <message>
-        <location filename="../../../widgets/taskpanel2.cpp" line="+62"/>
+        <location filename="../../../widgets/taskpanel2.cpp" line="+64"/>
         <source>Task</source>
         <translation>タスク</translation>
     </message>
@@ -11926,6 +11959,1419 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+14"/>
         <source>Restore Down</source>
         <translation>復元ダウン</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoEditor</name>
+    <message>
+        <location filename="../../../widgets/editors/todoeditor.cpp" line="+73"/>
+        <source>Untitled group</source>
+        <translation>無題のグループ</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+452"/>
+        <source>Untitled list</source>
+        <translation>無題のリスト</translation>
+    </message>
+    <message>
+        <location line="-446"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>No group</source>
+        <translation>グループなし</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+606"/>
+        <source>Untitled task</source>
+        <translation>無題のタスク</translation>
+    </message>
+    <message>
+        <location line="-298"/>
+        <source>TODO planner</source>
+        <translation>TODO プランナー</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>List navigation</source>
+        <translation>リストナビゲーション</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+5"/>
+        <source>Show lists and search</source>
+        <translation>リストと検索を表示</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Planner panes</source>
+        <translation>プランナーのペイン</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Lists and search</source>
+        <translation>リストと検索</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Search tasks in this file</source>
+        <translation>このファイル内のタスクを検索</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+3"/>
+        <source>Search tasks</source>
+        <translation>タスクを検索</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Lists and smart views</source>
+        <translation>リストとスマートビュー</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Lists actions</source>
+        <translation>リストの操作</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+1148"/>
+        <location line="+193"/>
+        <source>New List</source>
+        <translation>新しいリスト</translation>
+    </message>
+    <message>
+        <location line="-1341"/>
+        <location line="+1147"/>
+        <source>New list</source>
+        <translation>新しいリスト</translation>
+    </message>
+    <message>
+        <location line="-1146"/>
+        <location line="+1"/>
+        <location line="+1206"/>
+        <source>New group</source>
+        <translation>新しいグループ</translation>
+    </message>
+    <message>
+        <location line="-1203"/>
+        <location line="+458"/>
+        <location line="+778"/>
+        <source>Archive Completed Tasks</source>
+        <translation>完了したタスクをアーカイブ</translation>
+    </message>
+    <message>
+        <location line="-1205"/>
+        <source>Tasks or details</source>
+        <translation>タスクまたは詳細</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Tasks</source>
+        <translation>タスク</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+1366"/>
+        <source>Add list icon</source>
+        <translation>リストのアイコンを追加</translation>
+    </message>
+    <message>
+        <location line="-1358"/>
+        <source>List title</source>
+        <translation>リストのタイトル</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Current view</source>
+        <translation>現在のビュー</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+1"/>
+        <location line="+1572"/>
+        <source>List Options</source>
+        <translation>リストのオプション</translation>
+    </message>
+    <message>
+        <location line="-1564"/>
+        <location line="+1317"/>
+        <source>List description</source>
+        <translation>リストの説明</translation>
+    </message>
+    <message>
+        <location line="-1308"/>
+        <source>Tasks; Enter opens details, Space completes</source>
+        <translation>タスク: Enter キーで詳細を開き、Space キーで完了にします</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>New task destination list</source>
+        <translation>新しいタスクの追加先リスト</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Due date</source>
+        <translation>期限</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose a due date for the new task</source>
+        <translation>新しいタスクの期限を選択</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>New task due date</source>
+        <translation>新しいタスクの期限</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+1"/>
+        <source>Add a task</source>
+        <translation>タスクを追加</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add</source>
+        <translation>追加</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Add task</source>
+        <translation>タスクを追加</translation>
+    </message>
+    <message>
+        <location line="+100"/>
+        <location line="+3"/>
+        <source>Task details</source>
+        <translation>タスクの詳細</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Close details and return to tasks</source>
+        <translation>詳細を閉じてタスクに戻る</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+1"/>
+        <source>Task completed</source>
+        <translation>タスクの完了</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Task title</source>
+        <translation>タスクのタイトル</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Task important</source>
+        <translation>タスクの重要度</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Task steps</source>
+        <translation>タスクのステップ</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Add a step; press Enter</source>
+        <translation>ステップを追加: Enter キーで確定</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Add a step</source>
+        <translation>ステップを追加</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+325"/>
+        <location line="+1188"/>
+        <source>Add to My Day</source>
+        <translation>今日の予定に追加</translation>
+    </message>
+    <message>
+        <location line="-1509"/>
+        <location line="+803"/>
+        <location line="+38"/>
+        <source>Task due date</source>
+        <translation>タスクの期限</translation>
+    </message>
+    <message>
+        <location line="-830"/>
+        <location line="+1"/>
+        <source>Task note in Markdown</source>
+        <translation>Markdown 形式のタスクのメモ</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Add note (markdown supported)</source>
+        <translation>メモを追加（Markdown 対応）</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Task creation date</source>
+        <translation>タスクの作成日</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+4"/>
+        <location line="+1211"/>
+        <location line="+322"/>
+        <source>Delete task</source>
+        <translation>タスクを削除</translation>
+    </message>
+    <message>
+        <location line="-1363"/>
+        <source>Archive Completed Tasks (requires completed tasks in an editable file)</source>
+        <translation>完了したタスクをアーカイブ（編集可能なファイル内に完了したタスクが必要）</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>All Tasks</source>
+        <translation>すべてのタスク</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Search results</source>
+        <translation>検索結果</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Created on %1</source>
+        <translation>作成日: %1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Creation date unknown</source>
+        <translation>作成日不明</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+1201"/>
+        <source>Remove importance</source>
+        <translation>重要マークを解除</translation>
+    </message>
+    <message>
+        <location line="-1201"/>
+        <location line="+1201"/>
+        <source>Mark as important</source>
+        <translation>重要マークを付ける</translation>
+    </message>
+    <message>
+        <location line="-1198"/>
+        <location line="+1110"/>
+        <source>Added to My Day</source>
+        <translation>今日の予定に追加済み</translation>
+    </message>
+    <message>
+        <location line="-1106"/>
+        <source>My Day: %1</source>
+        <translation>今日の予定: %1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Include task in My Day</source>
+        <translation>タスクを今日の予定に含める</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Add Due Date</source>
+        <translation>期限を追加</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Step title</source>
+        <translation>ステップのタイトル</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+25"/>
+        <source>Untitled step</source>
+        <translation>無題のステップ</translation>
+    </message>
+    <message>
+        <location line="-17"/>
+        <location line="+391"/>
+        <source>Step options</source>
+        <translation>ステップのオプション</translation>
+    </message>
+    <message>
+        <location line="-373"/>
+        <source>Complete step: %1</source>
+        <translation>ステップを完了にする: %1</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Options for step: %1</source>
+        <translation>ステップのオプション: %1</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Choose a due date before adding to Planned</source>
+        <translation>「予定」に追加する前に期限を選択してください</translation>
+    </message>
+    <message>
+        <location line="+351"/>
+        <source>Mark as Not Completed</source>
+        <translation>未完了にする</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Mark as Completed</source>
+        <translation>完了にする</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Promote to Task</source>
+        <translation>タスクに昇格</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+664"/>
+        <source>Delete</source>
+        <translation>削除</translation>
+    </message>
+    <message>
+        <location line="-640"/>
+        <source>Today</source>
+        <translation>今日</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Tomorrow</source>
+        <translation>明日</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Next Week</source>
+        <translation>来週</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+20"/>
+        <location line="+2"/>
+        <source>Pick A Date</source>
+        <translation>日付を選択</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <source>Remove Due Date</source>
+        <translation>期限を削除</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Set due date</source>
+        <translation>期限を設定</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cancel due date</source>
+        <translation>期限の設定をキャンセル</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <location line="+1"/>
+        <source>List name</source>
+        <translation>リスト名</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Group for the new list</source>
+        <translation>新しいリストの所属グループ</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Create list</source>
+        <translation>リストを作成</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cancel new list</source>
+        <translation>リストの新規作成をキャンセル</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>New Group</source>
+        <translation>新しいグループ</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+2"/>
+        <location line="+55"/>
+        <location line="+3"/>
+        <source>Group name</source>
+        <translation>グループ名</translation>
+    </message>
+    <message>
+        <location line="-29"/>
+        <source>Archive all completed tasks in this file?
+
+They will be moved, with their group and list hierarchy, to a new .archived.todo file in the same folder. All groups and lists will remain in this file, even if empty.</source>
+        <translation>このファイル内の完了したタスクをすべてアーカイブしますか?
+
+グループとリストの階層を維持したまま、同じフォルダー内の新しい .archived.todo ファイルに移動します。空になったものも含め、すべてのグループとリストはこのファイルに残ります。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <location line="+2"/>
+        <source>Rename group</source>
+        <translation>グループ名を変更</translation>
+    </message>
+    <message>
+        <location line="+60"/>
+        <source>Group actions</source>
+        <translation>グループの操作</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+307"/>
+        <source>Rename</source>
+        <translation>名前変更</translation>
+    </message>
+    <message>
+        <location line="-305"/>
+        <source>Ungroup Lists</source>
+        <translation>リストのグループ化を解除</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <location line="+1"/>
+        <location line="+267"/>
+        <source>Edit Description</source>
+        <translation>説明を編集</translation>
+    </message>
+    <message>
+        <location line="-237"/>
+        <source>Change list icon</source>
+        <translation>リストのアイコンを変更</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <location line="+1"/>
+        <source>List icon</source>
+        <translation>リストのアイコン</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Search list icons</source>
+        <translation>リストのアイコンを検索</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Search emoji names or paste emoji</source>
+        <translation>絵文字の名前を検索するか、絵文字を貼り付け</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Remove icon</source>
+        <translation>アイコンを削除</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove list icon</source>
+        <translation>リストのアイコンを削除</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>Delete list</source>
+        <translation>リストを削除</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete list &quot;%1&quot; and all its tasks?</source>
+        <translation>リスト「%1」とそのすべてのタスクを削除しますか?</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Delete task &quot;%1&quot;?</source>
+        <translation>タスク「%1」を削除しますか?</translation>
+    </message>
+    <message>
+        <location line="+146"/>
+        <source>Sort by</source>
+        <translation>並べ替え</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Importance</source>
+        <translation>重要度</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Due Date</source>
+        <translation>期限</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Name</source>
+        <translation>名前</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Creation Date</source>
+        <translation>作成日</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Move List To Group</source>
+        <translation>リストをグループに移動</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Remove from Group</source>
+        <translation>グループから除外</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Duplicate</source>
+        <translation>複製</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Task actions</source>
+        <translation>タスクの操作</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Remove from My Day</source>
+        <translation>今日の予定から除外</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Mark as not completed</source>
+        <translation>未完了にする</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Mark as completed</source>
+        <translation>完了にする</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Due today</source>
+        <translation>期限を今日に設定</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Due tomorrow</source>
+        <translation>期限を明日に設定</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Pick a date</source>
+        <translation>日付を選択</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Move task to...</source>
+        <translation>タスクの移動先...</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>Undo</source>
+        <translation>元に戻す</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Redo</source>
+        <translation>やり直す</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Cut</source>
+        <translation>切り取り</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Copy</source>
+        <translation>コピー</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Paste</source>
+        <translation>貼り付け</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Select All</source>
+        <translation>すべて選択</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoListModel</name>
+    <message>
+        <location filename="../../../models/todomodels.cpp" line="+76"/>
+        <source>Untitled group</source>
+        <translation>無題のグループ</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Untitled list</source>
+        <translation>無題のリスト</translation>
+    </message>
+    <message>
+        <location line="+85"/>
+        <source>%1, %2 lists, %3 incomplete tasks, expanded</source>
+        <translation>%1、リスト %2 件、未完了のタスク %3 件、展開済み</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1, %2 lists, %3 incomplete tasks, collapsed</source>
+        <translation>%1、リスト %2 件、未完了のタスク %3 件、折りたたみ済み</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>My Day</source>
+        <translation>今日の予定</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Planned</source>
+        <translation>予定</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>All Tasks</source>
+        <translation>すべてのタスク</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1, %2 incomplete tasks</source>
+        <translation>%1、未完了のタスク %2 件</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoSticker</name>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="+52"/>
+        <location line="+1"/>
+        <location line="+217"/>
+        <location line="+1"/>
+        <source>Edit</source>
+        <translation>編集</translation>
+    </message>
+    <message>
+        <location line="-212"/>
+        <location line="+1"/>
+        <source>Settings</source>
+        <translation>設定</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose an existing TODO file</source>
+        <translation>既存の TODO ファイルを選択</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>TODO list</source>
+        <translation>TODO リスト</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>TODO tasks</source>
+        <translation>TODO タスク</translation>
+    </message>
+    <message>
+        <location line="+79"/>
+        <source>TODOs</source>
+        <translation>TODO</translation>
+    </message>
+    <message>
+        <location line="+80"/>
+        <source>Untitled list</source>
+        <translation>無題のリスト</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Default</source>
+        <translation>デフォルト</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Untitled group</source>
+        <translation>無題のグループ</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Saving TODOs...</source>
+        <translation>TODO を保存しています...</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+2"/>
+        <source>Loading TODOs...</source>
+        <translation>TODO を読み込んでいます...</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>No TODO lists.</source>
+        <translation>TODO リストがありません。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>No tasks in this list.</source>
+        <translation>このリストにはタスクがありません。</translation>
+    </message>
+    <message>
+        <location line="+96"/>
+        <source>Choose TODO File</source>
+        <translation>TODO ファイルを選択</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>TODO files (*.todo)</source>
+        <translation>TODO ファイル (*.todo)</translation>
+    </message>
+    <message>
+        <location line="-180"/>
+        <source>My Day</source>
+        <translation>今日の予定</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Planned</source>
+        <translation>予定</translation>
+    </message>
+    <message>
+        <location line="-160"/>
+        <location line="+1"/>
+        <location line="+276"/>
+        <source>Add Task</source>
+        <translation>タスクを追加</translation>
+    </message>
+    <message>
+        <location line="-275"/>
+        <source>Press Enter to add a task</source>
+        <translation>Enter キーでタスクを追加</translation>
+    </message>
+    <message>
+        <location line="+162"/>
+        <source>Due Date on %1</source>
+        <translation>期限: %1</translation>
+    </message>
+    <message>
+        <location line="+121"/>
+        <location line="+7"/>
+        <source>List</source>
+        <translation>リスト</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+3"/>
+        <source>Due date</source>
+        <translation>期限</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoStickerController</name>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="+157"/>
+        <location line="+210"/>
+        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
+        <translation>TODO のノートブックは閉じられています。開き直すか、別のファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location line="-177"/>
+        <source>The TODO file was deleted. Refresh to recreate it.</source>
+        <translation>TODO ファイルは削除されました。更新すると再作成されます。</translation>
+    </message>
+    <message>
+        <location line="+122"/>
+        <source>Choose an absolute path to a .todo file.</source>
+        <translation>.todo ファイルの絶対パスを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
+        <translation>リンクされた TODO ファイルやフォルダーは使用できません。通常のファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The TODO file is not a readable regular file: %1</source>
+        <translation>TODO ファイルは読み取り可能な通常のファイルではありません: %1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO file is missing or unreadable: %1</source>
+        <translation>TODO ファイルが存在しないか、読み取れません: %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The TODO parent folder is missing or unavailable: %1</source>
+        <translation>TODO の親フォルダーが存在しないか、利用できません: %1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO file path cannot be resolved: %1</source>
+        <translation>TODO ファイルのパスを解決できません: %1</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>The TODO file is being initialized by another dashboard.</source>
+        <translation>別のダッシュボードが TODO ファイルを初期化しています。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>The TODO notebook folder cannot be read.</source>
+        <translation>TODO のノートブックフォルダーを読み取れません。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>A notebook folder already occupies the TODO file path.</source>
+        <translation>TODO ファイルのパスには既にノートブックのフォルダーがあります。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
+        <translation>TODO の保存先は読み取り専用のため、ファイルを作成または登録できません。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The notebook maintenance service is unavailable.</source>
+        <translation>ノートブックのメンテナンスサービスを利用できません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The notebook is busy syncing. Try again after sync finishes.</source>
+        <translation>ノートブックを同期中です。同期が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The existing TODO file could not be indexed safely.</source>
+        <translation>既存の TODO ファイルを安全に登録できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
+        <translation>TODO ファイルの開いているバッファーが競合しています。余分なビューを閉じて再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
+        <translation>開いている TODO バッファーからこのファイルを安全に再作成できません。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
+        <translation>開いている TODO バッファーは処理中です。現在の操作が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The current TODO draft could not be captured. Save it from its editor.</source>
+        <translation>現在の TODO 下書きを取得できませんでした。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
+        <translation>保存する前に、開いている TODO バッファーが変更されたか利用できなくなりました。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
+        <translation>TODO 下書きの保存が拒否またはキャンセルされました。エディターで保存してください。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
+        <translation>ファイルを再作成するための TODO 下書きの保存に失敗しました（エラー %1）。下書きはエディターに残っています。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The bundled initial TODO document is unavailable.</source>
+        <translation>同梱の初期 TODO ドキュメントを利用できません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The bundled initial TODO document could not be read.</source>
+        <translation>同梱の初期 TODO ドキュメントを読み取れませんでした。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The TODO file could not be created.</source>
+        <translation>TODO ファイルを作成できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO destination changed during creation. No alternate file was selected.</source>
+        <translation>作成中に TODO の保存先が変更されました。代わりのファイルは選択していません。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
+        <translation>再作成中に TODO ファイルが変更されました。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The default TODO file is being initialized by another dashboard.</source>
+        <translation>別のダッシュボードがデフォルトの TODO ファイルを初期化しています。</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
+        <translation>利用可能なノートブックがありません。ノートブックを開くか、「設定」で TODO ファイルを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The default TODO location is missing or contains a linked path.</source>
+        <translation>デフォルトの TODO 保存先が存在しないか、リンクされたパスが含まれています。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location line="+137"/>
+        <source>The TODO services are unavailable.</source>
+        <translation>TODO サービスを利用できません。</translation>
+    </message>
+    <message>
+        <location line="-86"/>
+        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
+        <translation>TODO ファイルを一時的に利用できません。現在の操作が完了してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <location line="+124"/>
+        <source>Line %1: %2</source>
+        <translation>%1 行目: %2</translation>
+    </message>
+    <message>
+        <location line="-60"/>
+        <source>Wait for the current TODO operation to finish.</source>
+        <translation>現在の TODO 操作が完了するまでお待ちください。</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>The selected TODO file cannot be read right now.</source>
+        <translation>選択した TODO ファイルは現在読み取れません。</translation>
+    </message>
+    <message>
+        <location line="+94"/>
+        <source>This task is out of date. Refresh before trying again.</source>
+        <translation>このタスクの表示は古くなっています。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+68"/>
+        <location line="+81"/>
+        <source>The selected task no longer exists.</source>
+        <translation>選択したタスクはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="-113"/>
+        <source>The TODO selection changed before the operation could finish.</source>
+        <translation>操作が完了する前に TODO の選択が変更されました。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The TODO source cannot be edited without changing unrelated text.</source>
+        <translation>無関係なテキストを変更せずに TODO ソースを編集することはできません。</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>The task could not be updated.</source>
+        <translation>タスクを更新できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>The TODO change could not be saved.</source>
+        <translation>TODO の変更を保存できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The TODO change could not start. Refresh and try again.</source>
+        <translation>TODO の変更を開始できませんでした。更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The TODO source changed. Select the task again in the refreshed list.</source>
+        <translation>TODO ソースが変更されました。更新されたリストでタスクを選択し直してください。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The TODO file could not be opened.</source>
+        <translation>TODO ファイルを開けませんでした。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>The TODO file could not be opened for editing.</source>
+        <translation>TODO ファイルを編集用に開けませんでした。</translation>
+    </message>
+    <message>
+        <location line="-229"/>
+        <location line="+9"/>
+        <source>Choose an existing destination list.</source>
+        <translation>既存の追加先リストを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+7"/>
+        <source>Choose a due date for the new task.</source>
+        <translation>新しいタスクの期限を選択してください。</translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <location line="+5"/>
+        <source>The task could not be added.</source>
+        <translation>タスクを追加できませんでした。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoTaskModel</name>
+    <message>
+        <location filename="../../../models/todomodels.cpp" line="-106"/>
+        <source>Untitled task</source>
+        <translation>無題のタスク</translation>
+    </message>
+    <message>
+        <location line="+454"/>
+        <location line="+52"/>
+        <source>Completed</source>
+        <translation>完了</translation>
+    </message>
+    <message>
+        <location line="-48"/>
+        <source>Completed, %1 tasks, expanded</source>
+        <translation>完了、タスク %1 件、展開済み</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Completed, %1 tasks, collapsed</source>
+        <translation>完了、タスク %1 件、折りたたみ済み</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Not completed</source>
+        <translation>未完了</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Group: %1</source>
+        <translation>グループ: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>List: %1</source>
+        <translation>リスト: %1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Due: %1</source>
+        <translation>期限: %1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>My Day: %1</source>
+        <translation>今日の予定: %1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 of %2 steps completed</source>
+        <translation>%2 ステップ中 %1 ステップ完了</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tags: %1</source>
+        <translation>タグ: %1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoTaskView</name>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="+172"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Due %1</source>
+        <translation>期限 %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>My Day: %1</source>
+        <translation>今日の予定: %1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1/%2 steps</source>
+        <translation>ステップ %1/%2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Note</source>
+        <translation>メモ</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoViewWindow</name>
+    <message>
+        <location filename="../../../widgets/todoviewwindow.cpp" line="+85"/>
+        <source>TODO source diagnostic</source>
+        <translation>TODO ソースの診断</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Completed tasks archived to %1</source>
+        <translation>完了したタスクを %1 にアーカイブしました</translation>
+    </message>
+    <message>
+        <location line="+296"/>
+        <source>The document changed in another view. Please try again.</source>
+        <translation>別のビューでドキュメントが変更されました。再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Waiting for another view to finish saving this document</source>
+        <translation>別のビューでこのドキュメントの保存が完了するのを待っています</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The note source is unavailable. Reload the document to try again.</source>
+        <translation>ノートのソースを利用できません。ドキュメントを再読み込みしてから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Line %1: %2</source>
+        <translation>%1 行目: %2</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Correct the task data at its source, then reload this document.</source>
+        <translation>ソース内のタスクデータを修正してから、このドキュメントを再読み込みしてください。</translation>
+    </message>
+    <message>
+        <location line="+87"/>
+        <location line="+19"/>
+        <source>Edit task fields to change this document.</source>
+        <translation>このドキュメントを変更するには、タスクの項目を編集してください。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoViewWindowController</name>
+    <message>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-931"/>
+        <source>Line %1: %2</source>
+        <translation>%1 行目: %2</translation>
+    </message>
+    <message>
+        <location line="+165"/>
+        <location line="+12"/>
+        <location line="+1176"/>
+        <source>The task no longer exists.</source>
+        <translation>タスクはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="-1101"/>
+        <source>There are no completed tasks to archive.</source>
+        <translation>アーカイブする完了済みのタスクがありません。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The TODO document changed in another view. Try archiving again.</source>
+        <translation>別のビューで TODO ドキュメントが変更されました。アーカイブを再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Unable to save the current TODO document. No tasks were archived.</source>
+        <translation>現在の TODO ドキュメントを保存できません。タスクはアーカイブされていません。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The notebook is busy syncing. Try archiving after sync finishes.</source>
+        <translation>ノートブックを同期中です。同期が完了してからアーカイブを再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Tasks were left in the original document. Archive destination: %1
+%2</source>
+        <translation>タスクは元のドキュメントに残っています。アーカイブ先: %1
+%2</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The archive was written to %1, but the original document changed. Its tasks were not removed.</source>
+        <translation>アーカイブを %1 に書き込みましたが、元のドキュメントが変更されました。元のドキュメントのタスクは削除されていません。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The archive was written to %1, but the original document could not be saved. The move is incomplete; save the original document to finish.</source>
+        <translation>アーカイブを %1 に書き込みましたが、元のドキュメントを保存できませんでした。移動は未完了です。完了するには元のドキュメントを保存してください。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>The TODO document is unavailable or read-only.</source>
+        <translation>TODO ドキュメントは利用できないか、読み取り専用です。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The source changed. Refresh Tasks before trying again.</source>
+        <translation>ソースが変更されました。「タスク」を更新してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The document changed or is no longer editable. Please try again.</source>
+        <translation>ドキュメントが変更されたか、編集できなくなりました。再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The document changed during this operation. Please try again.</source>
+        <translation>この操作中にドキュメントが変更されました。再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>This row is out of date. Please try again.</source>
+        <translation>この行の表示は古くなっています。再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+376"/>
+        <location line="+413"/>
+        <source>Conflicting source edits were rejected.</source>
+        <translation>競合するソースの編集は拒否されました。</translation>
+    </message>
+    <message>
+        <location line="-406"/>
+        <source>The source snapshot is out of date.</source>
+        <translation>ソースのスナップショットが古くなっています。</translation>
+    </message>
+    <message>
+        <location line="+102"/>
+        <source>A new group needs a nonempty, single-line title.</source>
+        <translation>新しいグループには、空でなく改行を含まないタイトルが必要です。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>The group is missing or its title contains a line break.</source>
+        <translation>グループが存在しないか、タイトルに改行が含まれています。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Choose an existing custom group to ungroup.</source>
+        <translation>グループ化を解除する既存のカスタムグループを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+66"/>
+        <source>The source or destination group no longer exists.</source>
+        <translation>移動元または移動先のグループはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>A new list needs a nonempty, single-line title.</source>
+        <translation>新しいリストには、空でなく改行を含まないタイトルが必要です。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Choose an existing destination group.</source>
+        <translation>既存の追加先グループを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>The list is missing or its title contains a line break.</source>
+        <translation>リストが存在しないか、タイトルに改行が含まれています。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <location line="+56"/>
+        <location line="+18"/>
+        <source>The list no longer exists.</source>
+        <translation>リストはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>The list is missing or its icon contains a line break.</source>
+        <translation>リストが存在しないか、アイコンに改行が含まれています。</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Untitled list</source>
+        <translation>無題のリスト</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 (copy)</source>
+        <translation>%1（コピー）</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>The source or destination list/group no longer exists.</source>
+        <translation>移動元または移動先のリストまたはグループはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <location line="+241"/>
+        <source>A new task needs a nonempty, single-line title.</source>
+        <translation>新しいタスクには、空でなく改行を含まないタイトルが必要です。</translation>
+    </message>
+    <message>
+        <location line="-237"/>
+        <source>Choose an existing destination list.</source>
+        <translation>既存の追加先リストを選択してください。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Tasks</source>
+        <translation>タスク</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The task is missing or its title contains a line break.</source>
+        <translation>タスクが存在しないか、タイトルに改行が含まれています。</translation>
+    </message>
+    <message>
+        <location line="+98"/>
+        <source>The task or its move destination no longer exists.</source>
+        <translation>タスクまたはその移動先はもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>A new step needs an existing task and a nonempty, single-line title.</source>
+        <translation>新しいステップには、既存のタスクと、空でなく改行を含まないタイトルが必要です。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>The step no longer exists or its title contains a line break.</source>
+        <translation>ステップが存在しないか、タイトルに改行が含まれています。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>The step no longer exists.</source>
+        <translation>ステップはもう存在しません。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Only an existing, incomplete step can be promoted.</source>
+        <translation>既存の未完了のステップのみタスクに昇格できます。</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>The step move is out of range.</source>
+        <translation>ステップの移動先が範囲外です。</translation>
     </message>
 </context>
 <context>
@@ -12451,7 +13897,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+234"/>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+240"/>
         <source>Update Available</source>
         <translation>更新があります</translation>
     </message>
@@ -12466,7 +13912,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>リリースを確認</translation>
     </message>
     <message>
-        <location line="+457"/>
+        <location line="+472"/>
         <source>Could not check for updates.</source>
         <translation>更新を確認できませんでした。</translation>
     </message>
@@ -12476,7 +13922,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>TLS を利用できません: 利用可能なセキュアソケットのバックエンドが見つかりませんでした。</translation>
     </message>
     <message>
-        <location line="-488"/>
+        <location line="-503"/>
         <source>VNote %1 is available. Update Now downloads the update, then closes and reopens VNote.</source>
         <translation>VNote %1 が公開されています。「今すぐ更新」は更新をダウンロードしてから VNote を終了し、再起動します。</translation>
     </message>
@@ -12599,12 +14045,12 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+20"/>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+21"/>
         <source>Check for Updates</source>
         <translation>更新を確認</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+34"/>
         <source>Open Release Page</source>
         <translation>リリースページを開く</translation>
     </message>
@@ -12644,22 +14090,22 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>現在のバージョンは %1 です。リリースページを開いて新しいバージョンをダウンロードし、ご自身でインストールしてください。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+23"/>
         <source>Could not check for updates: %1</source>
         <translation>更新を確認できませんでした: %1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="80"/>
+        <location line="-16"/>
         <source>Update Now</source>
         <translation>今すぐ更新</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="79"/>
+        <location line="-1"/>
         <source>Update Now downloads the update, then closes and reopens VNote.</source>
         <translation>「今すぐ更新」は更新をダウンロードしてから VNote を終了し、再起動します。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="101"/>
+        <location line="+22"/>
         <source>An update is already in progress. Follow the updater window.</source>
         <translation>更新はすでに進行中です。更新プログラムのウィンドウを確認してください。</translation>
     </message>
@@ -12667,7 +14113,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+174"/>
+        <location filename="../../../core/services/updateservice.cpp" line="+289"/>
         <location line="+44"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>予期しないホストへの接続を拒否しました: %1</translation>
@@ -12675,11 +14121,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="-48"/>
         <location line="+20"/>
+        <location line="+168"/>
         <source>Cancelled.</source>
         <translation>キャンセルされました。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-163"/>
         <source>The request to %1 timed out.</source>
         <translation>%1 へのリクエストがタイムアウトしました。</translation>
     </message>
@@ -13027,7 +14474,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>マインドマップ: %1</translation>
     </message>
     <message>
-        <location line="+645"/>
+        <location line="+647"/>
         <source>Preview</source>
         <translation>プレビュー</translation>
     </message>
@@ -13035,7 +14482,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+245"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+294"/>
         <source>Stay on Top</source>
         <translation>常に手前に表示</translation>
     </message>
@@ -13125,7 +14572,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>スプリットとワークスペースを削除</translation>
     </message>
     <message>
-        <location line="+387"/>
+        <location line="+392"/>
         <source>Reload content from its source, discarding unsaved changes</source>
         <translation>未保存の変更を破棄して、ソースから内容を再読み込みします</translation>
     </message>
@@ -13308,13 +14755,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+557"/>
+        <location line="+555"/>
         <source>Failed to save note (%1).</source>
         <translation>ノート(%1)を保存できませんでした。</translation>
     </message>
     <message>
-        <location line="-553"/>
-        <location line="+525"/>
+        <location line="-551"/>
+        <location line="+523"/>
         <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>エディタの内容を読み取れません</translation>
@@ -13427,7 +14874,7 @@ Continue?</source>
         <translation>ノートのパス(%1)</translation>
     </message>
     <message>
-        <location line="-1738"/>
+        <location line="-1736"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>別のノートを開けません: コメントを保存できませんでした</translation>
     </message>
@@ -13436,19 +14883,19 @@ Continue?</source>
         <location line="+5"/>
         <location line="+520"/>
         <location line="+73"/>
-        <location line="+46"/>
+        <location line="+44"/>
         <location line="+26"/>
         <location line="+22"/>
         <source>Read-only — cannot edit</source>
         <translation>読み取り専用のため編集できません</translation>
     </message>
     <message>
-        <location line="-505"/>
+        <location line="-503"/>
         <source>Close note (%1) with unsaved changes?</source>
         <translation>未保存の変更があるノート (%1) を閉じますか？</translation>
     </message>
     <message>
-        <location line="+928"/>
+        <location line="+926"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>このファイルは読み取り専用です（%1）。変更を保存できません。</translation>
     </message>
@@ -13710,413 +15157,6 @@ Continue?</source>
     <message>
         <source>The token no longer exists</source>
         <translation>トークンはもう存在しません</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoSticker</name>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="176"/>
-        <source>Edit</source>
-        <translation>編集</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="183"/>
-        <source>Settings</source>
-        <translation>設定</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="184"/>
-        <source>Choose an existing TODO file</source>
-        <translation>既存の TODO ファイルを選択</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
-        <source>TODO list</source>
-        <translation>TODO リスト</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="199"/>
-        <source>TODO tasks</source>
-        <translation>TODO タスク</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="230"/>
-        <source>TODOs</source>
-        <translation>TODO</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="254"/>
-        <source>Untitled list</source>
-        <translation>無題のリスト</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="258"/>
-        <source>Default</source>
-        <translation>デフォルト</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="259"/>
-        <source>Untitled group</source>
-        <translation>無題のグループ</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="260"/>
-        <source>%1 / %2</source>
-        <translation>%1 / %2</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
-        <source>Saving TODOs...</source>
-        <translation>TODO を保存しています...</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="292"/>
-        <source>Loading TODOs...</source>
-        <translation>TODO を読み込んでいます...</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="424"/>
-        <source>No TODO lists.</source>
-        <translation>TODO リストがありません。</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
-        <source>No tasks in this list.</source>
-        <translation>このリストにはタスクがありません。</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
-        <source>Choose TODO File</source>
-        <translation>TODO ファイルを選択</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
-        <source>TODO files (*.todo)</source>
-        <translation>TODO ファイル (*.todo)</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="286"/>
-        <source>My Day</source>
-        <translation>今日の予定</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="287"/>
-        <source>Important</source>
-        <translation>重要</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="288"/>
-        <source>Planned</source>
-        <translation>予定</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="191"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="461"/>
-        <source>Add Task</source>
-        <translation>タスクを追加</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="193"/>
-        <source>Press Enter to add a task</source>
-        <translation>Enter キーでタスクを追加</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="349"/>
-        <source>Due Date on %1</source>
-        <translation>期限: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="469"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="476"/>
-        <source>List</source>
-        <translation>リスト</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="482"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="485"/>
-        <source>Due date</source>
-        <translation>期限</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoStickerController</name>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="139"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="340"/>
-        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
-        <translation>TODO のノートブックは閉じられています。開き直すか、別のファイルを選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="172"/>
-        <source>The TODO file was deleted. Refresh to recreate it.</source>
-        <translation>TODO ファイルは削除されました。更新すると再作成されます。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="285"/>
-        <source>Choose an absolute path to a .todo file.</source>
-        <translation>.todo ファイルの絶対パスを選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="289"/>
-        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
-        <translation>リンクされた TODO ファイルやフォルダーは使用できません。通常のファイルを選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="294"/>
-        <source>The TODO file is not a readable regular file: %1</source>
-        <translation>TODO ファイルは読み取り可能な通常のファイルではありません: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="300"/>
-        <source>The TODO file is missing or unreadable: %1</source>
-        <translation>TODO ファイルが存在しないか、読み取れません: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="305"/>
-        <source>The TODO parent folder is missing or unavailable: %1</source>
-        <translation>TODO の親フォルダーが存在しないか、利用できません: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="311"/>
-        <source>The TODO file path cannot be resolved: %1</source>
-        <translation>TODO ファイルのパスを解決できません: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="362"/>
-        <source>The TODO file is being initialized by another dashboard.</source>
-        <translation>別のダッシュボードが TODO ファイルを初期化しています。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="386"/>
-        <source>The TODO notebook folder cannot be read.</source>
-        <translation>TODO のノートブックフォルダーを読み取れません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="402"/>
-        <source>A notebook folder already occupies the TODO file path.</source>
-        <translation>TODO ファイルのパスには既にノートブックのフォルダーがあります。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="409"/>
-        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
-        <translation>TODO の保存先は読み取り専用のため、ファイルを作成または登録できません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="417"/>
-        <source>The notebook maintenance service is unavailable.</source>
-        <translation>ノートブックのメンテナンスサービスを利用できません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="422"/>
-        <source>The notebook is busy syncing. Try again after sync finishes.</source>
-        <translation>ノートブックを同期中です。同期が完了してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="432"/>
-        <source>The existing TODO file could not be indexed safely.</source>
-        <translation>既存の TODO ファイルを安全に登録できませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="452"/>
-        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
-        <translation>TODO ファイルの開いているバッファーが競合しています。余分なビューを閉じて再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="460"/>
-        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
-        <translation>開いている TODO バッファーからこのファイルを安全に再作成できません。エディターで保存してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="468"/>
-        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
-        <translation>開いている TODO バッファーは処理中です。現在の操作が完了してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="478"/>
-        <source>The current TODO draft could not be captured. Save it from its editor.</source>
-        <translation>現在の TODO 下書きを取得できませんでした。エディターで保存してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="490"/>
-        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
-        <translation>保存する前に、開いている TODO バッファーが変更されたか利用できなくなりました。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="504"/>
-        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
-        <translation>TODO 下書きの保存が拒否またはキャンセルされました。エディターで保存してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="505"/>
-        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
-        <translation>ファイルを再作成するための TODO 下書きの保存に失敗しました（エラー %1）。下書きはエディターに残っています。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="522"/>
-        <source>The bundled initial TODO document is unavailable.</source>
-        <translation>同梱の初期 TODO ドキュメントを利用できません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="527"/>
-        <source>The bundled initial TODO document could not be read.</source>
-        <translation>同梱の初期 TODO ドキュメントを読み取れませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="536"/>
-        <source>The TODO file could not be created.</source>
-        <translation>TODO ファイルを作成できませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="542"/>
-        <source>The TODO destination changed during creation. No alternate file was selected.</source>
-        <translation>作成中に TODO の保存先が変更されました。代わりのファイルは選択していません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="551"/>
-        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
-        <translation>再作成中に TODO ファイルが変更されました。更新してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="563"/>
-        <source>The default TODO file is being initialized by another dashboard.</source>
-        <translation>別のダッシュボードがデフォルトの TODO ファイルを初期化しています。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="595"/>
-        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
-        <translation>利用可能なノートブックがありません。ノートブックを開くか、「設定」で TODO ファイルを選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="608"/>
-        <source>The default TODO location is missing or contains a linked path.</source>
-        <translation>デフォルトの TODO 保存先が存在しないか、リンクされたパスが含まれています。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="633"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="737"/>
-        <source>The TODO services are unavailable.</source>
-        <translation>TODO サービスを利用できません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="684"/>
-        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
-        <translation>TODO ファイルを一時的に利用できません。現在の操作が完了してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="699"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="788"/>
-        <source>Line %1: %2</source>
-        <translation>%1 行目: %2</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="730"/>
-        <source>Wait for the current TODO operation to finish.</source>
-        <translation>現在の TODO 操作が完了するまでお待ちください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="770"/>
-        <source>The selected TODO file cannot be read right now.</source>
-        <translation>選択した TODO ファイルは現在読み取れません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="805"/>
-        <source>This task is out of date. Refresh before trying again.</source>
-        <translation>このタスクの表示は古くなっています。更新してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="810"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="850"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="909"/>
-        <source>The selected task no longer exists.</source>
-        <translation>選択したタスクはもう存在しません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="835"/>
-        <source>The TODO selection changed before the operation could finish.</source>
-        <translation>操作が完了する前に TODO の選択が変更されました。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="843"/>
-        <source>The TODO source cannot be edited without changing unrelated text.</source>
-        <translation>無関係なテキストを変更せずに TODO ソースを編集することはできません。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="859"/>
-        <source>The task could not be updated.</source>
-        <translation>タスクを更新できませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="873"/>
-        <source>The TODO change could not be saved.</source>
-        <translation>TODO の変更を保存できませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="887"/>
-        <source>The TODO change could not start. Refresh and try again.</source>
-        <translation>TODO の変更を開始できませんでした。更新してから再試行してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="904"/>
-        <source>The TODO source changed. Select the task again in the refreshed list.</source>
-        <translation>TODO ソースが変更されました。更新されたリストでタスクを選択し直してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="918"/>
-        <source>The TODO file could not be opened.</source>
-        <translation>TODO ファイルを開けませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
-        <source>The TODO file could not be opened for editing.</source>
-        <translation>TODO ファイルを編集用に開けませんでした。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="861"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="870"/>
-        <source>Choose an existing destination list.</source>
-        <translation>既存の追加先リストを選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="884"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="891"/>
-        <source>Choose a due date for the new task.</source>
-        <translation>新しいタスクの期限を選択してください。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="963"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="968"/>
-        <source>The task could not be added.</source>
-        <translation>タスクを追加できませんでした。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoTaskView</name>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="172"/>
-        <source>%1 / %2</source>
-        <translation>%1 / %2</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="177"/>
-        <source>Due %1</source>
-        <translation>期限 %1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="182"/>
-        <source>My Day: %1</source>
-        <translation>今日の予定: %1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="186"/>
-        <source>%1/%2 steps</source>
-        <translation>ステップ %1/%2</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="191"/>
-        <source>Note</source>
-        <translation>メモ</translation>
     </message>
 </context>
 </TS>

@@ -333,7 +333,7 @@ Trust is remembered until you close this notebook.</source>
         <translation> （编辑）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+119"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+73"/>
         <source>Save</source>
         <translation>保存</translation>
     </message>
@@ -343,12 +343,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>查找替换</translation>
     </message>
     <message>
-        <location line="+270"/>
+        <location line="+140"/>
         <source>Print</source>
         <translation>打印</translation>
     </message>
     <message>
-        <location line="-263"/>
+        <location line="-133"/>
         <source>Word Count</source>
         <translation>字词计数</translation>
     </message>
@@ -368,7 +368,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>放弃</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+75"/>
         <source>Heading 1</source>
         <translation>标题1</translation>
     </message>
@@ -378,7 +378,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>标题 %1</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>Clear</source>
         <translation>清空</translation>
     </message>
@@ -448,22 +448,24 @@ Trust is remembered until you close this notebook.</source>
         <translation>引用块</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="+202"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Link</source>
         <translation>链接</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Image</source>
         <translation>图片</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="+15"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2actions.cpp" line="+7"/>
         <source>Table</source>
         <translation>表格</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="+40"/>
         <source>Mind Map</source>
         <translation>思维导图</translation>
     </message>
@@ -979,12 +981,14 @@ Trust is remembered until you close this notebook.</source>
         <translation>菜单</translation>
     </message>
     <message>
+        <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="-106"/>
         <location filename="../../../widgets/textviewwindowhelper.h" line="+52"/>
         <source>Undo</source>
         <translation>撤销</translation>
     </message>
     <message>
         <location line="+1"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="+1"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
@@ -1091,6 +1095,15 @@ Trust is remembered until you close this notebook.</source>
         <location line="+4"/>
         <source>A password or app password is required to enable WebDAV sync.</source>
         <translation>启用 WebDAV 同步需要密码或应用密码。</translation>
+    </message>
+</context>
+<context>
+    <name>TodoDocument</name>
+    <message>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+787"/>
+        <location line="+222"/>
+        <source>Default</source>
+        <translation>默认</translation>
     </message>
 </context>
 <context>
@@ -1415,25 +1428,27 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+3120"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+3955"/>
         <source>The note is no longer open.</source>
         <translation>该笔记已不再打开。</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+19"/>
         <source>A note was closed while the folder was being prepared.</source>
         <translation>在准备文件夹时有笔记被关闭。</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-6"/>
+        <location line="+19"/>
         <location line="+25"/>
         <location line="+26"/>
-        <location line="+44"/>
+        <location line="+8"/>
+        <location line="+38"/>
         <source>An open note is still being saved. Try again in a moment.</source>
         <translation>已打开的笔记仍在保存中，请稍后重试。</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-58"/>
         <source>The note changed while its snapshot was being saved.</source>
         <translation>保存快照期间笔记发生变化。</translation>
     </message>
@@ -1443,28 +1458,28 @@ Trust is remembered until you close this notebook.</source>
         <translation>无法读取已打开笔记的最新内容。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>An open note has unsaved changes but its notebook is read-only.</source>
         <translation>已打开的笔记有未保存的修改，但其笔记本为只读。</translation>
     </message>
     <message>
-        <location line="-56"/>
-        <location line="+66"/>
+        <location line="-58"/>
+        <location line="+68"/>
         <source>Saving an open note was cancelled.</source>
         <translation>保存已打开的笔记已取消。</translation>
     </message>
     <message>
-        <location line="-3036"/>
-        <location line="+306"/>
-        <location line="+241"/>
-        <location line="+164"/>
-        <location line="+74"/>
-        <location line="+49"/>
+        <location line="-3801"/>
+        <location line="+328"/>
+        <location line="+400"/>
+        <location line="+178"/>
+        <location line="+107"/>
+        <location line="+51"/>
         <source>Replacement was cancelled.</source>
         <translation>替换已取消。</translation>
     </message>
     <message>
-        <location line="-828"/>
+        <location line="-1058"/>
         <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
         <translation>无法读取笔记，或笔记超出搜索大小限制。</translation>
@@ -1475,17 +1490,19 @@ Trust is remembered until you close this notebook.</source>
         <translation>已保存的笔记已发生变化。</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+5"/>
+        <location line="+595"/>
+        <location line="+335"/>
         <source>The note has a binary or non-round-trippable encoding.</source>
         <translation>笔记为二进制内容，或其编码无法无损往返转换。</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="-921"/>
         <source>Binary content cannot be replaced.</source>
         <translation>无法替换二进制内容。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+29"/>
         <source>The note has unsaved editor changes.</source>
         <translation>笔记在编辑器中有未保存的修改。</translation>
     </message>
@@ -1496,70 +1513,63 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+16"/>
-        <location line="+586"/>
-        <location line="+101"/>
+        <location line="+769"/>
+        <location line="+143"/>
         <source>Could not prepare the replacement.</source>
         <translation>无法准备替换操作。</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-276"/>
         <source>Replacement is available only for Simple search results.</source>
         <translation>仅支持替换简单搜索结果。</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+36"/>
+        <location line="+10"/>
+        <location line="+40"/>
         <source>The search target is not an available notebook file.</source>
         <translation>搜索目标不是笔记本中可用的文件。</translation>
     </message>
     <message>
-        <location line="-29"/>
+        <location line="-33"/>
         <source>The search target has moved or is no longer available.</source>
         <translation>搜索目标已移动或不再可用。</translation>
     </message>
     <message>
         <location line="+5"/>
-        <location line="+285"/>
+        <location line="+341"/>
         <source>The operation is no longer authorized.</source>
         <translation>此操作的授权已失效。</translation>
     </message>
     <message>
-        <location line="-279"/>
+        <location line="-555"/>
+        <location line="+9"/>
+        <location line="+211"/>
         <source>The notebook is busy.</source>
         <translation>笔记本正忙。</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>The notebook is closed or read-only.</source>
         <translation>笔记本已关闭或为只读。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>Protected notes cannot be replaced.</source>
         <translation>无法替换受保护的笔记。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <source>The note path is unavailable.</source>
-        <translation>笔记路径不可用。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Linked note paths are unavailable.</source>
-        <translation>包含文件系统链接的笔记路径不可用。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
+        <location line="+18"/>
         <source>The note is missing, read-only, or exceeds the search size limit.</source>
         <translation>笔记不存在、为只读或超出搜索大小限制。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="-220"/>
+        <location line="+234"/>
         <source>The note has competing open buffers.</source>
         <translation>此笔记已打开的多个缓冲区存在冲突。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+19"/>
         <source>The note is unavailable, protected, read-only, or already being replaced.</source>
         <translation>笔记不可用、受保护、为只读或已在替换中。</translation>
     </message>
@@ -1569,7 +1579,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>笔记有未保存的修改。</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+76"/>
         <source>The note is still being saved. Try again in a moment.</source>
         <translation>笔记仍在保存中，请稍后重试。</translation>
     </message>
@@ -1585,18 +1595,20 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+10"/>
-        <location line="+57"/>
-        <location line="+54"/>
+        <location line="+91"/>
+        <location line="+58"/>
         <source>The note changed while preparing the replacement.</source>
         <translation>准备替换期间笔记发生变化。</translation>
     </message>
     <message>
-        <location line="-104"/>
+        <location line="-479"/>
+        <location line="+24"/>
+        <location line="+313"/>
         <source>Could not capture the current note content.</source>
         <translation>无法获取笔记的当前内容。</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+102"/>
         <location line="+5"/>
         <source>The replacement cannot be represented in the note&apos;s encoding.</source>
         <translation>替换内容无法用笔记的编码表示。</translation>
@@ -1607,7 +1619,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>保存替换结果已取消。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+18"/>
         <source>A save hook changed the guarded note content.</source>
         <translation>保存钩子修改了受防护的笔记内容。</translation>
     </message>
@@ -1632,7 +1644,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>笔记已保存，但保存后钩子执行失败。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+10"/>
         <source>Replacement edits remain unsaved: %1</source>
         <translation>替换所做的修改仍未保存：%1</translation>
     </message>
@@ -1642,17 +1654,38 @@ Trust is remembered until you close this notebook.</source>
         <translation>笔记操作未正常完成；请检查其保存和提交状态。</translation>
     </message>
     <message>
-        <location line="+1963"/>
+        <location line="+1341"/>
+        <source>Snapshot persistence requires the save worker.</source>
+        <translation>快照持久化需要保存工作线程。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The buffer binding was retired.</source>
+        <translation>缓冲区绑定已失效。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+79"/>
+        <source>The editor snapshot is stale. Reload before saving.</source>
+        <translation>编辑器快照已过期。请重新加载后再保存。</translation>
+    </message>
+    <message>
+        <location line="-54"/>
+        <source>Saving the buffer failed.</source>
+        <translation>保存缓冲区失败。</translation>
+    </message>
+    <message>
+        <location line="+1111"/>
         <source>The note is being replaced.</source>
         <translation>笔记正在替换中。</translation>
     </message>
     <message>
-        <location line="+119"/>
+        <location line="+123"/>
         <source>The notebook is busy syncing. Try again in a moment.</source>
         <translation>笔记本正在同步，请稍后重试。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+20"/>
         <source>Could not write an open note to disk.</source>
         <translation>无法将已打开的笔记写入磁盘。</translation>
     </message>
@@ -1663,78 +1696,78 @@ Trust is remembered until you close this notebook.</source>
         <translation>无法读取编辑器内容</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="305"/>
+        <location line="-3822"/>
         <source>Mixed line endings cannot be edited from a snapshot.</source>
         <translation>无法通过快照编辑混合换行符的文档。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="791"/>
-        <location filename="../../../core/services/bufferservice.cpp" line="850"/>
+        <location line="+486"/>
+        <location line="+59"/>
         <source>The note snapshot is unavailable.</source>
         <translation>笔记快照不可用。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="806"/>
+        <location line="-44"/>
         <source>The notebook is closed.</source>
         <translation>笔记本已关闭。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="816"/>
+        <location line="+10"/>
         <source>The note is unavailable or protected.</source>
         <translation>笔记不可用或受保护。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="819"/>
+        <location line="+3"/>
         <source>Protected notes cannot be read as text snapshots.</source>
         <translation>无法将受保护的笔记读取为文本快照。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="826"/>
+        <location line="+7"/>
         <source>The note path is unavailable or linked, or the note is too large.</source>
         <translation>笔记路径不可用、为链接路径或笔记过大。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="855"/>
+        <location line="+29"/>
         <source>The note is busy. Try again in a moment.</source>
         <translation>笔记正忙，请稍后重试。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="859"/>
+        <location line="+4"/>
         <source>The note changed on disk. Reopen it before reading a snapshot.</source>
         <translation>磁盘上的笔记已改变。请重新打开后再读取快照。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="871"/>
+        <location line="+12"/>
         <source>The note changed while reading its snapshot.</source>
         <translation>读取快照时笔记发生变化。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="882"/>
+        <location line="+11"/>
         <source>The note snapshot is not supported.</source>
         <translation>不支持此笔记快照。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1053"/>
+        <location line="+171"/>
         <source>The note path is unavailable or linked.</source>
         <translation>笔记路径不可用或为链接路径。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1208"/>
+        <location line="+155"/>
         <source>The note exceeds the snapshot size limit.</source>
         <translation>笔记超过快照大小限制。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1221"/>
+        <location line="+13"/>
         <source>The note changed. Refresh its snapshot before editing.</source>
         <translation>笔记已改变。请刷新快照后再编辑。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1227"/>
+        <location line="+6"/>
         <source>Could not edit the note snapshot.</source>
         <translation>无法编辑笔记快照。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="1233"/>
+        <location line="+6"/>
         <source>The note changed while editing its snapshot.</source>
         <translation>编辑快照时笔记发生变化。</translation>
     </message>
@@ -1742,7 +1775,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::CalendarSticker</name>
     <message>
-        <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+31"/>
+        <location filename="../../../widgets/dashboard/calendarsticker.cpp" line="+34"/>
         <source>Calendar</source>
         <translation>日历</translation>
     </message>
@@ -4797,7 +4830,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location line="+305"/>
+        <location line="+307"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>全局</translation>
@@ -4855,9 +4888,9 @@ Trust is remembered until you close this notebook.</source>
         <translation>导入文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="-988"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="-990"/>
         <location line="+22"/>
-        <location line="+330"/>
+        <location line="+332"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="+91"/>
         <source>Export</source>
         <translation>导出</translation>
@@ -7591,7 +7624,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+758"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+762"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
@@ -7652,52 +7685,52 @@ Trust is remembered until you close this notebook.</source>
         <translation>vxcore 上下文尚未初始化</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1837"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1884"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1889"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1903"/>
+        <location line="+188"/>
+        <location line="+47"/>
+        <location line="+5"/>
+        <location line="+14"/>
         <source>The destination folder is unavailable.</source>
         <translation>目标文件夹不可用。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1839"/>
+        <location line="-64"/>
         <source>The notebook is read-only.</source>
         <translation>笔记本为只读。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1863"/>
+        <location line="+24"/>
         <source>Unable to choose a file name.</source>
         <translation>无法选择文件名。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1868"/>
+        <location line="+5"/>
         <source>File creation was cancelled.</source>
         <translation>文件创建已取消。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1872"/>
+        <location line="+4"/>
         <source>The notebook is busy. Try again shortly.</source>
         <translation>笔记本正忙，请稍后重试。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1878"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1925"/>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1935"/>
+        <location line="+6"/>
+        <location line="+47"/>
+        <location line="+10"/>
         <source>The file destination changed.</source>
         <translation>文件目标位置已改变。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1966"/>
+        <location line="+31"/>
         <source>The created file needs recovery; its contents were not overwritten.</source>
         <translation>创建的文件需要恢复，未覆盖其内容。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1986"/>
+        <location line="+20"/>
         <source>The file was written, but its notebook identity needs recovery.</source>
         <translation>文件已写入，但其笔记本标识需要恢复。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="1992"/>
+        <location line="+6"/>
         <source>The file was written, but an after-create hook failed.</source>
         <translation>文件已写入，但创建后钩子失败。</translation>
     </message>
@@ -11317,15 +11350,15 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../controllers/tagcontroller.cpp" line="+31"/>
         <location line="+10"/>
-        <location line="+62"/>
+        <location line="+66"/>
         <location line="+10"/>
         <location line="+16"/>
         <source>Tags</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location line="-98"/>
-        <location line="+72"/>
+        <location line="-102"/>
+        <location line="+76"/>
         <location line="+10"/>
         <location line="+16"/>
         <location line="+27"/>
@@ -11334,8 +11367,8 @@ The legacy notebook would be kept for data backup.</source>
         <translation>未选择笔记本。</translation>
     </message>
     <message>
-        <location line="-148"/>
-        <location line="+99"/>
+        <location line="-152"/>
+        <location line="+103"/>
         <location line="+27"/>
         <location line="+33"/>
         <source>Tag service is not available.</source>
@@ -11392,12 +11425,12 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagExplorer2</name>
     <message>
-        <location filename="../../../widgets/tagexplorer2.cpp" line="+124"/>
+        <location filename="../../../widgets/tagexplorer2.cpp" line="+159"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+2"/>
         <source>Open Location</source>
         <translation>打开所在文件夹</translation>
     </message>
@@ -11422,29 +11455,29 @@ Notebook: %3</source>
 笔记本：%3</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="+62"/>
         <source>Search tags</source>
         <translation>搜索标签</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+81"/>
-        <location line="+28"/>
+        <location line="+3"/>
+        <location line="+110"/>
+        <location line="+26"/>
         <source>New Tag</source>
         <translation>新建标签</translation>
     </message>
     <message>
-        <location line="-102"/>
+        <location line="-130"/>
         <source>Clear Selection</source>
         <translation>清除选择</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+10"/>
         <source>Two Columns</source>
         <translation>双列</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+89"/>
         <source>Tag path (e.g. tag1/tag2/tag3):</source>
         <translation>标签路径（例如 tag1/tag2/tag3）：</translation>
     </message>
@@ -11454,23 +11487,23 @@ Notebook: %3</source>
         <translation>&quot;%1&quot; 下的标签路径（例如 child1/child2）：</translation>
     </message>
     <message>
-        <location line="+16"/>
-        <location line="+20"/>
+        <location line="+15"/>
+        <location line="+18"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location line="-19"/>
+        <location line="-17"/>
         <source>Are you sure you want to delete tag &quot;%1&quot;?</source>
         <translation>确定要删除标签 &quot;%1&quot; 吗？</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+21"/>
         <source>Move</source>
         <translation>移动</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+2"/>
         <source>Move Tag</source>
         <translation>移动标签</translation>
     </message>
@@ -11565,7 +11598,7 @@ Notebook: %3</source>
 <context>
     <name>vnotex::TaskPanel2</name>
     <message>
-        <location filename="../../../widgets/taskpanel2.cpp" line="+62"/>
+        <location filename="../../../widgets/taskpanel2.cpp" line="+64"/>
         <source>Task</source>
         <translation>任务</translation>
     </message>
@@ -11926,6 +11959,1419 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+14"/>
         <source>Restore Down</source>
         <translation>向下还原</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoEditor</name>
+    <message>
+        <location filename="../../../widgets/editors/todoeditor.cpp" line="+73"/>
+        <source>Untitled group</source>
+        <translation>未命名分组</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+452"/>
+        <source>Untitled list</source>
+        <translation>未命名列表</translation>
+    </message>
+    <message>
+        <location line="-446"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>No group</source>
+        <translation>无分组</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+606"/>
+        <source>Untitled task</source>
+        <translation>未命名任务</translation>
+    </message>
+    <message>
+        <location line="-298"/>
+        <source>TODO planner</source>
+        <translation>TODO 规划器</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>List navigation</source>
+        <translation>列表导航</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+5"/>
+        <source>Show lists and search</source>
+        <translation>显示列表和搜索</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Planner panes</source>
+        <translation>规划器面板</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Lists and search</source>
+        <translation>列表和搜索</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Search tasks in this file</source>
+        <translation>搜索此文件中的任务</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+3"/>
+        <source>Search tasks</source>
+        <translation>搜索任务</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Lists and smart views</source>
+        <translation>列表和智能视图</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Lists actions</source>
+        <translation>列表操作</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+1148"/>
+        <location line="+193"/>
+        <source>New List</source>
+        <translation>新建列表</translation>
+    </message>
+    <message>
+        <location line="-1341"/>
+        <location line="+1147"/>
+        <source>New list</source>
+        <translation>新建列表</translation>
+    </message>
+    <message>
+        <location line="-1146"/>
+        <location line="+1"/>
+        <location line="+1206"/>
+        <source>New group</source>
+        <translation>新建分组</translation>
+    </message>
+    <message>
+        <location line="-1203"/>
+        <location line="+458"/>
+        <location line="+778"/>
+        <source>Archive Completed Tasks</source>
+        <translation>归档已完成的任务</translation>
+    </message>
+    <message>
+        <location line="-1205"/>
+        <source>Tasks or details</source>
+        <translation>任务或详情</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Tasks</source>
+        <translation>任务</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+1366"/>
+        <source>Add list icon</source>
+        <translation>添加列表图标</translation>
+    </message>
+    <message>
+        <location line="-1358"/>
+        <source>List title</source>
+        <translation>列表标题</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Current view</source>
+        <translation>当前视图</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+1"/>
+        <location line="+1572"/>
+        <source>List Options</source>
+        <translation>列表选项</translation>
+    </message>
+    <message>
+        <location line="-1564"/>
+        <location line="+1317"/>
+        <source>List description</source>
+        <translation>列表描述</translation>
+    </message>
+    <message>
+        <location line="-1308"/>
+        <source>Tasks; Enter opens details, Space completes</source>
+        <translation>任务；按 Enter 打开详情，按空格键完成任务</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>New task destination list</source>
+        <translation>新任务的目标列表</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Due date</source>
+        <translation>截止日期</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose a due date for the new task</source>
+        <translation>为新任务选择截止日期</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>New task due date</source>
+        <translation>新任务的截止日期</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+1"/>
+        <source>Add a task</source>
+        <translation>添加任务</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Add</source>
+        <translation>添加</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Add task</source>
+        <translation>添加任务</translation>
+    </message>
+    <message>
+        <location line="+100"/>
+        <location line="+3"/>
+        <source>Task details</source>
+        <translation>任务详情</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Close details and return to tasks</source>
+        <translation>关闭详情并返回任务</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <location line="+1"/>
+        <source>Task completed</source>
+        <translation>任务已完成</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Task title</source>
+        <translation>任务标题</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Task important</source>
+        <translation>重要任务</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Task steps</source>
+        <translation>任务步骤</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Add a step; press Enter</source>
+        <translation>添加步骤；按 Enter 确认</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Add a step</source>
+        <translation>添加步骤</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+325"/>
+        <location line="+1188"/>
+        <source>Add to My Day</source>
+        <translation>添加到我的一天</translation>
+    </message>
+    <message>
+        <location line="-1509"/>
+        <location line="+803"/>
+        <location line="+38"/>
+        <source>Task due date</source>
+        <translation>任务截止日期</translation>
+    </message>
+    <message>
+        <location line="-830"/>
+        <location line="+1"/>
+        <source>Task note in Markdown</source>
+        <translation>Markdown 格式的任务备注</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Add note (markdown supported)</source>
+        <translation>添加备注（支持 Markdown）</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Task creation date</source>
+        <translation>任务创建日期</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+4"/>
+        <location line="+1211"/>
+        <location line="+322"/>
+        <source>Delete task</source>
+        <translation>删除任务</translation>
+    </message>
+    <message>
+        <location line="-1363"/>
+        <source>Archive Completed Tasks (requires completed tasks in an editable file)</source>
+        <translation>归档已完成的任务（需要可编辑文件中有已完成的任务）</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>All Tasks</source>
+        <translation>所有任务</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>Search results</source>
+        <translation>搜索结果</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Created on %1</source>
+        <translation>创建于 %1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Creation date unknown</source>
+        <translation>创建日期未知</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <location line="+1201"/>
+        <source>Remove importance</source>
+        <translation>取消重要标记</translation>
+    </message>
+    <message>
+        <location line="-1201"/>
+        <location line="+1201"/>
+        <source>Mark as important</source>
+        <translation>标记为重要</translation>
+    </message>
+    <message>
+        <location line="-1198"/>
+        <location line="+1110"/>
+        <source>Added to My Day</source>
+        <translation>已添加到我的一天</translation>
+    </message>
+    <message>
+        <location line="-1106"/>
+        <source>My Day: %1</source>
+        <translation>我的一天：%1</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Include task in My Day</source>
+        <translation>将任务加入我的一天</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Add Due Date</source>
+        <translation>添加截止日期</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Step title</source>
+        <translation>步骤标题</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+25"/>
+        <source>Untitled step</source>
+        <translation>未命名步骤</translation>
+    </message>
+    <message>
+        <location line="-17"/>
+        <location line="+391"/>
+        <source>Step options</source>
+        <translation>步骤选项</translation>
+    </message>
+    <message>
+        <location line="-373"/>
+        <source>Complete step: %1</source>
+        <translation>完成步骤：%1</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Options for step: %1</source>
+        <translation>步骤选项：%1</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Choose a due date before adding to Planned</source>
+        <translation>添加到“计划”前请选择截止日期</translation>
+    </message>
+    <message>
+        <location line="+351"/>
+        <source>Mark as Not Completed</source>
+        <translation>标记为未完成</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Mark as Completed</source>
+        <translation>标记为已完成</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Promote to Task</source>
+        <translation>提升为任务</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <location line="+664"/>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <location line="-640"/>
+        <source>Today</source>
+        <translation>今天</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Tomorrow</source>
+        <translation>明天</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Next Week</source>
+        <translation>下周</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+20"/>
+        <location line="+2"/>
+        <source>Pick A Date</source>
+        <translation>选择日期</translation>
+    </message>
+    <message>
+        <location line="-13"/>
+        <source>Remove Due Date</source>
+        <translation>移除截止日期</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Set due date</source>
+        <translation>设置截止日期</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cancel due date</source>
+        <translation>取消设置截止日期</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <location line="+1"/>
+        <source>List name</source>
+        <translation>列表名称</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Group for the new list</source>
+        <translation>新列表所属分组</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Create list</source>
+        <translation>创建列表</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Cancel new list</source>
+        <translation>取消新建列表</translation>
+    </message>
+    <message>
+        <location line="+49"/>
+        <source>New Group</source>
+        <translation>新建分组</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+2"/>
+        <location line="+55"/>
+        <location line="+3"/>
+        <source>Group name</source>
+        <translation>分组名称</translation>
+    </message>
+    <message>
+        <location line="-29"/>
+        <source>Archive all completed tasks in this file?
+
+They will be moved, with their group and list hierarchy, to a new .archived.todo file in the same folder. All groups and lists will remain in this file, even if empty.</source>
+        <translation>归档此文件中所有已完成的任务？
+
+这些任务将连同其分组和列表层级一起移动到同一文件夹中新建的 .archived.todo 文件中。所有分组和列表都将保留在此文件中，即使为空也不例外。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <location line="+2"/>
+        <source>Rename group</source>
+        <translation>重命名分组</translation>
+    </message>
+    <message>
+        <location line="+60"/>
+        <source>Group actions</source>
+        <translation>分组操作</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <location line="+307"/>
+        <source>Rename</source>
+        <translation>重命名</translation>
+    </message>
+    <message>
+        <location line="-305"/>
+        <source>Ungroup Lists</source>
+        <translation>取消列表分组</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <location line="+1"/>
+        <location line="+267"/>
+        <source>Edit Description</source>
+        <translation>编辑描述</translation>
+    </message>
+    <message>
+        <location line="-237"/>
+        <source>Change list icon</source>
+        <translation>更改列表图标</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <location line="+1"/>
+        <source>List icon</source>
+        <translation>列表图标</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Search list icons</source>
+        <translation>搜索列表图标</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Search emoji names or paste emoji</source>
+        <translation>搜索表情符号名称或粘贴表情符号</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Remove icon</source>
+        <translation>移除图标</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Remove list icon</source>
+        <translation>移除列表图标</translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>Delete list</source>
+        <translation>删除列表</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Delete list &quot;%1&quot; and all its tasks?</source>
+        <translation>删除列表“%1”及其所有任务？</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Delete task &quot;%1&quot;?</source>
+        <translation>删除任务“%1”？</translation>
+    </message>
+    <message>
+        <location line="+146"/>
+        <source>Sort by</source>
+        <translation>排序依据</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Importance</source>
+        <translation>重要性</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Due Date</source>
+        <translation>截止日期</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Name</source>
+        <translation>名称</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Creation Date</source>
+        <translation>创建日期</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Move List To Group</source>
+        <translation>将列表移至分组</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Remove from Group</source>
+        <translation>从分组中移除</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Duplicate</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Task actions</source>
+        <translation>任务操作</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Remove from My Day</source>
+        <translation>从我的一天中移除</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Mark as not completed</source>
+        <translation>标记为未完成</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>Mark as completed</source>
+        <translation>标记为已完成</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Due today</source>
+        <translation>今天截止</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Due tomorrow</source>
+        <translation>明天截止</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Pick a date</source>
+        <translation>选择日期</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Move task to...</source>
+        <translation>将任务移至…</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>Undo</source>
+        <translation>撤销</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Redo</source>
+        <translation>重做</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Cut</source>
+        <translation>剪切</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Copy</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Paste</source>
+        <translation>粘贴</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Select All</source>
+        <translation>选择全部</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoListModel</name>
+    <message>
+        <location filename="../../../models/todomodels.cpp" line="+76"/>
+        <source>Untitled group</source>
+        <translation>未命名分组</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Untitled list</source>
+        <translation>未命名列表</translation>
+    </message>
+    <message>
+        <location line="+85"/>
+        <source>%1, %2 lists, %3 incomplete tasks, expanded</source>
+        <translation>%1，%2 个列表，%3 个未完成任务，已展开</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1, %2 lists, %3 incomplete tasks, collapsed</source>
+        <translation>%1，%2 个列表，%3 个未完成任务，已折叠</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>My Day</source>
+        <translation>我的一天</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Planned</source>
+        <translation>计划</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>All Tasks</source>
+        <translation>所有任务</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1, %2 incomplete tasks</source>
+        <translation>%1，%2 个未完成任务</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoSticker</name>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="+52"/>
+        <location line="+1"/>
+        <location line="+217"/>
+        <location line="+1"/>
+        <source>Edit</source>
+        <translation>编辑</translation>
+    </message>
+    <message>
+        <location line="-212"/>
+        <location line="+1"/>
+        <source>Settings</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Choose an existing TODO file</source>
+        <translation>选择已有的 TODO 文件</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>TODO list</source>
+        <translation>TODO 列表</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>TODO tasks</source>
+        <translation>TODO 任务</translation>
+    </message>
+    <message>
+        <location line="+79"/>
+        <source>TODOs</source>
+        <translation>待办事项</translation>
+    </message>
+    <message>
+        <location line="+80"/>
+        <source>Untitled list</source>
+        <translation>未命名列表</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Untitled group</source>
+        <translation>未命名分组</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Saving TODOs...</source>
+        <translation>正在保存待办事项…</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <location line="+2"/>
+        <source>Loading TODOs...</source>
+        <translation>正在加载待办事项…</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>No TODO lists.</source>
+        <translation>没有 TODO 列表。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>No tasks in this list.</source>
+        <translation>此列表中没有任务。</translation>
+    </message>
+    <message>
+        <location line="+96"/>
+        <source>Choose TODO File</source>
+        <translation>选择 TODO 文件</translation>
+    </message>
+    <message>
+        <location line="+0"/>
+        <source>TODO files (*.todo)</source>
+        <translation>TODO 文件 (*.todo)</translation>
+    </message>
+    <message>
+        <location line="-180"/>
+        <source>My Day</source>
+        <translation>我的一天</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Planned</source>
+        <translation>计划</translation>
+    </message>
+    <message>
+        <location line="-160"/>
+        <location line="+1"/>
+        <location line="+276"/>
+        <source>Add Task</source>
+        <translation>添加任务</translation>
+    </message>
+    <message>
+        <location line="-275"/>
+        <source>Press Enter to add a task</source>
+        <translation>按 Enter 添加任务</translation>
+    </message>
+    <message>
+        <location line="+162"/>
+        <source>Due Date on %1</source>
+        <translation>截止日期为 %1</translation>
+    </message>
+    <message>
+        <location line="+121"/>
+        <location line="+7"/>
+        <source>List</source>
+        <translation>列表</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+3"/>
+        <source>Due date</source>
+        <translation>截止日期</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoStickerController</name>
+    <message>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="+157"/>
+        <location line="+210"/>
+        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
+        <translation>TODO 所在的笔记本已关闭。请重新打开或选择其他文件。</translation>
+    </message>
+    <message>
+        <location line="-177"/>
+        <source>The TODO file was deleted. Refresh to recreate it.</source>
+        <translation>TODO 文件已被删除。刷新可重新创建。</translation>
+    </message>
+    <message>
+        <location line="+122"/>
+        <source>Choose an absolute path to a .todo file.</source>
+        <translation>请选择 .todo 文件的绝对路径。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
+        <translation>无法使用链接的 TODO 文件或文件夹。请选择普通文件。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The TODO file is not a readable regular file: %1</source>
+        <translation>TODO 文件不是可读取的普通文件：%1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO file is missing or unreadable: %1</source>
+        <translation>TODO 文件不存在或无法读取：%1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The TODO parent folder is missing or unavailable: %1</source>
+        <translation>TODO 的父文件夹不存在或不可用：%1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO file path cannot be resolved: %1</source>
+        <translation>无法解析 TODO 文件路径：%1</translation>
+    </message>
+    <message>
+        <location line="+51"/>
+        <source>The TODO file is being initialized by another dashboard.</source>
+        <translation>其他仪表盘正在初始化 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>The TODO notebook folder cannot be read.</source>
+        <translation>无法读取 TODO 所在的笔记本文件夹。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>A notebook folder already occupies the TODO file path.</source>
+        <translation>TODO 文件路径已被笔记本文件夹占用。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
+        <translation>TODO 位置为只读，无法创建或索引文件。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The notebook maintenance service is unavailable.</source>
+        <translation>笔记本维护服务不可用。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The notebook is busy syncing. Try again after sync finishes.</source>
+        <translation>笔记本正在同步。请在同步完成后重试。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The existing TODO file could not be indexed safely.</source>
+        <translation>无法安全地索引已有的 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
+        <translation>TODO 文件有相互冲突的打开缓冲区。请关闭多余视图后重试。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
+        <translation>打开的 TODO 缓冲区无法安全地重新创建此文件。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
+        <translation>打开的 TODO 缓冲区正忙。请在当前操作完成后重试。</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The current TODO draft could not be captured. Save it from its editor.</source>
+        <translation>无法获取当前 TODO 草稿。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
+        <translation>保存前，打开的 TODO 缓冲区已改变或变得不可用。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
+        <translation>保存 TODO 草稿被拒绝或取消。请在编辑器中保存。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
+        <translation>无法通过保存 TODO 草稿重新创建文件（错误 %1）。草稿仍在编辑器中打开。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The bundled initial TODO document is unavailable.</source>
+        <translation>随附的初始 TODO 文档不可用。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The bundled initial TODO document could not be read.</source>
+        <translation>无法读取随附的初始 TODO 文档。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The TODO file could not be created.</source>
+        <translation>无法创建 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The TODO destination changed during creation. No alternate file was selected.</source>
+        <translation>创建过程中 TODO 目标位置发生变化，未选择其他文件。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
+        <translation>重新创建过程中 TODO 文件发生变化。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The default TODO file is being initialized by another dashboard.</source>
+        <translation>其他仪表盘正在初始化默认 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
+        <translation>没有可用的笔记本。请打开笔记本或在“设置”中选择 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The default TODO location is missing or contains a linked path.</source>
+        <translation>默认 TODO 位置不存在或包含链接路径。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <location line="+137"/>
+        <source>The TODO services are unavailable.</source>
+        <translation>TODO 服务不可用。</translation>
+    </message>
+    <message>
+        <location line="-86"/>
+        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
+        <translation>TODO 文件暂时不可用。请在当前操作完成后重试。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <location line="+124"/>
+        <source>Line %1: %2</source>
+        <translation>第 %1 行：%2</translation>
+    </message>
+    <message>
+        <location line="-60"/>
+        <source>Wait for the current TODO operation to finish.</source>
+        <translation>请等待当前 TODO 操作完成。</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>The selected TODO file cannot be read right now.</source>
+        <translation>目前无法读取所选 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+94"/>
+        <source>This task is out of date. Refresh before trying again.</source>
+        <translation>此任务已过期。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+68"/>
+        <location line="+81"/>
+        <source>The selected task no longer exists.</source>
+        <translation>所选任务已不存在。</translation>
+    </message>
+    <message>
+        <location line="-113"/>
+        <source>The TODO selection changed before the operation could finish.</source>
+        <translation>操作完成前，所选 TODO 已发生变化。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The TODO source cannot be edited without changing unrelated text.</source>
+        <translation>无法在不改变无关文本的情况下编辑 TODO 源文档。</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>The task could not be updated.</source>
+        <translation>无法更新任务。</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>The TODO change could not be saved.</source>
+        <translation>无法保存 TODO 更改。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The TODO change could not start. Refresh and try again.</source>
+        <translation>无法开始 TODO 更改。请刷新后重试。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>The TODO source changed. Select the task again in the refreshed list.</source>
+        <translation>TODO 源文档已改变。请在刷新后的列表中重新选择任务。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The TODO file could not be opened.</source>
+        <translation>无法打开 TODO 文件。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>The TODO file could not be opened for editing.</source>
+        <translation>无法打开 TODO 文件进行编辑。</translation>
+    </message>
+    <message>
+        <location line="-229"/>
+        <location line="+9"/>
+        <source>Choose an existing destination list.</source>
+        <translation>请选择已有的目标列表。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+7"/>
+        <source>Choose a due date for the new task.</source>
+        <translation>请选择新任务的截止日期。</translation>
+    </message>
+    <message>
+        <location line="+75"/>
+        <location line="+5"/>
+        <source>The task could not be added.</source>
+        <translation>无法添加任务。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoTaskModel</name>
+    <message>
+        <location filename="../../../models/todomodels.cpp" line="-106"/>
+        <source>Untitled task</source>
+        <translation>未命名任务</translation>
+    </message>
+    <message>
+        <location line="+454"/>
+        <location line="+52"/>
+        <source>Completed</source>
+        <translation>已完成</translation>
+    </message>
+    <message>
+        <location line="-48"/>
+        <source>Completed, %1 tasks, expanded</source>
+        <translation>已完成，%1 个任务，已展开</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Completed, %1 tasks, collapsed</source>
+        <translation>已完成，%1 个任务，已折叠</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>Not completed</source>
+        <translation>未完成</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Group: %1</source>
+        <translation>分组：%1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>List: %1</source>
+        <translation>列表：%1</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Important</source>
+        <translation>重要</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Due: %1</source>
+        <translation>截止日期：%1</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>My Day: %1</source>
+        <translation>我的一天：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1 of %2 steps completed</source>
+        <translation>已完成 %1 个步骤，共 %2 个</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Tags: %1</source>
+        <translation>标签：%1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoTaskView</name>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="+172"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Due %1</source>
+        <translation>截止日期 %1</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>My Day: %1</source>
+        <translation>我的一天：%1</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>%1/%2 steps</source>
+        <translation>%1/%2 个步骤</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Note</source>
+        <translation>备注</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoViewWindow</name>
+    <message>
+        <location filename="../../../widgets/todoviewwindow.cpp" line="+85"/>
+        <source>TODO source diagnostic</source>
+        <translation>TODO 源文档诊断</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Completed tasks archived to %1</source>
+        <translation>已完成的任务已归档至 %1</translation>
+    </message>
+    <message>
+        <location line="+296"/>
+        <source>The document changed in another view. Please try again.</source>
+        <translation>文档已在其他视图中更改。请重试。</translation>
+    </message>
+    <message>
+        <location line="+32"/>
+        <source>Waiting for another view to finish saving this document</source>
+        <translation>正在等待其他视图完成此文档的保存</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>The note source is unavailable. Reload the document to try again.</source>
+        <translation>笔记源文档不可用。请重新加载文档后重试。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Line %1: %2</source>
+        <translation>第 %1 行：%2</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Correct the task data at its source, then reload this document.</source>
+        <translation>请在源文档中修正任务数据，然后重新加载此文档。</translation>
+    </message>
+    <message>
+        <location line="+87"/>
+        <location line="+19"/>
+        <source>Edit task fields to change this document.</source>
+        <translation>编辑任务字段以更改此文档。</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::TodoViewWindowController</name>
+    <message>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-931"/>
+        <source>Line %1: %2</source>
+        <translation>第 %1 行：%2</translation>
+    </message>
+    <message>
+        <location line="+165"/>
+        <location line="+12"/>
+        <location line="+1176"/>
+        <source>The task no longer exists.</source>
+        <translation>任务已不存在。</translation>
+    </message>
+    <message>
+        <location line="-1101"/>
+        <source>There are no completed tasks to archive.</source>
+        <translation>没有可归档的已完成任务。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The TODO document changed in another view. Try archiving again.</source>
+        <translation>TODO 文档已在其他视图中更改。请重新尝试归档。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Unable to save the current TODO document. No tasks were archived.</source>
+        <translation>无法保存当前 TODO 文档。未归档任何任务。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The notebook is busy syncing. Try archiving after sync finishes.</source>
+        <translation>笔记本正在同步。请在同步完成后尝试归档。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Tasks were left in the original document. Archive destination: %1
+%2</source>
+        <translation>任务仍保留在原文档中。归档目标：%1
+%2</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>The archive was written to %1, but the original document changed. Its tasks were not removed.</source>
+        <translation>归档已写入 %1，但原文档已更改。其中的任务未被移除。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The archive was written to %1, but the original document could not be saved. The move is incomplete; save the original document to finish.</source>
+        <translation>归档已写入 %1，但无法保存原文档。移动尚未完成；请保存原文档以完成移动。</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>The TODO document is unavailable or read-only.</source>
+        <translation>TODO 文档不可用或为只读。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>The source changed. Refresh Tasks before trying again.</source>
+        <translation>源文档已更改。请刷新任务后重试。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>The document changed or is no longer editable. Please try again.</source>
+        <translation>文档已更改或不再可编辑。请重试。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>The document changed during this operation. Please try again.</source>
+        <translation>操作期间文档发生变化。请重试。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>This row is out of date. Please try again.</source>
+        <translation>此行已过期。请重试。</translation>
+    </message>
+    <message>
+        <location line="+376"/>
+        <location line="+413"/>
+        <source>Conflicting source edits were rejected.</source>
+        <translation>对源文档的编辑存在冲突，已被拒绝。</translation>
+    </message>
+    <message>
+        <location line="-406"/>
+        <source>The source snapshot is out of date.</source>
+        <translation>源文档快照已过期。</translation>
+    </message>
+    <message>
+        <location line="+102"/>
+        <source>A new group needs a nonempty, single-line title.</source>
+        <translation>新分组需要非空的单行标题。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>The group is missing or its title contains a line break.</source>
+        <translation>分组不存在，或其标题包含换行符。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>Choose an existing custom group to ungroup.</source>
+        <translation>请选择已有的自定义分组以取消分组。</translation>
+    </message>
+    <message>
+        <location line="+66"/>
+        <source>The source or destination group no longer exists.</source>
+        <translation>源分组或目标分组已不存在。</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>A new list needs a nonempty, single-line title.</source>
+        <translation>新列表需要非空的单行标题。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Choose an existing destination group.</source>
+        <translation>请选择已有的目标分组。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>The list is missing or its title contains a line break.</source>
+        <translation>列表不存在，或其标题包含换行符。</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <location line="+56"/>
+        <location line="+18"/>
+        <source>The list no longer exists.</source>
+        <translation>列表已不存在。</translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>The list is missing or its icon contains a line break.</source>
+        <translation>列表不存在，或其图标包含换行符。</translation>
+    </message>
+    <message>
+        <location line="+50"/>
+        <source>Untitled list</source>
+        <translation>未命名列表</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 (copy)</source>
+        <translation>%1（副本）</translation>
+    </message>
+    <message>
+        <location line="+47"/>
+        <source>The source or destination list/group no longer exists.</source>
+        <translation>源列表/分组或目标列表/分组已不存在。</translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <location line="+241"/>
+        <source>A new task needs a nonempty, single-line title.</source>
+        <translation>新任务需要非空的单行标题。</translation>
+    </message>
+    <message>
+        <location line="-237"/>
+        <source>Choose an existing destination list.</source>
+        <translation>请选择已有的目标列表。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Tasks</source>
+        <translation>任务</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The task is missing or its title contains a line break.</source>
+        <translation>任务不存在，或其标题包含换行符。</translation>
+    </message>
+    <message>
+        <location line="+98"/>
+        <source>The task or its move destination no longer exists.</source>
+        <translation>任务或其移动目标已不存在。</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>A new step needs an existing task and a nonempty, single-line title.</source>
+        <translation>新步骤需要已有的任务和非空的单行标题。</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>The step no longer exists or its title contains a line break.</source>
+        <translation>步骤已不存在，或其标题包含换行符。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>The step no longer exists.</source>
+        <translation>步骤已不存在。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Only an existing, incomplete step can be promoted.</source>
+        <translation>只能将已有且未完成的步骤提升为任务。</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>The step move is out of range.</source>
+        <translation>步骤的移动位置超出范围。</translation>
     </message>
 </context>
 <context>
@@ -12451,7 +13897,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateController</name>
     <message>
-        <location filename="../../../controllers/updatecontroller.cpp" line="+234"/>
+        <location filename="../../../controllers/updatecontroller.cpp" line="+240"/>
         <source>Update Available</source>
         <translation>有可用更新</translation>
     </message>
@@ -12466,7 +13912,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>查看发布页面</translation>
     </message>
     <message>
-        <location line="+457"/>
+        <location line="+472"/>
         <source>Could not check for updates.</source>
         <translation>无法检查更新。</translation>
     </message>
@@ -12476,7 +13922,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>TLS 不可用：未找到可用的安全套接字后端。</translation>
     </message>
     <message>
-        <location line="-488"/>
+        <location line="-503"/>
         <source>VNote %1 is available. Update Now downloads the update, then closes and reopens VNote.</source>
         <translation>VNote %1 已发布。“立即更新”将下载更新，然后关闭并重新打开 VNote。</translation>
     </message>
@@ -12599,12 +14045,12 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+20"/>
+        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="+21"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+34"/>
         <source>Open Release Page</source>
         <translation>打开发布页面</translation>
     </message>
@@ -12644,22 +14090,22 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>您当前的版本为 %1。请打开发布页面下载新版本并自行安装。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+23"/>
         <source>Could not check for updates: %1</source>
         <translation>无法检查更新：%1</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="80"/>
+        <location line="-16"/>
         <source>Update Now</source>
         <translation>立即更新</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="79"/>
+        <location line="-1"/>
         <source>Update Now downloads the update, then closes and reopens VNote.</source>
         <translation>“立即更新”将下载更新，然后关闭并重新打开 VNote。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/updatedialog.cpp" line="101"/>
+        <location line="+22"/>
         <source>An update is already in progress. Follow the updater window.</source>
         <translation>已有更新正在进行，请查看更新程序窗口。</translation>
     </message>
@@ -12667,7 +14113,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+174"/>
+        <location filename="../../../core/services/updateservice.cpp" line="+289"/>
         <location line="+44"/>
         <source>Refusing to contact an unexpected host: %1</source>
         <translation>拒绝连接到非预期的主机：%1</translation>
@@ -12675,11 +14121,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="-48"/>
         <location line="+20"/>
+        <location line="+168"/>
         <source>Cancelled.</source>
         <translation>已取消。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-163"/>
         <source>The request to %1 timed out.</source>
         <translation>对 %1 的请求超时。</translation>
     </message>
@@ -13027,7 +14474,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>思维导图：%1</translation>
     </message>
     <message>
-        <location line="+645"/>
+        <location line="+647"/>
         <source>Preview</source>
         <translation>预览</translation>
     </message>
@@ -13035,7 +14482,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+245"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+294"/>
         <source>Stay on Top</source>
         <translation>置顶</translation>
     </message>
@@ -13125,7 +14572,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>移除分屏与工作区</translation>
     </message>
     <message>
-        <location line="+387"/>
+        <location line="+392"/>
         <source>Reload content from its source, discarding unsaved changes</source>
         <translation>从源重新加载内容，放弃未保存的更改</translation>
     </message>
@@ -13308,13 +14755,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+557"/>
+        <location line="+555"/>
         <source>Failed to save note (%1).</source>
         <translation>无法保存笔记(%1)。</translation>
     </message>
     <message>
-        <location line="-553"/>
-        <location line="+525"/>
+        <location line="-551"/>
+        <location line="+523"/>
         <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>无法读取编辑器内容</translation>
@@ -13427,7 +14874,7 @@ Continue?</source>
         <translation>笔记路径(%1)。</translation>
     </message>
     <message>
-        <location line="-1738"/>
+        <location line="-1736"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>无法打开其他笔记：批注未能保存</translation>
     </message>
@@ -13436,19 +14883,19 @@ Continue?</source>
         <location line="+5"/>
         <location line="+520"/>
         <location line="+73"/>
-        <location line="+46"/>
+        <location line="+44"/>
         <location line="+26"/>
         <location line="+22"/>
         <source>Read-only — cannot edit</source>
         <translation>只读，无法编辑</translation>
     </message>
     <message>
-        <location line="-505"/>
+        <location line="-503"/>
         <source>Close note (%1) with unsaved changes?</source>
         <translation>笔记（%1）有未保存的更改，是否关闭？</translation>
     </message>
     <message>
-        <location line="+928"/>
+        <location line="+926"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>此文件为只读（%1），无法保存更改。</translation>
     </message>
@@ -13710,413 +15157,6 @@ Continue?</source>
     <message>
         <source>The token no longer exists</source>
         <translation>令牌已不存在</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoSticker</name>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="176"/>
-        <source>Edit</source>
-        <translation>编辑</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="183"/>
-        <source>Settings</source>
-        <translation>设置</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="184"/>
-        <source>Choose an existing TODO file</source>
-        <translation>选择已有的 TODO 文件</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
-        <source>TODO list</source>
-        <translation>TODO 列表</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="199"/>
-        <source>TODO tasks</source>
-        <translation>TODO 任务</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="230"/>
-        <source>TODOs</source>
-        <translation>待办事项</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="254"/>
-        <source>Untitled list</source>
-        <translation>未命名列表</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="258"/>
-        <source>Default</source>
-        <translation>默认</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="259"/>
-        <source>Untitled group</source>
-        <translation>未命名分组</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="260"/>
-        <source>%1 / %2</source>
-        <translation>%1 / %2</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
-        <source>Saving TODOs...</source>
-        <translation>正在保存待办事项…</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="290"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="292"/>
-        <source>Loading TODOs...</source>
-        <translation>正在加载待办事项…</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="424"/>
-        <source>No TODO lists.</source>
-        <translation>没有 TODO 列表。</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="296"/>
-        <source>No tasks in this list.</source>
-        <translation>此列表中没有任务。</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
-        <source>Choose TODO File</source>
-        <translation>选择 TODO 文件</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="308"/>
-        <source>TODO files (*.todo)</source>
-        <translation>TODO 文件 (*.todo)</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="286"/>
-        <source>My Day</source>
-        <translation>我的一天</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="287"/>
-        <source>Important</source>
-        <translation>重要</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="288"/>
-        <source>Planned</source>
-        <translation>计划</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="191"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="192"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="461"/>
-        <source>Add Task</source>
-        <translation>添加任务</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="193"/>
-        <source>Press Enter to add a task</source>
-        <translation>按 Enter 添加任务</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="349"/>
-        <source>Due Date on %1</source>
-        <translation>截止日期为 %1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="469"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="476"/>
-        <source>List</source>
-        <translation>列表</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="482"/>
-        <location filename="../../../widgets/dashboard/todosticker.cpp" line="485"/>
-        <source>Due date</source>
-        <translation>截止日期</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoStickerController</name>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="139"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="340"/>
-        <source>The TODO notebook is closed. Reopen it or choose another file.</source>
-        <translation>TODO 所在的笔记本已关闭。请重新打开或选择其他文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="172"/>
-        <source>The TODO file was deleted. Refresh to recreate it.</source>
-        <translation>TODO 文件已被删除。刷新可重新创建。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="285"/>
-        <source>Choose an absolute path to a .todo file.</source>
-        <translation>请选择 .todo 文件的绝对路径。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="289"/>
-        <source>Linked TODO files or folders are unavailable. Choose a regular file.</source>
-        <translation>无法使用链接的 TODO 文件或文件夹。请选择普通文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="294"/>
-        <source>The TODO file is not a readable regular file: %1</source>
-        <translation>TODO 文件不是可读取的普通文件：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="300"/>
-        <source>The TODO file is missing or unreadable: %1</source>
-        <translation>TODO 文件不存在或无法读取：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="305"/>
-        <source>The TODO parent folder is missing or unavailable: %1</source>
-        <translation>TODO 的父文件夹不存在或不可用：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="311"/>
-        <source>The TODO file path cannot be resolved: %1</source>
-        <translation>无法解析 TODO 文件路径：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="362"/>
-        <source>The TODO file is being initialized by another dashboard.</source>
-        <translation>其他仪表盘正在初始化 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="386"/>
-        <source>The TODO notebook folder cannot be read.</source>
-        <translation>无法读取 TODO 所在的笔记本文件夹。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="402"/>
-        <source>A notebook folder already occupies the TODO file path.</source>
-        <translation>TODO 文件路径已被笔记本文件夹占用。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="409"/>
-        <source>The TODO location is read-only; the file cannot be created or indexed.</source>
-        <translation>TODO 位置为只读，无法创建或索引文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="417"/>
-        <source>The notebook maintenance service is unavailable.</source>
-        <translation>笔记本维护服务不可用。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="422"/>
-        <source>The notebook is busy syncing. Try again after sync finishes.</source>
-        <translation>笔记本正在同步。请在同步完成后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="432"/>
-        <source>The existing TODO file could not be indexed safely.</source>
-        <translation>无法安全地索引已有的 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="452"/>
-        <source>The TODO file has competing open buffers. Close the extra views and retry.</source>
-        <translation>TODO 文件有相互冲突的打开缓冲区。请关闭多余视图后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="460"/>
-        <source>The open TODO buffer cannot safely recreate this file. Save it from its editor.</source>
-        <translation>打开的 TODO 缓冲区无法安全地重新创建此文件。请在编辑器中保存。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="468"/>
-        <source>The open TODO buffer is busy. Try again after the current operation finishes.</source>
-        <translation>打开的 TODO 缓冲区正忙。请在当前操作完成后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="478"/>
-        <source>The current TODO draft could not be captured. Save it from its editor.</source>
-        <translation>无法获取当前 TODO 草稿。请在编辑器中保存。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="490"/>
-        <source>The open TODO buffer changed or became unavailable before it could be saved.</source>
-        <translation>保存前，打开的 TODO 缓冲区已改变或变得不可用。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="504"/>
-        <source>Saving the TODO draft was denied or cancelled. Save it from its editor.</source>
-        <translation>保存 TODO 草稿被拒绝或取消。请在编辑器中保存。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="505"/>
-        <source>The TODO draft could not be saved to recreate its file (error %1). The draft remains open in its editor.</source>
-        <translation>无法通过保存 TODO 草稿重新创建文件（错误 %1）。草稿仍在编辑器中打开。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="522"/>
-        <source>The bundled initial TODO document is unavailable.</source>
-        <translation>随附的初始 TODO 文档不可用。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="527"/>
-        <source>The bundled initial TODO document could not be read.</source>
-        <translation>无法读取随附的初始 TODO 文档。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="536"/>
-        <source>The TODO file could not be created.</source>
-        <translation>无法创建 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="542"/>
-        <source>The TODO destination changed during creation. No alternate file was selected.</source>
-        <translation>创建过程中 TODO 目标位置发生变化，未选择其他文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="551"/>
-        <source>The TODO file changed while it was being recreated. Refresh and try again.</source>
-        <translation>重新创建过程中 TODO 文件发生变化。请刷新后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="563"/>
-        <source>The default TODO file is being initialized by another dashboard.</source>
-        <translation>其他仪表盘正在初始化默认 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="595"/>
-        <source>No notebook is available. Open a notebook or choose a TODO file in Settings.</source>
-        <translation>没有可用的笔记本。请打开笔记本或在“设置”中选择 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="608"/>
-        <source>The default TODO location is missing or contains a linked path.</source>
-        <translation>默认 TODO 位置不存在或包含链接路径。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="633"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="737"/>
-        <source>The TODO services are unavailable.</source>
-        <translation>TODO 服务不可用。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="684"/>
-        <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
-        <translation>TODO 文件暂时不可用。请在当前操作完成后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="699"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="788"/>
-        <source>Line %1: %2</source>
-        <translation>第 %1 行：%2</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="730"/>
-        <source>Wait for the current TODO operation to finish.</source>
-        <translation>请等待当前 TODO 操作完成。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="770"/>
-        <source>The selected TODO file cannot be read right now.</source>
-        <translation>目前无法读取所选 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="805"/>
-        <source>This task is out of date. Refresh before trying again.</source>
-        <translation>此任务已过期。请刷新后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="810"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="850"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="909"/>
-        <source>The selected task no longer exists.</source>
-        <translation>所选任务已不存在。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="835"/>
-        <source>The TODO selection changed before the operation could finish.</source>
-        <translation>操作完成前，所选 TODO 已发生变化。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="843"/>
-        <source>The TODO source cannot be edited without changing unrelated text.</source>
-        <translation>无法在不改变无关文本的情况下编辑 TODO 源文档。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="859"/>
-        <source>The task could not be updated.</source>
-        <translation>无法更新任务。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="873"/>
-        <source>The TODO change could not be saved.</source>
-        <translation>无法保存 TODO 更改。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="887"/>
-        <source>The TODO change could not start. Refresh and try again.</source>
-        <translation>无法开始 TODO 更改。请刷新后重试。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="904"/>
-        <source>The TODO source changed. Select the task again in the refreshed list.</source>
-        <translation>TODO 源文档已改变。请在刷新后的列表中重新选择任务。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="918"/>
-        <source>The TODO file could not be opened.</source>
-        <translation>无法打开 TODO 文件。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="939"/>
-        <source>The TODO file could not be opened for editing.</source>
-        <translation>无法打开 TODO 文件进行编辑。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="861"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="870"/>
-        <source>Choose an existing destination list.</source>
-        <translation>请选择已有的目标列表。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="884"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="891"/>
-        <source>Choose a due date for the new task.</source>
-        <translation>请选择新任务的截止日期。</translation>
-    </message>
-    <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="963"/>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="968"/>
-        <source>The task could not be added.</source>
-        <translation>无法添加任务。</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::TodoTaskView</name>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="172"/>
-        <source>%1 / %2</source>
-        <translation>%1 / %2</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="177"/>
-        <source>Due %1</source>
-        <translation>截止日期 %1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="182"/>
-        <source>My Day: %1</source>
-        <translation>我的一天：%1</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="186"/>
-        <source>%1/%2 steps</source>
-        <translation>%1/%2 个步骤</translation>
-    </message>
-    <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="191"/>
-        <source>Note</source>
-        <translation>备注</translation>
     </message>
 </context>
 </TS>

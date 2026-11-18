@@ -1,19 +1,32 @@
-## v4.14.4
-A refinement release with smoother tree navigation, more flexible Markdown editing and improved formula paste on top of VNote 4.14.2, including the changes from the aborted 4.14.3 release:
+## v4.15.0
+A feature release with a native TODO planner, dashboard task management and refined editing and updates on top of VNote 4.14.4:
 
-* **Navigation and tasks**
-    * Add `Ctrl+G, F` for the View Window Mind Map action, configurable through `editor.core.shortcuts.MindMap`; existing profiles inherit it unless explicitly customized or disabled
-    * Create a Quick Note directly when only one scheme is available, without opening the scheme picker
-    * Expand or collapse task containers such as Git on double-click or Enter, including when filtering hides their children; keep leaf-task execution unchanged
-* **Interface**
-    * Animate expanding and collapsing Tasks, search results, Settings and United Entry trees consistently with Notebooks, Tags and Outline
-    * Make tree views in every bundled theme except Native more compact with smaller indentation and horizontal spacing while preserving row height; keep inline renaming within the row and restore each tree's original spacing when returning to Native
-    * Align notebook, search and task tree content with standard tree text by including theme borders and native text margins; preserve row heights and icon/count gaps
+* **TODO planner**
+    * Add a native, Markdown-backed `.todo` editor with a Tasks-only interface, full-width layout and automatic saving independent of the global save policy
+    * Organize lists under heading-based groups, keep Default-owned lists at the top level, and support list and group dragging, duplication, descriptions and per-list emoji icons
+    * Plan tasks with My Day, Important and Planned views, search and tag filters, due dates, Markdown notes and nested checklist steps
+    * Edit completion, importance and My Day membership inline; use task context menus and keyboard shortcuts for common actions, dates and moving tasks between lists
+    * Sort lists by importance, due date, My Day, name or creation date through list menus, with an option to return to manual order
+    * Refine task details, circular checkmarks, completed-step strikethrough, count badges and collapsible Completed sections; keep sidebar navigation accessible in narrow windows
+    * Archive completed tasks into sibling `.archived.todo` files while retaining notes, steps and metadata; preserve source groups and lists, and report incomplete moves without discarding the archive
+* **Dashboard**
+    * Add a TODOs sticker to fresh and reset dashboards, preserving existing layouts; select real lists or My Day, Important and Planned views
+    * Add quick task entry, calendar-selected due-date filtering, completion and importance controls, and a collapsible Completed section shared with the TODO editor
+    * Open a sticker task on double-click or Enter without navigating away when selecting it or toggling its controls; provide icon-only Edit and Settings actions
+    * Remember the sticker's backing file in session configuration and create missing TODO files without overwriting existing contents
 * **Editing and Markdown**
-    * Update vtextedit to keep concealed-marker cursor boundaries consistent across keyboard and Vi navigation, and skip unnecessary cursor processing when persistent concealment is disabled
-    * Rename the concealment control to Markers Concealment and clarify the None, Passive, Moderate and Aggressive settings descriptions
-    * Add Moderate concealment: hide supported Markdown markers and link syntax, reveal them on cursor entry, and shorten long image and reference URLs
-    * Offer three Markdown editing experiences and show the choice again when upgrading from versions below `4.14.4`, preserving the saved concealment preset until a new choice is accepted
-    * Fix pasted MathML formulas ending in TeX commands, recover symbols according to their token role, and preserve identifier font variants
-    * Move the readable-width toolbar hint into shared Editor settings instead of Mind Map Editor settings
+    * Add the shared formatting toolbar and configurable editing shortcuts to editable embedded Markdown editors, including TODO task notes, and fix toolbar overflow styling
+    * Insert native Markdown markers with InsertMark and recover MathML formulas with simultaneous lower and upper bounds
+    * Exit block quotes after two consecutive empty quote lines and insert new lines after entire collapsed blocks, including VSCode and Vi input modes
+    * Default Markdown Auto Section Numbering to off for new or missing settings while preserving saved preferences and the Outline panel default
+    * Hide code-block Collapse and Expand context actions while text is selected
+* **Interface**
+    * Scroll overflowing view tabs with mouse-wheel input without switching the active document
+    * Keep shared count badges visible at the right edge of explorer trees; load directly tagged note counts lazily while preserving selection
+    * Match web scrollbar colors and thumb widths to native widgets, and use active theme colors for editor status chips
+* **Windows updates and reliability**
+    * Offer the explicit Windows Update Now action in the manual-check dialog while keeping ordinary update checks check-only
+    * Display source-appropriate release notes and show bundled notes when VNote is already up to date
+    * Offer cleanup of retained Windows update backups after the user confirms the new installation works
+    * Fix false image asset publication errors on Windows shared folders without file identity support, retaining no-overwrite and reparse-point checks
 * **Translations**: Simplified Chinese (zh_CN) and Japanese (ja) catalogs updated
