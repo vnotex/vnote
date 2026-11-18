@@ -986,6 +986,8 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/todosticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.h
     ${CMAKE_SOURCE_DIR}/src/controllers/todostickercontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/todoviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/tododocument.cpp
@@ -1032,6 +1034,8 @@ add_qt_test(test_activitysticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/todosticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.h
     ${CMAKE_SOURCE_DIR}/src/controllers/todostickercontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/todoviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/tododocument.cpp
@@ -1077,6 +1081,8 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/todosticker.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/todotaskview.h
     ${CMAKE_SOURCE_DIR}/src/controllers/todostickercontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/todoviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/tododocument.cpp

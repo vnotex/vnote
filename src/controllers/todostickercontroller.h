@@ -56,6 +56,8 @@ private slots:
   void handleBufferChanged(const QString &p_bufferId);
 
 private:
+  enum class TaskFlag { Checked, Important };
+
   void subscribe();
   void scheduleRefresh();
   void cancelEdit();
@@ -70,8 +72,9 @@ private:
   QString resolveDefault(QString *p_error);
   void retarget(const QString &p_notebookId, const QString &p_oldPath,
                 const QString &p_newNotebookId, const QString &p_newPath, bool p_folder);
-  void setChecked(const QString &p_key, bool p_checked, int p_revision);
-  int applyTaskEdit(const QString &p_key, bool p_checked, std::optional<TodoTaskFields> p_newTask);
+  void setTaskFlag(const QString &p_key, bool p_value, int p_revision, TaskFlag p_flag);
+  int applyTaskEdit(const QString &p_key, bool p_value, std::optional<TodoTaskFields> p_newTask,
+                    TaskFlag p_flag = TaskFlag::Checked);
 
   ServiceLocator &m_services;
   TodoTaskModel *m_taskModel;
@@ -96,6 +99,7 @@ private:
   bool m_initialized = false;
   bool m_ready = false;
   bool m_readOnly = true;
+  bool m_completedExpanded = true;
   bool m_editing = false;
   bool m_refreshing = false;
   bool m_refreshScheduled = false;

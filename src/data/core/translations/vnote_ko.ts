@@ -14092,4 +14092,32 @@ Continue?</source>
         <translation>작업을 추가할 수 없습니다.</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::TodoTaskView</name>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="172"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="177"/>
+        <source>Due %1</source>
+        <translation>마감일 %1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="182"/>
+        <source>My Day: %1</source>
+        <translation>나의 하루: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="186"/>
+        <source>%1/%2 steps</source>
+        <translation>%1/%2 단계</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="191"/>
+        <source>Note</source>
+        <translation>메모</translation>
+    </message>
+</context>
 </TS>

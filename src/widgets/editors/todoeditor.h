@@ -24,6 +24,7 @@ class QVBoxLayout;
 namespace vnotex {
 class ServiceLocator;
 class SimpleMarkdownEditor;
+class TodoTaskView;
 class TodoViewWindowController;
 
 class TodoEditor : public QWidget {
@@ -73,8 +74,6 @@ private:
   void showDueMenu();
   void pickDueDate();
   void refreshQuickAdd();
-  void updateTaskCursor();
-  void setTaskCursor(const QModelIndex &p_index);
   void updateLayout();
   void updateSidebarGeometry();
   void setSidebarOpen(bool p_open);
@@ -136,7 +135,7 @@ private:
   QLabel *m_viewTitle = nullptr;
   QLabel *m_description = nullptr;
   QPushButton *m_listMore = nullptr;
-  QListView *m_tasks = nullptr;
+  TodoTaskView *m_tasks = nullptr;
   QComboBox *m_destination = nullptr;
   QCheckBox *m_addHasDue = nullptr;
   QDateEdit *m_addDue = nullptr;

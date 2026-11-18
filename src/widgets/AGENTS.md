@@ -1888,12 +1888,24 @@ no layout migration. The combo offers My Day, Important and Planned before the r
 (with group-qualified names, including collisions with smart labels). Both sticker and editor
 use `TodoDocument::parse()` and the same `TodoTaskModel` predicates: today's My Day date,
 importance, or any valid due date (including overdue). Completed tasks remain visible, and
-completion preserves the chosen smart view rather than switching to the task's source list.
+completion and importance changes preserve the chosen smart view rather than switching to the
+task's source list.
 A visible-only minute timer updates My Day's stored projection date without polling storage;
 showing the sticker refreshes that date. View selection is transient, so no migration is needed.
-Checkboxes/Space toggle completion; a task-body click or Enter opens the
-internal TODO view at its containing list and task. Edit forces Edit mode without replacing
-another note; an already-open backing note follows normal tab deduplication. Edit and Settings
+The editor and sticker share `TodoTaskView`: circular completion controls, summary text,
+importance stars, struck-through completed titles, and an expandable Completed header/count.
+The view owns hit geometry and gestures; model/controller intents own changes. Only a matching
+press/release on a live control commits; resets cancel pending control gestures. Controls select
+their row without activating it, and read-only tasks refuse completion/importance changes while
+the Completed header remains expandable with click or Space/Return/Enter.
+
+Single-click selects a task in the sticker; only double-click or Return/Enter opens the internal
+TODO view at its containing list and task, even under single-click-activation Qt styles.
+Completion circles/Space toggle completion and stars toggle importance without opening the editor.
+Completed expansion is transient and survives refresh/filter/mutations until the backing file
+changes; no configuration migration is needed. The editor retains single-click details and its
+existing keyboard/drag policy; hosts choose navigation, not the shared renderer.
+Edit forces Edit mode without replacing another note; an already-open backing note follows normal tab deduplication. Edit and Settings
 are icon-only, grouped at the top right, using the bundled `edit_editor.svg` and `settings.svg`.
 Their normal/disabled icon colors follow live theme changes; accessible names and tooltips remain.
 
@@ -1902,8 +1914,8 @@ smart views ask for a destination only when several lists exist. Planned always 
 explicit due date, even with zero or one list. My Day stamps the displayed day, Important sets
 importance, and the calendar-date view uses its selected due date. Other views never inherit
 that stored due date. An empty document uses the editor controller's native initial-list creation.
-Add and completion commands share the same reserved edit lifecycle. The input becomes read-only
-while busy and clears only for its matching confirmed new task, without replacing newer input.
+Add, completion and importance commands share the same reserved edit lifecycle. The input becomes
+read-only while busy and clears only for its matching confirmed new task, without replacing newer input.
 Cancelled, stale or precommit-rejected additions retain the draft. Installed-but-unsaved tasks
 consume the submitted title to avoid duplicate retry while preserving the normal save error.
 

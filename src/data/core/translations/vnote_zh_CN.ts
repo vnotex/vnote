@@ -14091,4 +14091,32 @@ Continue?</source>
         <translation>无法添加任务。</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::TodoTaskView</name>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="172"/>
+        <source>%1 / %2</source>
+        <translation>%1 / %2</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="177"/>
+        <source>Due %1</source>
+        <translation>截止日期 %1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="182"/>
+        <source>My Day: %1</source>
+        <translation>我的一天：%1</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="186"/>
+        <source>%1/%2 steps</source>
+        <translation>%1/%2 个步骤</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="191"/>
+        <source>Note</source>
+        <translation>备注</translation>
+    </message>
+</context>
 </TS>

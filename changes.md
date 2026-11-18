@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Add a default TODOs dashboard sticker with quick task entry, real-list and My Day/Important/Planned selection, calendar-selected due-date filtering, completion toggles, direct task navigation, and right-aligned icon-only Edit/Settings buttons; persist its file in session configuration and create missing TODO files without overwriting existing contents
+* Add a default TODOs dashboard sticker with quick task entry, real-list and My Day/Important/Planned selection, calendar-selected due-date filtering, the editor's shared task rows with completion/importance controls and a collapsible Completed section, activation-only task navigation (double-click or Enter), and right-aligned icon-only Edit/Settings buttons; persist its file in session configuration and create missing TODO files without overwriting existing contents
 * Fix false image asset publication errors on Windows shared folders that lack file identity support, while retaining no-overwrite and reparse-point checks
 
 ## v4.14.4

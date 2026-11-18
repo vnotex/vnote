@@ -6,7 +6,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
-#include <QCursor>
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -25,7 +24,6 @@
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
-#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
@@ -37,11 +35,9 @@
 #include <QScrollBar>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QStyledItemDelegate>
 #include <QTextDocument>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QtMath>
 #include <cmath>
 #include <functional>
 
@@ -57,6 +53,7 @@
 #include <widgets/plaintextedit.h>
 
 #include "simplemarkdowneditor.h"
+#include "todotaskview.h"
 
 using namespace vnotex;
 
@@ -346,21 +343,6 @@ private:
   QColor m_border;
 };
 
-void paintCompletionIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
-                              const QColor &p_foreground) {
-  p_painter->setPen(QPen(p_foreground, 1.5));
-  p_painter->setBrush(Qt::NoBrush);
-  p_painter->drawEllipse(p_rect.adjusted(2, 2, -2, -2));
-  if (p_checked) {
-    p_painter->setPen(QPen(p_foreground, 2));
-    const QPoint middle(p_rect.left() + p_rect.width() * 4 / 10,
-                        p_rect.top() + p_rect.height() * 7 / 10);
-    p_painter->drawLine(QPoint(p_rect.left() + p_rect.width() / 4, p_rect.center().y()), middle);
-    p_painter->drawLine(
-        middle, QPoint(p_rect.right() - p_rect.width() / 4, p_rect.top() + p_rect.height() / 3));
-  }
-}
-
 // Circular presentation, with independent checkbox interaction and accessibility.
 class CompletionCheckBox final : public QCheckBox {
 public:
@@ -394,7 +376,7 @@ protected:
                                                ? QStringLiteral("widgets#qlistview#item#hover#fg")
                                                : QStringLiteral("widgets#qlistview#fg")))
             : palette().color(group, QPalette::Text);
-    paintCompletionIndicator(&painter, circle, isChecked(), foreground);
+    paintTodoCompletionIndicator(&painter, circle, isChecked(), foreground);
     if (hasFocus()) {
       painter.setPen(QPen(QColor(m_theme->paletteColor(QStringLiteral("base#master#bg"))), 1.5));
       painter.setBrush(Qt::NoBrush);
@@ -416,235 +398,6 @@ private:
   ThemeService *m_theme;
 };
 
-class TaskDelegate : public TreeChildCountDelegate {
-public:
-  TaskDelegate(ServiceLocator &p_services, QObject *p_parent)
-      : TreeChildCountDelegate(p_parent), m_theme(p_services.get<ThemeService>()) {
-    Q_ASSERT(m_theme);
-  }
-
-  void setShowLocation(bool p_show) {
-    if (m_showLocation == p_show) {
-      return;
-    }
-    m_showLocation = p_show;
-    if (auto *view = qobject_cast<QListView *>(parent())) {
-      view->viewport()->update();
-    }
-  }
-
-  static QRect rowRect(const QStyleOptionViewItem &p_option) {
-    return p_option.rect.adjusted(0, 2, 0, -2);
-  }
-
-  static QRect checkRect(const QStyleOptionViewItem &p_option) {
-    const int side = qMax(20, p_option.fontMetrics.height());
-    const auto row = rowRect(p_option);
-    return QRect(row.left() + 16, row.center().y() - side / 2, side, side);
-  }
-  static QRect starRect(const QStyleOptionViewItem &p_option) {
-    const int side = qMax(20, p_option.fontMetrics.height());
-    const auto row = rowRect(p_option);
-    return QRect(row.right() - side - 16, row.center().y() - side / 2, side, side);
-  }
-
-  void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
-             const QModelIndex &p_index) const override {
-    QStyleOptionViewItem option(p_option);
-    initStyleOption(&option, p_index);
-    const auto *widget = option.widget;
-    const auto *style = widget ? widget->style() : QApplication::style();
-    option.text.clear();
-    option.features &= ~QStyleOptionViewItem::HasCheckIndicator;
-    const bool section = p_index.data(TodoTaskModel::SectionRole).toBool();
-    if (section) {
-      style->drawControl(QStyle::CE_ItemViewItem, &option, p_painter, widget);
-    }
-    p_painter->save();
-    p_painter->setClipRect(option.rect);
-    p_painter->setRenderHint(QPainter::Antialiasing);
-    const auto group =
-        (option.state & QStyle::State_Enabled) ? QPalette::Active : QPalette::Disabled;
-    const bool selected = option.state & QStyle::State_Selected;
-    // Match the theme's list-item color pairs, not the OS HighlightedText color.
-    const auto foreground =
-        selected ? (!section || (option.state & QStyle::State_Active)
-                        ? QStringLiteral("widgets#qlistview#item#selected#active#fg")
-                        : QStringLiteral("widgets#qlistview#item#selected#inactive#fg"))
-                 : (option.state & QStyle::State_MouseOver
-                        ? QStringLiteral("widgets#qlistview#item#hover#fg")
-                        : QStringLiteral("widgets#qlistview#fg"));
-    const QColor textColor = group == QPalette::Disabled
-                                 ? option.palette.color(group, QPalette::Text)
-                                 : QColor(m_theme->paletteColor(foreground));
-    p_painter->setPen(textColor);
-    p_painter->setFont(option.font);
-    if (section) {
-      const int side = qMax(20, option.fontMetrics.height());
-      const QRect circle(option.rect.left() + 8, option.rect.center().y() - side / 2, side, side);
-      const auto visual = [&](const QRect &p_rect) {
-        return QStyle::visualRect(option.direction, option.rect, p_rect);
-      };
-      auto badge = childCountBadge(option, p_index.data(TodoTaskModel::CompletedCountRole).toInt());
-      auto titleRect = option.rect.adjusted(circle.width() + 20, 0, -8, 0);
-      if (!badge.m_rect.isEmpty()) {
-        titleRect.setRight(qMin(titleRect.right(), badge.m_rect.left() - badge.m_gap - 1));
-        badge.m_rect = visual(badge.m_rect);
-      }
-      QStyleOption arrow;
-      arrow.rect = visual(circle.adjusted(4, 4, -4, -4));
-      arrow.palette = option.palette;
-      arrow.state = option.state;
-      style->drawPrimitive(p_index.data(TodoTaskModel::ExpandedRole).toBool()
-                               ? QStyle::PE_IndicatorArrowDown
-                           : option.direction == Qt::RightToLeft ? QStyle::PE_IndicatorArrowLeft
-                                                                 : QStyle::PE_IndicatorArrowRight,
-                           &arrow, p_painter, widget);
-      p_painter->drawText(
-          visual(titleRect),
-          QStyle::visualAlignment(option.direction, Qt::AlignVCenter | Qt::AlignLeading),
-          option.fontMetrics.elidedText(p_index.data().toString(), Qt::ElideRight,
-                                        qMax(0, titleRect.width())));
-      option.palette.setColor(
-          QPalette::Text, QColor(m_theme->paletteColor(QStringLiteral("widgets#qlistview#fg"))));
-      option.palette.setColor(QPalette::Disabled, QPalette::Text,
-                              QColor(m_theme->paletteColor(QStringLiteral("base#disabled#fg"))));
-      paintChildCount(p_painter, badge, option);
-      p_painter->restore();
-      return;
-    }
-
-    const auto row = rowRect(option);
-    if (selected || (option.state & QStyle::State_MouseOver)) {
-      auto background = textColor;
-      if (selected) {
-        // Keep the active pair like Lists; Native's inactive alternate-base can be transparent.
-        background = QColor(
-            m_theme->paletteColor(QStringLiteral("widgets#qlistview#item#selected#active#bg")));
-      } else {
-        background.setAlpha(18);
-      }
-      p_painter->setPen(Qt::NoPen);
-      p_painter->setBrush(background);
-      p_painter->drawRoundedRect(row, 4, 4);
-    }
-    if (option.state & QStyle::State_HasFocus) {
-      p_painter->setPen(QPen(textColor, 1, Qt::DotLine));
-      p_painter->setBrush(Qt::NoBrush);
-      p_painter->drawRoundedRect(row.adjusted(1, 1, -1, -1), 4, 4);
-    }
-    const QRect circle = checkRect(option);
-    const bool checked = p_index.data(TodoTaskModel::CheckedRole).toBool();
-    paintCompletionIndicator(p_painter, circle, checked, textColor);
-    const QRect star = starRect(option);
-    QPainterPath path;
-    constexpr double pi = 3.14159265358979323846;
-    for (int i = 0; i < 10; ++i) {
-      const double angle = -pi / 2 + i * pi / 5;
-      const double radius = star.width() * (i % 2 ? 0.20 : 0.46);
-      const QPointF point(star.center().x() + std::cos(angle) * radius,
-                          star.center().y() + std::sin(angle) * radius);
-      if (i == 0) {
-        path.moveTo(point);
-      } else {
-        path.lineTo(point);
-      }
-    }
-    path.closeSubpath();
-    p_painter->setPen(QPen(textColor, 1.5));
-    p_painter->setBrush(p_index.data(TodoTaskModel::ImportantRole).toBool() ? QBrush(textColor)
-                                                                            : Qt::NoBrush);
-    p_painter->drawPath(path);
-
-    auto titleFont = option.font;
-    titleFont.setStrikeOut(checked);
-    QStringList summaries;
-    if (m_showLocation) {
-      const auto groupTitle = p_index.data(TodoTaskModel::SourceGroupNameRole).toString();
-      const auto list = p_index.data(TodoTaskModel::SourceListNameRole).toString();
-      summaries.append(groupTitle.isEmpty() ? list
-                                            : TodoEditor::tr("%1 / %2").arg(groupTitle, list));
-    }
-    const auto due = p_index.data(TodoTaskModel::DueRole).toDate();
-    if (due.isValid()) {
-      summaries.append(TodoEditor::tr("Due %1").arg(QLocale().toString(due, QLocale::ShortFormat)));
-    }
-    const auto myDay = p_index.data(TodoTaskModel::MyDayRole).toDate();
-    if (myDay.isValid()) {
-      summaries.append(
-          TodoEditor::tr("My Day: %1").arg(QLocale().toString(myDay, QLocale::ShortFormat)));
-    }
-    const int steps = p_index.data(TodoTaskModel::StepsTotalRole).toInt();
-    if (steps) {
-      summaries.append(TodoEditor::tr("%1/%2 steps")
-                           .arg(p_index.data(TodoTaskModel::StepsCompletedRole).toInt())
-                           .arg(steps));
-    }
-    if (!p_index.data(TodoTaskModel::NoteRole).toString().isEmpty()) {
-      summaries.append(TodoEditor::tr("Note"));
-    }
-    auto secondaryFont = option.font;
-    if (secondaryFont.pointSizeF() > 2) {
-      secondaryFont.setPointSizeF(secondaryFont.pointSizeF() - 1);
-    }
-    const QFontMetrics secondaryMetrics(secondaryFont);
-    const int titleHeight = option.fontMetrics.height();
-    const int textHeight = titleHeight + (summaries.isEmpty() ? 0 : secondaryMetrics.height() + 4);
-    const QRect textRect(circle.right() + 14, row.center().y() - textHeight / 2,
-                         qMax(0, star.left() - circle.right() - 28), textHeight);
-    p_painter->setFont(titleFont);
-    p_painter->setPen(textColor);
-    p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop,
-                        QFontMetrics(titleFont).elidedText(p_index.data().toString(),
-                                                           Qt::ElideRight, textRect.width()));
-    if (!summaries.isEmpty()) {
-      p_painter->setFont(secondaryFont);
-      p_painter->setPen(selected ? textColor
-                                 : QColor(m_theme->paletteColor(QStringLiteral("base#muted#fg"))));
-      p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignBottom,
-                          secondaryMetrics.elidedText(summaries.join(QStringLiteral(" / ")),
-                                                      Qt::ElideRight, textRect.width()));
-    }
-    p_painter->restore();
-  }
-
-  QSize sizeHint(const QStyleOptionViewItem &p_option, const QModelIndex &p_index) const override {
-    const int height = p_option.fontMetrics.height();
-    return QSize(0, p_index.data(TodoTaskModel::SectionRole).toBool() ? qMax(44, height + 24)
-                                                                      : qMax(56, height * 2 + 24));
-  }
-
-  bool editorEvent(QEvent *p_event, QAbstractItemModel *p_model,
-                   const QStyleOptionViewItem &p_option, const QModelIndex &p_index) override {
-    if (p_event->type() != QEvent::MouseButtonRelease) {
-      return false;
-    }
-    const auto *event = static_cast<QMouseEvent *>(p_event);
-    if (event->button() != Qt::LeftButton) {
-      return false;
-    }
-    if (p_index.data(TodoTaskModel::SectionRole).toBool()) {
-      return p_model->setData(p_index, !p_index.data(TodoTaskModel::ExpandedRole).toBool(),
-                              TodoTaskModel::ExpandedRole);
-    }
-    if (!(p_index.flags() & Qt::ItemIsUserCheckable)) {
-      return false;
-    }
-    if (checkRect(p_option).contains(event->position().toPoint())) {
-      return p_model->setData(p_index, !p_index.data(TodoTaskModel::CheckedRole).toBool(),
-                              TodoTaskModel::CheckedRole);
-    }
-    if (starRect(p_option).contains(event->position().toPoint())) {
-      return p_model->setData(p_index, !p_index.data(TodoTaskModel::ImportantRole).toBool(),
-                              TodoTaskModel::ImportantRole);
-    }
-    return false;
-  }
-
-private:
-  ThemeService *m_theme;
-  bool m_showLocation = true;
-};
 } // namespace
 
 TodoEditor::TodoEditor(ServiceLocator &p_services, QWidget *p_parent)
@@ -795,24 +548,13 @@ void TodoEditor::createUi() {
   m_description->setMinimumWidth(0);
   m_description->setMaximumHeight(104);
   tasksLayout->addWidget(m_description);
-  m_tasks = named(new QListView(m_taskPane), "todoTasks",
+  m_tasks = named(new TodoTaskView(m_services, m_taskPane), "todoTasks",
                   tr("Tasks; Enter opens details, Space completes"));
-  m_tasks->setItemDelegate(new TaskDelegate(m_services, m_tasks));
-  m_tasks->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  m_tasks->setSelectionMode(QAbstractItemView::SingleSelection);
   m_tasks->setDragDropMode(QAbstractItemView::InternalMove);
   m_tasks->setDefaultDropAction(Qt::MoveAction);
   m_tasks->setDragDropOverwriteMode(false);
   m_tasks->setDropIndicatorShown(true);
   m_tasks->setContextMenuPolicy(Qt::CustomContextMenu);
-  m_tasks->setMouseTracking(true);
-  m_tasks->setFrameShape(QFrame::NoFrame);
-  m_tasks->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_tasks->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-  connect(m_tasks->verticalScrollBar(), &QScrollBar::valueChanged, this,
-          &TodoEditor::updateTaskCursor);
-  connect(m_tasks->horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          &TodoEditor::updateTaskCursor);
   tasksLayout->addWidget(m_tasks, 1);
   m_destination =
       named(new QComboBox(m_taskPane), "todoDestination", tr("New task destination list"));
@@ -889,8 +631,7 @@ void TodoEditor::createUi() {
                    m_lists->viewport()->mapToGlobal(p_position));
     }
   });
-  connect(m_tasks, &QListView::clicked, this, &TodoEditor::openTask);
-  connect(m_tasks, &QListView::activated, this, &TodoEditor::openTask);
+  connect(m_tasks, &TodoTaskView::taskClicked, this, &TodoEditor::openTask);
   connect(m_tasks, &QWidget::customContextMenuRequested, this, [this](const QPoint &p_position) {
     auto index = m_tasks->indexAt(p_position);
     if (!index.isValid()) {
@@ -1124,7 +865,6 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   }
   endTyping();
   if (m_controller) {
-    disconnect(m_controller->getTaskModel(), nullptr, this, nullptr);
     disconnect(m_controller, nullptr, this, nullptr);
   }
   if (m_tasks->selectionModel()) {
@@ -1135,12 +875,6 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   m_lists->setModel(p_controller ? p_controller->getListModel() : nullptr);
   m_tasks->setModel(p_controller ? p_controller->getTaskModel() : nullptr);
   if (p_controller) {
-    connect(p_controller->getTaskModel(), &QAbstractItemModel::modelReset, this,
-            &TodoEditor::updateTaskCursor);
-    connect(p_controller->getTaskModel(), &QAbstractItemModel::rowsInserted, this,
-            &TodoEditor::updateTaskCursor);
-    connect(p_controller->getTaskModel(), &QAbstractItemModel::rowsRemoved, this,
-            &TodoEditor::updateTaskCursor);
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
     connect(p_controller, &TodoViewWindowController::archiveStateChanged, this,
             &TodoEditor::refresh);
@@ -1214,7 +948,6 @@ void TodoEditor::refresh() {
     m_viewTitle->setText(tr("All Tasks"));
     refreshDetails();
     refreshQuickAdd();
-    updateTaskCursor();
     return;
   }
   const auto &projection = m_controller->getProjection();
@@ -1243,7 +976,7 @@ void TodoEditor::refresh() {
   const auto *list = projection.m_view == TodoViewKind::List && !filtered
                          ? m_controller->getDocument().findList(projection.m_listKey)
                          : nullptr;
-  static_cast<TaskDelegate *>(m_tasks->itemDelegate())->setShowLocation(!list);
+  m_tasks->setShowLocation(!list);
   m_listTitle->setVisible(list != nullptr);
   m_listIcon->setVisible(list != nullptr);
   m_listIcon->setEnabled(writable);
@@ -1283,7 +1016,6 @@ void TodoEditor::refresh() {
   m_destination->setCurrentIndex(destinationIndex < 0 ? 0 : destinationIndex);
   refreshDetails();
   refreshQuickAdd();
-  updateTaskCursor();
 }
 
 void TodoEditor::refreshDetails() {
@@ -1435,25 +1167,6 @@ void TodoEditor::refreshQuickAdd() {
   m_addTask->setToolTip(planned && !m_addHasDue->isChecked()
                             ? tr("Choose a due date before adding to Planned")
                             : QString());
-}
-
-void TodoEditor::updateTaskCursor() {
-  const auto *viewport = m_tasks->viewport();
-  setTaskCursor(viewport->underMouse() ? m_tasks->indexAt(viewport->mapFromGlobal(QCursor::pos()))
-                                       : QModelIndex());
-}
-
-void TodoEditor::setTaskCursor(const QModelIndex &p_index) {
-  auto *viewport = m_tasks->viewport();
-  const bool completed =
-      m_controller && m_tasks->isEnabled() && p_index.data(TodoTaskModel::SectionRole).toBool();
-  if (completed) {
-    if (viewport->cursor().shape() != Qt::PointingHandCursor) {
-      viewport->setCursor(Qt::PointingHandCursor);
-    }
-  } else if (viewport->testAttribute(Qt::WA_SetCursor)) {
-    viewport->unsetCursor();
-  }
 }
 
 void TodoEditor::updateLayout() {
@@ -2728,17 +2441,6 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   }
   if (!widget || (widget != this && !isAncestorOf(widget)) || widget->window() != window()) {
     return QWidget::eventFilter(p_object, p_event);
-  }
-  if (widget == m_tasks->viewport()) {
-    if (p_event->type() == QEvent::MouseMove) {
-      setTaskCursor(m_tasks->indexAt(static_cast<QMouseEvent *>(p_event)->position().toPoint()));
-    } else if (p_event->type() == QEvent::Enter) {
-      setTaskCursor(m_tasks->indexAt(static_cast<QEnterEvent *>(p_event)->position().toPoint()));
-    } else if (p_event->type() == QEvent::Resize) {
-      updateTaskCursor();
-    } else if (p_event->type() == QEvent::Leave) {
-      setTaskCursor({});
-    }
   }
   if (p_event->type() == QEvent::FocusOut && widget == m_typingField) {
     endTyping();

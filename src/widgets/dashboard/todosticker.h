@@ -10,7 +10,6 @@ class QComboBox;
 class QHideEvent;
 class QLabel;
 class QLineEdit;
-class QListView;
 class QShowEvent;
 class QToolButton;
 class QTimer;
@@ -19,6 +18,7 @@ namespace vnotex {
 
 class HookManager;
 class TodoStickerController;
+class TodoTaskView;
 
 class TodoSticker : public Sticker {
   Q_OBJECT
@@ -47,7 +47,7 @@ private:
   QPointer<HookManager> m_hookManager;
   QLineEdit *m_addTask = nullptr;
   QComboBox *m_lists = nullptr;
-  QListView *m_tasks = nullptr;
+  TodoTaskView *m_tasks = nullptr;
   QToolButton *m_edit = nullptr;
   QToolButton *m_settings = nullptr;
   QLabel *m_message = nullptr;

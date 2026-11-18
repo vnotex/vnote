@@ -32,6 +32,7 @@
 #include <QInputMethodEvent>
 #include <QItemSelectionModel>
 #include <QJsonDocument>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -45,6 +46,7 @@
 #include <QPersistentModelIndex>
 #include <QPointer>
 #include <QProcess>
+#include <QProxyStyle>
 #include <QPushButton>
 #include <QScopeGuard>
 #include <QScrollArea>
@@ -54,7 +56,6 @@
 #include <QSplitter>
 #include <QStandardPaths>
 #include <QStyleHints>
-#include <QStyleOptionViewItem>
 #include <QTemporaryDir>
 #include <QTextBlock>
 #include <QTextBlockFormat>
@@ -102,6 +103,7 @@
 #include <widgets/dialogs/newnotedialog2.h>
 #include <widgets/editors/simplemarkdowneditor.h>
 #include <widgets/editors/todoeditor.h>
+#include <widgets/editors/todotaskview.h>
 #include <widgets/inlinebanner.h>
 #include <widgets/plaintextedit.h>
 #include <widgets/todoviewwindow.h>
@@ -270,6 +272,25 @@ bool selectedTitleReadable(QListView *p_view, const QModelIndex &p_index) {
   }
   return contrast >= 4.5;
 }
+
+QPoint taskControlPoint(QListView *p_view, const QModelIndex &p_index, bool p_star = false) {
+  const auto row = p_view->visualRect(p_index);
+  const int side = qMax(20, p_view->fontMetrics().height());
+  return QPoint(p_star ? row.right() - 16 - side / 2 : row.left() + 16 + side / 2,
+                row.center().y());
+}
+
+class SingleClickTaskStyle final : public QProxyStyle {
+public:
+  SingleClickTaskStyle() : QProxyStyle(QStringLiteral("Fusion")) {}
+  int styleHint(StyleHint p_hint, const QStyleOption *p_option = nullptr,
+                const QWidget *p_widget = nullptr,
+                QStyleHintReturn *p_return = nullptr) const override {
+    return p_hint == QStyle::SH_ItemView_ActivateItemOnSingleClick
+               ? 1
+               : QProxyStyle::styleHint(p_hint, p_option, p_widget, p_return);
+  }
+};
 
 class SaveGateBarrier {
 public:
@@ -767,6 +788,12 @@ private slots:
   void stickerQuickAddReadOnlyAndInvalid_data();
   void stickerQuickAddReadOnlyAndInvalid();
   void calendarSelectsStickerDueDate();
+  void stickerTaskActivation_data();
+  void stickerTaskActivation();
+  void stickerSharedTaskControls_data();
+  void stickerSharedTaskControls();
+  void stickerSharedControlRejectsReset_data();
+  void stickerSharedControlRejectsReset();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
@@ -5447,16 +5474,8 @@ void TestTodoViewWindow::stickerInteractionAndSharedDraft() {
     if (!index.isValid() || !activate(tasks))
       return false;
     tasks->scrollTo(index);
-    const auto row = tasks->visualRect(index);
-    QStyleOptionViewItem option;
-    option.initFrom(tasks);
-    option.rect = row;
-    option.features = QStyleOptionViewItem::HasCheckIndicator | QStyleOptionViewItem::HasDisplay;
-    option.checkState = index.data(Qt::CheckStateRole).value<Qt::CheckState>();
-    option.text = index.data().toString();
-    const auto indicator =
-        tasks->style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator, &option, tasks);
-    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, indicator.center());
+    const auto point = taskControlPoint(tasks, index);
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
     return true;
   };
   QVERIFY(clickCheck(QStringLiteral("id:alpha")));
@@ -5477,8 +5496,13 @@ void TestTodoViewWindow::stickerInteractionAndSharedDraft() {
   const auto gamma = model->index(model->rowForKey(QStringLiteral("id:gamma")));
   QVERIFY(gamma.isValid());
   QVERIFY(activate(tasks));
-  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
-                    tasks->visualRect(gamma).center());
+  const auto priorSelection = window->getController()->getSelectedItemKey();
+  const auto point = tasks->visualRect(gamma).center();
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QCOMPARE(window->getController()->getSelectedItemKey(), priorSelection);
+  QCOMPARE(tasks->currentIndex().data(TodoTaskModel::IdRole).toString(),
+           QStringLiteral("id:gamma"));
+  QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   QTRY_COMPARE(current(), window);
   QTRY_COMPARE(window->getController()->getProjection().m_listKey, QStringLiteral("id:personal"));
   QCOMPARE(window->getController()->getSelectedItemKey(), QStringLiteral("id:gamma"));
@@ -5766,8 +5790,12 @@ void TestTodoViewWindow::stickerSmartViews() {
   }
   const auto target = model->index(model->rowForKey(taskKey));
   QVERIFY(activate(tasks));
-  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
-                    tasks->visualRect(target).center());
+  const auto priorSelection = window->getController()->getSelectedItemKey();
+  const auto point = tasks->visualRect(target).center();
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QCOMPARE(window->getController()->getSelectedItemKey(), priorSelection);
+  QCOMPARE(tasks->currentIndex().data(TodoTaskModel::IdRole).toString(), taskKey);
+  QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   QTRY_COMPARE(current(), window);
   QTRY_COMPARE(window->getController()->getProjection().m_listKey, QStringLiteral("id:personal"));
   QCOMPARE(window->getController()->getSelectedItemKey(), taskKey);
@@ -6170,6 +6198,193 @@ void TestTodoViewWindow::calendarSelectsStickerDueDate() {
   QVERIFY(chooseCombo(
       lists, lists->findData(QVariant::fromValue(TodoViewKind::All), TodoListModel::ViewKindRole)));
   QCOMPARE(keys(), QStringList({QStringLiteral("id:other")}));
+}
+
+void TestTodoViewWindow::stickerTaskActivation_data() {
+  QTest::addColumn<QString>("action");
+  QTest::addColumn<bool>("singleClickStyle");
+  QTest::newRow("double-click") << QStringLiteral("double") << false;
+  QTest::newRow("return") << QStringLiteral("return") << false;
+  QTest::newRow("enter") << QStringLiteral("enter") << false;
+  QTest::newRow("single-click-style") << QStringLiteral("double") << true;
+}
+
+void TestTodoViewWindow::stickerTaskActivation() {
+  QFETCH(QString, action);
+  QFETCH(bool, singleClickStyle);
+  createArea();
+  const auto name = QStringLiteral("activation.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), c_source));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  std::unique_ptr<SingleClickTaskStyle> style;
+  if (singleClickStyle)
+    style = std::make_unique<SingleClickTaskStyle>();
+  TodoSticker sticker(*m_services);
+  auto *tasks = control<TodoTaskView>(&sticker, "todoStickerTasks");
+  QVERIFY(tasks);
+  if (style)
+    tasks->setStyle(style.get());
+  sticker.resize(440, 420);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  QTRY_VERIFY(controller && controller->isReady());
+  controller->setView(TodoViewKind::List, QStringLiteral("id:personal"));
+  auto *model = controller->getTaskModel();
+  const auto target = model->index(model->rowForKey(QStringLiteral("id:gamma")));
+  QVERIFY(target.isValid());
+  QSignalSpy activated(tasks, &TodoTaskView::taskActivated);
+  QVERIFY(activate(tasks));
+  const auto point = tasks->visualRect(target).center();
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QCOMPARE(tasks->currentIndex().data(TodoTaskModel::IdRole).toString(),
+           QStringLiteral("id:gamma"));
+  QVERIFY(tasks->selectionModel()->isSelected(tasks->currentIndex()));
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+  QKeyEvent repeat(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier, QString(), true);
+  QCoreApplication::sendEvent(tasks, &repeat);
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+  if (action == QLatin1String("double"))
+    QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  else
+    QTest::keyClick(tasks, action == QLatin1String("return") ? Qt::Key_Return : Qt::Key_Enter);
+  QTRY_VERIFY(current());
+  QCOMPARE(activated.size(), 1);
+  QCOMPARE(current()->getBuffer().resolvedPath(), absolute(name));
+  QCOMPARE(current()->getController()->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(current()->getController()->getSelectedItemKey(), QStringLiteral("id:gamma"));
+  QCOMPARE(readBytes(absolute(name)), c_source);
+}
+
+void TestTodoViewWindow::stickerSharedTaskControls_data() {
+  QTest::addColumn<bool>("readOnly");
+  QTest::newRow("editable") << false;
+  QTest::newRow("read-only") << true;
+}
+
+void TestTodoViewWindow::stickerSharedTaskControls() {
+  QFETCH(bool, readOnly);
+  const auto name = QStringLiteral("shared-controls.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), c_source));
+  if (readOnly) {
+    FileOpenSettings settings;
+    settings.m_readOnly = true;
+    QVERIFY(m_buffers->openBuffer({m_notebook, name}, settings).isValid());
+  }
+  createArea();
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(440, 460);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *tasks = control<TodoTaskView>(&sticker, "todoStickerTasks");
+  QVERIFY(controller && tasks && controller->isReady());
+  auto *model = controller->getTaskModel();
+  QSignalSpy activated(tasks, &TodoTaskView::taskActivated);
+  const auto click = [&](const QString &p_key, bool p_star) {
+    const auto index = model->index(model->rowForKey(p_key));
+    if (!index.isValid() || !activate(tasks))
+      return false;
+    tasks->scrollTo(index);
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      taskControlPoint(tasks, index, p_star));
+    return true;
+  };
+  QVERIFY(click(QStringLiteral("id:alpha"), true));
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_important,
+           !readOnly);
+  auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QCOMPARE(saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_important, !readOnly);
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+  // A control's double-click/trailing release must not become body activation or another toggle.
+  auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  auto point = taskControlPoint(tasks, index, true);
+  QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_important,
+           !readOnly);
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+  QVERIFY(click(QStringLiteral("id:alpha"), false));
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_checked,
+           !readOnly);
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+
+  int header = model->getActiveCount();
+  QVERIFY(model->index(header).data(TodoTaskModel::SectionRole).toBool());
+  QVERIFY(activate(tasks));
+  point = tasks->visualRect(model->index(header)).center();
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QVERIFY(tasks->currentIndex().data(TodoTaskModel::SectionRole).toBool());
+  QVERIFY(tasks->selectionModel()->isSelected(tasks->currentIndex()));
+  QVERIFY(!model->index(header).data(TodoTaskModel::ExpandedRole).toBool());
+  QCOMPARE(model->rowForKey(QStringLiteral("id:done")), -1);
+  controller->refresh();
+  header = model->getActiveCount();
+  QVERIFY(!model->index(header).data(TodoTaskModel::ExpandedRole).toBool());
+  tasks->setCurrentIndex(model->index(header));
+  QTest::keyClick(tasks, Qt::Key_Return);
+  QVERIFY(model->rowForKey(QStringLiteral("id:done")) >= 0);
+  tasks->setCurrentIndex(model->index(header));
+  QTest::keyClick(tasks, Qt::Key_Space);
+  QCOMPARE(model->rowForKey(QStringLiteral("id:done")), -1);
+  QTest::keyClick(tasks, Qt::Key_Enter);
+  QVERIFY(model->rowForKey(QStringLiteral("id:done")) >= 0);
+  QCOMPARE(activated.size(), 0);
+  QVERIFY(!current());
+  if (readOnly) {
+    QCOMPARE(readBytes(absolute(name)), c_source);
+  } else {
+    controller->setView(TodoViewKind::Important);
+    QVERIFY(click(QStringLiteral("id:alpha"), true));
+    QTRY_VERIFY(!controller->isBusy());
+    QCOMPARE(controller->getViewKind(), TodoViewKind::Important);
+    QCOMPARE(model->rowForKey(QStringLiteral("id:alpha")), -1);
+    saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+    QVERIFY(!saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_important);
+  }
+}
+
+void TestTodoViewWindow::stickerSharedControlRejectsReset_data() {
+  QTest::addColumn<bool>("star");
+  QTest::newRow("completion") << false;
+  QTest::newRow("importance") << true;
+}
+
+void TestTodoViewWindow::stickerSharedControlRejectsReset() {
+  QFETCH(bool, star);
+  const auto name = QStringLiteral("stale-controls.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), c_source));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(440, 420);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *tasks = control<TodoTaskView>(&sticker, "todoStickerTasks");
+  QVERIFY(controller && tasks && controller->isReady());
+  auto *model = controller->getTaskModel();
+  const auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  QVERIFY(activate(tasks));
+  const auto point = taskControlPoint(tasks, index, star);
+  QTest::mousePress(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  controller->setView(TodoViewKind::List, QStringLiteral("id:personal"));
+  QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QVERIFY(!controller->isBusy());
+  QCOMPARE(readBytes(absolute(name)), c_source);
+  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_fields.m_checked);
+  QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_fields.m_important);
 }
 
 } // namespace tests

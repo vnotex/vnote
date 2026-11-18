@@ -65,7 +65,24 @@ QSet<QString> s_ensuringFiles;
 TodoStickerController::TodoStickerController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services), m_taskModel(new TodoTaskModel(p_services, this)) {
   connect(m_taskModel, &TodoTaskModel::checkedChangeRequested, this,
-          &TodoStickerController::setChecked);
+          [this](const QString &p_key, bool p_checked, int p_revision) {
+            setTaskFlag(p_key, p_checked, p_revision, TaskFlag::Checked);
+          });
+  connect(m_taskModel, &TodoTaskModel::importanceChangeRequested, this,
+          [this](const QString &p_key, bool p_important, int p_revision) {
+            setTaskFlag(p_key, p_important, p_revision, TaskFlag::Important);
+          });
+  connect(m_taskModel, &TodoTaskModel::completedExpansionRequested, this, [this](bool p_expanded) {
+    if (m_completedExpanded == p_expanded) {
+      return;
+    }
+    const QPointer<TodoStickerController> self(this);
+    m_completedExpanded = p_expanded;
+    m_taskModel->setCompletedExpanded(p_expanded);
+    if (self) {
+      emit stateChanged();
+    }
+  });
 }
 
 TodoStickerController::~TodoStickerController() {
@@ -248,6 +265,7 @@ void TodoStickerController::changeBinding(const QString &p_path) {
   m_document = {};
   m_ready = false;
   m_readOnly = true;
+  m_completedExpanded = true;
   ++m_revision;
   publishModel();
 }
@@ -256,7 +274,7 @@ void TodoStickerController::publishModel() {
   TodoProjection projection;
   projection.m_view = m_view;
   projection.m_listKey = m_selectedListKey;
-  projection.m_completedExpanded = true;
+  projection.m_completedExpanded = m_completedExpanded;
   projection.m_today = m_today;
   if (m_view == TodoViewKind::All) {
     projection.m_dueDate = m_dueDate;
@@ -897,7 +915,8 @@ int TodoStickerController::addTask(const QString &p_title, const QString &p_dest
   return applyTaskEdit(destination, false, std::move(fields));
 }
 
-void TodoStickerController::setChecked(const QString &p_key, bool p_checked, int p_revision) {
+void TodoStickerController::setTaskFlag(const QString &p_key, bool p_value, int p_revision,
+                                        TaskFlag p_flag) {
   if (!canEditTasks() || isBusy()) {
     return;
   }
@@ -910,14 +929,16 @@ void TodoStickerController::setChecked(const QString &p_key, bool p_checked, int
     reportError(tr("The selected task no longer exists."));
     return;
   }
-  if (item->m_fields.m_checked == p_checked) {
+  const bool current =
+      p_flag == TaskFlag::Checked ? item->m_fields.m_checked : item->m_fields.m_important;
+  if (current == p_value) {
     return;
   }
-  applyTaskEdit(p_key, p_checked, std::nullopt);
+  applyTaskEdit(p_key, p_value, std::nullopt, p_flag);
 }
 
-int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_checked,
-                                         std::optional<TodoTaskFields> p_newTask) {
+int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_value,
+                                         std::optional<TodoTaskFields> p_newTask, TaskFlag p_flag) {
   // Model-reset notifications below invalidate row references, including p_key.
   const QString key = p_key;
   const QString expected = m_document.m_source;
@@ -937,7 +958,7 @@ int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_checked,
   }
   const int token = buffers->editTextSnapshot(
       node, expected,
-      [self, services, generation, key, p_checked,
+      [self, services, generation, key, p_value, p_flag,
        newTask = std::move(p_newTask)](const Buffer2 &p_buffer, const QString &p_source,
                                        QString *p_replacement, QString *p_error) {
         if (!self || self->m_generation != generation) {
@@ -978,7 +999,11 @@ int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_checked,
           }
           auto fields = current->m_fields;
           controller.setView(TodoViewKind::List, current->m_listKey);
-          fields.m_checked = p_checked;
+          if (p_flag == TaskFlag::Checked) {
+            fields.m_checked = p_value;
+          } else {
+            fields.m_important = p_value;
+          }
           if (!controller.updateTask(key, fields)) {
             *p_error = rejection.isEmpty() ? tr("The task could not be updated.") : rejection;
             return false;

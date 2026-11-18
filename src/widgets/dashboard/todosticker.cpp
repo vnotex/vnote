@@ -9,18 +9,12 @@
 #include <QHBoxLayout>
 #include <QHash>
 #include <QHideEvent>
-#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
-#include <QListView>
 #include <QLocale>
-#include <QMouseEvent>
-#include <QPersistentModelIndex>
 #include <QShowEvent>
 #include <QSignalBlocker>
 #include <QSizePolicy>
-#include <QStyle>
-#include <QStyledItemDelegate>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -34,149 +28,9 @@
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <models/todomodels.h>
+#include <widgets/editors/todotaskview.h>
 
 using namespace vnotex;
-
-namespace {
-
-class TodoStickerTaskDelegate final : public QStyledItemDelegate {
-public:
-  explicit TodoStickerTaskDelegate(QObject *p_parent) : QStyledItemDelegate(p_parent) {}
-
-  QRect checkRect(const QModelIndex &p_index, QStyleOptionViewItem p_option) const {
-    initStyleOption(&p_option, p_index);
-    if (!(p_option.features & QStyleOptionViewItem::HasCheckIndicator)) {
-      return {};
-    }
-    return p_option.widget->style()->subElementRect(QStyle::SE_ItemViewItemCheckIndicator,
-                                                    &p_option, p_option.widget);
-  }
-
-  bool editorEvent(QEvent *, QAbstractItemModel *, const QStyleOptionViewItem &,
-                   const QModelIndex &) override {
-    // The view separates checkbox gestures from navigation and owns the mutation boundary.
-    return false;
-  }
-};
-
-class TodoStickerTaskView final : public QListView {
-public:
-  explicit TodoStickerTaskView(TodoStickerController &p_controller, QWidget *p_parent)
-      : QListView(p_parent), m_controller(p_controller) {
-    m_delegate = new TodoStickerTaskDelegate(this);
-    setItemDelegate(m_delegate);
-  }
-
-protected:
-  void mousePressEvent(QMouseEvent *p_event) override {
-    m_pressed = QPersistentModelIndex();
-    m_checkboxPress = false;
-    if (p_event->button() == Qt::LeftButton) {
-      m_pressed = indexAt(p_event->position().toPoint());
-      m_checkboxPress = isCheckHit(m_pressed, p_event->position().toPoint());
-      if (m_checkboxPress) {
-        setCurrentIndex(m_pressed);
-        p_event->accept();
-        return;
-      }
-    }
-    QListView::mousePressEvent(p_event);
-  }
-
-  void mouseReleaseEvent(QMouseEvent *p_event) override {
-    if (p_event->button() != Qt::LeftButton) {
-      QListView::mouseReleaseEvent(p_event);
-      return;
-    }
-    const QPersistentModelIndex pressed = m_pressed;
-    const bool checkboxPress = m_checkboxPress;
-    m_pressed = QPersistentModelIndex();
-    m_checkboxPress = false;
-    const auto index = indexAt(p_event->position().toPoint());
-    const bool sameTask = pressed.isValid() && pressed == index;
-    const bool checkboxRelease = isCheckHit(index, p_event->position().toPoint());
-    if (checkboxPress || checkboxRelease) {
-      p_event->accept();
-      if (sameTask && checkboxPress && checkboxRelease) {
-        toggleTask(index);
-      }
-      // setData() can reset the model synchronously. Do not inspect index afterward.
-      return;
-    }
-    QListView::mouseReleaseEvent(p_event);
-    if (sameTask && pressed.isValid()) {
-      openTask(pressed);
-    }
-  }
-
-  void mouseDoubleClickEvent(QMouseEvent *p_event) override {
-    // The first release already handled this gesture; never toggle/open twice.
-    m_pressed = QPersistentModelIndex();
-    m_checkboxPress = false;
-    if (p_event->button() == Qt::LeftButton) {
-      p_event->accept();
-      return;
-    }
-    QListView::mouseDoubleClickEvent(p_event);
-  }
-
-  void keyPressEvent(QKeyEvent *p_event) override {
-    if (p_event->modifiers() == Qt::NoModifier &&
-        (p_event->key() == Qt::Key_Return || p_event->key() == Qt::Key_Enter ||
-         p_event->key() == Qt::Key_Space)) {
-      p_event->accept();
-      if (!p_event->isAutoRepeat()) {
-        if (p_event->key() == Qt::Key_Space) {
-          toggleTask(currentIndex());
-        } else {
-          openTask(currentIndex());
-        }
-      }
-      return;
-    }
-    QListView::keyPressEvent(p_event);
-  }
-
-private:
-  bool isCheckHit(const QModelIndex &p_index, const QPoint &p_position) const {
-    if (!p_index.isValid()) {
-      return false;
-    }
-    QStyleOptionViewItem option;
-    initViewItemOption(&option);
-    option.rect = visualRect(p_index);
-    option.widget = this;
-    // Let the active style place the indicator, including right-to-left layouts.
-    return m_delegate->checkRect(p_index, option).contains(p_position);
-  }
-
-  void toggleTask(const QModelIndex &p_index) {
-    if (!m_controller.isReady() || m_controller.isBusy() || !p_index.isValid() ||
-        !(p_index.flags() & Qt::ItemIsUserCheckable)) {
-      return;
-    }
-    const int state =
-        p_index.data(Qt::CheckStateRole).toInt() == Qt::Checked ? Qt::Unchecked : Qt::Checked;
-    model()->setData(p_index, state, Qt::CheckStateRole);
-  }
-
-  void openTask(const QModelIndex &p_index) {
-    if (!m_controller.isReady() || m_controller.isBusy() || !p_index.isValid()) {
-      return;
-    }
-    const QString key = p_index.data(TodoTaskModel::IdRole).toString();
-    if (!key.isEmpty()) {
-      m_controller.openTask(key);
-    }
-  }
-
-  TodoStickerController &m_controller;
-  TodoStickerTaskDelegate *m_delegate = nullptr;
-  QPersistentModelIndex m_pressed;
-  bool m_checkboxPress = false;
-};
-
-} // namespace
 
 TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
     : Sticker(p_services, p_parent) {
@@ -226,14 +80,11 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   m_lists->setMinimumContentsLength(8);
   layout->addWidget(m_lists);
 
-  m_tasks = new TodoStickerTaskView(*m_controller, this);
+  m_tasks = new TodoTaskView(m_services, this);
   m_tasks->setObjectName(QStringLiteral("todoStickerTasks"));
   m_tasks->setAccessibleName(tr("TODO tasks"));
   m_tasks->setModel(m_controller->getTaskModel());
-  m_tasks->setSelectionMode(QAbstractItemView::SingleSelection);
-  m_tasks->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  m_tasks->setDragEnabled(false);
-  m_tasks->setAcceptDrops(false);
+  m_tasks->setDragDropMode(QAbstractItemView::NoDragDrop);
   layout->addWidget(m_tasks, 1);
 
   m_message = new QLabel(this);
@@ -245,6 +96,15 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   m_message->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_message);
 
+  connect(m_tasks, &TodoTaskView::taskActivated, this, [this](const QModelIndex &p_index) {
+    if (!m_controller->isReady() || m_controller->isBusy() || !p_index.isValid()) {
+      return;
+    }
+    const QString key = p_index.data(TodoTaskModel::IdRole).toString();
+    if (!key.isEmpty()) {
+      m_controller->openTask(key);
+    }
+  });
   connect(m_addTask, &QLineEdit::returnPressed, this, &TodoSticker::submitTask);
   connect(m_edit, &QToolButton::clicked, m_controller, &TodoStickerController::edit);
   connect(m_settings, &QToolButton::clicked, this, &TodoSticker::chooseFile);
@@ -411,6 +271,7 @@ void TodoSticker::updateState() {
                          : tr("Edit") + QLatin1Char('\n') + m_controller->getFilePath());
   m_settings->setEnabled(!busy);
   m_lists->setEnabled(ready && !busy && m_lists->count() > 0);
+  m_tasks->setShowLocation(m_controller->getViewKind() != TodoViewKind::List);
   m_tasks->setEnabled(ready && !busy);
   m_tasks->setVisible(ready && m_controller->getTaskModel()->rowCount() > 0);
 

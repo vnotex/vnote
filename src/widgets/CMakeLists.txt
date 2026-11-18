@@ -92,6 +92,7 @@ target_sources(vnote PRIVATE
     editors/statusoverlay.h
     editors/texteditor.cpp editors/texteditor.h
     editors/todoeditor.cpp editors/todoeditor.h
+    editors/todotaskview.cpp editors/todotaskview.h
     editors/webviewadapter.cpp editors/webviewadapter.h
     editreaddiscardaction.cpp editreaddiscardaction.h
     encodingbutton.cpp encodingbutton.h
