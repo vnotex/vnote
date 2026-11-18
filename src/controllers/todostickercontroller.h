@@ -1,18 +1,19 @@
 #ifndef VNOTEX_TODOSTICKERCONTROLLER_H
 #define VNOTEX_TODOSTICKERCONTROLLER_H
 
+#include <QDate>
 #include <QObject>
 #include <QPointer>
 #include <QVector>
 
 #include <core/nodeidentifier.h>
 #include <core/tododocument.h>
+#include <models/todomodels.h>
 
 namespace vnotex {
 
 class HookManager;
 class ServiceLocator;
-class TodoTaskModel;
 
 // A source-bound projection only. BufferService owns every read/edit lifetime.
 class TodoStickerController : public QObject {
@@ -26,7 +27,9 @@ public:
   TodoTaskModel *getTaskModel() const { return m_taskModel; }
   const TodoDocument &getDocument() const { return m_document; }
   const QString &getSelectedListKey() const { return m_selectedListKey; }
-  void selectList(const QString &p_key);
+  TodoViewKind getViewKind() const { return m_view; }
+  void setView(TodoViewKind p_view, const QString &p_listKey = {});
+  void setToday(const QDate &p_today);
   QString getFilePath() const { return m_filePath; }
   const QString &getError() const { return m_error; }
   bool isReady() const { return m_ready; }
@@ -70,6 +73,8 @@ private:
   NodeIdentifier m_node;
   QString m_filePath;
   QString m_notebookRoot;
+  TodoViewKind m_view = TodoViewKind::List;
+  QDate m_today = QDate::currentDate();
   QString m_selectedListKey;
   QString m_pendingListKey;
   QString m_error;

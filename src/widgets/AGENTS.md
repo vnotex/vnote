@@ -1884,10 +1884,18 @@ and persistence live in `DashboardController` (`../controllers/`).
 
 `TodoSticker` is the `todos` built-in. Fresh and reset dashboards place it below Calendar;
 nonempty saved layouts, including an explicit empty sticker array, remain user-owned. There is
-no layout migration. The combo selects real lists (with group-qualified names), and completed
-tasks remain visible. Checkboxes/Space toggle completion; a task-body click or Enter opens the
+no layout migration. The combo offers My Day, Important and Planned before the real lists
+(with group-qualified names, including collisions with smart labels). Both sticker and editor
+use `TodoDocument::parse()` and the same `TodoTaskModel` predicates: today's My Day date,
+importance, or any valid due date (including overdue). Completed tasks remain visible, and
+completion preserves the chosen smart view rather than switching to the task's source list.
+A visible-only minute timer updates My Day's stored projection date without polling storage;
+showing the sticker refreshes that date. View selection is transient, so no migration is needed.
+Checkboxes/Space toggle completion; a task-body click or Enter opens the
 internal TODO view at its containing list and task. Edit forces Edit mode without replacing
-another note; an already-open backing note follows normal tab deduplication.
+another note; an already-open backing note follows normal tab deduplication. Edit and Settings
+are icon-only, grouped at the top right, using the bundled `edit_editor.svg` and `settings.svg`.
+Their normal/disabled icon colors follow live theme changes; accessible names and tooltips remain.
 
 `TodoStickerController` owns the global backing path in `SessionConfig::core.todoStickerFilePath`.
 Settings selects an existing `.todo` file; cancellation leaves the path unchanged. Session change

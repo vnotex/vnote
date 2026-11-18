@@ -4,10 +4,12 @@
 #include "sticker.h"
 
 class QComboBox;
+class QHideEvent;
 class QLabel;
 class QListView;
 class QShowEvent;
 class QToolButton;
+class QTimer;
 
 namespace vnotex {
 
@@ -24,9 +26,11 @@ public:
 
 protected:
   void showEvent(QShowEvent *p_event) override;
+  void hideEvent(QHideEvent *p_event) override;
 
 private:
   void updateState();
+  void refreshIcons();
   void chooseFile();
 
   TodoStickerController *m_controller = nullptr;
@@ -35,6 +39,7 @@ private:
   QToolButton *m_edit = nullptr;
   QToolButton *m_settings = nullptr;
   QLabel *m_message = nullptr;
+  QTimer *m_dayTimer = nullptr;
   bool m_initialized = false;
 };
 

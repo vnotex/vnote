@@ -754,6 +754,8 @@ private slots:
   void stickerCreatesMissingBackingFile();
   void stickerRecreatesMissingBodyFromLiveDraft();
   void stickerCompletionKeepsLegacyListSelection();
+  void stickerSmartViews_data();
+  void stickerSmartViews();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source = c_source,
@@ -5427,7 +5429,6 @@ void TestTodoViewWindow::stickerInteractionAndSharedDraft() {
   auto *lists = control<QComboBox>(&sticker, "todoStickerLists");
   auto *tasks = control<QListView>(&sticker, "todoStickerTasks");
   QVERIFY(lists && tasks);
-  QCOMPARE(lists->count(), 2);
   QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:work"))));
   auto *model = controller->getTaskModel();
   auto clickCheck = [&](const QString &p_key) {
@@ -5644,7 +5645,7 @@ void TestTodoViewWindow::stickerCompletionKeepsLegacyListSelection() {
   controller.initialize();
   QVERIFY(controller.isReady());
   const auto laterKey = controller.getDocument().m_lists.at(1).m_key;
-  controller.selectList(laterKey);
+  controller.setView(TodoViewKind::List, laterKey);
   auto *model = controller.getTaskModel();
   QCOMPARE(model->index(0).data().toString(), QStringLiteral("Second"));
   QVERIFY(model->setData(model->index(0), Qt::Checked, Qt::CheckStateRole));
@@ -5660,6 +5661,135 @@ void TestTodoViewWindow::stickerCompletionKeepsLegacyListSelection() {
   QVERIFY(selected);
   QCOMPARE(selected->m_title, QStringLiteral("Later"));
   QVERIFY(!selected->m_items.first().m_fields.m_checked);
+}
+
+void TestTodoViewWindow::stickerSmartViews_data() {
+  QTest::addColumn<TodoViewKind>("view");
+  QTest::addColumn<QStringList>("expected");
+  QTest::addColumn<QString>("taskKey");
+  QTest::newRow("my-day") << TodoViewKind::MyDay
+                          << QStringList{QStringLiteral("id:alpha"), QStringLiteral("id:done"),
+                                         QStringLiteral("id:gamma")}
+                          << QStringLiteral("id:gamma");
+  QTest::newRow("important") << TodoViewKind::Important
+                             << QStringList{QStringLiteral("id:beta"), QStringLiteral("id:delta"),
+                                            QStringLiteral("id:done")}
+                             << QStringLiteral("id:delta");
+  QTest::newRow("planned-includes-overdue")
+      << TodoViewKind::Planned
+      << QStringList{QStringLiteral("id:beta"), QStringLiteral("id:done"),
+                     QStringLiteral("id:gamma")}
+      << QStringLiteral("id:gamma");
+}
+
+void TestTodoViewWindow::stickerSmartViews() {
+  QFETCH(TodoViewKind, view);
+  QFETCH(QStringList, expected);
+  QFETCH(QString, taskKey);
+  const QDate today(2024, 6, 12);
+  const auto source =
+      QStringLiteral("## Work\n<!-- todo-list: {\"id\":\"work\"} -->\n\n"
+                     "- [ ] Alpha\n  <!-- todo-item: {\"id\":\"alpha\",\"myDay\":\"%1\"} -->\n\n"
+                     "- [ ] Beta\n  <!-- todo-item: "
+                     "{\"id\":\"beta\",\"myDay\":\"%2\",\"important\":true,\"due\":\"%2\"} -->\n\n"
+                     "- [x] Done\n  <!-- todo-item: "
+                     "{\"id\":\"done\",\"myDay\":\"%1\",\"important\":true,\"due\":\"%3\"} -->\n\n"
+                     "## My Day\n<!-- todo-list: {\"id\":\"personal\"} -->\n\n"
+                     "- [ ] Gamma\n  <!-- todo-item: "
+                     "{\"id\":\"gamma\",\"myDay\":\"%1\",\"due\":\"%1\"} -->\n\n"
+                     "- [ ] Delta\n  <!-- todo-item: "
+                     "{\"id\":\"delta\",\"myDay\":\"%3\",\"important\":true} -->\n")
+          .arg(today.toString(Qt::ISODate), today.addDays(-1).toString(Qt::ISODate),
+               today.addDays(1).toString(Qt::ISODate))
+          .toUtf8();
+  createArea();
+  const auto name = QStringLiteral("smart-sticker.todo");
+  const auto buffer = openNote(name, source);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(420, 460);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  QVERIFY(controller && controller->isReady());
+  controller->setToday(today);
+  auto *lists = control<QComboBox>(&sticker, "todoStickerLists");
+  auto *tasks = control<QListView>(&sticker, "todoStickerTasks");
+  QVERIFY(lists && tasks);
+  auto *model = controller->getTaskModel();
+  const auto keys = [&]() {
+    QStringList result;
+    for (int row = 0; row < model->rowCount(); ++row) {
+      const auto key = model->index(row).data(TodoTaskModel::IdRole).toString();
+      if (!key.isEmpty())
+        result.append(key);
+    }
+    result.sort();
+    return result;
+  };
+  const auto chooseSmart = [&]() {
+    return chooseCombo(lists,
+                       lists->findData(QVariant::fromValue(view), TodoListModel::ViewKindRole));
+  };
+  QVERIFY(chooseSmart());
+  QCOMPARE(keys(), expected);
+  QCOMPARE(controller->getViewKind(), view);
+  controller->refresh();
+  QCOMPARE(keys(), expected);
+  QCOMPARE(lists->currentData(TodoListModel::ViewKindRole).value<TodoViewKind>(), view);
+  for (bool checked : {true, false}) {
+    tasks->setCurrentIndex(model->index(model->rowForKey(taskKey)));
+    QVERIFY(activate(tasks));
+    QTest::keyClick(tasks, Qt::Key_Space);
+    QTRY_VERIFY(!controller->isBusy());
+    QTRY_COMPARE(controller->getDocument().findItem(taskKey)->m_fields.m_checked, checked);
+    QCOMPARE(controller->getViewKind(), view);
+    QCOMPARE(keys(), expected);
+    QCOMPARE(lists->currentData(TodoListModel::ViewKindRole).value<TodoViewKind>(), view);
+    const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+    QCOMPARE(saved.findItem(taskKey)->m_fields.m_checked, checked);
+    QCOMPARE(saved.findItem(QStringLiteral("id:beta"))->m_fields.m_due, today.addDays(-1));
+  }
+  const auto target = model->index(model->rowForKey(taskKey));
+  QVERIFY(activate(tasks));
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    tasks->visualRect(target).center());
+  QTRY_COMPARE(current(), window);
+  QTRY_COMPARE(window->getController()->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(window->getController()->getSelectedItemKey(), taskKey);
+
+  // Return to the same real-list identity after a smart selection, not just a different key.
+  const QStringList workKeys{QStringLiteral("id:alpha"), QStringLiteral("id:beta"),
+                             QStringLiteral("id:done")};
+  QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:work"))));
+  QCOMPARE(keys(), workKeys);
+  QVERIFY(chooseSmart());
+  QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:work"))));
+  QCOMPARE(controller->getViewKind(), TodoViewKind::List);
+  QCOMPARE(keys(), workKeys);
+  // A real list named My Day must remain distinct from the smart view.
+  QVERIFY(lists->itemText(lists->findData(QStringLiteral("id:personal"))) !=
+          lists->itemText(lists->findData(QVariant::fromValue(TodoViewKind::MyDay),
+                                          TodoListModel::ViewKindRole)));
+  QVERIFY(chooseCombo(lists, lists->findData(QStringLiteral("id:personal"))));
+  QCOMPARE(controller->getViewKind(), TodoViewKind::List);
+  QCOMPARE(keys(), QStringList({QStringLiteral("id:delta"), QStringLiteral("id:gamma")}));
+  QVERIFY(chooseSmart());
+  if (view == TodoViewKind::MyDay) {
+    controller->setToday(today.addDays(1));
+    QCOMPARE(keys(), QStringList({QStringLiteral("id:delta")}));
+    controller->refresh();
+    QCOMPARE(keys(), QStringList({QStringLiteral("id:delta")}));
+    QVERIFY(model->setData(model->index(model->rowForKey(QStringLiteral("id:delta"))), Qt::Checked,
+                           Qt::CheckStateRole));
+    QTRY_VERIFY(!controller->isBusy());
+    QCOMPARE(controller->getViewKind(), TodoViewKind::MyDay);
+    QCOMPARE(keys(), QStringList({QStringLiteral("id:delta")}));
+    QVERIFY(controller->getDocument().findItem(QStringLiteral("id:delta"))->m_fields.m_checked);
+  }
 }
 
 } // namespace tests

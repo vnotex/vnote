@@ -13796,6 +13796,21 @@ Continue?</source>
         <source>TODO files (*.todo)</source>
         <translation>TODO 파일 (*.todo)</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="286"/>
+        <source>My Day</source>
+        <translation>나의 하루</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="287"/>
+        <source>Important</source>
+        <translation>중요</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dashboard/todosticker.cpp" line="288"/>
+        <source>Planned</source>
+        <translation>계획</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::TodoStickerController</name>

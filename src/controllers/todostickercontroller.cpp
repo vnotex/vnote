@@ -239,6 +239,7 @@ void TodoStickerController::changeBinding(const QString &p_path) {
   m_filePath = p_path;
   m_node = {};
   m_notebookRoot.clear();
+  m_view = TodoViewKind::List;
   m_selectedListKey.clear();
   m_document = {};
   m_ready = false;
@@ -249,10 +250,10 @@ void TodoStickerController::changeBinding(const QString &p_path) {
 
 void TodoStickerController::publishModel() {
   TodoProjection projection;
-  projection.m_view = TodoViewKind::List;
+  projection.m_view = m_view;
   projection.m_listKey = m_selectedListKey;
   projection.m_completedExpanded = true;
-  projection.m_today = QDate::currentDate();
+  projection.m_today = m_today;
   m_taskModel->setSnapshot(m_document, projection,
                            m_ready && !m_readOnly && !m_editing && m_document.isValid(),
                            m_revision);
@@ -690,7 +691,7 @@ void TodoStickerController::refresh() {
   m_document = TodoDocument::parse(source);
   m_ready = true;
   m_readOnly = readOnly || !QFileInfo(canonical).isWritable();
-  if (!m_document.findList(m_selectedListKey)) {
+  if (m_view == TodoViewKind::List && !m_document.findList(m_selectedListKey)) {
     m_selectedListKey = m_document.m_lists.isEmpty() ? QString() : m_document.m_lists.first().m_key;
   }
   ++m_revision;
@@ -713,14 +714,34 @@ void TodoStickerController::refresh() {
   emit stateChanged();
 }
 
-void TodoStickerController::selectList(const QString &p_key) {
-  if (!m_ready || m_editing || !m_document.findList(p_key) || p_key == m_selectedListKey) {
+void TodoStickerController::setView(TodoViewKind p_view, const QString &p_listKey) {
+  if (!m_ready || isBusy() ||
+      (p_view != TodoViewKind::List && p_view != TodoViewKind::MyDay &&
+       p_view != TodoViewKind::Important && p_view != TodoViewKind::Planned)) {
     return;
   }
-  m_selectedListKey = p_key;
+  const auto listKey = p_view == TodoViewKind::List ? p_listKey : QString();
+  if ((p_view == TodoViewKind::List && !m_document.findList(listKey)) ||
+      (p_view == m_view && listKey == m_selectedListKey)) {
+    return;
+  }
+  m_view = p_view;
+  m_selectedListKey = listKey;
   ++m_revision;
   publishModel();
   emit stateChanged();
+}
+
+void TodoStickerController::setToday(const QDate &p_today) {
+  if (m_today == p_today) {
+    return;
+  }
+  m_today = p_today;
+  if (m_view == TodoViewKind::MyDay) {
+    ++m_revision;
+    publishModel();
+    emit stateChanged();
+  }
 }
 
 bool TodoStickerController::setFilePath(const QString &p_path) {
@@ -807,7 +828,7 @@ void TodoStickerController::setChecked(const QString &p_key, bool p_checked, int
     return;
   }
   const auto *item = m_document.findItem(p_key);
-  if (!item || item->m_listKey != m_selectedListKey) {
+  if (!item || m_taskModel->rowForKey(p_key) < 0) {
     reportError(tr("The selected task no longer exists."));
     return;
   }
@@ -876,8 +897,8 @@ void TodoStickerController::setChecked(const QString &p_key, bool p_checked, int
         const auto listKey = self->m_pendingListKey;
         self->m_pendingListKey.clear();
         self->refresh();
-        if (self && self->m_generation == generation) {
-          self->selectList(listKey);
+        if (self && self->m_generation == generation && self->m_view == TodoViewKind::List) {
+          self->setView(TodoViewKind::List, listKey);
         }
         if (self && self->m_generation == generation && (!p_saved || !p_error.isEmpty())) {
           self->reportError(p_error.isEmpty() ? tr("The TODO change could not be saved.")

@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QHash>
+#include <QHideEvent>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QListView>
@@ -13,11 +14,15 @@
 #include <QSignalBlocker>
 #include <QStyle>
 #include <QStyledItemDelegate>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 
 #include <controllers/todostickercontroller.h>
+#include <core/servicelocator.h>
 #include <core/tododocument.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 #include <models/todomodels.h>
 
 using namespace vnotex;
@@ -171,21 +176,32 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   layout->setContentsMargins(0, 0, 0, 0);
   auto *toolbar = new QHBoxLayout();
   toolbar->setContentsMargins(4, 2, 4, 2);
+  toolbar->addStretch();
   m_edit = new QToolButton(this);
   m_edit->setObjectName(QStringLiteral("todoStickerEdit"));
   m_edit->setText(tr("Edit"));
+  m_edit->setAccessibleName(tr("Edit"));
   m_edit->setAutoRaise(true);
-  m_edit->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  m_edit->setToolButtonStyle(Qt::ToolButtonIconOnly);
   toolbar->addWidget(m_edit);
-  toolbar->addStretch();
   m_settings = new QToolButton(this);
   m_settings->setObjectName(QStringLiteral("todoStickerSettings"));
   m_settings->setText(tr("Settings"));
+  m_settings->setAccessibleName(tr("Settings"));
   m_settings->setToolTip(tr("Choose an existing TODO file"));
   m_settings->setAutoRaise(true);
-  m_settings->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  m_settings->setToolButtonStyle(Qt::ToolButtonIconOnly);
   toolbar->addWidget(m_settings);
   layout->addLayout(toolbar);
+  refreshIcons();
+  if (auto *theme = m_services.get<ThemeService>()) {
+    connect(theme, &ThemeService::themeChanged, this, &TodoSticker::refreshIcons);
+  }
+
+  m_dayTimer = new QTimer(this);
+  m_dayTimer->setInterval(60000);
+  connect(m_dayTimer, &QTimer::timeout, this,
+          [this]() { m_controller->setToday(QDate::currentDate()); });
 
   m_lists = new QComboBox(this);
   m_lists->setObjectName(QStringLiteral("todoStickerLists"));
@@ -217,7 +233,10 @@ TodoSticker::TodoSticker(ServiceLocator &p_services, QWidget *p_parent)
   connect(m_settings, &QToolButton::clicked, this, &TodoSticker::chooseFile);
   connect(m_lists, &QComboBox::currentIndexChanged, this, [this](int p_index) {
     if (p_index >= 0 && !m_controller->isBusy()) {
-      m_controller->selectList(m_lists->itemData(p_index).toString());
+      const auto kind = m_lists->itemData(p_index, TodoListModel::ViewKindRole);
+      if (kind.isValid()) {
+        m_controller->setView(kind.value<TodoViewKind>(), m_lists->itemData(p_index).toString());
+      }
     }
   });
   connect(m_controller, &TodoStickerController::stateChanged, this, &TodoSticker::updateState);
@@ -231,11 +250,30 @@ QString TodoSticker::titleText() const { return tr("TODOs"); }
 
 void TodoSticker::showEvent(QShowEvent *p_event) {
   Sticker::showEvent(p_event);
+  m_controller->setToday(QDate::currentDate());
+  m_dayTimer->start();
   if (!m_initialized) {
     m_initialized = true;
     m_controller->initialize();
   } else {
     m_controller->refresh();
+  }
+}
+
+void TodoSticker::hideEvent(QHideEvent *p_event) {
+  m_dayTimer->stop();
+  Sticker::hideEvent(p_event);
+}
+
+void TodoSticker::refreshIcons() {
+  if (auto *theme = m_services.get<ThemeService>()) {
+    const QVector<IconUtils::OverriddenColor> colors{
+        {theme->paletteColor(QStringLiteral("widgets#toolbar#icon#fg")), QIcon::Normal},
+        {theme->paletteColor(QStringLiteral("widgets#toolbar#icon#disabled#fg")), QIcon::Disabled}};
+    m_edit->setIcon(
+        IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("edit_editor.svg")), colors));
+    m_settings->setIcon(
+        IconUtils::fetchIcon(theme->getIconFile(QStringLiteral("settings.svg")), colors));
   }
 }
 
@@ -245,11 +283,35 @@ void TodoSticker::updateState() {
   const auto &document = m_controller->getDocument();
   {
     const QSignalBlocker blocker(m_lists);
-    QHash<QString, int> titleCounts;
+    const auto myDay = tr("My Day");
+    const auto important = tr("Important");
+    const auto planned = tr("Planned");
+    QHash<QString, int> titleCounts{{myDay, 1}, {important, 1}, {planned, 1}};
     for (const auto &list : document.m_lists) {
       ++titleCounts[list.m_title];
     }
     int row = 0;
+    const auto appendEntry = [&](const QString &p_label, TodoViewKind p_view,
+                                 const QString &p_key = QString()) {
+      if (row >= m_lists->count()) {
+        m_lists->addItem(p_label, p_key);
+      } else {
+        if (m_lists->itemText(row) != p_label) {
+          m_lists->setItemText(row, p_label);
+        }
+        if (m_lists->itemData(row).toString() != p_key) {
+          m_lists->setItemData(row, p_key);
+        }
+      }
+      const auto kind = QVariant::fromValue(p_view);
+      if (m_lists->itemData(row, TodoListModel::ViewKindRole) != kind) {
+        m_lists->setItemData(row, kind, TodoListModel::ViewKindRole);
+      }
+      ++row;
+    };
+    appendEntry(myDay, TodoViewKind::MyDay);
+    appendEntry(important, TodoViewKind::Important);
+    appendEntry(planned, TodoViewKind::Planned);
     for (const auto &list : document.m_lists) {
       QString label = list.m_title.isEmpty() ? tr("Untitled list") : list.m_title;
       const auto *group = document.groupForList(list);
@@ -259,26 +321,24 @@ void TodoSticker::updateState() {
                                : (group->m_title.isEmpty() ? tr("Untitled group") : group->m_title);
         label = tr("%1 / %2").arg(groupTitle, label);
       }
-      if (row >= m_lists->count()) {
-        m_lists->addItem(label, list.m_key);
-      } else {
-        if (m_lists->itemText(row) != label) {
-          m_lists->setItemText(row, label);
-        }
-        if (m_lists->itemData(row).toString() != list.m_key) {
-          m_lists->setItemData(row, list.m_key);
-        }
-      }
-      ++row;
+      appendEntry(label, TodoViewKind::List, list.m_key);
     }
     while (m_lists->count() > row) {
       m_lists->removeItem(m_lists->count() - 1);
     }
-    m_lists->setCurrentIndex(m_lists->findData(m_controller->getSelectedListKey()));
+    const int selected = m_controller->getViewKind() == TodoViewKind::List
+                             ? (m_controller->getSelectedListKey().isEmpty()
+                                    ? -1
+                                    : m_lists->findData(m_controller->getSelectedListKey()))
+                             : m_lists->findData(QVariant::fromValue(m_controller->getViewKind()),
+                                                 TodoListModel::ViewKindRole);
+    m_lists->setCurrentIndex(selected);
   }
 
   m_edit->setEnabled(ready && !busy);
-  m_edit->setToolTip(m_controller->getFilePath());
+  m_edit->setToolTip(m_controller->getFilePath().isEmpty()
+                         ? tr("Edit")
+                         : tr("Edit") + QLatin1Char('\n') + m_controller->getFilePath());
   m_settings->setEnabled(!busy);
   m_lists->setEnabled(ready && !busy && m_lists->count() > 0);
   m_tasks->setEnabled(ready && !busy);
