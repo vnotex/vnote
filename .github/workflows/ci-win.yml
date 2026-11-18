@@ -30,7 +30,7 @@ jobs:
     name: ${{ matrix.config.name }}
     runs-on: windows-${{ matrix.config.vs_version }}
     # Leave room for the full test suite and package gates after a cold build.
-    timeout-minutes: 180
+    timeout-minutes: 360
 
     strategy:
       fail-fast: false

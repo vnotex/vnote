@@ -32,7 +32,7 @@ jobs:
     environment: Mac-code-sign
     name: ${{ matrix.config.name }}
     # Cold universal packaging plus native test builds exceed two hours.
-    timeout-minutes: 180
+    timeout-minutes: 360
 
     strategy:
       fail-fast: false
