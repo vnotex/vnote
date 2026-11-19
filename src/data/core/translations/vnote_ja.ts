@@ -11741,31 +11741,6 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+10"/>
-        <source>Input mode like Vi</source>
-        <translation>Viのような入力モード</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Normal</source>
-        <translation>標準</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Vi</source>
-        <translation>Vi</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>VSCode</source>
-        <translation>VSCode</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Input mode</source>
-        <translation>入力モード</translation>
-    </message>
-    <message>
-        <location line="+11"/>
         <source>Force to center text cursor</source>
         <translation>テキストカーソルを強制的に中央揃えにする</translation>
     </message>
@@ -11866,8 +11841,8 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>スペルチェック</translation>
     </message>
     <message>
-        <location line="-142"/>
-        <location line="+233"/>
+        <location line="-125"/>
+        <location line="+205"/>
         <source>Text Editor</source>
         <translation>テキストエディタ</translation>
     </message>
@@ -14163,9 +14138,9 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
 </context>
 <context>
-    <name>vnotex::ViPage</name>
+    <name>vnotex::InputModePage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="+32"/>
+        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+52"/>
         <source>Ctrl+C/X to copy/cut</source>
         <translation>Ctrl+C/X でコピー/切り取り</translation>
     </message>
@@ -14176,9 +14151,39 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="-5"/>
-        <location line="+34"/>
         <source>Vi Input Mode</source>
         <translation>Vi 入力モード</translation>
+    </message>
+    <message>
+        <location line="-19"/>
+        <location line="+63"/>
+        <source>Input Mode</source>
+        <translation>入力モード</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>Input mode</source>
+        <translation>入力モード</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <source>Input mode for editors</source>
+        <translation>エディターの入力モード</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Normal</source>
+        <translation>標準</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vi</source>
+        <translation>Vi</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VSCode</source>
+        <translation>VSCode</translation>
     </message>
 </context>
 <context>

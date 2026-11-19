@@ -77,6 +77,8 @@ public:
   enum AutoSavePolicy { None, AutoSave, BackupFile };
   Q_ENUM(AutoSavePolicy)
 
+  enum class InputMode { NormalMode, ViMode, VscodeMode };
+
   struct ImageHostItem {
     ImageHostItem() = default;
 
@@ -118,6 +120,9 @@ public:
 
   EditorConfig::AutoSavePolicy getAutoSavePolicy() const;
   void setAutoSavePolicy(EditorConfig::AutoSavePolicy p_policy);
+
+  EditorConfig::InputMode getInputMode() const;
+  void setInputMode(EditorConfig::InputMode p_mode);
 
   const QString &getBackupFileDirectory() const;
 
@@ -170,6 +175,9 @@ private:
   QString autoSavePolicyToString(AutoSavePolicy p_policy) const;
   AutoSavePolicy stringToAutoSavePolicy(const QString &p_str) const;
 
+  QString inputModeToString(InputMode p_mode) const;
+  InputMode stringToInputMode(const QString &p_str) const;
+
   void loadImageHost(const QJsonObject &p_jobj);
 
   QJsonObject saveImageHost() const;
@@ -185,6 +193,8 @@ private:
   std::bitset<Shortcut::MaxShortcut> m_filteredShortcuts;
 
   AutoSavePolicy m_autoSavePolicy = AutoSavePolicy::AutoSave;
+
+  InputMode m_inputMode = InputMode::VscodeMode;
 
   // Where to put backup file, relative to the content file itself.
   QString m_backupFileDirectory;

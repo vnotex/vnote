@@ -30,8 +30,6 @@ private:
 
   QCheckBox *m_textFoldingCheckBox = nullptr;
 
-  QComboBox *m_inputModeComboBox = nullptr;
-
   QComboBox *m_centerCursorComboBox = nullptr;
 
   QComboBox *m_wrapModeComboBox = nullptr;

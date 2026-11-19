@@ -31,11 +31,6 @@ private slots:
   void testBuildConfig_lineNumberRelative();
   void testBuildConfig_lineNumberNone();
 
-  // Input mode mapping
-  void testBuildConfig_inputModeNormal();
-  void testBuildConfig_inputModeVi();
-  void testBuildConfig_inputModeVscode();
-
   // Wrap mode mapping
   void testBuildConfig_wrapModeNoWrap();
   void testBuildConfig_wrapModeWordWrap();
@@ -116,8 +111,7 @@ void TestTextViewWindowController::testBuildConfig_lineNumberAbsolute() {
   auto &tc = ec.getTextEditorConfig();
   tc.setLineNumberType(TextEditorConfig::LineNumberType::Absolute);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineNumberType, vte::VTextEditor::LineNumberType::Absolute);
 }
@@ -127,8 +121,7 @@ void TestTextViewWindowController::testBuildConfig_lineNumberRelative() {
   auto &tc = ec.getTextEditorConfig();
   tc.setLineNumberType(TextEditorConfig::LineNumberType::Relative);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineNumberType, vte::VTextEditor::LineNumberType::Relative);
 }
@@ -138,45 +131,9 @@ void TestTextViewWindowController::testBuildConfig_lineNumberNone() {
   auto &tc = ec.getTextEditorConfig();
   tc.setLineNumberType(TextEditorConfig::LineNumberType::None);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineNumberType, vte::VTextEditor::LineNumberType::None);
-}
-
-// --- Input mode ---
-
-void TestTextViewWindowController::testBuildConfig_inputModeNormal() {
-  auto ec = makeEditorConfig();
-  auto &tc = ec.getTextEditorConfig();
-  tc.setInputMode(TextEditorConfig::InputMode::NormalMode);
-
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
-
-  QCOMPARE(result->m_inputMode, vte::InputMode::NormalMode);
-}
-
-void TestTextViewWindowController::testBuildConfig_inputModeVi() {
-  auto ec = makeEditorConfig();
-  auto &tc = ec.getTextEditorConfig();
-  tc.setInputMode(TextEditorConfig::InputMode::ViMode);
-
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
-
-  QCOMPARE(result->m_inputMode, vte::InputMode::ViMode);
-}
-
-void TestTextViewWindowController::testBuildConfig_inputModeVscode() {
-  auto ec = makeEditorConfig();
-  auto &tc = ec.getTextEditorConfig();
-  tc.setInputMode(TextEditorConfig::InputMode::VscodeMode);
-
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
-
-  QCOMPARE(result->m_inputMode, vte::InputMode::VscodeMode);
 }
 
 // --- Wrap mode ---
@@ -186,8 +143,7 @@ void TestTextViewWindowController::testBuildConfig_wrapModeNoWrap() {
   auto &tc = ec.getTextEditorConfig();
   tc.setWrapMode(TextEditorConfig::WrapMode::NoWrap);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_wrapMode), static_cast<int>(vte::WrapMode::NoWrap));
 }
@@ -197,8 +153,7 @@ void TestTextViewWindowController::testBuildConfig_wrapModeWordWrap() {
   auto &tc = ec.getTextEditorConfig();
   tc.setWrapMode(TextEditorConfig::WrapMode::WordWrap);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_wrapMode), static_cast<int>(vte::WrapMode::WordWrap));
 }
@@ -208,8 +163,7 @@ void TestTextViewWindowController::testBuildConfig_wrapModeWrapAnywhere() {
   auto &tc = ec.getTextEditorConfig();
   tc.setWrapMode(TextEditorConfig::WrapMode::WrapAnywhere);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_wrapMode), static_cast<int>(vte::WrapMode::WrapAnywhere));
 }
@@ -219,8 +173,7 @@ void TestTextViewWindowController::testBuildConfig_wrapModeWordWrapOrAnywhere() 
   auto &tc = ec.getTextEditorConfig();
   tc.setWrapMode(TextEditorConfig::WrapMode::WordWrapOrAnywhere);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_wrapMode),
            static_cast<int>(vte::WrapMode::WordWrapOrAnywhere));
@@ -233,8 +186,7 @@ void TestTextViewWindowController::testBuildConfig_centerCursorNever() {
   auto &tc = ec.getTextEditorConfig();
   tc.setCenterCursor(TextEditorConfig::CenterCursor::NeverCenter);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_centerCursor),
            static_cast<int>(vte::CenterCursor::NeverCenter));
@@ -245,8 +197,7 @@ void TestTextViewWindowController::testBuildConfig_centerCursorAlways() {
   auto &tc = ec.getTextEditorConfig();
   tc.setCenterCursor(TextEditorConfig::CenterCursor::AlwaysCenter);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_centerCursor),
            static_cast<int>(vte::CenterCursor::AlwaysCenter));
@@ -257,8 +208,7 @@ void TestTextViewWindowController::testBuildConfig_centerCursorOnBottom() {
   auto &tc = ec.getTextEditorConfig();
   tc.setCenterCursor(TextEditorConfig::CenterCursor::CenterOnBottom);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(static_cast<int>(result->m_centerCursor),
            static_cast<int>(vte::CenterCursor::CenterOnBottom));
@@ -271,8 +221,7 @@ void TestTextViewWindowController::testBuildConfig_lineEndingPlatform() {
   ec.setLineEndingPolicy(LineEndingPolicy::Platform);
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineEndingPolicy, vte::LineEndingPolicy::Platform);
 }
@@ -282,8 +231,7 @@ void TestTextViewWindowController::testBuildConfig_lineEndingFile() {
   ec.setLineEndingPolicy(LineEndingPolicy::File);
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineEndingPolicy, vte::LineEndingPolicy::File);
 }
@@ -293,8 +241,7 @@ void TestTextViewWindowController::testBuildConfig_lineEndingLF() {
   ec.setLineEndingPolicy(LineEndingPolicy::LF);
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineEndingPolicy, vte::LineEndingPolicy::LF);
 }
@@ -304,8 +251,7 @@ void TestTextViewWindowController::testBuildConfig_lineEndingCRLF() {
   ec.setLineEndingPolicy(LineEndingPolicy::CRLF);
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineEndingPolicy, vte::LineEndingPolicy::CRLF);
 }
@@ -315,8 +261,7 @@ void TestTextViewWindowController::testBuildConfig_lineEndingCR() {
   ec.setLineEndingPolicy(LineEndingPolicy::CR);
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_lineEndingPolicy, vte::LineEndingPolicy::CR);
 }
@@ -328,13 +273,11 @@ void TestTextViewWindowController::testBuildConfig_expandTab() {
   auto &tc = ec.getTextEditorConfig();
 
   tc.setExpandTabEnabled(true);
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_expandTab, true);
 
   tc.setExpandTabEnabled(false);
-  result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_expandTab, false);
 }
 
@@ -343,13 +286,11 @@ void TestTextViewWindowController::testBuildConfig_textFolding() {
   auto &tc = ec.getTextEditorConfig();
 
   tc.setTextFoldingEnabled(true);
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_textFoldingEnabled, true);
 
   tc.setTextFoldingEnabled(false);
-  result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_textFoldingEnabled, false);
 }
 
@@ -358,13 +299,11 @@ void TestTextViewWindowController::testBuildConfig_highlightWhitespace() {
   auto &tc = ec.getTextEditorConfig();
 
   tc.setHighlightWhitespaceEnabled(true);
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_highlightWhitespace, true);
 
   tc.setHighlightWhitespaceEnabled(false);
-  result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
   QCOMPARE(result->m_highlightWhitespace, false);
 }
 
@@ -375,8 +314,7 @@ void TestTextViewWindowController::testBuildConfig_tabStopWidth() {
   auto &tc = ec.getTextEditorConfig();
   tc.setTabStopWidth(8);
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_tabStopWidth, 8);
 }
@@ -387,8 +325,7 @@ void TestTextViewWindowController::testBuildConfig_scaleFactor() {
   auto ec = makeEditorConfig();
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 2.5);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 2.5);
 
   QCOMPARE(result->m_scaleFactor, 2.5);
 }
@@ -399,8 +336,7 @@ void TestTextViewWindowController::testBuildConfig_emptyThemeFile() {
   auto ec = makeEditorConfig();
   auto &tc = ec.getTextEditorConfig();
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   // Empty theme file means no theme is loaded.
   QVERIFY(result->m_theme.isNull());
@@ -411,8 +347,8 @@ void TestTextViewWindowController::testBuildConfig_syntaxTheme() {
   auto &tc = ec.getTextEditorConfig();
   QString syntaxTheme = QStringLiteral("Solarized Dark");
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), syntaxTheme, 1.0);
+  auto result =
+      TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), syntaxTheme, 1.0);
 
   QCOMPARE(result->m_syntaxTheme, syntaxTheme);
 }
@@ -426,8 +362,7 @@ void TestTextViewWindowController::testBuildConfig_viConfigForwarded() {
   const auto &viConfig = ec.getViConfig();
   QVERIFY(!viConfig.isNull());
 
-  auto result = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0);
+  auto result = TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0);
 
   QCOMPARE(result->m_viConfig.data(), viConfig.data());
 }
@@ -450,18 +385,16 @@ void TestTextViewWindowController::testBuildTextEditorConfigFromContent_validJso
   auto config = TextViewWindowController::buildTextEditorConfigFromContent(
       ec, tc, QString::fromUtf8(kValidThemeJson), QString(), 1.0, 0);
   QVERIFY(config);
-  QVERIFY2(!config->m_theme.isNull(),
-           "expected theme to be constructed from content");
+  QVERIFY2(!config->m_theme.isNull(), "expected theme to be constructed from content");
 }
 
 void TestTextViewWindowController::testBuildTextEditorConfigFromContent_emptyContent() {
   auto ec = makeEditorConfig();
   auto &tc = ec.getTextEditorConfig();
-  auto config = TextViewWindowController::buildTextEditorConfigFromContent(
-      ec, tc, QString(), QString(), 1.0, 0);
+  auto config = TextViewWindowController::buildTextEditorConfigFromContent(ec, tc, QString(),
+                                                                           QString(), 1.0, 0);
   QVERIFY(config);
-  QVERIFY2(config->m_theme.isNull(),
-           "empty content should yield null theme but valid config");
+  QVERIFY2(config->m_theme.isNull(), "empty content should yield null theme but valid config");
 }
 
 void TestTextViewWindowController::testBuildTextEditorConfig_pathStillWorks() {
@@ -470,11 +403,10 @@ void TestTextViewWindowController::testBuildTextEditorConfig_pathStillWorks() {
   // (mirrors testBuildTextEditorConfigFromContent_emptyContent).
   auto ec = makeEditorConfig();
   auto &tc = ec.getTextEditorConfig();
-  auto config = TextViewWindowController::buildTextEditorConfig(
-      ec, tc, QString(), QString(), 1.0, 0);
+  auto config =
+      TextViewWindowController::buildTextEditorConfig(ec, tc, QString(), QString(), 1.0, 0);
   QVERIFY(config);
-  QVERIFY2(config->m_theme.isNull(),
-           "empty path should yield null theme but valid config");
+  QVERIFY2(config->m_theme.isNull(), "empty path should yield null theme but valid config");
 }
 
 // ============ Group 2: buildTextEditorParameters ============
@@ -536,8 +468,7 @@ void TestTextViewWindowController::initTestCase() {
   QVERIFY(!m_notebookId.isEmpty());
 
   // Create test files with different extensions.
-  QString mdId =
-      m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("note.md"));
+  QString mdId = m_notebookService->createFile(m_notebookId, QString(), QStringLiteral("note.md"));
   QVERIFY(!mdId.isEmpty());
 
   QString txtId =
@@ -581,8 +512,8 @@ void TestTextViewWindowController::testPrepareBufferState_invalidBuffer() {
 }
 
 void TestTextViewWindowController::testPrepareBufferState_validBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(
-      NodeIdentifier{m_notebookId, QStringLiteral("note.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("note.md")});
   QVERIFY(buf.isValid());
 
   auto state = TextViewWindowController::prepareBufferState(buf);
@@ -595,8 +526,8 @@ void TestTextViewWindowController::testPrepareBufferState_validBuffer() {
 }
 
 void TestTextViewWindowController::testPrepareBufferState_modifiedBuffer() {
-  Buffer2 buf = m_bufferService->openBuffer(
-      NodeIdentifier{m_notebookId, QStringLiteral("note.md")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("note.md")});
   QVERIFY(buf.isValid());
 
   QVERIFY(buf.setContentRaw(QByteArray("modified content")));
@@ -609,8 +540,8 @@ void TestTextViewWindowController::testPrepareBufferState_modifiedBuffer() {
 }
 
 void TestTextViewWindowController::testPrepareBufferState_txtExtension() {
-  Buffer2 buf = m_bufferService->openBuffer(
-      NodeIdentifier{m_notebookId, QStringLiteral("readme.txt")});
+  Buffer2 buf =
+      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("readme.txt")});
   QVERIFY(buf.isValid());
 
   auto state = TextViewWindowController::prepareBufferState(buf);

@@ -74,10 +74,10 @@ QSharedPointer<vte::TextEditorConfig> TextViewWindowController::buildTextEditorC
   editorConfig->m_textFoldingEnabled = p_config.getTextFoldingEnabled();
 
   switch (p_config.getInputMode()) {
-  case TextEditorConfig::InputMode::ViMode:
+  case EditorConfig::InputMode::ViMode:
     editorConfig->m_inputMode = vte::InputMode::ViMode;
     break;
-  case TextEditorConfig::InputMode::VscodeMode:
+  case EditorConfig::InputMode::VscodeMode:
     editorConfig->m_inputMode = vte::InputMode::VscodeMode;
     break;
   default:
@@ -170,10 +170,10 @@ QSharedPointer<vte::TextEditorConfig> TextViewWindowController::buildTextEditorC
   editorConfig->m_textFoldingEnabled = p_config.getTextFoldingEnabled();
 
   switch (p_config.getInputMode()) {
-  case TextEditorConfig::InputMode::ViMode:
+  case EditorConfig::InputMode::ViMode:
     editorConfig->m_inputMode = vte::InputMode::ViMode;
     break;
-  case TextEditorConfig::InputMode::VscodeMode:
+  case EditorConfig::InputMode::VscodeMode:
     editorConfig->m_inputMode = vte::InputMode::VscodeMode;
     break;
   default:

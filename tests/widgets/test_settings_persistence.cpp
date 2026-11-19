@@ -4,8 +4,7 @@
 //   - FileAssociationPage: reloading and adding programs must keep their inputs
 //     above the compact Add Program button, including when it is nested in a row.
 //
-// The pages are constructed for real (not stubbed as in test_settings_slug),
-// so this is NOT GUILESS: it needs a QApplication.
+// These pages use production implementations and require a QApplication.
 
 #include <QCheckBox>
 #include <QtTest>

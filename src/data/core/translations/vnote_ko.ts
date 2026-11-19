@@ -11697,12 +11697,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     <name>vnotex::TextEditorPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/texteditorpage.cpp" line="+30"/>
-        <location line="+233"/>
+        <location line="+205"/>
         <source>Text Editor</source>
         <translation>텍스트 편집기</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-201"/>
         <source>Line number type</source>
         <translation>줄 번호 유형</translation>
     </message>
@@ -11738,31 +11738,6 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+10"/>
-        <source>Input mode like Vi</source>
-        <translation>Vi와 같은 입력 모드</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Normal</source>
-        <translation>일반</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Vi</source>
-        <translation>Vi</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>VSCode</source>
-        <translation>VSCode</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Input mode</source>
-        <translation>입력 모드</translation>
-    </message>
-    <message>
-        <location line="+11"/>
         <source>Force to center text cursor</source>
         <translation>텍스트 커서를 강제로 가운데에 배치</translation>
     </message>
@@ -12740,15 +12715,14 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
 </context>
 <context>
-    <name>vnotex::ViPage</name>
+    <name>vnotex::InputModePage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="+29"/>
-        <location line="+34"/>
+        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+49"/>
         <source>Vi Input Mode</source>
         <translation>Vi 입력 모드</translation>
     </message>
     <message>
-        <location line="-31"/>
+        <location line="+3"/>
         <source>Ctrl+C/X to copy/cut</source>
         <translation>Ctrl+C/X로 복사/잘라내기</translation>
     </message>
@@ -12756,6 +12730,37 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location line="+2"/>
         <source>Use Ctrl+C/X to copy/cut text</source>
         <translation>Ctrl+C/X를 사용하여 텍스트 복사/잘라내기</translation>
+    </message>
+    <message>
+        <location line="-24"/>
+        <location line="+63"/>
+        <source>Input Mode</source>
+        <translation>입력 모드</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>Input mode</source>
+        <translation>입력 모드</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <source>Input mode for editors</source>
+        <translation>편집기 입력 모드</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Normal</source>
+        <translation>일반</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vi</source>
+        <translation>Vi</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VSCode</source>
+        <translation>VSCode</translation>
     </message>
 </context>
 <context>

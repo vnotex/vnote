@@ -55,7 +55,7 @@ target_sources(vnote PRIVATE
     dialogs/settings/texteditorpage.cpp dialogs/settings/texteditorpage.h
     dialogs/settings/themepage.cpp dialogs/settings/themepage.h
     dialogs/settings/unitedentrypage.cpp dialogs/settings/unitedentrypage.h
-    dialogs/settings/vipage.cpp dialogs/settings/vipage.h
+    dialogs/settings/inputmodepage.cpp dialogs/settings/inputmodepage.h
     dialogs/snippetinfowidget2.cpp dialogs/snippetinfowidget2.h
     dialogs/snippetpropertiesdialog2.cpp dialogs/snippetpropertiesdialog2.h
     dialogs/sortdialog2.cpp dialogs/sortdialog2.h

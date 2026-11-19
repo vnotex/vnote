@@ -57,23 +57,6 @@ void TextEditorPage::setupUI() {
   }
 
   {
-    m_inputModeComboBox = WidgetsFactory::createComboBox(this);
-    m_inputModeComboBox->setToolTip(tr("Input mode like Vi"));
-
-    m_inputModeComboBox->addItem(tr("Normal"), (int)TextEditorConfig::InputMode::NormalMode);
-    m_inputModeComboBox->addItem(tr("Vi"), (int)TextEditorConfig::InputMode::ViMode);
-    m_inputModeComboBox->addItem(tr("VSCode"), (int)TextEditorConfig::InputMode::VscodeMode);
-
-    const QString label(tr("Input mode"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_inputModeComboBox->toolTip(), m_inputModeComboBox, this));
-    addSearchItem(label, m_inputModeComboBox->toolTip(), m_inputModeComboBox);
-    connect(m_inputModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-            &TextEditorPage::pageIsChanged);
-  }
-
-  {
     m_centerCursorComboBox = WidgetsFactory::createComboBox(this);
     m_centerCursorComboBox->setToolTip(tr("Force to center text cursor"));
 
@@ -192,12 +175,6 @@ void TextEditorPage::loadInternal() {
   m_textFoldingCheckBox->setChecked(textConfig.getTextFoldingEnabled());
 
   {
-    int idx = m_inputModeComboBox->findData(static_cast<int>(textConfig.getInputMode()));
-    Q_ASSERT(idx != -1);
-    m_inputModeComboBox->setCurrentIndex(idx);
-  }
-
-  {
     int idx = m_centerCursorComboBox->findData(static_cast<int>(textConfig.getCenterCursor()));
     Q_ASSERT(idx != -1);
     m_centerCursorComboBox->setCurrentIndex(idx);
@@ -229,11 +206,6 @@ bool TextEditorPage::saveInternal() {
   }
 
   textConfig.setTextFoldingEnabled(m_textFoldingCheckBox->isChecked());
-
-  {
-    auto inputMode = m_inputModeComboBox->currentData().toInt();
-    textConfig.setInputMode(static_cast<TextEditorConfig::InputMode>(inputMode));
-  }
 
   {
     auto centerCursor = m_centerCursorComboBox->currentData().toInt();

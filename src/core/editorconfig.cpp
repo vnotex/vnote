@@ -53,7 +53,8 @@ QJsonObject EditorConfig::ImageHostItem::toJson() const {
 }
 
 EditorConfig::EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
-    : IConfig(p_mgr, p_topConfig), m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig)),
+    : IConfig(p_mgr, p_topConfig),
+      m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig, *this)),
       m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
       m_mindMapEditorConfig(new MindMapEditorConfig(p_mgr, p_topConfig)),
       m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)) {
@@ -91,6 +92,8 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
     m_autoSavePolicy = stringToAutoSavePolicy(autoSavePolicy);
   }
 
+  m_inputMode = stringToInputMode(READSTR(QStringLiteral("inputMode")));
+
   m_defaultImageFormat = normalizeDefaultImageFormat(READSTR(QStringLiteral("defaultImageFormat")));
 
   m_backupFileDirectory = READSTR(QStringLiteral("backupFileDirectory"));
@@ -120,6 +123,7 @@ QJsonObject EditorConfig::saveCore() const {
   QJsonObject obj;
   obj[QStringLiteral("toolbarIconSize")] = m_toolBarIconSize;
   obj[QStringLiteral("autoSavePolicy")] = autoSavePolicyToString(m_autoSavePolicy);
+  obj[QStringLiteral("inputMode")] = inputModeToString(m_inputMode);
   obj[QStringLiteral("defaultImageFormat")] = m_defaultImageFormat;
   obj[QStringLiteral("backupFileDirectory")] = m_backupFileDirectory;
   obj[QStringLiteral("backupFileExtension")] = m_backupFileExtension;
@@ -235,6 +239,39 @@ EditorConfig::AutoSavePolicy EditorConfig::getAutoSavePolicy() const { return m_
 
 void EditorConfig::setAutoSavePolicy(EditorConfig::AutoSavePolicy p_policy) {
   updateConfig(m_autoSavePolicy, p_policy, this);
+}
+
+QString EditorConfig::inputModeToString(InputMode p_mode) const {
+  switch (p_mode) {
+  case InputMode::ViMode:
+    return QStringLiteral("vi");
+
+  case InputMode::VscodeMode:
+    return QStringLiteral("vscode");
+
+  default:
+    return QStringLiteral("normal");
+  }
+}
+
+EditorConfig::InputMode EditorConfig::stringToInputMode(const QString &p_str) const {
+  auto inputMode = p_str.toLower();
+  if (inputMode == QStringLiteral("vi")) {
+    return InputMode::ViMode;
+  } else if (inputMode == QStringLiteral("vscode")) {
+    return InputMode::VscodeMode;
+  } else if (inputMode == QStringLiteral("normal")) {
+    return InputMode::NormalMode;
+  } else {
+    // Unset or unrecognized value falls back to the default input mode.
+    return InputMode::VscodeMode;
+  }
+}
+
+EditorConfig::InputMode EditorConfig::getInputMode() const { return m_inputMode; }
+
+void EditorConfig::setInputMode(EditorConfig::InputMode p_mode) {
+  updateConfig(m_inputMode, p_mode, this);
 }
 
 QString EditorConfig::normalizeDefaultImageFormat(const QString &p_format) {

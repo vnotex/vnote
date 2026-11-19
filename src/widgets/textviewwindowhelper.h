@@ -38,13 +38,12 @@ class TextViewWindowHelper {
 public:
   TextViewWindowHelper() = delete;
 
-  static std::pair<QAction *, QAction *> addUndoRedoActions(QToolBar *p_toolBar,
-                                                           ServiceLocator &p_services,
-                                                           ViewWindow2 *p_window) {
+  static std::pair<QAction *, QAction *>
+  addUndoRedoActions(QToolBar *p_toolBar, ServiceLocator &p_services, ViewWindow2 *p_window) {
     auto *separator = p_toolBar->addSeparator();
     const auto add = [&](const QString &p_text, const QString &p_icon) {
-      auto *action = p_toolBar->addAction(
-          ViewWindowToolBarHelper2::generateIcon(p_services, p_icon), p_text);
+      auto *action =
+          p_toolBar->addAction(ViewWindowToolBarHelper2::generateIcon(p_services, p_icon), p_text);
       action->setProperty("iconName", p_icon);
       action->setEnabled(false);
       return action;
@@ -62,8 +61,8 @@ public:
     return {undo, redo};
   }
 
-  static void connectUndoRedoActions(ViewWindow2 *p_window, QTextEdit *p_editor,
-                                    QAction *p_undo, QAction *p_redo) {
+  static void connectUndoRedoActions(ViewWindow2 *p_window, QTextEdit *p_editor, QAction *p_undo,
+                                     QAction *p_redo) {
     const auto canEdit = [p_window, p_editor]() {
       const auto &buffer = p_window->getBuffer();
       return p_window->getMode() == ViewWindowMode::Edit && buffer.isValid() &&
@@ -150,11 +149,11 @@ public:
     editorConfig->m_textFoldingEnabled = p_config.getTextFoldingEnabled();
 
     switch (p_config.getInputMode()) {
-    case TextEditorConfig::InputMode::ViMode:
+    case EditorConfig::InputMode::ViMode:
       editorConfig->m_inputMode = vte::InputMode::ViMode;
       break;
 
-    case TextEditorConfig::InputMode::VscodeMode:
+    case EditorConfig::InputMode::VscodeMode:
       editorConfig->m_inputMode = vte::InputMode::VscodeMode;
       break;
 

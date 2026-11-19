@@ -198,6 +198,22 @@ force while the stamp remains below the boundary, as can downgrade/re-upgrade.
 Coverage: the default-open-mode migration cases in `tests/core/test_configmgr2.cpp` verify
 the boundary, persistence and restart.
 
+### Shared editor input mode
+
+`EditorConfig` owns the portable `editor.core.inputMode` preference in `vnotex.json`
+(`normal`, `vi`, or `vscode`; default `vscode`). `TextEditorConfig` holds a reference to
+its owning `EditorConfig` and reads the mode directly; it has no independent input-mode
+setter, state, or JSON key. Markdown shares that same text-editor config.
+
+`ConfigMgr2::init()` relocates legacy `editor.text_editor.inputMode` before the defaults
+merge, only when the global key is absent. An explicit global key wins, including null
+or an unrecognized value (which resolves to VSCode). Normal serialization writes only
+the global key. This is a presence-based schema relocation, not a forced-default
+version override: saved Normal/Vi choices survive same-version launches immediately,
+and the legacy key is retired on the next normal config write. Unreadable main configs
+retain the existing write protection. Migration, precedence, persistence and restart
+coverage lives in `tests/core/test_configmgr2.cpp`.
+
 ### Update-check state
 
 `SessionConfig` owns `core.lastUpdateCheckTime` in local `session.json`, persisted as a decimal

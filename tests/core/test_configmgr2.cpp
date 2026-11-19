@@ -23,6 +23,7 @@
 #include <core/services/configcoreservice.h>
 #include <core/services/notificationservice.h>
 #include <core/sessionconfig.h>
+#include <core/texteditorconfig.h>
 #include <core/webresource.h>
 #include <core/widgetconfig.h>
 #include <gui/services/tooltipservice.h>
@@ -107,6 +108,8 @@ private slots:
   void testDetectHeading1ForSectionNumber_mergeAndPersistedOptOut();
   void testOutlineAutoSectionNumber_migrationAndPersistence_data();
   void testOutlineAutoSectionNumber_migrationAndPersistence();
+  void testInputMode_migrationAndPersistence_data();
+  void testInputMode_migrationAndPersistence();
   void testMathRenderer_mergeNormalizationAndPersistence();
   void testMindMapEditor_mergeAndNormalization_data();
   void testMindMapEditor_mergeAndNormalization();
@@ -1708,6 +1711,136 @@ void TestConfigMgr2::testOutlineAutoSectionNumber_migrationAndPersistence() {
   ConfigMgr2 restarted(m_configService);
   restarted.init();
   QCOMPARE(restarted.getConfig().getWidgetConfig().getOutlineAutoSectionNumberEnabled(), expected);
+}
+
+void TestConfigMgr2::testInputMode_migrationAndPersistence_data() {
+  using Mode = EditorConfig::InputMode;
+  QTest::addColumn<QJsonValue>("legacy");
+  QTest::addColumn<QJsonValue>("global");
+  QTest::addColumn<int>("expected");
+  QTest::addColumn<QString>("token");
+  const QJsonValue missing(QJsonValue::Undefined);
+  const QJsonValue null(QJsonValue::Null);
+  const QJsonValue normal(QStringLiteral("normal"));
+  const QJsonValue vi(QStringLiteral("vi"));
+  const QJsonValue vscode(QStringLiteral("vscode"));
+  QTest::newRow("legacy-normal") << normal << missing << int(Mode::NormalMode)
+                                 << QStringLiteral("normal");
+  QTest::newRow("legacy-vi") << vi << missing << int(Mode::ViMode) << QStringLiteral("vi");
+  QTest::newRow("legacy-vscode") << vscode << missing << int(Mode::VscodeMode)
+                                 << QStringLiteral("vscode");
+  QTest::newRow("legacy-case-insensitive")
+      << QJsonValue(QStringLiteral("VI")) << missing << int(Mode::ViMode) << QStringLiteral("vi");
+  QTest::newRow("global-normal-wins")
+      << vi << normal << int(Mode::NormalMode) << QStringLiteral("normal");
+  QTest::newRow("global-vi-wins") << normal << vi << int(Mode::ViMode) << QStringLiteral("vi");
+  QTest::newRow("global-vscode-wins")
+      << vi << vscode << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-null-wins")
+      << vi << null << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("missing-default")
+      << missing << missing << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("legacy-unknown") << QJsonValue(QStringLiteral("unknown")) << missing
+                                  << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("legacy-not-a-string")
+      << QJsonValue(42) << missing << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("legacy-null") << null << missing << int(Mode::VscodeMode)
+                               << QStringLiteral("vscode");
+  QTest::newRow("global-unknown-wins") << normal << QJsonValue(QStringLiteral("unknown"))
+                                       << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-empty-wins")
+      << vi << QJsonValue(QString()) << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-number-wins")
+      << vi << QJsonValue(42) << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-bool-wins")
+      << vi << QJsonValue(false) << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-array-wins")
+      << vi << QJsonValue(QJsonArray()) << int(Mode::VscodeMode) << QStringLiteral("vscode");
+  QTest::newRow("global-object-wins")
+      << vi << QJsonValue(QJsonObject()) << int(Mode::VscodeMode) << QStringLiteral("vscode");
+}
+
+void TestConfigMgr2::testInputMode_migrationAndPersistence() {
+  using Mode = EditorConfig::InputMode;
+  QFETCH(QJsonValue, legacy);
+  QFETCH(QJsonValue, global);
+  QFETCH(int, expected);
+  QFETCH(QString, token);
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  QJsonObject text{{QStringLiteral("tabStopWidth"), 8}};
+  QJsonObject core;
+  if (!legacy.isUndefined()) {
+    text[QStringLiteral("inputMode")] = legacy;
+  }
+  if (!global.isUndefined()) {
+    core[QStringLiteral("inputMode")] = global;
+  }
+  // Relocation must also work for profiles already stamped with the current version.
+  const QJsonObject onDisk{
+      {QStringLiteral("metadata"),
+       QJsonObject{{QStringLiteral("version"), ConfigMgr2::getApplicationVersion()}}},
+      {QStringLiteral("editor"),
+       QJsonObject{{QStringLiteral("core"), core}, {QStringLiteral("text_editor"), text}}}};
+  const QStringList globalPath{QStringLiteral("editor"), QStringLiteral("core"),
+                               QStringLiteral("inputMode")};
+  const QStringList legacyPath{QStringLiteral("editor"), QStringLiteral("text_editor"),
+                               QStringLiteral("inputMode")};
+  const auto loaded = loadThroughMergePath(onDisk);
+  QCOMPARE(valueAt(loaded, globalPath), QJsonValue(token));
+  QVERIFY(valueAt(loaded, legacyPath).isUndefined());
+
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    QVERIFY(!settings.isVersionChanged());
+    const auto &editor = settings.getEditorConfig();
+    QCOMPARE(int(editor.getInputMode()), expected);
+    QCOMPARE(int(editor.getTextEditorConfig().getInputMode()), expected);
+    QCOMPARE(int(editor.getMarkdownEditorConfig().getTextEditorConfig().getInputMode()), expected);
+    QCOMPARE(editor.getTextEditorConfig().getTabStopWidth(), 8);
+    // init() only normalizes in memory; the next ordinary update persists the relocation.
+    settings.getConfig().update();
+  }
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QCOMPARE(valueAt(persisted, globalPath), QJsonValue(token));
+  QVERIFY(valueAt(persisted, legacyPath).isUndefined());
+
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    auto &editor = restarted.getEditorConfig();
+    const auto &textConfig = editor.getTextEditorConfig();
+    const auto &markdownTextConfig = editor.getMarkdownEditorConfig().getTextEditorConfig();
+    QCOMPARE(int(editor.getInputMode()), expected);
+    QCOMPARE(int(textConfig.getInputMode()), expected);
+    QCOMPARE(int(markdownTextConfig.getInputMode()), expected);
+    QCOMPARE(textConfig.getTabStopWidth(), 8);
+    // Existing consumers see every global change, without reloading or copying config state.
+    for (const auto mode : {Mode::NormalMode, Mode::ViMode, Mode::VscodeMode}) {
+      editor.setInputMode(mode);
+      QCOMPARE(editor.getInputMode(), mode);
+      QCOMPARE(textConfig.getInputMode(), mode);
+      QCOMPARE(markdownTextConfig.getInputMode(), mode);
+      QVERIFY(!textConfig.toJson().contains(QStringLiteral("inputMode")));
+    }
+    // Destruction flushes the normal pending setter write; no timer waits are needed.
+  }
+  const auto changed =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QCOMPARE(valueAt(changed, globalPath), QJsonValue(QStringLiteral("vscode")));
+  QVERIFY(valueAt(changed, legacyPath).isUndefined());
+  ConfigMgr2 reloaded(m_configService);
+  reloaded.init();
+  const auto &editor = reloaded.getEditorConfig();
+  QCOMPARE(editor.getInputMode(), Mode::VscodeMode);
+  QCOMPARE(editor.getTextEditorConfig().getInputMode(), Mode::VscodeMode);
+  QCOMPARE(editor.getMarkdownEditorConfig().getTextEditorConfig().getInputMode(), Mode::VscodeMode);
 }
 
 void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {

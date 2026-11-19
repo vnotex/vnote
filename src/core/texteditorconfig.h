@@ -1,7 +1,7 @@
 #ifndef VNOTEX_TEXTEDITORCONFIG_H
 #define VNOTEX_TEXTEDITORCONFIG_H
 
-#include "iconfig.h"
+#include "editorconfig.h"
 
 namespace vnotex {
 class MainConfig;
@@ -11,13 +11,11 @@ class TextEditorConfig : public IConfig {
 public:
   enum class LineNumberType { None, Absolute, Relative };
 
-  enum class InputMode { NormalMode, ViMode, VscodeMode };
-
   enum class CenterCursor { NeverCenter, AlwaysCenter, CenterOnBottom };
 
   enum class WrapMode { NoWrap, WordWrap, WrapAnywhere, WordWrapOrAnywhere };
 
-  TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig);
+  TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig, const EditorConfig &p_editorConfig);
 
   void fromJson(const QJsonObject &p_jobj) Q_DECL_OVERRIDE;
 
@@ -29,8 +27,7 @@ public:
   bool getTextFoldingEnabled() const;
   void setTextFoldingEnabled(bool p_enabled);
 
-  TextEditorConfig::InputMode getInputMode() const;
-  void setInputMode(TextEditorConfig::InputMode p_mode);
+  EditorConfig::InputMode getInputMode() const;
 
   TextEditorConfig::CenterCursor getCenterCursor() const;
   void setCenterCursor(TextEditorConfig::CenterCursor p_centerCursor);
@@ -59,20 +56,17 @@ private:
   QString lineNumberTypeToString(LineNumberType p_type) const;
   LineNumberType stringToLineNumberType(const QString &p_str) const;
 
-  QString inputModeToString(InputMode p_mode) const;
-  InputMode stringToInputMode(const QString &p_str) const;
-
   QString centerCursorToString(CenterCursor p_cursor) const;
   CenterCursor stringToCenterCursor(const QString &p_str) const;
 
   QString wrapModeToString(WrapMode p_mode) const;
   WrapMode stringToWrapMode(const QString &p_str) const;
 
+  const EditorConfig &m_editorConfig;
+
   LineNumberType m_lineNumberType = LineNumberType::Absolute;
 
   bool m_textFoldingEnabled = true;
-
-  InputMode m_inputMode = InputMode::VscodeMode;
 
   CenterCursor m_centerCursor = CenterCursor::NeverCenter;
 

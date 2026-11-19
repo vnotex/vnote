@@ -34,6 +34,7 @@
 #include "dialogs/settings/generalpage.h"
 #include "dialogs/settings/httpapipage.h"
 #include "dialogs/settings/imagehostpage.h"
+#include "dialogs/settings/inputmodepage.h"
 #include "dialogs/settings/markdowneditorpage.h"
 #include "dialogs/settings/mindmapeditorpage.h"
 #include "dialogs/settings/notemanagementpage.h"
@@ -42,7 +43,6 @@
 #include "dialogs/settings/texteditorpage.h"
 #include "dialogs/settings/themepage.h"
 #include "dialogs/settings/unitedentrypage.h"
-#include "dialogs/settings/vipage.h"
 
 using namespace vnotex;
 
@@ -284,7 +284,7 @@ void SettingsWidget::setupPages() {
     }
 
     {
-      auto *subPage = new ViPage(m_services, this);
+      auto *subPage = new InputModePage(m_services, this);
       addSubPage(subPage, item);
     }
 

@@ -6,8 +6,9 @@ using namespace vnotex;
 #define READBOOL(key) readBool(p_jobj, (key))
 #define READINT(key) readInt(p_jobj, (key))
 
-TextEditorConfig::TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
-    : IConfig(p_mgr, p_topConfig) {
+TextEditorConfig::TextEditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig,
+                                   const EditorConfig &p_editorConfig)
+    : IConfig(p_mgr, p_topConfig), m_editorConfig(p_editorConfig) {
   m_sectionName = QStringLiteral("text_editor");
 }
 
@@ -19,11 +20,6 @@ void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {
   }
 
   m_textFoldingEnabled = READBOOL(QStringLiteral("textFolding"));
-
-  {
-    auto inputMode = READSTR(QStringLiteral("inputMode"));
-    m_inputMode = stringToInputMode(inputMode);
-  }
 
   {
     auto centerCursor = READSTR(QStringLiteral("centerCursor"));
@@ -50,7 +46,6 @@ QJsonObject TextEditorConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("lineNumber")] = lineNumberTypeToString(m_lineNumberType);
   obj[QStringLiteral("textFolding")] = m_textFoldingEnabled;
-  obj[QStringLiteral("inputMode")] = inputModeToString(m_inputMode);
   obj[QStringLiteral("centerCursor")] = centerCursorToString(m_centerCursor);
   obj[QStringLiteral("wrapMode")] = wrapModeToString(m_wrapMode);
   obj[QStringLiteral("expandTab")] = m_expandTab;
@@ -83,33 +78,6 @@ TextEditorConfig::stringToLineNumberType(const QString &p_str) const {
     return LineNumberType::Relative;
   } else {
     return LineNumberType::Absolute;
-  }
-}
-
-QString TextEditorConfig::inputModeToString(InputMode p_mode) const {
-  switch (p_mode) {
-  case InputMode::ViMode:
-    return QStringLiteral("vi");
-
-  case InputMode::VscodeMode:
-    return QStringLiteral("vscode");
-
-  default:
-    return QStringLiteral("normal");
-  }
-}
-
-TextEditorConfig::InputMode TextEditorConfig::stringToInputMode(const QString &p_str) const {
-  auto inputMode = p_str.toLower();
-  if (inputMode == QStringLiteral("vi")) {
-    return InputMode::ViMode;
-  } else if (inputMode == QStringLiteral("vscode")) {
-    return InputMode::VscodeMode;
-  } else if (inputMode == QStringLiteral("normal")) {
-    return InputMode::NormalMode;
-  } else {
-    // Unset or unrecognized value falls back to the default input mode.
-    return InputMode::VscodeMode;
   }
 }
 
@@ -180,10 +148,8 @@ void TextEditorConfig::setTextFoldingEnabled(bool p_enabled) {
   updateConfig(m_textFoldingEnabled, p_enabled, this);
 }
 
-TextEditorConfig::InputMode TextEditorConfig::getInputMode() const { return m_inputMode; }
-
-void TextEditorConfig::setInputMode(TextEditorConfig::InputMode p_mode) {
-  updateConfig(m_inputMode, p_mode, this);
+EditorConfig::InputMode TextEditorConfig::getInputMode() const {
+  return m_editorConfig.getInputMode();
 }
 
 TextEditorConfig::CenterCursor TextEditorConfig::getCenterCursor() const { return m_centerCursor; }

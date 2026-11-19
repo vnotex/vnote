@@ -203,10 +203,10 @@ QSharedPointer<vte::MarkdownEditorConfig> MarkdownEditorController::buildMarkdow
   textEditorConfig->m_textFoldingEnabled = textConfig.getTextFoldingEnabled();
 
   switch (textConfig.getInputMode()) {
-  case TextEditorConfig::InputMode::ViMode:
+  case EditorConfig::InputMode::ViMode:
     textEditorConfig->m_inputMode = vte::InputMode::ViMode;
     break;
-  case TextEditorConfig::InputMode::VscodeMode:
+  case EditorConfig::InputMode::VscodeMode:
     textEditorConfig->m_inputMode = vte::InputMode::VscodeMode;
     break;
   default:
@@ -308,10 +308,10 @@ MarkdownEditorController::buildMarkdownEditorConfigFromContent(
   textEditorConfig->m_textFoldingEnabled = textConfig.getTextFoldingEnabled();
 
   switch (textConfig.getInputMode()) {
-  case TextEditorConfig::InputMode::ViMode:
+  case EditorConfig::InputMode::ViMode:
     textEditorConfig->m_inputMode = vte::InputMode::ViMode;
     break;
-  case TextEditorConfig::InputMode::VscodeMode:
+  case EditorConfig::InputMode::VscodeMode:
     textEditorConfig->m_inputMode = vte::InputMode::VscodeMode;
     break;
   default:

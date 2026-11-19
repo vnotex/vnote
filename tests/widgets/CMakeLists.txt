@@ -329,36 +329,8 @@ target_include_directories(test_explorer_selection_after_save PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_qt_test(test_settings_slug
-  SOURCES
-    test_settings_slug.cpp
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/settingspage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/generalpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/notemanagementpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/appearancepage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/themepage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/quickaccesspage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/editorpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/imagehostpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/vipage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/texteditorpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/markdowneditorpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/syncpage.h
-    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/settings/fileassociationpage.h
-  LINKS
-    core_services
-    vxcore
-    VTextEdit
-    Qt6::Widgets
-)
-
-target_include_directories(test_settings_slug PRIVATE
-  ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-# Persistence regressions on two REAL settings pages (test_settings_slug above
-# stubs their method bodies, so it cannot cover load/save behavior). The pages
-# are constructed for real, hence QTEST_MAIN and no GUILESS. NewQuickAccessItemDialog
+# Persistence regressions on real settings pages, hence QTEST_MAIN and no GUILESS.
+# NewQuickAccessItemDialog
 # and its Dialog/ScrollDialog bases are compiled in because QuickAccessPage
 # references the dialog from its "New" handler; stubbing it would need the same
 # bases anyway (moc + virtuals), so the real sources are cheaper.

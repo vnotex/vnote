@@ -181,6 +181,24 @@ void ConfigMgr2::init() {
         rawJson[widgetKey] = widgetJson;
       }
 
+      const auto editorKey = QStringLiteral("editor");
+      const auto editorCoreKey = QStringLiteral("core");
+      const auto textEditorKey = QStringLiteral("text_editor");
+      const auto inputModeKey = QStringLiteral("inputMode");
+      auto editorJson = rawJson.value(editorKey).toObject();
+      auto textEditorJson = editorJson.value(textEditorKey).toObject();
+      const auto legacyInputMode = textEditorJson.take(inputModeKey);
+      if (!legacyInputMode.isUndefined()) {
+        auto editorCoreJson = editorJson.value(editorCoreKey).toObject();
+        // An explicitly present global value, including null, takes precedence.
+        if (!editorCoreJson.contains(inputModeKey)) {
+          editorCoreJson[inputModeKey] = legacyInputMode;
+          editorJson[editorCoreKey] = editorCoreJson;
+        }
+        editorJson[textEditorKey] = textEditorJson;
+        rawJson[editorKey] = editorJson;
+      }
+
       const auto coreJson = rawJson.value(QStringLiteral("core")).toObject();
       for (const auto &key :
            {QStringLiteral("lastToolTipDate"), QStringLiteral("nextToolTipIndex")}) {

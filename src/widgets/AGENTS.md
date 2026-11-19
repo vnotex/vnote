@@ -105,6 +105,15 @@ text-only status-bar look.
 
 ## Widget Families
 
+### Input-mode settings
+
+`dialogs/settings/inputmodepage.{h,cpp}` implements `InputModePage` under Editor, with
+slug `inputmode`. Its first section selects the shared Normal/Vi/VSCode mode through
+`ConfigMgr2::getEditorConfig()`; the Vi-specific Ctrl+C/X options remain below it.
+`TextEditorPage` has no input-mode selector. Changes apply through the existing
+`EditorPage::notifyEditorConfigChange()` hook; unsaved selections do not mutate config.
+There is no compatibility alias for the former `vi` settings slug.
+
 ### Plain text input
 
 Use `PlainTextEdit` for editable multiline fields; `WidgetsFactory::createPlainTextEdit()`

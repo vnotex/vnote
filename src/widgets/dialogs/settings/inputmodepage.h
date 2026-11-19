@@ -1,15 +1,16 @@
-#ifndef VIPAGE_H
-#define VIPAGE_H
+#ifndef INPUTMODEPAGE_H
+#define INPUTMODEPAGE_H
 
 #include "settingspage.h"
 
 class QCheckBox;
+class QComboBox;
 
 namespace vnotex {
-class ViPage : public SettingsPage {
+class InputModePage : public SettingsPage {
   Q_OBJECT
 public:
-  explicit ViPage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
+  explicit InputModePage(ServiceLocator &p_services, QWidget *p_parent = nullptr);
 
   QString title() const Q_DECL_OVERRIDE;
 
@@ -23,8 +24,10 @@ protected:
 private:
   void setupUI();
 
+  QComboBox *m_inputModeComboBox = nullptr;
+
   QCheckBox *m_controlCToCopyCheckBox = nullptr;
 };
 } // namespace vnotex
 
-#endif // VIPAGE_H
+#endif // INPUTMODEPAGE_H
