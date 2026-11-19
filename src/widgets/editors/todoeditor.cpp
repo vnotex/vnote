@@ -651,10 +651,27 @@ void TodoEditor::createUi() {
       showListMenu(key, m_listMore->mapToGlobal(QPoint(0, m_listMore->height())));
     }
   });
-  connect(m_listTitle, &QLineEdit::textEdited, this, [this](const QString &p_text) {
-    if (!m_updating && m_controller) {
-      const auto key = m_controller->getProjection().m_listKey;
-      command([this, key, p_text]() { return m_controller->renameList(key, p_text); }, m_listTitle);
+  connect(m_listTitle, &QLineEdit::editingFinished, this, [this]() {
+    if (m_updating || !canMutate()) {
+      return;
+    }
+    const auto key = m_controller->getProjection().m_listKey;
+    const auto *list = m_controller->getDocument().findList(key);
+    if (!list) {
+      return;
+    }
+    const auto title = m_listTitle->text();
+    if (title.trimmed().isEmpty()) {
+      m_listTitle->setText(list->m_title);
+      return;
+    }
+    const QPointer<QLineEdit> input(m_listTitle);
+    if (title == list->m_title ||
+        command([this, key, title]() { return m_controller->renameList(key, title); })) {
+      if (input) {
+        // A completed edit returns Undo/Redo ownership to source history.
+        input->setText(input->text());
+      }
     }
   });
   connect(m_destination, &QComboBox::activated, this,
@@ -2314,22 +2331,36 @@ void TodoEditor::showTextMenu(QWidget *p_widget, const QPoint &p_position) {
   const auto token = gesture();
   const bool projected = line == m_title || line == m_listTitle ||
                          m_steps->isAncestorOf(p_widget) || text == m_note->getTextEdit();
-  auto *menu = new QMenu(this);
+  auto *menu = new QMenu(p_widget);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   auto *undo = menu->addAction(tr("Undo"));
   undo->setObjectName(QStringLiteral("todoNativeUndoAction"));
-  undo->setEnabled(canMutate());
-  connect(undo, &QAction::triggered, this, [this]() {
+  const bool localHistory =
+      line == m_listTitle && (line->isUndoAvailable() || line->isRedoAvailable());
+  undo->setEnabled(canMutate() && (!localHistory || line->isUndoAvailable()));
+  connect(undo, &QAction::triggered, this, [this, line, localHistory]() {
     if (canMutate()) {
-      emit undoRequested();
+      if (localHistory) {
+        if (line) {
+          line->undo();
+        }
+      } else {
+        emit undoRequested();
+      }
     }
   });
   auto *redo = menu->addAction(tr("Redo"));
   redo->setObjectName(QStringLiteral("todoNativeRedoAction"));
-  redo->setEnabled(canMutate());
-  connect(redo, &QAction::triggered, this, [this]() {
+  redo->setEnabled(canMutate() && (!localHistory || line->isRedoAvailable()));
+  connect(redo, &QAction::triggered, this, [this, line, localHistory]() {
     if (canMutate()) {
-      emit redoRequested();
+      if (localHistory) {
+        if (line) {
+          line->redo();
+        }
+      } else {
+        emit redoRequested();
+      }
     }
   });
   menu->addSeparator();
@@ -2528,7 +2559,14 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
       if (find) {
         focusSearch();
       } else if (canMutate()) {
-        if (undo) {
+        if (widget == m_listTitle &&
+            (m_listTitle->isUndoAvailable() || m_listTitle->isRedoAvailable())) {
+          if (undo) {
+            m_listTitle->undo();
+          } else {
+            m_listTitle->redo();
+          }
+        } else if (undo) {
           emit undoRequested();
         } else {
           emit redoRequested();

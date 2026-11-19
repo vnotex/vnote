@@ -709,6 +709,11 @@ private slots:
   void taskMenuAndListShortcuts();
   void taskShortcutsStayScoped();
   void nativeListActions();
+  void listNameCommitBoundaries();
+  void listNameDraftHistory_data();
+  void listNameDraftHistory();
+  void emptyListNameCancels_data();
+  void emptyListNameCancels();
   void descriptionDialogRejectsStaleOwner_data();
   void descriptionDialogRejectsStaleOwner();
   void listIconsPersistAndUndo();
@@ -2649,6 +2654,148 @@ void TestTodoViewWindow::listIconPickerRejectsStaleOwner() {
   QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
 }
 
+void TestTodoViewWindow::listNameCommitBoundaries() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("list-name.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *controller = window->getController();
+  auto *title = control<QLineEdit>(window, "todoListTitle");
+  QVERIFY(title && activate(title));
+  title->deselect();
+  title->end(false);
+  for (int i = 0; i < 4; ++i) {
+    QTest::keyClick(title, Qt::Key_Backspace);
+  }
+  QCOMPARE(title->text(), QString());
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->isModified());
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+
+  QTest::keyClicks(title, "Renamed");
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QTest::keyClick(title, Qt::Key_Return);
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
+           QStringLiteral("Renamed"));
+  const auto renamed = window->getLatestContent();
+  QTest::keyClick(title, Qt::Key_Return);
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  window->redo();
+  QCOMPARE(window->getLatestContent(), renamed);
+
+  QVERIFY(typeText(title, QStringLiteral("Final name")));
+  QCOMPARE(window->getLatestContent(), renamed);
+  auto *lists = control<QListView>(window, "todoLists");
+  QVERIFY(lists);
+  const auto personal = controller->getListModel()->index(
+      controller->getListModel()->rowForKey(QStringLiteral("id:personal")));
+  lists->scrollTo(personal);
+  QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    lists->visualRect(personal).center());
+  QCOMPARE(controller->getProjection().m_listKey, QStringLiteral("id:personal"));
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
+           QStringLiteral("Final name"));
+  QCOMPARE(title->text(), QStringLiteral("Personal"));
+  window->undo();
+  QCOMPARE(window->getLatestContent(), renamed);
+  window->redo();
+  QVERIFY(window->save());
+  const auto saved = window->getLatestContent().toUtf8();
+  QCOMPARE(readBytes(absolute(QStringLiteral("list-name.todo"))), saved);
+  QVERIFY(window->reload());
+  QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
+           QStringLiteral("Final name"));
+}
+
+void TestTodoViewWindow::listNameDraftHistory_data() {
+  QTest::addColumn<bool>("contextMenu");
+  QTest::newRow("keyboard") << false;
+  QTest::newRow("context-menu") << true;
+}
+
+void TestTodoViewWindow::listNameDraftHistory() {
+  QFETCH(bool, contextMenu);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("list-name-history.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *title = control<QLineEdit>(window, "todoListTitle");
+  QVERIFY(typeText(title, QStringLiteral("Renamed")));
+  QTest::keyClick(title, Qt::Key_Return);
+  const auto committed = window->getLatestContent();
+  title->end(false);
+  QTest::keyClicks(title, " draft");
+  const auto history = [&](bool p_undo) {
+    if (contextMenu) {
+      return chooseMenu(title, title->rect().center(),
+                        p_undo ? QStringLiteral("Undo") : QStringLiteral("Redo"));
+    }
+    QTest::keySequence(title, QKeySequence(p_undo ? QKeySequence::Undo : QKeySequence::Redo));
+    return true;
+  };
+  QVERIFY(history(true));
+  QCOMPARE(title->text(), QStringLiteral("Renamed"));
+  QCOMPARE(window->getLatestContent(), committed);
+  QVERIFY(history(false));
+  QCOMPARE(title->text(), QStringLiteral("Renamed draft"));
+  QCOMPARE(window->getLatestContent(), committed);
+  QTest::keyClick(title, Qt::Key_Return);
+  const auto secondCommit = window->getLatestContent();
+  QVERIFY(history(true));
+  QCOMPARE(window->getLatestContent(), committed);
+  QVERIFY(history(false));
+  QCOMPARE(window->getLatestContent(), secondCommit);
+
+  // Finishing an edit restored by local Undo must retire its local Redo too.
+  title->end(false);
+  QTest::keyClicks(title, " temporary");
+  QVERIFY(history(true));
+  QCOMPARE(title->text(), QStringLiteral("Renamed draft"));
+  QTest::keyClick(title, Qt::Key_Return);
+  QVERIFY(history(true));
+  QCOMPARE(window->getLatestContent(), committed);
+}
+
+void TestTodoViewWindow::emptyListNameCancels_data() {
+  QTest::addColumn<QString>("draft");
+  QTest::addColumn<bool>("pressReturn");
+  QTest::newRow("empty-return") << QString() << true;
+  QTest::newRow("empty-focus-loss") << QString() << false;
+  QTest::newRow("whitespace-return") << QStringLiteral("   ") << true;
+  QTest::newRow("whitespace-focus-loss") << QStringLiteral("   ") << false;
+}
+
+void TestTodoViewWindow::emptyListNameCancels() {
+  QFETCH(QString, draft);
+  QFETCH(bool, pressReturn);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("cancel-list-name.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window && selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *title = control<QLineEdit>(window, "todoListTitle");
+  QVERIFY(typeText(title, QStringLiteral("Last committed name")));
+  QTest::keyClick(title, Qt::Key_Return);
+  const auto committed = window->getLatestContent();
+  title->selectAll();
+  QTest::keyClick(title, Qt::Key_Backspace);
+  QTest::keyClicks(title, draft);
+  QCOMPARE(title->text(), draft);
+  QCOMPARE(window->getLatestContent(), committed);
+  if (pressReturn) {
+    QTest::keyClick(title, Qt::Key_Return);
+  } else {
+    focusTasks(window);
+    QVERIFY(!title->hasFocus());
+  }
+  QCOMPARE(title->text(), QStringLiteral("Last committed name"));
+  QCOMPARE(window->getLatestContent(), committed);
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+}
+
 void TestTodoViewWindow::nativeListActions() {
   createArea();
   QVERIFY(openNote(QStringLiteral("lists.todo")).isValid());
@@ -2669,6 +2816,7 @@ void TestTodoViewWindow::nativeListActions() {
   auto *title = control<QLineEdit>(window, "todoListTitle");
   QVERIFY(title && title->hasFocus());
   QVERIFY(typeText(title, QStringLiteral("Work renamed")));
+  QTest::keyClick(title, Qt::Key_Return);
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:work"))->m_title,
            QStringLiteral("Work renamed"));
   window->undo();

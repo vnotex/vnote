@@ -519,6 +519,11 @@ bool TodoViewWindow::eventFilter(QObject *p_object, QEvent *p_event) {
     auto *key = static_cast<QKeyEvent *>(p_event);
     const bool undoKey = key->matches(QKeySequence::Undo);
     const bool redoKey = key->matches(QKeySequence::Redo);
+    if ((undoKey || redoKey) && m_todoEditor->isAncestorOf(widget) &&
+        widget->window() == window()) {
+      // The native editor owns local field history and forwards committed source history.
+      return false;
+    }
     const bool findKey = key->matches(QKeySequence::Find);
     const bool replaceKey = key->matches(QKeySequence::Replace);
     if (undoKey || redoKey || findKey || replaceKey) {

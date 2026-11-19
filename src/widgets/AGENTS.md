@@ -687,8 +687,13 @@ Captured source/binding/selection/group/writability guards apply to every menu a
 only revisions remain admissible; no extra document-revision guard replaces the source token.
 The central list/smart-view heading uses 1.35 times the editor's current font size, with
 24px leading/options icons and extra vertical spacing. Theme refresh and zoom derive that size
-from the editor font rather than repeatedly enlarging the heading. Inline list renaming remains
-unchanged, and task rows keep their existing typography.
+from the editor font rather than repeatedly enlarging the heading; task rows keep their existing
+typography. The list-name field keeps typing local until Enter or focus loss, then applies one
+source-history rename. Empty or whitespace-only input restores the last committed name without
+changing source or undo history. Keyboard and text-menu Undo/Redo stay local while the name has
+an uncommitted edit, then return to source history after completion. Text menus belong to their
+input so opening one does not finish a name edit. The TODO host defers native-field history
+shortcuts to the editor. Task titles, notes and steps retain their live-edit behavior.
 Nonempty list descriptions appear as wrapped plain-text labels, capped at 104px so long text
 cannot displace the tasks. Empty descriptions and non-list/filtered views hide the label.
 **Edit Description** opens a `PlainTextEdit` dialog with local undo and OK/Cancel; only acceptance
