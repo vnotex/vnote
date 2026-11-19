@@ -250,7 +250,7 @@ private:
 
   QJsonArray m_unitedEntryAlias;
 
-  ViewWindowMode m_defaultOpenMode = ViewWindowMode::Read;
+  ViewWindowMode m_defaultOpenMode = ViewWindowMode::Edit;
 
   bool m_alwaysOpenNotesInNewTabs = true;
 

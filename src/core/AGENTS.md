@@ -189,6 +189,15 @@ persisted version has reached the migration boundary. A downgrade followed by re
 can repeat the reset. Coverage: `testMarkdownExperienceMigration` in
 `tests/core/test_configmgr2.cpp` verifies version gates, all presets, persistence and restart.
 
+The default open mode is Edit. `MainConfig::doVersionSpecificOverride()` forces Edit for
+previous versions below `4.15.1`, including saved Read values: those cannot distinguish the
+old default from a deliberate choice. At `4.15.1` and later, saved Read choices are preserved.
+No version bump is included; profiles already stamped `4.15.0` migrate on their next version
+change, while same-version restarts preserve the choice. `VX_DEBUG_REFRESH` can reapply the
+force while the stamp remains below the boundary, as can downgrade/re-upgrade.
+Coverage: the default-open-mode migration cases in `tests/core/test_configmgr2.cpp` verify
+the boundary, persistence and restart.
+
 ### Update-check state
 
 `SessionConfig` owns `core.lastUpdateCheckTime` in local `session.json`, persisted as a decimal

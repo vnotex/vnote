@@ -82,6 +82,9 @@ private slots:
   void testUnitedEntryMigration_respectsVersionBoundary_data();
   void testUnitedEntryMigration_respectsVersionBoundary();
   void testUnitedEntryMigration_persistsAndDoesNotRepeatOnRestart();
+  void testDefaultOpenModeMigration_data();
+  void testDefaultOpenModeMigration();
+  void testDefaultOpenModeMigration_persistsAndPreservesLaterChoice();
   void testPdfJsMigration_persistedListWinsOverTheCppDefault();
   void testPdfJsMigration_resetsTheV3ScriptListInMemoryAndOnSave();
   void testPdfJsMigration_doesNotRunOnTheSameOrANewerVersion();
@@ -1185,6 +1188,94 @@ void TestConfigMgr2::testUnitedEntryMigration_persistsAndDoesNotRepeatOnRestart(
     QVERIFY(!restarted.isVersionChanged());
     restarted.initAfterQtAppStarted();
     QCOMPARE(restarted.getCoreConfig().getUnitedEntryAlias(), oldAliases);
+  }
+}
+
+void TestConfigMgr2::testDefaultOpenModeMigration_data() {
+  QTest::addColumn<QString>("previousVersion");
+  QTest::addColumn<ViewWindowMode>("savedMode");
+  QTest::addColumn<ViewWindowMode>("expectedMode");
+  QTest::newRow("legacy-read") << QStringLiteral("4.14.4") << ViewWindowMode::Read
+                               << ViewWindowMode::Edit;
+  QTest::newRow("legacy-edit") << QStringLiteral("4.14.4") << ViewWindowMode::Edit
+                               << ViewWindowMode::Edit;
+  // Exercise the next upgrade directly while the application is still 4.15.0.
+  QTest::newRow("previous-release")
+      << QStringLiteral("4.15.0") << ViewWindowMode::Read << ViewWindowMode::Edit;
+  QTest::newRow("missing-version") << QString() << ViewWindowMode::Read << ViewWindowMode::Edit;
+  QTest::newRow("invalid-version")
+      << QStringLiteral("unknown") << ViewWindowMode::Read << ViewWindowMode::Edit;
+  QTest::newRow("boundary") << QStringLiteral("4.15.1") << ViewWindowMode::Read
+                            << ViewWindowMode::Read;
+  QTest::newRow("newer-version") << QStringLiteral("4.16.0") << ViewWindowMode::Read
+                                 << ViewWindowMode::Read;
+}
+
+void TestConfigMgr2::testDefaultOpenModeMigration() {
+  QFETCH(QString, previousVersion);
+  QFETCH(ViewWindowMode, savedMode);
+  QFETCH(ViewWindowMode, expectedMode);
+  MainConfig config(m_configMgr);
+  auto json = config.toJson();
+  auto core = json.value(QStringLiteral("core")).toObject();
+  core.insert(QStringLiteral("defaultOpenMode"),
+              savedMode == ViewWindowMode::Edit ? QStringLiteral("edit") : QStringLiteral("read"));
+  json.insert(QStringLiteral("core"), core);
+  config.fromJson(json);
+  QCOMPARE(config.getCoreConfig().getDefaultOpenMode(), savedMode);
+  config.doVersionSpecificOverride(previousVersion);
+  QCOMPARE(config.getCoreConfig().getDefaultOpenMode(), expectedMode);
+}
+
+void TestConfigMgr2::testDefaultOpenModeMigration_persistsAndPreservesLaterChoice() {
+  const auto originalMain = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto originalSession = m_configService->getConfigByName(DataLocation::Local, "session");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, "vnotex", originalMain);
+    m_configService->updateConfigByName(DataLocation::Local, "session", originalSession);
+  });
+  const QJsonObject onDisk{{QStringLiteral("metadata"),
+                            QJsonObject{{QStringLiteral("version"), QStringLiteral("4.14.4")}}},
+                           {QStringLiteral("core"), QJsonObject{{QStringLiteral("defaultOpenMode"),
+                                                                 QStringLiteral("read")}}}};
+  QVERIFY(!m_configService->updateConfigByName(DataLocation::App, "vnotex", onDisk));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto fixture = buildExtraDataFixture(tmp);
+  const auto persistedMode = [this]() {
+    return m_configService->getConfigByName(DataLocation::App, "vnotex")
+        .value(QStringLiteral("core"))
+        .toObject()
+        .value(QStringLiteral("defaultOpenMode"))
+        .toString();
+  };
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QCOMPARE(mgr.getCoreConfig().getDefaultOpenMode(), ViewWindowMode::Read);
+    QVERIFY(mgr.isVersionChanged());
+    mgr.initAfterQtAppStarted();
+    QCOMPARE(mgr.getCoreConfig().getDefaultOpenMode(), ViewWindowMode::Edit);
+    QTRY_COMPARE(persistedMode(), QStringLiteral("edit"));
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.setExtraDataSourceRootOverrideForTesting(fixture);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    restarted.initAfterQtAppStarted();
+    QCOMPARE(restarted.getCoreConfig().getDefaultOpenMode(), ViewWindowMode::Edit);
+    restarted.getCoreConfig().setDefaultOpenMode(ViewWindowMode::Read);
+    QTRY_COMPARE(persistedMode(), QStringLiteral("read"));
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.setExtraDataSourceRootOverrideForTesting(fixture);
+    restarted.init();
+    QVERIFY(!restarted.isVersionChanged());
+    restarted.initAfterQtAppStarted();
+    QCOMPARE(restarted.getCoreConfig().getDefaultOpenMode(), ViewWindowMode::Read);
   }
 }
 

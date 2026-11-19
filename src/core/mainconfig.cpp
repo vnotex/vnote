@@ -196,6 +196,13 @@ void MainConfig::doVersionSpecificOverride(const QString &p_previousVersion) {
       coreConfig.setUnitedEntryAlias(aliases);
     }
   }
+
+  // Include profiles stamped 4.15.0 on their next version change. Saved Read
+  // cannot be distinguished from the old default; preserve choices from 4.15.1 on.
+  static const QVersionNumber c_defaultEditModeVersion(4, 15, 1);
+  if (QVersionNumber::fromString(p_previousVersion) < c_defaultEditModeVersion) {
+    getCoreConfig().setDefaultOpenMode(ViewWindowMode::Edit);
+  }
 }
 
 QString MainConfig::peekVersion(const QJsonObject &p_jboj) {
