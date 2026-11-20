@@ -1,5 +1,9 @@
 # Changes
 
+## Unreleased
+
+* Fix deleting notebook folders whose ordinary descendants have missing index metadata, while retaining protected-file and unsafe-path checks
+
 ## v4.15.0
 A feature release with a native TODO planner, dashboard task management and refined editing and updates on top of VNote 4.14.4:
 
