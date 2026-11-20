@@ -301,6 +301,7 @@ struct VNoteApiBackend::Impl {
   };
   struct SearchTarget {
     QString notebook;
+    bool raw = false;
     QJsonArray paths;
     QHash<QString, QString> ids;
     QList<Node> nodes;
@@ -402,40 +403,46 @@ struct VNoteApiBackend::Impl {
       return unavailable();
     VxCoreError error = VXCORE_OK;
     const auto info = core->getFileInfo(nb, path, &error);
-    if (error != VXCORE_OK || info.value(QLatin1String(vxcore::kJsonKeyId)).toString() != id)
+    if (error != VXCORE_OK)
       return unavailable();
-    const bool folder =
-        info.value(QLatin1String(vxcore::kJsonKeyType)).toString() == QLatin1String("folder");
-    if (info.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
-        path.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
+    return resolveWithMetadata(nb, id, path, core->buildAbsolutePath(nb, QStringLiteral(".")), info,
+                               allowFolder, out);
+  }
+  ApiResult resolveWithMetadata(const QString &p_nb, const QString &p_id, const QString &p_path,
+                                const QString &p_root, const QJsonObject &p_info,
+                                bool p_allowFolder, Node *p_out) const {
+    if (p_id.isEmpty() || p_info.value(QLatin1String(vxcore::kJsonKeyId)).toString() != p_id)
+      return unavailable();
+    const auto type = p_info.value(QLatin1String(vxcore::kJsonKeyType)).toString();
+    const bool folder = type == QLatin1String("folder");
+    if (p_info.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
+        p_path.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
       return failure(422, "protected_note_unavailable",
                      "Protected notes are unavailable through this API.");
-    if ((!folder &&
-         info.value(QLatin1String(vxcore::kJsonKeyType)).toString() != QLatin1String("file")) ||
-        (folder && !allowFolder))
+    if ((!folder && type != QLatin1String("file")) || (folder && !p_allowFolder))
       return failure(422, "unsupported_note_type", "This resource is not an ordinary note.");
-    const auto root = core->buildAbsolutePath(nb, QStringLiteral("."));
-    if (root.isEmpty() || !allowedPath(root, path, folder))
+    if (p_root.isEmpty() || !allowedPath(p_root, p_path, folder))
       return unavailable();
+    auto *core = services.get<NotebookCoreService>();
     Node node;
-    node.notebook = nb;
-    node.id = id;
-    node.path = path;
-    node.root = QFileInfo(root).canonicalFilePath();
-    node.name = info.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+    node.notebook = p_nb;
+    node.id = p_id;
+    node.path = p_path;
+    node.root = QFileInfo(p_root).canonicalFilePath();
+    node.name = p_info.value(QLatin1String(vxcore::kJsonKeyName)).toString();
     node.folder = folder;
-    node.readOnly = core->isNotebookReadOnly(nb);
-    node.trash = !node.readOnly && !folder && !core->getRecycleBinPath(nb).isEmpty();
+    node.readOnly = core->isNotebookReadOnly(p_nb);
+    node.trash = !node.readOnly && !folder && !core->getRecycleBinPath(p_nb).isEmpty();
     if (auto *types = services.get<FileTypeCoreService>()) {
-      node.type = types->getFileType(path).m_typeName;
+      node.type = types->getFileType(p_path).m_typeName;
       node.readable =
           !folder && (node.type == QLatin1String("Markdown") || node.type == QLatin1String("Text"));
     }
     if (auto *buffers = services.get<BufferService>()) {
       for (const auto &entry : buffers->listBuffers()) {
         const auto object = entry.toObject();
-        if (object.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() == nb &&
-            object.value("filePath").toString() == path) {
+        if (object.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() == p_nb &&
+            object.value("filePath").toString() == p_path) {
           node.bufferId = object.value(QLatin1String(vxcore::kJsonKeyId)).toString();
           node.encoding = buffers->bufferEncoding(node.bufferId);
           node.dirty = buffers->isDirty(node.bufferId) || buffers->isModified(node.bufferId);
@@ -446,10 +453,10 @@ struct VNoteApiBackend::Impl {
     }
     node.trash = node.trash && node.readable && !node.readOnly;
     node.metadata = {
-        {QLatin1String(vxcore::kJsonKeyId), id},
-        {QLatin1String(vxcore::kJsonKeyNotebookId), nb},
+        {QLatin1String(vxcore::kJsonKeyId), p_id},
+        {QLatin1String(vxcore::kJsonKeyNotebookId), p_nb},
         {QLatin1String(vxcore::kJsonKeyName), node.name},
-        {"path", path},
+        {"path", p_path},
         {QLatin1String(vxcore::kJsonKeyType), folder ? QStringLiteral("folder") : node.type},
         {"contentReadable", node.readable},
         {QLatin1String(vxcore::kJsonKeyReadOnly), node.readOnly},
@@ -459,7 +466,7 @@ struct VNoteApiBackend::Impl {
                                      {"rename", !folder && !node.readOnly},
                                      {"trash", node.trash && !node.readOnly}}}};
     node.metadata.insert("metadataVersion", version("metadata", node.metadata));
-    *out = std::move(node);
+    *p_out = std::move(node);
     return {};
   }
   QString contentVersion(const Node &node, const DiskSnapshot &disk) const {
@@ -871,7 +878,8 @@ struct VNoteApiBackend::Impl {
     int files = 0, scanned = 0;
     qint64 totalBytes = 0;
     for (const auto &nb : books) {
-      if (notebook(nb, item->context).isEmpty()) {
+      const auto book = notebook(nb, item->context);
+      if (book.isEmpty()) {
         if (!cmd.notebookIds.isEmpty()) {
           finish(id, unavailable());
           return;
@@ -880,6 +888,9 @@ struct VNoteApiBackend::Impl {
       }
       SearchTarget target;
       target.notebook = nb;
+      target.raw =
+          book.value(QLatin1String(vxcore::kJsonKeyType)).toString() == QLatin1String("raw");
+      const auto root = core->buildAbsolutePath(nb, QStringLiteral("."));
       QList<QString> folders{QString()};
       QSet<QString> seen;
       while (!folders.isEmpty() && scanned < kMaxScannedNodes && files < kMaxSearchFiles) {
@@ -887,7 +898,6 @@ struct VNoteApiBackend::Impl {
         if (seen.contains(folder))
           continue;
         seen.insert(folder);
-        const auto root = core->buildAbsolutePath(nb, QStringLiteral("."));
         if (!allowedPath(root, folder, true))
           continue;
         const auto children = core->listFolderChildren(nb, folder);
@@ -903,11 +913,19 @@ struct VNoteApiBackend::Impl {
                     .toString()
                     .endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
               continue;
+            const auto id = child.value(QLatin1String(vxcore::kJsonKeyId)).toString();
             Node node;
-            if (resolve(nb, child.value(QLatin1String(vxcore::kJsonKeyId)).toString(),
-                        item->context, &node, true)
-                    .error.status)
+            if (target.raw && key == vxcore::kJsonKeyFiles) {
+              const auto name = child.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+              if (name.isEmpty() || name.contains(QLatin1Char('/')) ||
+                  name.contains(QLatin1Char('\\')))
+                continue;
+              const auto path = folder.isEmpty() ? name : folder + QLatin1Char('/') + name;
+              if (resolveWithMetadata(nb, id, path, root, child, false, &node).error.status)
+                continue;
+            } else if (resolve(nb, id, item->context, &node, true).error.status) {
               continue;
+            }
             if (node.folder) {
               folders.append(node.path);
               continue;
@@ -980,34 +998,68 @@ struct VNoteApiBackend::Impl {
     ++readers;
     const quint64 request = activeSearch;
     auto *watcher = new QFutureWatcher<QHash<QString, QByteArray>>(owner);
-    QObject::connect(watcher, &QFutureWatcher<QHash<QString, QByteArray>>::finished, owner,
-                     [this, watcher, request] {
-                       --readers;
-                       const auto digests = watcher->result();
-                       watcher->deleteLater();
-                       const auto item = pending.value(request);
-                       if (!item || stopped || activeSearch != request)
-                         return;
-                       if (!authorized(item->context)) {
-                         finishSearch({});
-                         return;
-                       }
-                       item->current.paths = {};
-                       for (const auto &node : item->current.nodes) {
-                         Node fresh;
-                         if (!digests.contains(node.path) ||
-                             resolve(node.notebook, node.id, item->context, &fresh).error.status ||
-                             fresh.metadata != node.metadata || fresh.encoding != node.encoding ||
-                             fresh.root != node.root)
-                           continue;
-                         item->current.paths.append(node.path);
-                         item->current.digests.insert(node.path, digests.value(node.path));
-                       }
-                       if (item->current.paths.isEmpty())
-                         searchStep();
-                       else
-                         submitSearch();
-                     });
+    QObject::connect(
+        watcher, &QFutureWatcher<QHash<QString, QByteArray>>::finished, owner,
+        [this, watcher, request] {
+          --readers;
+          const auto digests = watcher->result();
+          watcher->deleteLater();
+          const auto item = pending.value(request);
+          if (!item || stopped || activeSearch != request)
+            return;
+          if (!authorized(item->context)) {
+            finishSearch({});
+            return;
+          }
+          item->current.paths = {};
+          // Raw per-file metadata lookup rescans its parent. Refresh each parent
+          // once in this owner-thread phase; final hits still use full resolve().
+          QHash<QString, QHash<QString, QJsonObject>> listings;
+          auto *core = services.get<NotebookCoreService>();
+          const auto nb = item->current.notebook;
+          const bool raw = item->current.raw;
+          const auto root = raw && !notebook(nb, item->context).isEmpty()
+                                ? core->buildAbsolutePath(nb, QStringLiteral("."))
+                                : QString();
+          for (const auto &node : item->current.nodes) {
+            if (!digests.contains(node.path))
+              continue;
+            Node fresh;
+            if (raw) {
+              const auto parent = node.path.left(qMax(0, int(node.path.lastIndexOf('/'))));
+              auto listing = listings.find(parent);
+              if (listing == listings.end()) {
+                QHash<QString, QJsonObject> byId;
+                if (!root.isEmpty() && allowedPath(root, parent, true)) {
+                  const auto files = core->listFolderChildren(nb, parent)
+                                         .value(QLatin1String(vxcore::kJsonKeyFiles))
+                                         .toArray();
+                  for (const auto &entry : files) {
+                    const auto info = entry.toObject();
+                    byId.insert(info.value(QLatin1String(vxcore::kJsonKeyId)).toString(), info);
+                  }
+                }
+                listing = listings.insert(parent, std::move(byId));
+              }
+              const auto info = listing.value().value(node.id);
+              if (info.value(QLatin1String(vxcore::kJsonKeyName)).toString() != node.name ||
+                  resolveWithMetadata(nb, node.id, node.path, root, info, false, &fresh)
+                      .error.status)
+                continue;
+            } else if (resolve(nb, node.id, item->context, &fresh).error.status) {
+              continue;
+            }
+            if (fresh.metadata != node.metadata || fresh.encoding != node.encoding ||
+                fresh.root != node.root)
+              continue;
+            item->current.paths.append(node.path);
+            item->current.digests.insert(node.path, digests.value(node.path));
+          }
+          if (item->current.paths.isEmpty())
+            searchStep();
+          else
+            submitSearch();
+        });
     watcher->setFuture(
         QtConcurrent::run([nodes = item->current.nodes, cancelled = item->context.cancelled] {
           QHash<QString, QByteArray> digests;
