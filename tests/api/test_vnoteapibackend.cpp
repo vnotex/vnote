@@ -462,6 +462,12 @@ private slots:
     const auto externalPath = QDir(nestedPath).filePath(QStringLiteral("external.txt"));
     const auto bytes = QByteArrayLiteral("raw-content-needle\n");
     QVERIFY(writeFile(externalPath, bytes));
+    QVERIFY(writeFile(QDir(nestedPath).filePath(QStringLiteral("external.vne")), bytes));
+#ifndef Q_OS_WIN
+    const auto outside = fixture.directory.filePath(QStringLiteral("outside.txt"));
+    QVERIFY(writeFile(outside, bytes));
+    QVERIFY(QFile::link(outside, QDir(nestedPath).filePath(QStringLiteral("external-link.txt"))));
+#endif
     auto itemNamed = [](const ApiResult &result, const QString &name) {
       for (const auto &entry : result.data.value("items").toArray()) {
         const auto item = entry.toObject();
@@ -489,6 +495,7 @@ private slots:
       search.query = content ? QStringLiteral("raw-content-needle") : QStringLiteral("external");
       const auto found = fixture.execute(search);
       QCOMPARE(found.error.status, 0);
+      QCOMPARE(found.data.value("items").toArray().size(), 1);
       QCOMPARE(itemNamed(found, QStringLiteral("external.txt")).value("id").toString(), fileId);
     }
     auto create = fixture.command(ApiCommandKind::CreateNote);
