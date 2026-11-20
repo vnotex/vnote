@@ -1,6 +1,6 @@
 # Typed vxcore results for VNote
 
-Status: implemented. The original design and acceptance plan are retained below; the final section records exercised verification and platform limits.
+Status: implemented. Operational guidance below reflects the subsequent removal of the rg backend; the final historical section records the original typed-result cutover verification and platform limits.
 
 ## Goal and scope
 
@@ -201,16 +201,15 @@ serialization remain intentional. Benchmarks must separately include empty and n
 4. Keep public `SearchService` signals and final `SearchResult` consumer contracts unchanged,
    including request tokens, cancellation, progress, and drain ownership. The HTTP search route
    and ordinary search controller therefore need no search-signal migration.
-5. Preserve backend-native column units: Simple replacement addresses are one-based lines and
-   zero-based, end-exclusive UTF-16 columns; do not reinterpret rg byte offsets as replacement
-   addresses. Replacement permission is granted only by the existing successful-completion
-   checks, never by typed conversion or a streaming preview.
+5. Preserve built-in search addresses: one-based lines and zero-based, end-exclusive UTF-16
+   columns. Replacement permission is granted only by successful uncancelled content-search
+   completion, never by typed conversion or a streaming preview.
 6. Preserve `maxResults` behavior (omitted=100 for content, nonpositive=uncapped, cap may cut within
-   a file), first-match-per-file support/rejection, protected-note exclusions, and encrypted-skipped
+   a file), first-match-per-file support, protected-note exclusions, and encrypted-skipped
    counts. Plain empty scans emit no callbacks; an all-encrypted scan retains the existing synthetic
    empty batch that reports skipped counts. Preserve zero-match chunk progress and batch-index order.
 7. Remove obsolete Qt JSON response parsers/from-JSON result constructors once every caller/test is
-   migrated. Keep query parsing and backend-config capability checks, which are separate concerns.
+   migrated. Keep query parsing; backend-config capability checks were removed with rg.
    Migrate `TagCoreService::searchByTags` and `TagService::searchByTags` to the typed generic-search
    result too; do not leave that duplicate entry point on the JSON result path. Explicitly migrate
    `SearchCoreService::searchContentCancellable` to the typed blob result. Retain the independent
@@ -397,7 +396,7 @@ changes, push vxcore first, then the parent. This planning task does not push an
   never persisted, colors/encryption metadata, protected export exclusion, and sorting timestamps.
 - Search: many occurrences on one line, nonadjacent same-line records, cap inside a file, omitted
   and nonpositive caps, no matches, all-encrypted candidates, exact skipped count, first-match mode,
-  Simple/rg contracts, Unicode replacement offsets, cancelled scans, interleaved chunk completion,
+  Built-in search contracts, Unicode replacement offsets, cancelled scans, interleaved chunk completion,
   no external drainers versus multiple drainers, and teardown with work in flight.
 - Tag hierarchy/orphan handling and metadata roles; direct counts versus subtree counts; unknown
   counts on reported failure; AND/OR/empty inputs and complete match tags; raw unsupported reads;
@@ -407,8 +406,8 @@ changes, push vxcore first, then the parent. This planning task does not push an
 
 Run full affected test targets, not only newly added functions. Initial core set:
 `test_folder`, `test_missing_nodes`, `test_folder_child_order`, `test_search`, `test_notebook`,
-`test_tag_sync`; also run unchanged backend coverage `test_simple_search_backend`,
-`test_rg_search_backend`, and `test_db` because shared search/tag producers are exercised.
+`test_tag_sync`; also run `test_simple_search_backend` and `test_db` because shared
+search/tag producers are exercised.
 
 Qt set: the basename targets of all Qt files listed above, plus unchanged consumer regressions
 `test_searchresultmodel`, `test_searchcontroller`, `test_exportcontroller`,
@@ -421,8 +420,8 @@ native Linux/macOS compiler). Example configuration/build commands from the repo
 cmake -S . -B build-typed-results-qt -G Ninja -DCMAKE_BUILD_TYPE=Release -DVNOTE_BUILD_TESTS=ON
 cmake -S libs/vxcore -B build-typed-results-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DVXCORE_BUILD_TESTS=ON
 cmake --build build-typed-results-qt --target vnote core_services vnote_httpapi benchmark_vxcore_typed_results
-cmake --build build-typed-results-core --target vxcore test_folder test_missing_nodes test_folder_child_order test_search test_notebook test_tag_sync test_simple_search_backend test_rg_search_backend test_db
-ctest --test-dir build-typed-results-core -C Release -R '^(test_folder|test_missing_nodes|test_folder_child_order|test_search|test_notebook|test_tag_sync|test_simple_search_backend|test_rg_search_backend|test_db)$' --output-on-failure
+cmake --build build-typed-results-core --target vxcore test_folder test_missing_nodes test_folder_child_order test_search test_notebook test_tag_sync test_simple_search_backend test_db
+ctest --test-dir build-typed-results-core -C Release -R '^(test_folder|test_missing_nodes|test_folder_child_order|test_search|test_notebook|test_tag_sync|test_simple_search_backend|test_db)$' --output-on-failure
 ```
 
 Build the full enumerated Qt test-target set explicitly, then run its anchored CTest alternation.
@@ -448,14 +447,14 @@ Qt Core; the benchmark alone may retain a reference JSON-to-Qt conversion path. 
 Configure its runtime output directory explicitly so the run command is stable across kits.
 
 For each domain compare the retained JSON C API plus reference Qt conversion against the typed
-C API plus production Qt conversion on the same fixtures, kit, build mode, and backend. Also run
+C API plus production Qt conversion on the same fixtures, kit, build mode, and built-in engine. Also run
 pre-cutover and final end-to-end application measurements, so common-producer refactors cannot
 hide a regression in the JSON comparator.
 
 | Domain | Proposed fixtures | Required observations |
 |---|---|---|
 | Folder children | 100, 1,000, 10,000 siblings; a 50-level tree; bundled and raw; empty versus populated metadata | Acquisition, conversion, total listing/expansion time, peak memory |
-| Search | 100, 1,000, 10,000 matched files; repeated occurrences within lines; bounded and uncapped results; Simple and available rg | Time to first batch, completion, conversion CPU/time, peak memory, cancellation completion |
+| Search | 100, 1,000, 10,000 matched files; repeated occurrences within lines; bounded and uncapped results; built-in Simple engine | Time to first batch, completion, conversion CPU/time, peak memory, cancellation completion |
 | Tags | 100, 1,000, 10,000 tags; wide/deep hierarchy; sparse/dense associations; large AND/OR match sets | List/count/find and model-refresh time, conversion cost, peak memory |
 
 Exclude fixture creation from timing. Use at least 3 warm-ups and 30 paired/interleaved measured
@@ -477,7 +476,12 @@ Acceptance gates:
 5. If performance gates cannot be met, present the measurements and revise the plan with user
    approval. Do not silently drop a domain, weaken a behavior test, or add unrelated optimization.
 
-## Implementation verification record
+## Historical implementation verification record
+
+The following observations belong to VNote `46c24f99` / vxcore `22be4f0`, before the later
+backend removal. They are not claims about current rg support. The current benchmark has no
+backend selector, rg fixture or process probe. The separate `vxsearch-validate` tool retains
+external rg only as an independent oracle for the built-in engine.
 
 Verified with Qt 6.10.3, MSVC 19.51 and Release builds on Windows. Successfully built the
 application, `core_services`, `vnote_httpapi`, shared/installed vxcore and the explicit benchmark.

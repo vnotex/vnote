@@ -27,6 +27,7 @@ A feature release with a native TODO planner, dashboard task management and refi
     * Keep shared count badges visible at the right edge of explorer trees; load directly tagged note counts lazily while preserving selection
     * Match web scrollbar colors and thumb widths to native widgets, and use active theme colors for editor status chips
     * Use owning typed vxcore results for folder listings, search and tags, removing in-process JSON result round trips while preserving metadata, ordering and existing JSON APIs
+    * Remove the ripgrep search backend and obsolete backend settings; use built-in search for consistent Unicode replacement and cooperative cancellation
 * **Windows updates and reliability**
     * Offer the explicit Windows Update Now action in the manual-check dialog while keeping ordinary update checks check-only
     * Display source-appropriate release notes and show bundled notes when VNote is already up to date

@@ -88,9 +88,6 @@ struct Fixture {
     vxcore_set_test_mode(1);
     if (vxcore_context_create(nullptr, &context) != VXCORE_OK)
       return false;
-    if (vxcore_context_update_config(context, "{\"search\":{\"backends\":[\"simple\"]}}") !=
-        VXCORE_OK)
-      return false;
     configCore = std::make_unique<ConfigCoreService>(context);
     config = std::make_unique<ConfigMgr2>(configCore.get());
     config->init();

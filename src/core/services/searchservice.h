@@ -45,7 +45,6 @@ public:
   void cancel();
   bool isSearching() const;
   bool isSearching(int p_token) const;
-  bool isReplacementSupported() const;
 
   // Validate immutable Simple search snapshots and replace their exact ranges literally.
   // Empty/identical replacements are allowed. All output pointers are required; errors

@@ -416,8 +416,8 @@ QString SearchController::replacementEligibilityError() const {
         "Results are truncated. Narrow the search or increase the result limit before replacing.");
   }
   const auto *searchSvc = m_services.get<SearchService>();
-  if (!m_completedProvenance || !searchSvc || !searchSvc->isReplacementSupported()) {
-    return tr("Replacement is available only for Simple search results.");
+  if (!m_completedProvenance || !searchSvc) {
+    return tr("Run a new completed content search before replacing.");
   }
   if (!m_services.get<BufferService>()) {
     return tr("Buffer service is not available.");
@@ -453,7 +453,7 @@ void SearchController::requestReplacement(const QString &p_replacement, bool p_a
   for (const auto &file : targets) {
     if (!file.m_replacementSupported) {
       emit replacementFinished(0, 0, false,
-                               {tr("Replacement is available only for Simple search results.")});
+                               {tr("Run a new completed content search before replacing.")});
       return;
     }
     for (const auto &line : file.m_lineMatches) {
@@ -496,7 +496,7 @@ void SearchController::confirmReplacement(bool p_confirmed) {
   }
   for (const auto &file : m_replacement->targets) {
     if (!file.m_replacementSupported) {
-      error = tr("Replacement is available only for Simple search results.");
+      error = tr("Run a new completed content search before replacing.");
       break;
     }
   }

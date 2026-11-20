@@ -70,7 +70,6 @@ private slots:
   void testSearchFilesWithFiles();
 
   void testSimpleSearchUnicodeReplacement();
-  void testReplacementCapabilityUsesBackendOrder();
   void testReplacementPreservesSourceSlices();
   void testReplacementLiteralAndDeletion();
   void testReplacementNoOps();
@@ -145,8 +144,6 @@ void TestSearchService::initTestCase() {
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
-  QCOMPARE(vxcore_context_update_config(m_context, "{\"search\":{\"backends\":[\"simple\"]}}"),
-           VXCORE_OK);
 
   // Create a test notebook
   QString notebookPath = m_tempDir.filePath("test_notebook");
@@ -170,7 +167,6 @@ void TestSearchService::cleanupTestCase() {
 
 void TestSearchService::testNullContext() {
   SearchCoreService service(nullptr);
-  QVERIFY(!service.isReplacementSupported());
   SearchResult results;
   results.m_matchCount = 99;
 
@@ -238,6 +234,9 @@ void TestSearchService::testSearchFilesWithFiles() {
 }
 
 void TestSearchService::testSimpleSearchUnicodeReplacement() {
+  // Retired rg-first settings must not disable replacement or change address units.
+  QCOMPARE(vxcore_context_update_config(m_context, R"({"search":{"backends":["rg","simple"]}})"),
+           VXCORE_OK);
   const QString source = QStringLiteral("\u4f60\u597d \U0001f600 foo foo\r\n");
   char *fileId = nullptr;
   QCOMPARE(
@@ -259,7 +258,6 @@ void TestSearchService::testSimpleSearchUnicodeReplacement() {
 
   SearchCoreService coreService(m_context);
   SearchService service(&coreService);
-  QVERIFY(service.isReplacementSupported());
   QSignalSpy batchSpy(&service, &SearchService::searchBatch);
   QSignalSpy finishedSpy(&service, &SearchService::searchFinished);
   QSignalSpy failedSpy(&service, &SearchService::searchFailed);
@@ -295,33 +293,6 @@ void TestSearchService::testSimpleSearchUnicodeReplacement() {
   const SearchResult parsed = SearchResult::fromContentSearchResult(content, m_notebookId);
   QCOMPARE(parsed.m_fileResults.size(), 1);
   QVERIFY(!parsed.m_fileResults.first().m_replacementSupported);
-}
-
-void TestSearchService::testReplacementCapabilityUsesBackendOrder() {
-  vxcore_set_test_mode(1);
-  VxCoreContextHandle context = nullptr;
-  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
-  const std::unique_ptr<VxCoreContext, decltype(&vxcore_context_destroy)> ownedContext(
-      context, vxcore_context_destroy);
-  SearchCoreService coreService(context);
-  SearchService service(&coreService);
-  const struct {
-    const char *m_config;
-    bool m_supported;
-  } cases[] = {
-      {"{\"search\":{\"backends\":[\"simple\",\"rg\"]}}", true},
-      {"{\"search\":{\"backends\":[\"rg\",\"simple\"]}}", false},
-      {"{\"search\":{\"backends\":[\"unknown\",\"simple\",\"rg\"]}}", true},
-      {"{\"search\":{\"backends\":[\"unknown\",\"rg\",\"simple\"]}}", false},
-      {"{\"search\":{\"backends\":[]}}", true},
-      {"{\"search\":{\"backends\":[\"unknown\"]}}", true},
-  };
-  // Configuration inspection only: no search is dispatched and rg is never executed.
-  for (const auto &entry : cases) {
-    QCOMPARE(vxcore_context_update_config(context, entry.m_config), VXCORE_OK);
-    QCOMPARE(coreService.isReplacementSupported(), entry.m_supported);
-    QCOMPARE(service.isReplacementSupported(), entry.m_supported);
-  }
 }
 
 void TestSearchService::testReplacementPreservesSourceSlices() {
@@ -922,8 +893,6 @@ void TestSearchService::testCoreSnapshotsOutliveContext() {
     QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
     const std::unique_ptr<VxCoreContext, decltype(&vxcore_context_destroy)> owner(
         context, vxcore_context_destroy);
-    QCOMPARE(vxcore_context_update_config(context, "{\"search\":{\"backends\":[\"simple\"]}}"),
-             VXCORE_OK);
     char *rawId = nullptr;
     const auto root = m_tempDir.filePath("typed_lifetime").toUtf8();
     QCOMPARE(vxcore_notebook_create(context, root.constData(), "{\"name\":\"Lifetime\"}",

@@ -34,7 +34,7 @@ functions are pure production conversions, also used by the opt-in benchmark. Me
 uses `QJsonValue::fromJson()` to preserve null versus `{}`; only a zero-length native
 metadata view is shorthand for an empty object. Result arrays must not be reconstructed
 as Qt JSON. Queries, events/hooks, configuration, and actual HTTP responses remain JSON.
-There is no persisted setting/schema change and no configuration migration.
+The typed-result cutover itself did not change persisted settings.
 
 `SearchContentResult::fromView()` retains ungrouped occurrences. The worker stores batches
 by index, caps occurrences, then builds grouped `SearchResult` values. It sums the
@@ -417,14 +417,23 @@ storage are core mechanisms documented in the owning sync guide.
 
 **Degradation.** The initiating thread help-drains its own enqueued items, so a search stays correct even if this pool is absent or stalled. With no drain threads the search simply runs single-threaded; results, ordering, cancellation, and `max_results` are unaffected.
 
+## Built-in search engine
+
+Content search always uses vxcore's built-in Simple engine; no backend selector or external
+process participates. The retired `search.backends` key in `vxcore.json` is ignored on load
+and omitted on the next ordinary save. `search.encodings` and other settings are preserved.
+No `MainConfig` migration applies: the removed native key cannot override the sole engine.
+Empty backend lists never disabled search. Backend capability inspection is gone; replacement
+authorization still belongs to successful uncancelled completion and the result provenance.
+
 ## Search-result replacement
 
 `SearchService::buildReplacement()` transforms immutable Simple-search addresses: one-based
 lines, zero-based UTF-16 columns, end-exclusive ranges, and terminator-free line snapshots.
 Replacement text is literal even for regex searches. Validate whole lines and surrogate-safe,
-nonoverlapping ranges before constructing output; never rematch a changed line or interpret rg
-byte offsets. Only final successful Simple results carry `m_replacementSupported`; parsing and
-streaming previews cannot grant it. The controller rejects truncated or invalidated results.
+nonoverlapping ranges before constructing output; never rematch a changed line. Only final
+successful content results carry `m_replacementSupported`; parsing and streaming previews
+cannot grant it. The controller rejects truncated or invalidated results.
 
 `BufferService` owns one `ContentReplacement` lifecycle for both
 `replaceSearchMatches()` and `NoteOperationService` Replace/Append. Search supplies its reviewed

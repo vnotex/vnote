@@ -61,7 +61,7 @@ This does not change token generation or add machine-bound cryptography.
   cannot be persisted, stop HTTP and report that revocation is not durable.
 - Do not log credentials, verifiers, note names/bodies, queries or filesystem paths. This
   includes shared buffer, node-resolution, metadata-persistence, hook, comment and search diagnostics,
-  not just the router: debug logs and ripgrep commands must remain payload-free. Use
+  not just the router: debug logs must remain payload-free. Use
   existing stable IDs and error codes; the controller supplies translated storage errors.
 
 API access and operation audit messages use `vnote.api.audit` INFO through the existing Qt

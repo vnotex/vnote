@@ -203,8 +203,6 @@ void TestSearchServiceDrain::initTestCase() {
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
-  QCOMPARE(vxcore_context_update_config(m_context, "{\"search\":{\"backends\":[\"simple\"]}}"),
-           VXCORE_OK);
   // Baseline / idle / teardown notebook spans multiple default 64-file chunks.
   createFilledNotebook(QStringLiteral("drain_notebook"), kFileCount, &m_notebookId);
   QVERIFY(!m_notebookId.isEmpty());

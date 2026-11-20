@@ -13,7 +13,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
-#include <QProcess>
 #include <QTemporaryDir>
 #include <QUuid>
 
@@ -285,7 +284,7 @@ QVector<TagFileMatch> tagFilesFromJson(const JsonResults &json) {
   return result;
 }
 
-// Untimed concrete normalization. File/tag enumeration order may differ between backend runs;
+// Untimed concrete normalization. File/tag enumeration order may differ between paired runs;
 // folder child order, tag arrays, occurrence order, null notebook IDs and every field are kept.
 void encode(QDataStream &stream, const FolderListing &value) {
   const auto entries = [&stream](const QVector<FolderEntry> &items) {
@@ -635,7 +634,7 @@ QJsonObject samplesJson(const std::vector<Sample> &samples) {
 }
 
 struct Options {
-  QStringList domains, notebooks, metadata, shapes, hierarchies, densities, backends;
+  QStringList domains, notebooks, metadata, shapes, hierarchies, densities;
   std::vector<int> sizes;
   int pairs = 30;
   int warmups = 3;
@@ -1354,8 +1353,7 @@ QJsonObject streamStats(const std::vector<StreamRun> &runs, bool cancel) {
           {QStringLiteral("callbacks"), distribution(callbacks)}};
 }
 
-void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture,
-                   const QString &backend, bool cancel) try {
+void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture, bool cancel) try {
   auto description = describe(fixture, cancel ? QStringLiteral("search/stream_cancel")
                                               : QStringLiteral("search/stream_full"));
   if (!description.value(QStringLiteral("operation")).toString().contains(options.filter)) {
@@ -1373,9 +1371,9 @@ void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture,
   const auto full = contentFromJson(fullJson.front().get());
   require(full.m_files.size() == fixture.size,
           QStringLiteral("Streaming reference lost fixture files"));
-  const int emittedPerFile = backend == QStringLiteral("rg") ? 2 : options.occurrences * 2;
+  const int emittedPerFile = options.occurrences * 2;
   require(occurrenceCount(full) == qint64(fixture.size) * emittedPerFile,
-          QStringLiteral("Streaming reference occurrence count differs from backend semantics"));
+          QStringLiteral("Streaming reference occurrence count differs from Simple semantics"));
   auto firstJson = streamRun(fixture, query, options, false, cancel);
   auto firstTyped = streamRun(fixture, query, options, true, cancel);
   if (cancel) {
@@ -1438,14 +1436,12 @@ void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture,
     return result;
   };
   description[QStringLiteral("status")] = QStringLiteral("ok");
-  description[QStringLiteral("backend")] = backend;
   description[QStringLiteral("batch_size")] = options.batchSize;
   description[QStringLiteral("text_occurrences_per_file")] = options.occurrences * 2;
   description[QStringLiteral("expected_result_occurrences_per_file")] = emittedPerFile;
   description[QStringLiteral("full_reference_sha256")] = checksum(normalized(full));
   description[QStringLiteral("cancel_policy")] =
-      cancel ? QStringLiteral("set the public cancel flag after retaining the first callback; rg "
-                              "may deliver its single batch only after its whole process finishes")
+      cancel ? QStringLiteral("set the public cancel flag after retaining the first callback")
              : QStringLiteral("none; streaming primitive is uncapped");
   description[QStringLiteral("measurement_scope")] =
       QStringLiteral("blocking API includes callbacks; callback conversion is summed wall "
@@ -1462,7 +1458,6 @@ void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture,
 } catch (const std::exception &error) {
   auto description = describe(fixture, cancel ? QStringLiteral("search/stream_cancel")
                                               : QStringLiteral("search/stream_full"));
-  description[QStringLiteral("backend")] = backend;
   description[QStringLiteral("status")] = QStringLiteral("error");
   description[QStringLiteral("error")] = QString::fromUtf8(error.what());
   rows.append(description);
@@ -1470,20 +1465,13 @@ void streamingCase(QJsonArray &rows, const Options &options, Fixture &fixture,
   throw;
 }
 
-void searchCases(QJsonArray &rows, const Options &options, Fixture &fixture,
-                 const QString &backend) {
-  const auto config = compact(QJsonObject{
-      {QStringLiteral("search"), QJsonObject{{QStringLiteral("backends"), QJsonArray{backend}}}}});
-  check(vxcore_context_update_config(fixture.context, config.constData()), "select search backend");
+void searchCases(QJsonArray &rows, const Options &options, Fixture &fixture) {
   const QString notebookId = QString::fromUtf8(fixture.id);
-  // rg currently reports just the first submatch on each matching line. Keep that existing
-  // behavior visible rather than claiming that its response contains every textual occurrence.
-  const int emittedPerFile = backend == QStringLiteral("rg") ? 2 : options.occurrences * 2;
+  const int emittedPerFile = options.occurrences * 2;
   for (bool bounded : {true, false}) {
     const auto query = searchQuery(false, bounded);
     auto description = describe(fixture, bounded ? QStringLiteral("search/files_bounded")
                                                  : QStringLiteral("search/files_uncapped"));
-    description[QStringLiteral("backend")] = backend;
     description[QStringLiteral("max_results")] = bounded ? 37 : std::numeric_limits<int>::max();
     pairedCase(
         rows, description, options, bounded ? std::min(fixture.size, 37) : fixture.size,
@@ -1516,7 +1504,6 @@ void searchCases(QJsonArray &rows, const Options &options, Fixture &fixture,
           fixture, QStringLiteral("search/content%1_%2")
                        .arg(cancellable ? QStringLiteral("_ex") : QString(),
                             bounded ? QStringLiteral("bounded") : QStringLiteral("uncapped")));
-      contentDescription[QStringLiteral("backend")] = backend;
       contentDescription[QStringLiteral("max_results")] = bounded ? 17 : 0;
       contentDescription[QStringLiteral("text_occurrences_per_file")] = options.occurrences * 2;
       contentDescription[QStringLiteral("expected_result_occurrences_per_file")] = emittedPerFile;
@@ -1552,7 +1539,6 @@ void searchCases(QJsonArray &rows, const Options &options, Fixture &fixture,
     auto groupedDescription =
         describe(fixture, bounded ? QStringLiteral("search/content_grouped_bounded")
                                   : QStringLiteral("search/content_grouped_uncapped"));
-    groupedDescription[QStringLiteral("backend")] = backend;
     groupedDescription[QStringLiteral("max_results")] = bounded ? 17 : 0;
     groupedDescription[QStringLiteral("text_occurrences_per_file")] = options.occurrences * 2;
     groupedDescription[QStringLiteral("expected_result_occurrences_per_file")] = emittedPerFile;
@@ -1581,8 +1567,8 @@ void searchCases(QJsonArray &rows, const Options &options, Fixture &fixture,
         },
         expectedOccurrences);
   }
-  streamingCase(rows, options, fixture, backend, false);
-  streamingCase(rows, options, fixture, backend, true);
+  streamingCase(rows, options, fixture, false);
+  streamingCase(rows, options, fixture, true);
 }
 
 void tagCases(QJsonArray &rows, const Options &options, Fixture &fixture) {
@@ -1697,22 +1683,12 @@ public:
                                  qgetenv(key.constData()));
         setEnvironment(key, directory.path().toUtf8());
       }
-      // Isolate inherited user rg configuration and make bounded result membership stable.
-      // Both APIs see this same explicitly reported configuration; native code is untouched.
-      const QByteArray rgKey("RIPGREP_CONFIG_PATH");
-      environment.emplace_back(rgKey, qEnvironmentVariableIsSet(rgKey.constData()),
-                               qgetenv(rgKey.constData()));
-      const QString rgConfig = directory.path() + QStringLiteral("/rg.conf");
-      writeFile(rgConfig, "--sort=path\n");
-      setEnvironment(rgKey, rgConfig.toUtf8());
       // std::filesystem::temp_directory_path() must already resolve below our private root.
       // Never clear the shared test directory; another process may be using it.
       vxcore_set_test_mode(1);
       vxcore_set_app_info("VNote", "TypedResultsBenchmark");
       check(vxcore_log_set_level(VXCORE_LOG_LEVEL_WARN), "configure native logging");
-      check(vxcore_context_create(
-                "{\"recoverLastSession\":false,\"search\":{\"backends\":[\"simple\"]}}", &context),
-            "create isolated context");
+      check(vxcore_context_create(nullptr, &context), "create isolated context");
       for (const auto location : {VXCORE_DATA_APP, VXCORE_DATA_LOCAL}) {
         const auto path = acquire<JsonOwner>(
             [&](char **out) { return vxcore_context_get_data_path(context, location, out); });
@@ -1776,25 +1752,6 @@ private:
   }
 };
 
-bool rgAvailable(QString &version) {
-  QProcess process;
-  process.start(QStringLiteral("rg"), {QStringLiteral("--version")});
-  if (!process.waitForStarted(10000)) {
-    return false;
-  }
-  if (!process.waitForFinished(10000)) {
-    process.kill();
-    process.waitForFinished();
-    return false;
-  }
-  if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
-    return false;
-  }
-  version =
-      QString::fromUtf8(process.readAllStandardOutput()).section(QLatin1Char('\n'), 0, 0).trimmed();
-  return true;
-}
-
 Options arguments(QCoreApplication &application) {
   QCommandLineParser parser;
   parser.setApplicationDescription(
@@ -1805,8 +1762,8 @@ Options arguments(QCoreApplication &application) {
       {QStringLiteral("matrix"),
        QStringLiteral(
            "Select the complete 100/1000/10000 matrix; explicit dimension flags override it.")});
-  for (const auto &name : {"domains", "sizes", "notebooks", "metadata", "shapes", "hierarchies",
-                           "densities", "backends"}) {
+  for (const auto &name :
+       {"domains", "sizes", "notebooks", "metadata", "shapes", "hierarchies", "densities"}) {
     parser.addOption({QString::fromLatin1(name),
                       QStringLiteral("Comma-separated %1 selection; see report dimensions.")
                           .arg(QString::fromLatin1(name)),
@@ -1868,9 +1825,6 @@ Options arguments(QCoreApplication &application) {
   options.densities = selection(QStringLiteral("densities"), QStringLiteral("sparse"),
                                 QStringLiteral("sparse,dense"),
                                 {QStringLiteral("sparse"), QStringLiteral("dense")});
-  options.backends =
-      selection(QStringLiteral("backends"), QStringLiteral("simple"), QStringLiteral("simple,rg"),
-                {QStringLiteral("simple"), QStringLiteral("rg")});
   for (const auto &size :
        selection(QStringLiteral("sizes"), QStringLiteral("100"), QStringLiteral("100,1000,10000"),
                  {QStringLiteral("100"), QStringLiteral("1000"), QStringLiteral("10000")})) {
@@ -1897,16 +1851,6 @@ void execute(const Options &options, QJsonObject &report, QJsonArray &rows) {
   IsolatedRuntime runtime(options);
   report[QStringLiteral("isolated_root")] = runtime.directory.path();
   report[QStringLiteral("fixtures_retained")] = options.keepFixtures;
-  QString rgVersion;
-  const bool hasRg = !options.backends.contains(QStringLiteral("rg")) || rgAvailable(rgVersion);
-  report[QStringLiteral("rg_version")] = rgVersion;
-  report[QStringLiteral("rg_configuration")] = QJsonObject{
-      {QStringLiteral("source"),
-       QStringLiteral("isolated RIPGREP_CONFIG_PATH; inherited value restored on exit")},
-      {QStringLiteral("arguments"), QJsonArray{QStringLiteral("--sort=path")}},
-      {QStringLiteral("scope"),
-       QStringLiteral("both JSON and typed calls; deterministic cap membership; sorting may "
-                      "disable rg parallel scanning")}};
   int sequence = 0;
   for (const auto &notebook : options.notebooks) {
     const bool raw = notebook == QStringLiteral("raw");
@@ -1931,17 +1875,7 @@ void execute(const Options &options, QJsonObject &report, QJsonArray &rows) {
           Fixture fixture;
           createFixture(fixture, runtime.context, runtime.directory.path(), sequence++, size, raw,
                         populated, false, false, false, false, false, options.occurrences);
-          for (const auto &backend : options.backends) {
-            if (backend == QStringLiteral("rg") && !hasRg) {
-              auto skipped = describe(fixture, QStringLiteral("search/rg"));
-              skipped[QStringLiteral("status")] = QStringLiteral("skipped");
-              skipped[QStringLiteral("reason")] = QStringLiteral(
-                  "rg --version was unavailable or failed; no Simple fallback is reported as rg");
-              rows.append(skipped);
-            } else {
-              searchCases(rows, options, fixture, backend);
-            }
-          }
+          searchCases(rows, options, fixture);
         }
         if (!raw && options.domains.contains(QStringLiteral("tags"))) {
           for (const auto &hierarchy : options.hierarchies) {
@@ -1980,6 +1914,7 @@ int main(int argc, char **argv) {
     const auto options = arguments(application);
     report[QStringLiteral("schema_version")] = 1;
     report[QStringLiteral("vxcore_version")] = QString::fromUtf8(vxcore_get_version_string());
+    report[QStringLiteral("search_engine")] = QStringLiteral("Simple (built-in)");
     report[QStringLiteral("qt_version")] = QString::fromLatin1(qVersion());
 #ifdef QT_NO_DEBUG
     report[QStringLiteral("qt_debug_assertions")] = false;
@@ -2004,8 +1939,8 @@ int main(int argc, char **argv) {
         "retained validation snapshots and preceding cases, and fixture generation may dominate; "
         "current resident/private bytes are reported where available; interleaved JSON/typed paths "
         "share one process, so these are NOT independent per-path allocation or peak-memory "
-        "evidence and cannot establish the 5% memory gate; no child rg RSS, allocation count or "
-        "profiler estimate");
+        "evidence and cannot establish the 5% memory gate; no allocation count or profiler "
+        "estimate");
     report[QStringLiteral("measurement_limits")] = QJsonArray{
         QStringLiteral("C ABI acquisition combines producer work and transport construction; they "
                        "cannot be separated without production instrumentation"),
@@ -2020,14 +1955,9 @@ int main(int argc, char **argv) {
             "deterministic, checksums are within-run, not portable across temp roots"),
         QStringLiteral("Raw populated metadata is seeded in one native-store transaction after "
                        "filesystem indexing and verified through public reads; setup is untimed"),
-        QStringLiteral("rg preserves its existing first-submatch-per-line response; text "
-                       "occurrence counts and emitted occurrence counts are reported separately"),
-        QStringLiteral("rg uses an isolated --sort=path configuration in both paired paths; "
-                       "command-length/native backend errors remain errors and return nonzero"),
         QStringLiteral("No cache eviction, allocation profiler, GUI model-refresh/render timing or "
                        "end-to-end application smoke; collect those externally"),
-        QStringLiteral("Cancellation is requested after the first callback is owned; rg's "
-                       "single-shot backend may have completed scanning before that point")};
+        QStringLiteral("Cancellation is requested after the first callback is owned")};
     report[QStringLiteral("selection")] = QJsonObject{
         {QStringLiteral("domains"), QJsonArray::fromStringList(options.domains)},
         {QStringLiteral("notebooks"), QJsonArray::fromStringList(options.notebooks)},
@@ -2035,7 +1965,6 @@ int main(int argc, char **argv) {
         {QStringLiteral("shapes"), QJsonArray::fromStringList(options.shapes)},
         {QStringLiteral("hierarchies"), QJsonArray::fromStringList(options.hierarchies)},
         {QStringLiteral("densities"), QJsonArray::fromStringList(options.densities)},
-        {QStringLiteral("backends"), QJsonArray::fromStringList(options.backends)},
         {QStringLiteral("case_filter"), options.filter}};
     QJsonArray sizes;
     for (int size : options.sizes) {

@@ -115,10 +115,8 @@ public slots:
     };
 
     Error error;
-    bool replacementSupportedAtStart = false;
     {
       QMutexLocker locker(m_mutex);
-      replacementSupportedAtStart = m_coreService->isReplacementSupported();
       error = m_coreService->searchContentStreaming(p_notebookId, p_queryJson, p_inputFilesJson, 0,
                                                     p_cancelFlag, onBatch);
     }
@@ -154,14 +152,9 @@ public slots:
     content.m_encryptedSkippedCount = encryptedSkippedCount;
     content.m_truncated = applyMaxResultsTruncation(content.m_files, maxResults);
     SearchResult result = SearchResult::fromContentSearchResult(content, p_notebookId);
-    {
-      QMutexLocker locker(m_mutex);
-      const bool replacementSupportedAtFinish = m_coreService->isReplacementSupported();
-      if (replacementSupportedAtStart && replacementSupportedAtFinish) {
-        for (SearchFileResult &file : result.m_fileResults) {
-          file.m_replacementSupported = true;
-        }
-      }
+    // Only a successful, uncancelled content search grants replacement provenance.
+    for (SearchFileResult &file : result.m_fileResults) {
+      file.m_replacementSupported = true;
     }
 
     qDebug() << "SearchWorker::doSearchContent: [worker thread streaming] completed, matchCount:"
@@ -440,10 +433,6 @@ void SearchService::cancel() {
 bool SearchService::isSearching() const { return !m_activeTokens.isEmpty(); }
 
 bool SearchService::isSearching(int p_token) const { return m_activeTokens.contains(p_token); }
-
-bool SearchService::isReplacementSupported() const {
-  return m_coreService && m_coreService->isReplacementSupported();
-}
 
 bool SearchService::buildReplacement(const QString &p_source,
                                      const QVector<SearchLineMatch> &p_matches,

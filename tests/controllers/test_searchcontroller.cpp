@@ -116,13 +116,10 @@ private:
     QString notebookId;
     QString rootPath;
     QString folder;
-    bool configured = false;
 
     ControllerFixture(VxCoreContextHandle p_ctx, const QString &p_notebookId,
                       const QString &p_rootPath, bool p_failWrites = false)
         : notebookId(p_notebookId), rootPath(p_rootPath) {
-      configured =
-          vxcore_context_update_config(p_ctx, R"({"search":{"backends":["simple"]}})") == VXCORE_OK;
       hooks = new vnotex::HookManager();
       gate = new vnotex::NotebookIoGate();
       bufferService =
@@ -160,7 +157,7 @@ private:
       if (tag && *tag) {
         folder += QLatin1Char('-') + QString::fromLatin1(tag);
       }
-      if (!configured || notebookService->createFolderPath(notebookId, folder).isEmpty() ||
+      if (notebookService->createFolderPath(notebookId, folder).isEmpty() ||
           notebookService->createFile(notebookId, folder, QStringLiteral("a.md")).isEmpty() ||
           notebookService->createFile(notebookId, folder, QStringLiteral("b.txt")).isEmpty()) {
         return false;
@@ -518,9 +515,8 @@ void TestSearchController::testReplacementSelectedAndAll() {
 
 void TestSearchController::testReplacementIneligible_data() {
   QTest::addColumn<QString>("reason");
-  for (const char *reason :
-       {"running", "criteria-during-search", "truncated", "file-name", "tag", "model-reset",
-        "unsupported-current-backend", "unsupported-provenance", "failed"}) {
+  for (const char *reason : {"running", "criteria-during-search", "truncated", "file-name", "tag",
+                             "model-reset", "unsupported-provenance", "failed"}) {
     QTest::newRow(reason) << QString::fromLatin1(reason);
   }
 }
@@ -564,9 +560,6 @@ void TestSearchController::testReplacementIneligible() {
     identical.m_fileResults = model.allReplacementTargets();
     identical.m_matchCount = model.totalMatchCount();
     model.setSearchResult(identical);
-  } else if (reason == QStringLiteral("unsupported-current-backend")) {
-    QCOMPARE(vxcore_context_update_config(m_ctx, R"({"search":{"backends":["rg","simple"]}})"),
-             VXCORE_OK);
   } else if (reason == QStringLiteral("unsupported-provenance")) {
     vnotex::SearchResult unsupported;
     unsupported.m_fileResults = model.allReplacementTargets();
@@ -576,7 +569,7 @@ void TestSearchController::testReplacementIneligible() {
     }
     fixture.search();
     const int token = started.last().at(0).toInt();
-    // A final result's provenance is immutable even if the current configuration is Simple.
+    // A final result must carry replacement provenance regardless of current search state.
     fixture.searchService->searchFinished(token, unsupported);
     QTRY_COMPARE_WITH_TIMEOUT(searches.count(), 2, 10000);
   } else if (reason == QStringLiteral("failed")) {
@@ -607,7 +600,7 @@ void TestSearchController::testReplacementIneligible() {
 
 void TestSearchController::testReplacementConfirmationRevalidation_data() {
   QTest::addColumn<QString>("change");
-  for (const char *change : {"new-search", "criteria", "model-reset", "backend"}) {
+  for (const char *change : {"new-search", "criteria", "model-reset"}) {
     QTest::newRow(change) << QString::fromLatin1(change);
   }
 }
@@ -634,9 +627,6 @@ void TestSearchController::testReplacementConfirmationRevalidation() {
     fixture.controller->invalidateReplacementResults();
   } else if (change == QStringLiteral("model-reset")) {
     model.clear();
-  } else {
-    QCOMPARE(vxcore_context_update_config(m_ctx, R"({"search":{"backends":["rg","simple"]}})"),
-             VXCORE_OK);
   }
   fixture.controller->confirmReplacement(true);
   QCOMPARE(replacements.count(), 1);
