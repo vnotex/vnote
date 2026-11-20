@@ -26,6 +26,7 @@ A feature release with a native TODO planner, dashboard task management and refi
     * Scroll overflowing view tabs with mouse-wheel input without switching the active document
     * Keep shared count badges visible at the right edge of explorer trees; load directly tagged note counts lazily while preserving selection
     * Match web scrollbar colors and thumb widths to native widgets, and use active theme colors for editor status chips
+    * Show Created and Modified timestamps in note and folder properties using the application locale, preserving local time and seconds
     * Use owning typed vxcore results for folder listings, search and tags, removing in-process JSON result round trips while preserving metadata, ordering and existing JSON APIs
     * Remove the ripgrep search backend and obsolete backend settings; use built-in search for consistent Unicode replacement and cooperative cancellation
 * **Windows updates and reliability**

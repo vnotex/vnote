@@ -11,6 +11,7 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 #include <utils/stringutils.h>
+#include <utils/utils.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
@@ -51,19 +52,18 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
   if (!p_nodeInfo.isFolder) {
     quint64 size = 0;
     const auto error = notebookSvc->getFileSize(p_nodeId.notebookId, p_nodeId.relativePath, size);
-    auto *sizeLabel = new QLabel(
-        error == VXCORE_OK ? formatFileSize(size) : tr("N/A"), mainWidget);
+    auto *sizeLabel = new QLabel(error == VXCORE_OK ? formatFileSize(size) : tr("N/A"), mainWidget);
     mainLayout->addRow(tr("Size"), sizeLabel);
   }
 
   // Created.
   auto *createdLabel =
-      new QLabel(p_nodeInfo.createdTimeUtc.toLocalTime().toString(), mainWidget);
+      new QLabel(Utils::dateTimeString(p_nodeInfo.createdTimeUtc.toLocalTime()), mainWidget);
   mainLayout->addRow(tr("Created"), createdLabel);
 
   // Modified.
   auto *modifiedLabel =
-      new QLabel(p_nodeInfo.modifiedTimeUtc.toLocalTime().toString(), mainWidget);
+      new QLabel(Utils::dateTimeString(p_nodeInfo.modifiedTimeUtc.toLocalTime()), mainWidget);
   mainLayout->addRow(tr("Modified"), modifiedLabel);
 
   // Children (folders only).
