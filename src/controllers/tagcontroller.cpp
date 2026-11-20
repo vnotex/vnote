@@ -1,27 +1,24 @@
 #include "tagcontroller.h"
 
-#include <QJsonObject>
-#include <QJsonValue>
-
 #include <QSet>
 
 #include <core/servicelocator.h>
 #include <core/services/tagcoreservice.h>
 #include <core/services/tagservice.h>
 
-#include <vxcore/notebook_json_keys.h>
-
 using namespace vnotex;
 
 TagController::TagController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+    : QObject(p_parent), m_services(p_services) {
+  qRegisterMetaType<QVector<TagFileMatch>>();
+}
 
 void TagController::setNotebookId(const QString &p_notebookId) { m_notebookId = p_notebookId; }
 
 void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   if (p_selectedTags.isEmpty()) {
-    m_matchingNodes = QJsonArray();
-    emit matchingNodesChanged(QJsonArray());
+    m_matchingNodes.clear();
+    emit matchingNodesChanged(m_matchingNodes);
     emit tagCompatibilityChanged(QStringList());
     return;
   }
@@ -29,8 +26,8 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   const QString notebookId = m_notebookId;
   if (notebookId.isEmpty()) {
     emit errorOccurred(tr("Tags"), tr("No notebook selected."));
-    m_matchingNodes = QJsonArray();
-    emit matchingNodesChanged(QJsonArray());
+    m_matchingNodes.clear();
+    emit matchingNodesChanged(m_matchingNodes);
     emit tagCompatibilityChanged(QStringList());
     return;
   }
@@ -39,28 +36,24 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   auto *tagCoreService = m_services.get<TagCoreService>();
   if (!tagService || !tagCoreService) {
     emit errorOccurred(tr("Tags"), tr("Tag service is not available."));
-    m_matchingNodes = QJsonArray();
-    emit matchingNodesChanged(QJsonArray());
+    m_matchingNodes.clear();
+    emit matchingNodesChanged(m_matchingNodes);
     emit tagCompatibilityChanged(QStringList());
     return;
   }
 
-  QJsonArray rawNodes = tagService->findFilesByTags(notebookId, p_selectedTags);
+  m_matchingNodes = tagService->findFilesByTags(notebookId, p_selectedTags);
 
-  // Inject notebookId into each match object — vxcore doesn't include it.
-  m_matchingNodes = QJsonArray();
+  // Native matches have no notebook attribution; preserve explicit per-item values.
   QSet<QString> compatibleTags;
-  for (const QJsonValue &val : rawNodes) {
-    QJsonObject obj = val.toObject();
-    if (!obj.contains(QLatin1String(vxcore::kJsonKeyNotebookId))) {
-      obj.insert(QLatin1String(vxcore::kJsonKeyNotebookId), notebookId);
+  for (auto &node : m_matchingNodes) {
+    if (node.m_notebookId.isNull()) {
+      node.m_notebookId = notebookId;
     }
-    m_matchingNodes.append(obj);
     // Each match contains its complete tag set. A tag can extend this AND selection
     // exactly when it occurs on one of the notes already matching the selection.
-    const auto tags = obj.value(QStringLiteral("tags")).toArray();
-    for (const auto &tag : tags) {
-      compatibleTags.insert(tag.toString());
+    for (const auto &tag : node.m_tags) {
+      compatibleTags.insert(tag);
     }
   }
   emit matchingNodesChanged(m_matchingNodes);
@@ -71,9 +64,9 @@ void TagController::onTagsSelected(const QStringList &p_selectedTags) {
   }
   QStringList incompatibleTags;
 
-  const QJsonArray allTags = tagCoreService->listTags(notebookId);
-  for (const auto &tagValue : allTags) {
-    const QString tagName = extractTagName(tagValue);
+  const auto allTags = tagCoreService->listTags(notebookId);
+  for (const auto &tag : allTags) {
+    const auto &tagName = tag.m_name;
     if (!tagName.isEmpty() && !selectedTagSet.contains(tagName) &&
         !compatibleTags.contains(tagName)) {
       incompatibleTags.append(tagName);
@@ -92,8 +85,10 @@ void TagController::onNodeActivated(const NodeIdentifier &p_nodeId) {
     return;
   }
 
-  for (const auto &nodeValue : m_matchingNodes) {
-    NodeIdentifier nodeId = extractNodeIdentifier(nodeValue);
+  for (const auto &node : m_matchingNodes) {
+    NodeIdentifier nodeId;
+    nodeId.notebookId = node.m_notebookId.isNull() ? m_notebookId : node.m_notebookId;
+    nodeId.relativePath = node.m_filePath;
     if (nodeId.isValid()) {
       emit openNodeRequested(nodeId);
       return;
@@ -223,48 +218,4 @@ QString TagController::resolveNotebookId(const QString &p_notebookId) const {
     return p_notebookId;
   }
   return m_notebookId;
-}
-
-QString TagController::extractTagName(const QJsonValue &p_tagValue) const {
-  if (p_tagValue.isString()) {
-    return p_tagValue.toString();
-  }
-
-  const QJsonObject tagObj = p_tagValue.toObject();
-  return tagObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
-}
-
-NodeIdentifier TagController::extractNodeIdentifier(const QJsonValue &p_nodeValue) const {
-  NodeIdentifier nodeId;
-
-  const QJsonObject nodeObj = p_nodeValue.toObject();
-  if (nodeObj.isEmpty()) {
-    return nodeId;
-  }
-
-  const QString notebookId = nodeObj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
-  if (!notebookId.isEmpty()) {
-    nodeId.notebookId = notebookId;
-  } else {
-    nodeId.notebookId = m_notebookId;
-  }
-
-  const QString relativePath = nodeObj.value(QString(QLatin1String("relativePath"))).toString();
-  if (!relativePath.isEmpty()) {
-    nodeId.relativePath = relativePath;
-    return nodeId;
-  }
-
-  const QString filePath = nodeObj.value(QString(QLatin1String("filePath"))).toString();
-  if (!filePath.isEmpty()) {
-    nodeId.relativePath = filePath;
-    return nodeId;
-  }
-
-  const QString path = nodeObj.value(QString(QLatin1String("path"))).toString();
-  if (!path.isEmpty()) {
-    nodeId.relativePath = path;
-  }
-
-  return nodeId;
 }

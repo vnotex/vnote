@@ -4,14 +4,12 @@
 #include <atomic>
 #include <functional>
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QObject>
 #include <QString>
 
 #include "core/error.h"
 #include "core/noncopyable.h"
+#include "core/searchresulttypes.h"
 
 #include <vxcore/vxcore_types.h>
 
@@ -33,20 +31,20 @@ public:
   // @p_queryJson: JSON search query (pattern, options, etc.).
   // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
-  // @p_results: Output parameter for search results (the "matches" array).
+  // @p_results: Owning output, reset on error; retains native truncation.
   // @return: Error code (Ok on success).
   Error searchFiles(const QString &p_notebookId, const QString &p_queryJson,
-                    const QString &p_inputFilesJson, QJsonArray *p_results) const;
+                    const QString &p_inputFilesJson, SearchResult *p_results) const;
 
   // Search file content.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (pattern, options, etc.).
   // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
-  // @p_results: Output parameter for search results (the "matches" array).
+  // @p_results: Owning ungrouped output, reset on error.
   // @return: Error code (Ok on success).
   Error searchContent(const QString &p_notebookId, const QString &p_queryJson,
-                      const QString &p_inputFilesJson, QJsonArray *p_results) const;
+                      const QString &p_inputFilesJson, SearchContentResult *p_results) const;
 
   // Search file content with cooperative cancellation support.
   // @p_notebookId: Target notebook ID.
@@ -54,27 +52,25 @@ public:
   // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays.
   // @p_cancelFlag: Atomic flag that can be set non-zero from another thread to cancel.
   //   If nullptr, behaves like searchContent().
-  // @p_resultObj: Output parameter for the FULL vxcore JSON response
-  //   (contains "matchCount", "truncated", "matches" keys).
+  // @p_result: Owning ungrouped blob output, including truncation and skipped facts.
   // @return: Error code (Ok on success, Cancelled if cancelled).
   Error searchContentCancellable(const QString &p_notebookId, const QString &p_queryJson,
                                  const QString &p_inputFilesJson, std::atomic<int> *p_cancelFlag,
-                                 QJsonObject *p_resultObj) const;
+                                 SearchContentResult *p_result) const;
 
   // Callback invoked once per file-chunk batch during streaming content search.
   // MAY be invoked concurrently from multiple vxcore drain threads; the callback MUST be
   // thread-safe and MUST NOT re-enter SearchCoreService / vxcore synchronously.
   // @p_batchIndex: chunk position in input-file order (chunk 0 == files[0..batchSize)).
-  // @p_totalBatches: total chunk count computed up front. Zero-file search yields
-  //   totalBatches == 0 and the callback never fires.
-  // @p_batchObj: parsed batch JSON in the content-search shape
-  //   ({"matchCount":N,"truncated":false,"matches":[...]}). "truncated" is always false;
-  //   the streaming primitive owns no truncation.
+  // @p_totalBatches: total chunk count computed up front. A plain zero-file scan
+  //   emits none; an all-encrypted scan emits one empty batch with skipped facts.
+  // @p_batch: Owning ungrouped values, safe to copy/retain. Truncated is always false.
+  //   The callback must not throw; no borrowed C pointer is exposed here.
   using SearchBatchCallback =
-      std::function<void(int p_batchIndex, int p_totalBatches, const QJsonObject &p_batchObj)>;
+      std::function<void(int p_batchIndex, int p_totalBatches, const SearchContentResult &p_batch)>;
 
   // Streaming content search: delivers matches in file-chunk batches via p_onBatch instead of
-  // one aggregated blob. Thin wrapper over vxcore_search_content_streaming.
+  // one aggregated blob. Thin wrapper over vxcore_search_content_streaming_typed.
   // @p_notebookId: Target notebook ID.
   // @p_queryJson: JSON search query (pattern, options, etc.).
   // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays.
@@ -94,10 +90,10 @@ public:
   // @p_queryJson: JSON search query (tags array, options, etc.).
   // @p_inputFilesJson: Optional JSON object with "files" and "folders" arrays:
   //   {"files":[...],"folders":[...]}. Empty string means no scope restriction.
-  // @p_results: Output parameter for search results (the "matches" array).
+  // @p_results: Owning output, reset on error; retains native truncation.
   // @return: Error code (Ok on success).
   Error searchByTags(const QString &p_notebookId, const QString &p_queryJson,
-                     const QString &p_inputFilesJson, QJsonArray *p_results) const;
+                     const QString &p_inputFilesJson, SearchResult *p_results) const;
 
   // Whether normalized backend ordering guarantees Simple search replacement addresses.
   // Unreadable/malformed configuration fails closed; rg is never probed for availability.
@@ -113,14 +109,6 @@ private:
 
   // Helper to convert VxCoreError to Error.
   Error vxcoreErrorToError(VxCoreError p_error, const QString &p_operation) const;
-
-  // Parse vxcore JSON search response, extracting "matches" into p_results.
-  // Frees p_json via vxcore_string_free.
-  Error parseSearchResponse(char *p_json, QJsonArray *p_results) const;
-
-  // Parse vxcore JSON search response, returning the FULL JSON object.
-  // Frees p_json via vxcore_string_free.
-  Error parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const;
 };
 
 } // namespace vnotex

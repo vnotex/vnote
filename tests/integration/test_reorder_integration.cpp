@@ -115,9 +115,9 @@ QStringList filesFromVxJson(const QJsonObject &p_obj) {
 QStringList listChildFolders(NotebookCoreService &p_svc, const QString &p_notebookId,
                              const QString &p_folderPath = QString()) {
   QStringList out;
-  const QJsonObject obj = p_svc.listFolderChildren(p_notebookId, p_folderPath);
-  for (const QJsonValue &v : obj.value(QStringLiteral("folders")).toArray()) {
-    out.append(v.toObject().value(QStringLiteral("name")).toString());
+  const FolderListing children = p_svc.listFolderChildren(p_notebookId, p_folderPath);
+  for (const FolderEntry &child : children.m_folders) {
+    out.append(child.m_name);
   }
   return out;
 }
@@ -125,9 +125,9 @@ QStringList listChildFolders(NotebookCoreService &p_svc, const QString &p_notebo
 QStringList listChildFiles(NotebookCoreService &p_svc, const QString &p_notebookId,
                            const QString &p_folderPath = QString()) {
   QStringList out;
-  const QJsonObject obj = p_svc.listFolderChildren(p_notebookId, p_folderPath);
-  for (const QJsonValue &v : obj.value(QStringLiteral("files")).toArray()) {
-    out.append(v.toObject().value(QStringLiteral("name")).toString());
+  const FolderListing children = p_svc.listFolderChildren(p_notebookId, p_folderPath);
+  for (const FolderEntry &child : children.m_files) {
+    out.append(child.m_name);
   }
   return out;
 }

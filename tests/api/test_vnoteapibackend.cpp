@@ -336,6 +336,92 @@ private slots:
     fixture.buffers->unregisterActiveWriter(protectedBuffer.id(), 2);
   }
 
+  void listingAndMetadataPreserveProtectionPolicy_data() {
+    QTest::addColumn<int>("notebookType");
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<bool>("metadataEncrypted");
+    QTest::addColumn<bool>("protectedSuffix");
+    for (const auto type : {NotebookType::Bundled, NotebookType::Raw}) {
+      const auto prefix =
+          type == NotebookType::Bundled ? QByteArrayLiteral("bundled-") : QByteArrayLiteral("raw-");
+      QTest::newRow((prefix + "ordinary").constData())
+          << static_cast<int>(type) << QStringLiteral("policy-ordinary.md") << false << false;
+      QTest::newRow((prefix + "metadata-marked").constData())
+          << static_cast<int>(type) << QStringLiteral("policy-marked.md") << true << false;
+      QTest::newRow((prefix + "protected-suffix").constData())
+          << static_cast<int>(type) << QStringLiteral("policy-secret.vne") << false << true;
+      QTest::newRow((prefix + "mixed-case-suffix").constData())
+          << static_cast<int>(type) << QStringLiteral("policy-secret.VnE") << false << true;
+      QTest::newRow((prefix + "suffix-not-at-end").constData())
+          << static_cast<int>(type) << QStringLiteral("policy-ordinary.vne.md") << false << false;
+    }
+  }
+
+  void listingAndMetadataPreserveProtectionPolicy() {
+    QFETCH(int, notebookType);
+    QFETCH(QString, name);
+    QFETCH(bool, metadataEncrypted);
+    QFETCH(bool, protectedSuffix);
+    Fixture fixture;
+    QVERIFY(fixture.init(static_cast<NotebookType>(notebookType)));
+    const auto body = QByteArrayLiteral("policy-content-needle\n");
+    QVERIFY(writeFile(fixture.notebooks->buildAbsolutePath(fixture.notebookId, name), body));
+    if (notebookType == static_cast<int>(NotebookType::Bundled))
+      QVERIFY(fixture.notebooks->indexNode(fixture.notebookId, name));
+    const auto id = fixture.notebooks->getFileInfo(fixture.notebookId, name).value("id").toString();
+    QVERIFY(!id.isEmpty());
+    if (metadataEncrypted) {
+      QVERIFY(fixture.notebooks->updateFileMetadata(fixture.notebookId, name,
+                                                    QStringLiteral("{\"encrypted\":true}")));
+    }
+
+    const auto listing = fixture.execute(fixture.command(ApiCommandKind::ListNodes));
+    QCOMPARE(listing.error.status, 0);
+    const auto listed = listing.data.value("items").toArray();
+    QCOMPARE(listed.size(), protectedSuffix ? 0 : 1);
+    const auto metadata = fixture.execute(fixture.command(ApiCommandKind::ReadNote, id));
+    const auto content = fixture.execute(fixture.command(ApiCommandKind::ReadContent, id));
+    if (protectedSuffix) {
+      QCOMPARE(metadata.error.code, QStringLiteral("protected_note_unavailable"));
+      QVERIFY(metadata.data.isEmpty());
+      QCOMPARE(content.error.code, QStringLiteral("protected_note_unavailable"));
+      QVERIFY(content.data.isEmpty());
+    } else {
+      QCOMPARE(metadata.error.status, 0);
+      QCOMPARE(content.error.status, 0);
+      QCOMPARE(content.data.value("text").toString().toUtf8(), body);
+      QCOMPARE(listed.first().toObject().value("id").toString(), id);
+      QCOMPARE(listed.first().toObject().value("name").toString(), name);
+      QCOMPARE(metadata.data.value("id").toString(), id);
+      QCOMPARE(metadata.data.value("name").toString(), name);
+      for (const auto &node : {listed.first().toObject(), metadata.data}) {
+        const auto capabilities = node.value("capabilities").toObject();
+        QVERIFY(capabilities.value("stableId").toBool());
+        QVERIFY(capabilities.value("readContent").toBool());
+        QVERIFY(capabilities.value("writeContent").toBool());
+        QVERIFY(capabilities.value("rename").toBool());
+        QCOMPARE(capabilities.value("trash").toBool(),
+                 notebookType == static_cast<int>(NotebookType::Bundled));
+      }
+    }
+
+    for (const bool searchContent : {false, true}) {
+      auto search = fixture.command(ApiCommandKind::Search);
+      search.searchContent = searchContent;
+      search.query =
+          searchContent ? QStringLiteral("policy-content-needle") : QStringLiteral("policy-");
+      const auto result = fixture.execute(search);
+      QCOMPARE(result.error.status, 0);
+      const auto matches = result.data.value("items").toArray();
+      // Content search retains its independent metadata-encryption filter. HTTP metadata
+      // and filename candidates must not promote that nested marker to a top-level flag.
+      const bool excluded = protectedSuffix || (searchContent && metadataEncrypted);
+      QCOMPARE(matches.size(), excluded ? 0 : 1);
+      if (!excluded)
+        QCOMPARE(matches.first().toObject().value("id").toString(), id);
+    }
+  }
+
   void specializedMetadataAndLosslessEncoding() {
     Fixture fixture;
     QVERIFY(fixture.init());

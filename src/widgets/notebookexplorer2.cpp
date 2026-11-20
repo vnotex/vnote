@@ -2351,11 +2351,11 @@ void NotebookExplorer2::onSortRequested(const NodeIdentifier &p_parentId,
     return;
   }
 
-  const QJsonObject childrenJson =
+  const FolderListing children =
       notebookService->listFolderChildren(p_parentId.notebookId, p_parentId.relativePath);
 
   const SortDialogResult result =
-      runSortDialogsForChildren(p_parentId, p_currentNodeId, childrenJson, this);
+      runSortDialogsForChildren(p_parentId, p_currentNodeId, children, this);
 
   if (!result.newFolderOrder.isEmpty() || !result.newFileOrder.isEmpty()) {
     m_nodeExplorer->requestReorderNodes(p_parentId, result.newFolderOrder, result.newFileOrder);

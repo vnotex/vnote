@@ -48,6 +48,8 @@ private slots:
   void hierarchyChangesPreserveSelectionAndReveal();
   void hiddenNotebookSwitch();
   void compatibilityUsesMatchingIntersection();
+  void typedMatchesPreserveOwnershipAndActivation();
+  void typedMatchesPreserveNotebookAttribution();
   void postSyncPublicationDefersWhileHidden();
   void badgeWidthUpdatesWithoutReset();
 
@@ -383,6 +385,69 @@ void TestTagExplorer2::compatibilityUsesMatchingIntersection() {
   QVERIFY(
       !(m_model->flags(m_model->indexFromTagName(QStringLiteral("Extra"))) & Qt::ItemIsEnabled));
   QCOMPARE(m_view->selectedTagNames().size(), 2);
+}
+
+void TestTagExplorer2::typedMatchesPreserveOwnershipAndActivation() {
+  m_panel->setNotebookId(m_notebookId);
+  showTags();
+  auto *controller = m_panel->findChild<TagController *>();
+  QVERIFY(controller);
+  QSignalSpy matches(controller, &TagController::matchingNodesChanged);
+  QSignalSpy opened(m_panel, &TagExplorer2::openNodeRequested);
+  QVector<QVector<TagFileMatch>> queuedMatches;
+  QObject receiver;
+  connect(
+      controller, &TagController::matchingNodesChanged, &receiver,
+      [&queuedMatches](const QVector<TagFileMatch> &p_matches) { queuedMatches.append(p_matches); },
+      Qt::QueuedConnection);
+
+  controller->onTagsSelected({QStringLiteral("Parent")});
+  QCOMPARE(matches.size(), 1);
+  const auto snapshot = matches.first().first().value<QVector<TagFileMatch>>();
+  QCOMPARE(snapshot.size(), 1);
+  QCOMPARE(snapshot.first().m_filePath, QStringLiteral("one.md"));
+  QCOMPARE(snapshot.first().m_fileName, QStringLiteral("one.md"));
+  QCOMPARE(snapshot.first().m_notebookId, m_notebookId);
+  QCOMPARE(snapshot.first().m_tags.size(), 2);
+  QVERIFY(snapshot.first().m_tags.contains(QStringLiteral("Parent")));
+  QVERIFY(snapshot.first().m_tags.contains(QStringLiteral("Child")));
+  const auto node = m_files->nodeInfoFromIndex(m_files->index(0, 0));
+  QCOMPARE(node.tags, snapshot.first().m_tags);
+  controller->onNodeActivated(node.id);
+  controller->onNodeActivated(NodeIdentifier());
+  QCOMPARE(opened.size(), 2);
+  for (const auto &arguments : opened) {
+    QCOMPARE(arguments.first().value<NodeIdentifier>(), node.id);
+  }
+
+  // Clearing the controller cache must not invalidate an already queued payload.
+  controller->onTagsSelected({});
+  QCOMPARE(m_files->rowCount(), 0);
+  drainEvents();
+  QCOMPARE(queuedMatches.size(), 2);
+  QCOMPARE(queuedMatches.first(), snapshot);
+  QVERIFY(queuedMatches.last().isEmpty());
+}
+
+void TestTagExplorer2::typedMatchesPreserveNotebookAttribution() {
+  m_panel->setNotebookId(m_notebookId);
+  auto *controller = m_panel->findChild<TagController *>();
+  QVERIFY(controller);
+  TagFileMatch absent;
+  absent.m_filePath = QStringLiteral("one.md");
+  TagFileMatch explicitEmpty = absent;
+  explicitEmpty.m_notebookId = QStringLiteral("");
+  TagFileMatch explicitNotebook = absent;
+  explicitNotebook.m_notebookId = QStringLiteral("other-notebook");
+  emit controller->matchingNodesChanged({absent, explicitEmpty, explicitNotebook});
+
+  QCOMPARE(m_files->rowCount(), 3);
+  QCOMPARE(m_files->nodeIdFromIndex(m_files->index(0, 0)).notebookId, m_notebookId);
+  const auto emptyId = m_files->nodeIdFromIndex(m_files->index(1, 0));
+  QVERIFY(emptyId.notebookId.isEmpty());
+  QVERIFY(!emptyId.notebookId.isNull());
+  QCOMPARE(m_files->nodeIdFromIndex(m_files->index(2, 0)).notebookId,
+           QStringLiteral("other-notebook"));
 }
 
 void TestTagExplorer2::postSyncPublicationDefersWhileHidden() {

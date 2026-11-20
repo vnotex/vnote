@@ -1,6 +1,7 @@
-#include <QtTest>
 #include <QFile>
+#include <QJsonArray>
 #include <QTemporaryDir>
+#include <QtTest>
 
 #include <core/hookcontext.h>
 #include <core/hookevents.h>
@@ -34,6 +35,9 @@ private slots:
   void testUntagFile();
   void testUpdateFileTags();
   void testSearchByTags();
+  void testTypedSnapshots();
+  void testTypedRawNotebook();
+  void testTypedMetadataValueKinds();
 
   // ===== TagService hook tests =====
   void testCreateTagHookFires();
@@ -134,10 +138,10 @@ void TestTagService::testCreateAndDeleteTag() {
   QVERIFY(m_tagCoreService->createTag(nbId, "TestTag"));
 
   // Verify tag appears in listTags.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  auto tags = m_tagCoreService->listTags(nbId);
   bool found = false;
   for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "TestTag") {
+    if (tagVal.m_name == "TestTag") {
       found = true;
       break;
     }
@@ -151,7 +155,7 @@ void TestTagService::testCreateAndDeleteTag() {
   tags = m_tagCoreService->listTags(nbId);
   found = false;
   for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "TestTag") {
+    if (tagVal.m_name == "TestTag") {
       found = true;
       break;
     }
@@ -168,11 +172,11 @@ void TestTagService::testCreateTagPath() {
   QVERIFY(m_tagCoreService->createTagPath(nbId, "Parent/Child"));
 
   // Verify both tags appear in listTags.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundParent = false;
   bool foundChild = false;
   for (const auto &tagVal : tags) {
-    QString name = tagVal.toObject()["name"].toString();
+    const QString &name = tagVal.m_name;
     if (name == "Parent") {
       foundParent = true;
     }
@@ -195,12 +199,12 @@ void TestTagService::testListTags() {
   QVERIFY(m_tagCoreService->createTag(nbId, "Gamma"));
 
   // Verify all are returned.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   QVERIFY(tags.size() >= 3);
 
   QSet<QString> tagNames;
   for (const auto &tagVal : tags) {
-    tagNames.insert(tagVal.toObject()["name"].toString());
+    tagNames.insert(tagVal.m_name);
   }
   QVERIFY(tagNames.contains("Alpha"));
   QVERIFY(tagNames.contains("Beta"));
@@ -220,19 +224,18 @@ void TestTagService::testMoveTag() {
   QVERIFY(m_tagCoreService->moveTag(nbId, "ChildTag", "ParentTag"));
 
   // Verify both tags still exist (move doesn't delete).
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundParent = false;
   bool foundChild = false;
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    QString name = tagObj["name"].toString();
+    const QString &name = tagVal.m_name;
     if (name == "ParentTag") {
       foundParent = true;
     }
     if (name == "ChildTag") {
       foundChild = true;
       // Verify parent field changed.
-      QCOMPARE(tagObj["parent"].toString(), QStringLiteral("ParentTag"));
+      QCOMPARE(tagVal.m_parent, QStringLiteral("ParentTag"));
     }
   }
   QVERIFY(foundParent);
@@ -276,10 +279,10 @@ void TestTagService::testUntagFile() {
   QVERIFY(!fileInfo.isEmpty());
 
   // Search by the removed tag should NOT find the file.
-  QJsonArray results = m_tagCoreService->searchByTags(nbId, QStringList() << "RemoveTag");
+  const auto results = m_tagCoreService->searchByTags(nbId, QStringList() << "RemoveTag");
   bool found = false;
-  for (const auto &resultVal : results) {
-    if (resultVal.toObject()["path"].toString() == "untagged.md") {
+  for (const auto &resultVal : results.m_fileResults) {
+    if (resultVal.m_path == "untagged.md") {
       found = true;
       break;
     }
@@ -303,10 +306,10 @@ void TestTagService::testUpdateFileTags() {
   QVERIFY(m_tagCoreService->updateFileTags(nbId, "multi.md", tagsJson));
 
   // Search by TagA should find the file.
-  QJsonArray results = m_tagCoreService->searchByTags(nbId, QStringList() << "TagA");
+  const auto results = m_tagCoreService->searchByTags(nbId, QStringList() << "TagA");
   bool found = false;
-  for (const auto &resultVal : results) {
-    if (resultVal.toObject()["path"].toString() == "multi.md") {
+  for (const auto &resultVal : results.m_fileResults) {
+    if (resultVal.m_path == "multi.md") {
       found = true;
       break;
     }
@@ -330,11 +333,11 @@ void TestTagService::testSearchByTags() {
   QVERIFY(m_tagCoreService->tagFile(nbId, "file2.md", "SearchTag2"));
 
   // Search by SearchTag1.
-  QJsonArray results = m_tagCoreService->searchByTags(nbId, QStringList() << "SearchTag1");
+  auto results = m_tagCoreService->searchByTags(nbId, QStringList() << "SearchTag1");
   bool foundFile1 = false;
   bool foundFile2 = false;
-  for (const auto &resultVal : results) {
-    QString path = resultVal.toObject()["path"].toString();
+  for (const auto &resultVal : results.m_fileResults) {
+    const QString &path = resultVal.m_path;
     if (path == "file1.md") {
       foundFile1 = true;
     }
@@ -349,8 +352,8 @@ void TestTagService::testSearchByTags() {
   results = m_tagCoreService->searchByTags(nbId, QStringList() << "SearchTag2");
   foundFile1 = false;
   foundFile2 = false;
-  for (const auto &resultVal : results) {
-    QString path = resultVal.toObject()["path"].toString();
+  for (const auto &resultVal : results.m_fileResults) {
+    const QString &path = resultVal.m_path;
     if (path == "file1.md") {
       foundFile1 = true;
     }
@@ -360,6 +363,61 @@ void TestTagService::testSearchByTags() {
   }
   QVERIFY(!foundFile1);
   QVERIFY(foundFile2);
+}
+
+void TestTagService::testTypedSnapshots() {
+  const auto nbId = createTestNotebook(m_tempDir.filePath("tc_typed_snapshots"));
+  QVERIFY(!nbId.isEmpty());
+  QVERIFY(m_tagService->createTagPath(nbId, QStringLiteral("Parent/Child")));
+  QVERIFY(m_tagService->createTag(nbId, QStringLiteral("Other")));
+  QVERIFY(!m_notebookService->createFile(nbId, QString(), QStringLiteral("complete.md")).isEmpty());
+  QVERIFY(m_tagService->updateFileTags(nbId, QStringLiteral("complete.md"),
+                                       QStringLiteral("[\"Child\",\"Other\"]")));
+
+  const auto tags = m_tagService->listTags(nbId);
+  const auto counts = m_tagService->countFilesByTag(nbId);
+  const auto files = m_tagService->findFilesByTags(nbId, {QStringLiteral("Child")});
+  const auto search = m_tagService->searchByTags(nbId, {QStringLiteral("Child")});
+  QCOMPARE(tags.size(), 3);
+  QCOMPARE(tags[1].m_name, QStringLiteral("Child"));
+  QCOMPARE(tags[1].m_parent, QStringLiteral("Parent"));
+  QCOMPARE(tags[1].m_metadata, QJsonValue(QJsonObject()));
+  QCOMPARE(files.size(), 1);
+  QCOMPARE(files.first().m_filePath, QStringLiteral("complete.md"));
+  QCOMPARE(files.first().m_fileName, QStringLiteral("complete.md"));
+  QCOMPARE(files.first().m_tags, (QStringList{QStringLiteral("Child"), QStringLiteral("Other")}));
+  QVERIFY(files.first().m_notebookId.isNull());
+  QCOMPARE(search.m_fileResults.size(), 1);
+  QCOMPARE(search.m_fileResults.first().m_tags, files.first().m_tags);
+  QCOMPARE(search.m_fileResults.first().m_notebookId, nbId);
+  QHash<QString, qint64> directCounts;
+  for (const auto &count : counts) {
+    directCounts.insert(count.m_tag, count.m_count);
+  }
+  QCOMPARE(directCounts.value(QStringLiteral("Child"), -1), qint64(1));
+  QCOMPARE(directCounts.value(QStringLiteral("Other"), -1), qint64(1));
+  // A parent must not inherit its child's associations; an unindexed count is unknown.
+  QVERIFY(!directCounts.contains(QStringLiteral("Parent")) ||
+          directCounts.value(QStringLiteral("Parent")) == 0);
+  QVERIFY(m_tagService->findFilesByTags(nbId, {}, QStringLiteral("AND")).isEmpty());
+  QVERIFY(m_tagService->findFilesByTags(nbId, {}, QStringLiteral("OR")).isEmpty());
+
+  QVERIFY(m_tagService->untagFile(nbId, QStringLiteral("complete.md"), QStringLiteral("Other")));
+  QVERIFY(m_tagService->moveTag(nbId, QStringLiteral("Child"), QString()));
+  QVERIFY(m_notebookService->closeNotebook(nbId));
+  QCOMPARE(tags[1].m_parent, QStringLiteral("Parent"));
+  QCOMPARE(files.first().m_tags.size(), 2);
+  QCOMPARE(search.m_fileResults.first().m_path, QStringLiteral("complete.md"));
+  QCOMPARE(directCounts.value(QStringLiteral("Other")), qint64(1));
+}
+
+void TestTagService::testTypedRawNotebook() {
+  const auto nbId = m_notebookService->createNotebook(m_tempDir.filePath("tc_typed_raw"),
+                                                      QStringLiteral("{}"), NotebookType::Raw);
+  QVERIFY(!nbId.isEmpty());
+  QVERIFY(m_tagCoreService->listTags(nbId).isEmpty());
+  QVERIFY(m_tagCoreService->countFilesByTag(nbId).isEmpty());
+  QVERIFY(m_tagCoreService->findFilesByTags(nbId, {}, QStringLiteral("AND")).isEmpty());
 }
 
 // ===== TagService hook tests =====
@@ -410,17 +468,17 @@ void TestTagService::testCreateTagCancelledByHook() {
   QVERIFY(!nbId.isEmpty());
 
   int hookId = m_hookMgr->addAction(
-      HookNames::TagBeforeCreate,
-      [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); }, 10);
+      HookNames::TagBeforeCreate, [](HookContext &p_ctx, const QVariantMap &) { p_ctx.cancel(); },
+      10);
 
   bool result = m_tagService->createTag(nbId, "CancelledTag");
   QVERIFY(!result);
 
   // Verify tag was NOT created.
-  QJsonArray tags = m_tagService->listTags(nbId);
+  const auto tags = m_tagService->listTags(nbId);
   bool found = false;
   for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "CancelledTag") {
+    if (tagVal.m_name == "CancelledTag") {
       found = true;
       break;
     }
@@ -573,8 +631,7 @@ void TestTagService::testUntagFileHookFires() {
   QVERIFY(beforeFired);
   QVERIFY(afterFired);
   QCOMPARE(capturedArgs[QStringLiteral("notebookId")].toString(), nbId);
-  QCOMPARE(capturedArgs[QStringLiteral("filePath")].toString(),
-           QStringLiteral("hookuntagged.md"));
+  QCOMPARE(capturedArgs[QStringLiteral("filePath")].toString(), QStringLiteral("hookuntagged.md"));
   QCOMPARE(capturedArgs[QStringLiteral("tagName")].toString(), QStringLiteral("UntagHookTag"));
   QCOMPARE(capturedArgs[QStringLiteral("operation")].toString(), QStringLiteral("untag"));
 
@@ -600,7 +657,7 @@ void TestTagService::testListTagsNoHook() {
   int id5 = m_hookMgr->addAction(HookNames::TagBeforeMove, counter, 10);
   int id6 = m_hookMgr->addAction(HookNames::TagAfterMove, counter, 10);
 
-  QJsonArray tags = m_tagService->listTags(nbId);
+  const auto tags = m_tagService->listTags(nbId);
   QVERIFY(tags.size() > 0);
   QCOMPARE(hookCallCount, 0);
 
@@ -632,9 +689,9 @@ void TestTagService::testSearchByTagsNoHook() {
   int id5 = m_hookMgr->addAction(HookNames::FileBeforeUntag, counter, 10);
   int id6 = m_hookMgr->addAction(HookNames::FileAfterUntag, counter, 10);
 
-  QJsonArray results = m_tagService->searchByTags(nbId, QStringList() << "NoHookSearchTag");
+  const auto results = m_tagService->searchByTags(nbId, QStringList() << "NoHookSearchTag");
   // The search itself should work.
-  QVERIFY(results.size() > 0);
+  QVERIFY(!results.m_fileResults.isEmpty());
   // But no hooks should have fired.
   QCOMPARE(hookCallCount, 0);
 
@@ -644,6 +701,23 @@ void TestTagService::testSearchByTagsNoHook() {
   m_hookMgr->removeAction(id4);
   m_hookMgr->removeAction(id5);
   m_hookMgr->removeAction(id6);
+}
+
+void TestTagService::testTypedMetadataValueKinds() {
+  // Byte views are not required to be NUL-terminated. Null metadata is not {}.
+  const char nullJson[] = {'n', 'u', 'l', 'l'};
+  const char arrayJson[] = {'[', '1', ',', 'n', 'u', 'l', 'l', ']'};
+  const VxCoreTagEntryView entries[] = {{{"empty", 5}, {}, {}},
+                                        {{"null", 4}, {}, {nullJson, sizeof(nullJson)}},
+                                        {{"array", 5}, {}, {arrayJson, sizeof(arrayJson)}}};
+  const VxCoreTagListView view{entries, 3};
+  const auto tags = TagCoreService::tagsFromView(view);
+  QVERIFY(tags[0].m_metadata.isObject());
+  QVERIFY(tags[1].m_metadata.isNull());
+  QVERIFY(tags[2].m_metadata.isArray());
+  const auto values = tags[2].m_metadata.toArray();
+  QCOMPARE(values[0].toInt(), 1);
+  QVERIFY(values[1].isNull());
 }
 
 } // namespace tests

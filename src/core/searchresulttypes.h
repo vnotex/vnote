@@ -3,11 +3,35 @@
 
 #include <QMetaType>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
-class QJsonObject;
+#include <vxcore/vxcore_results.h>
 
 namespace vnotex {
+
+// Owning occurrence-level values. Keep these ungrouped until the worker has applied
+// its deterministic raw-occurrence cap. No C view escapes conversion.
+struct SearchOccurrence {
+  int m_lineNumber = -1;
+  int m_columnStart = 0;
+  int m_columnEnd = 0;
+  QString m_lineText;
+};
+
+struct SearchContentFile {
+  QString m_path;
+  QString m_id;
+  QVector<SearchOccurrence> m_matches;
+};
+
+struct SearchContentResult {
+  QVector<SearchContentFile> m_files;
+  bool m_truncated = false;
+  int m_encryptedSkippedCount = 0;
+
+  static SearchContentResult fromView(const VxCoreContentSearchView &p_view);
+};
 
 // A single matched column range within a line. Simple-backed replacement addresses use
 // 0-based UTF-16 columns with an end-exclusive endpoint.
@@ -37,6 +61,9 @@ struct SearchFileResult {
   QString m_absolutePath; // Absolute filesystem path (file search only)
   QString m_id;           // Node ID (GUID)
   QString m_notebookId;   // Notebook GUID (set by caller)
+  QStringList m_tags;
+  qint64 m_createdUtc = 0;
+  qint64 m_modifiedUtc = 0;
 
   // Total match occurrences in this file (content search only). Distinct from
   // m_lineMatches.size(), which counts matched LINES after same-line grouping.
@@ -46,7 +73,7 @@ struct SearchFileResult {
   QVector<SearchLineMatch> m_lineMatches;
 
   // Qt-side provenance, set only on successful completed Simple-backed content searches.
-  // JSON parsing, streaming previews, and file/tag results never grant this capability.
+  // Typed conversion, streaming previews, and file/tag results never grant this capability.
   bool m_replacementSupported = false;
 };
 
@@ -57,15 +84,13 @@ struct SearchResult {
   bool m_truncated = false;
   int m_encryptedSkippedCount = 0;
 
-  // Build from vxcore content search JSON response.
-  // @p_json: full vxcore response with matchCount, truncated, matches.
-  // @p_notebookId: notebook GUID to stamp on each file result.
-  static SearchResult fromContentSearchJson(const QJsonObject &p_json, const QString &p_notebookId);
+  // Group already-capped occurrences, retaining first-seen line order.
+  static SearchResult fromContentSearchResult(const SearchContentResult &p_content,
+                                              const QString &p_notebookId);
 
-  // Build from vxcore file/tag search JSON response.
-  // @p_json: wrapped response with matchCount, truncated, matches.
-  // @p_notebookId: notebook GUID to stamp on each file result.
-  static SearchResult fromFileSearchJson(const QJsonObject &p_json, const QString &p_notebookId);
+  // Preserve all native file/tag fields and the native truncation fact.
+  static SearchResult fromFileSearchView(const VxCoreFileSearchView &p_view,
+                                         const QString &p_notebookId);
 };
 
 } // namespace vnotex

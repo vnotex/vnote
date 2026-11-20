@@ -7,6 +7,7 @@
 
 #include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
+#include <core/notebookresulttypes.h>
 
 class QSplitter;
 
@@ -51,7 +52,7 @@ private slots:
   void onDeleteTagRequested(const QString &p_notebookId, const QString &p_tagName);
   void onErrorOccurred(const QString &p_title, const QString &p_message);
   void onContextMenuRequested(const QString &p_tagName, const QPoint &p_globalPos);
-  void onMatchingNodesChanged(const QJsonArray &p_nodes);
+  void onMatchingNodesChanged(const QVector<TagFileMatch> &p_nodes);
 
 private:
   void setupUI();

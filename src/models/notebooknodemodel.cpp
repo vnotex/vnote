@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMimeData>
+#include <utility>
 
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
@@ -152,25 +153,21 @@ NodeIdentifier NotebookNodeModel::nodeIdForIndexId(quintptr p_indexId) const {
   return it.value();
 }
 
-QVector<NodeInfo> NotebookNodeModel::parseChildrenFromJson(const QJsonObject &p_json,
-                                                           const NodeIdentifier &p_parentId) const {
+QVector<NodeInfo> NotebookNodeModel::parseChildren(const FolderListing &p_listing,
+                                                   const NodeIdentifier &p_parentId) const {
   QVector<NodeInfo> children;
-
-  QJsonArray folders = p_json.value(QStringLiteral("folders")).toArray();
-  for (const QJsonValue &folderVal : folders) {
-    NodeInfo info = parseNodeInfoFromJson(folderVal.toObject(), p_parentId);
+  children.reserve(p_listing.m_folders.size() + p_listing.m_files.size());
+  for (const auto &folder : p_listing.m_folders) {
+    NodeInfo info = parseNodeInfo(folder, p_parentId);
     info.isFolder = true;
-    children.append(info);
+    children.append(std::move(info));
   }
-
-  QJsonArray files = p_json.value(QStringLiteral("files")).toArray();
-  for (const QJsonValue &fileVal : files) {
-    NodeInfo info = parseNodeInfoFromJson(fileVal.toObject(), p_parentId);
+  for (const auto &file : p_listing.m_files) {
+    NodeInfo info = parseNodeInfo(file, p_parentId);
     info.isFolder = false;
-    // Preview is fetched lazily via PreviewRole when requested by view
-    children.append(info);
+    // Preview is fetched lazily via PreviewRole when requested by view.
+    children.append(std::move(info));
   }
-
   return children;
 }
 
@@ -232,12 +229,12 @@ NotebookNodeModel::parseExternalNodesFromJson(const QJsonObject &p_json,
   return externals;
 }
 
-NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
-                                                  const NodeIdentifier &p_parentId) const {
+NodeInfo NotebookNodeModel::parseNodeInfo(const FolderEntry &p_entry,
+                                          const NodeIdentifier &p_parentId) const {
   NodeInfo info;
   info.id.notebookId = p_parentId.notebookId;
 
-  const QString name = p_json.value(QStringLiteral("name")).toString();
+  const QString &name = p_entry.m_name;
   info.name = name;
   if (p_parentId.relativePath.isEmpty()) {
     info.id.relativePath = name;
@@ -245,30 +242,14 @@ NodeInfo NotebookNodeModel::parseNodeInfoFromJson(const QJsonObject &p_json,
     info.id.relativePath = p_parentId.relativePath + QLatin1Char('/') + name;
   }
 
-  // Transient missing-content flag. Derived strictly from the latest listing's
-  // per-child "exists" bool (bundled notebooks). Absent or true => not missing;
-  // never sticky across reloads. Distinct from isExternal.
-  const QString existsKey = QString::fromUtf8(vxcore::kJsonKeyNodeExists);
-  info.isMissing = p_json.contains(existsKey) && !p_json.value(existsKey).toBool();
+  // Unknown existence (raw notebooks) remains not missing. Never retain a
+  // previous listing's missing state, and keep it distinct from isExternal.
+  info.isMissing = p_entry.m_existsKnown && !p_entry.m_exists;
+  info.createdTimeUtc = QDateTime::fromMSecsSinceEpoch(p_entry.m_createdUtc, Qt::UTC);
+  info.modifiedTimeUtc = QDateTime::fromMSecsSinceEpoch(p_entry.m_modifiedUtc, Qt::UTC);
+  info.tags = p_entry.m_tags;
 
-  const QJsonValue createdUtc = p_json.value(QStringLiteral("createdUtc"));
-  if (createdUtc.isDouble()) {
-    auto createdMs = static_cast<qint64>(createdUtc.toDouble());
-    info.createdTimeUtc = QDateTime::fromMSecsSinceEpoch(createdMs, Qt::UTC);
-  }
-
-  const QJsonValue modifiedUtc = p_json.value(QStringLiteral("modifiedUtc"));
-  if (modifiedUtc.isDouble()) {
-    auto modifiedMs = static_cast<qint64>(modifiedUtc.toDouble());
-    info.modifiedTimeUtc = QDateTime::fromMSecsSinceEpoch(modifiedMs, Qt::UTC);
-  }
-
-  QJsonArray tagsArray = p_json.value(QStringLiteral("tags")).toArray();
-  for (const QJsonValue &tagVal : tagsArray) {
-    info.tags.append(tagVal.toString());
-  }
-
-  QJsonObject metadata = p_json.value(QStringLiteral("metadata")).toObject();
+  const QJsonObject metadata = p_entry.m_metadata.toObject();
   info.isEncrypted = metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool();
   if (!metadata.isEmpty()) {
     info.backgroundColor = metadata.value(QStringLiteral("backgroundColor")).toString();
@@ -676,14 +657,14 @@ void NotebookNodeModel::fetchMore(const QModelIndex &p_parent) {
 
   // Fetch indexed nodes
   VxCoreError listErr = VXCORE_OK;
-  QJsonObject result =
+  const auto result =
       notebookService->listFolderChildren(parentId.notebookId, parentId.relativePath, &listErr);
   QList<NodeIdentifier> missingIds;
   if (listErr == VXCORE_ERR_NODE_NOT_EXISTS) {
     // The listed folder's own content is gone from disk.
     missingIds.append(parentId);
   }
-  QVector<NodeInfo> children = parseChildrenFromJson(result, parentId);
+  QVector<NodeInfo> children = parseChildren(result, parentId);
   for (const NodeInfo &child : children) {
     if (child.isMissing) {
       missingIds.append(child.id);
@@ -762,9 +743,9 @@ void NotebookNodeModel::prefetchChildrenOfChildren(const QModelIndex &p_parent) 
     }
 
     // Then fetch indexed children
-    QJsonObject result =
+    const auto result =
         notebookService->listFolderChildren(childId.notebookId, childId.relativePath);
-    QVector<NodeInfo> indexedChildren = parseChildrenFromJson(result, childId);
+    QVector<NodeInfo> indexedChildren = parseChildren(result, childId);
     allGrandchildren.append(indexedChildren);
 
     QVector<NodeIdentifier> grandchildIds;
@@ -996,13 +977,13 @@ void NotebookNodeModel::reloadNode(const NodeIdentifier &p_nodeId) {
 
         // Fetch indexed nodes
         VxCoreError listErr = VXCORE_OK;
-        QJsonObject result = notebookService->listFolderChildren(p_nodeId.notebookId,
-                                                                 p_nodeId.relativePath, &listErr);
+        const auto result = notebookService->listFolderChildren(p_nodeId.notebookId,
+                                                                p_nodeId.relativePath, &listErr);
         if (listErr == VXCORE_ERR_NODE_NOT_EXISTS) {
           // The reloaded folder's own content is gone from disk.
           missingIds.append(p_nodeId);
         }
-        QVector<NodeInfo> childrenInfo = parseChildrenFromJson(result, p_nodeId);
+        QVector<NodeInfo> childrenInfo = parseChildren(result, p_nodeId);
         for (const NodeInfo &child : childrenInfo) {
           if (child.isMissing) {
             missingIds.append(child.id);

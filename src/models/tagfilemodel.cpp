@@ -1,46 +1,38 @@
 #include "tagfilemodel.h"
 
-#include <QJsonObject>
-
 #include <core/services/notebookcoreservice.h>
-
-#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
 TagFileModel::TagFileModel(NotebookCoreService *p_notebookService, QObject *p_parent)
     : QAbstractListModel(p_parent), m_notebookService(p_notebookService) {}
 
-void TagFileModel::setNodes(const QJsonArray &p_nodes, const QString &p_notebookId) {
+void TagFileModel::setNodes(const QVector<TagFileMatch> &p_nodes, const QString &p_notebookId) {
   beginResetModel();
 
   m_nodes.clear();
+  m_nodes.reserve(p_nodes.size());
   m_notebookId = p_notebookId;
 
-  for (const auto &nodeVal : p_nodes) {
-    const QJsonObject obj = nodeVal.toObject();
-    const QString filePath = obj.value(QStringLiteral("filePath")).toString();
+  for (const auto &node : p_nodes) {
+    const auto &filePath = node.m_filePath;
 
     NodeInfo info;
-    info.id.notebookId = obj.contains(QLatin1String(vxcore::kJsonKeyNotebookId))
-                             ? obj.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString()
-                             : p_notebookId;
+    info.id.notebookId = node.m_notebookId.isNull() ? p_notebookId : node.m_notebookId;
     info.id.relativePath = filePath;
     info.isFolder = false;
     info.isExternal = false;
 
-    // fileName from JSON, fallback to last component of filePath.
-    QString fileName = obj.value(QStringLiteral("fileName")).toString();
+    // Fall back to the last component of filePath when fileName is empty.
+    QString fileName = node.m_fileName;
     if (fileName.isEmpty() && !filePath.isEmpty()) {
       int lastSlash = filePath.lastIndexOf(QLatin1Char('/'));
       fileName = (lastSlash >= 0) ? filePath.mid(lastSlash + 1) : filePath;
     }
     info.name = fileName;
 
-    // Parse tags JSON array to QStringList.
-    const QJsonArray tagsArray = obj.value(QStringLiteral("tags")).toArray();
-    for (const auto &tagVal : tagsArray) {
-      const QString tag = tagVal.toString();
+    info.tags.reserve(node.m_tags.size());
+    for (const auto &tag : node.m_tags) {
       if (!tag.isEmpty()) {
         info.tags.append(tag);
       }

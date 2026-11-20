@@ -3,11 +3,11 @@
 #include <QApplication>
 #include <QDataStream>
 #include <QIODevice>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QMimeData>
 #include <QPalette>
 #include <QSet>
+
+#include <limits>
 
 #include <core/services/eventbridge.h>
 #include <core/services/syncservice.h>
@@ -300,7 +300,7 @@ void TagModel::reload() {
   m_dirty = false;
   ++m_hierarchyRevision;
 
-  QJsonArray tags;
+  QVector<TagRecord> tags;
   QHash<QString, int> counts;
   if (!m_notebookId.isEmpty()) {
     if (auto *service = m_services.get<TagCoreService>()) {
@@ -308,10 +308,12 @@ void TagModel::reload() {
       if (!tags.isEmpty()) {
         const auto countRecords = service->countFilesByTag(m_notebookId);
         counts.reserve(countRecords.size());
-        for (const auto &value : countRecords) {
-          const auto record = value.toObject();
-          counts.insert(record.value(QStringLiteral("tag")).toString(),
-                        record.value(QStringLiteral("count")).toInt(-1));
+        for (const auto &record : countRecords) {
+          const auto count = record.m_count;
+          counts.insert(record.m_tag, count >= std::numeric_limits<int>::min() &&
+                                              count <= std::numeric_limits<int>::max()
+                                          ? static_cast<int>(count)
+                                          : -1);
         }
       }
     }
@@ -319,15 +321,14 @@ void TagModel::reload() {
 
   bool hierarchyChanged = m_loadedNotebookId != m_notebookId;
   int tagCount = 0;
-  for (const auto &value : tags) {
-    const auto tag = value.toObject();
-    const auto name = tag.value(QStringLiteral("name")).toString();
+  for (const auto &tag : tags) {
+    const auto &name = tag.m_name;
     if (name.isEmpty()) {
       continue;
     }
     ++tagCount;
     const auto it = m_nodeCache.constFind(name);
-    if (it == m_nodeCache.cend() || it->parent != tag.value(QStringLiteral("parent")).toString()) {
+    if (it == m_nodeCache.cend() || it->parent != tag.m_parent) {
       hierarchyChanged = true;
     }
   }
@@ -336,16 +337,15 @@ void TagModel::reload() {
   if (hierarchyChanged) {
     beginResetModel();
     clearCache();
-    for (const auto &value : tags) {
-      const auto tag = value.toObject();
-      const auto name = tag.value(QStringLiteral("name")).toString();
+    for (const auto &tag : tags) {
+      const auto &name = tag.m_name;
       if (name.isEmpty()) {
         continue;
       }
       TagNodeInfo info;
       info.name = name;
-      info.parent = tag.value(QStringLiteral("parent")).toString();
-      info.metadata = tag.value(QStringLiteral("metadata"));
+      info.parent = tag.m_parent;
+      info.metadata = tag.m_metadata;
       info.noteCount = counts.value(name, -1);
       m_nodeCache.insert(name, info);
     }
@@ -358,15 +358,14 @@ void TagModel::reload() {
     endResetModel();
   } else {
     // Membership changes do not disturb selection, expansion or persistent indexes.
-    for (const auto &value : tags) {
-      const auto tag = value.toObject();
-      const auto name = tag.value(QStringLiteral("name")).toString();
+    for (const auto &tag : tags) {
+      const auto &name = tag.m_name;
       auto it = m_nodeCache.find(name);
       if (it == m_nodeCache.end()) {
         continue;
       }
       const int count = counts.value(name, -1);
-      const auto metadata = tag.value(QStringLiteral("metadata"));
+      const auto &metadata = tag.m_metadata;
       if (it->noteCount != count || it->metadata != metadata) {
         it->noteCount = count;
         it->metadata = metadata;

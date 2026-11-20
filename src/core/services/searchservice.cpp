@@ -5,7 +5,6 @@
 #include <mutex>
 
 #include <QDebug>
-#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -19,8 +18,6 @@
 #include <QVector>
 
 #include <core/services/searchcoreservice.h>
-
-#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -43,11 +40,11 @@ public slots:
       return;
     }
 
-    QJsonArray matches;
+    SearchResult result;
     Error error;
     {
       QMutexLocker locker(m_mutex);
-      error = m_coreService->searchFiles(p_notebookId, p_queryJson, p_inputFilesJson, &matches);
+      error = m_coreService->searchFiles(p_notebookId, p_queryJson, p_inputFilesJson, &result);
     }
 
     if (error) {
@@ -60,14 +57,10 @@ public slots:
       return;
     }
 
-    QJsonObject wrapped;
-    wrapped.insert(QStringLiteral("matchCount"), matches.size());
-    wrapped.insert(QStringLiteral("truncated"), false);
-    wrapped.insert(QStringLiteral("matches"), QJsonValue(matches));
-
-    SearchResult result = SearchResult::fromFileSearchJson(wrapped, p_notebookId);
+    // Preserve the existing async UI policy; the core service retains the native fact.
+    result.m_truncated = false;
     qDebug() << "SearchWorker::doSearchFiles: [worker thread] completed, matches:"
-             << matches.size();
+             << result.m_matchCount;
     emit progress(p_token, 100);
     emit finished(p_token, result);
   }
@@ -84,29 +77,23 @@ public slots:
     }
 
     // The streaming primitive owns NO truncation (it emits every occurrence). The consumer
-    // (this worker) applies the SAME deterministic file-boundary maxResults cap the blob
-    // API applies, so the authoritative finished() payload stays byte-for-byte equivalent to
-    // the blob search baseline. Parse the cap out of the query the same way vxcore would.
+    // (this worker) applies the SAME deterministic raw-occurrence maxResults cap as the
+    // blob API, before grouping same-line occurrences. Query parsing remains JSON.
     const int maxResults = parseMaxResults(p_queryJson);
 
-    // Batches arrive concurrently from vxcore drain threads. Accumulate each chunk's RAW JSON
-    // keyed by its batch index. Truncation must run on the raw per-occurrence "matches" arrays
-    // (BEFORE fromContentSearchJson groups same-line occurrences into segments), otherwise a
-    // cap that cuts inside a file cannot be reproduced faithfully. Progress counts COMPLETED
-    // callbacks, not max(batch_index), because chunks complete out of order.
+    // Batches arrive concurrently and out of order. Retain owning UNGROUPED values by
+    // batch index. Progress counts completed callbacks, not the greatest index seen.
     std::mutex accMutex;
-    QMap<int, QJsonArray> batchMatchesByIndex;
+    QMap<int, SearchContentResult> batchesByIndex;
     std::atomic<int> completed{0};
     int encryptedSkippedCount = 0;
 
-    const auto onBatch = [&](int p_batchIndex, int p_totalBatches, const QJsonObject &p_batchObj) {
-      const QJsonArray batchMatches = p_batchObj.value(QStringLiteral("matches")).toArray();
-
+    const auto onBatch = [&](int p_batchIndex, int p_totalBatches,
+                             const SearchContentResult &p_batch) {
       {
         std::lock_guard<std::mutex> guard(accMutex);
-        batchMatchesByIndex.insert(p_batchIndex, batchMatches);
-        encryptedSkippedCount +=
-            p_batchObj.value(QLatin1String(vxcore::kJsonKeyEncryptedSkippedCount)).toInt(0);
+        batchesByIndex.insert(p_batchIndex, p_batch);
+        encryptedSkippedCount += p_batch.m_encryptedSkippedCount;
       }
 
       const int done = completed.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -115,8 +102,8 @@ public slots:
       // the connection to SearchService (GUI thread) is queued, so this only posts an event.
       // Skip zero-match chunks (consumer would ignore them) but still count progress. Preview
       // rows are superseded at completion by the authoritative, capped setSearchResult().
-      if (!batchMatches.isEmpty()) {
-        SearchResult batchResult = SearchResult::fromContentSearchJson(p_batchObj, p_notebookId);
+      if (!p_batch.m_files.isEmpty()) {
+        SearchResult batchResult = SearchResult::fromContentSearchResult(p_batch, p_notebookId);
         if (batchResult.m_matchCount > 0) {
           emit batch(p_token, batchResult);
         }
@@ -151,30 +138,22 @@ public slots:
       return;
     }
 
-    // Reassemble the raw matched-file objects in input-file (batch-index) order.
-    QJsonArray allFiles;
-    for (auto it = batchMatchesByIndex.cbegin(); it != batchMatchesByIndex.cend(); ++it) {
-      const QJsonArray &batchMatches = it.value();
-      for (const QJsonValue &fileVal : batchMatches) {
-        allFiles.append(fileVal);
+    // Reassemble by input-file (batch-index) order, then cap raw occurrences. Preview
+    // grouping never mutates the retained batches or the authoritative final payload.
+    SearchContentResult content;
+    qsizetype fileCount = 0;
+    for (auto it = batchesByIndex.cbegin(); it != batchesByIndex.cend(); ++it) {
+      fileCount += it.value().m_files.size();
+    }
+    content.m_files.reserve(fileCount);
+    for (auto it = batchesByIndex.begin(); it != batchesByIndex.end(); ++it) {
+      for (auto &file : it.value().m_files) {
+        content.m_files.append(std::move(file));
       }
     }
-
-    // Deterministic file-boundary maxResults truncation, mirroring
-    // SimpleSearchBackend::Search: count occurrences across files; when the running total
-    // reaches maxResults, keep occurrences [0..j] of the current file, drop the rest of it and
-    // every later file, and flag truncated.
-    const bool truncated = applyMaxResultsTruncation(allFiles, maxResults);
-
-    QJsonObject finalObj;
-    finalObj.insert(QStringLiteral("matchCount"), allFiles.size());
-    finalObj.insert(QStringLiteral("truncated"), truncated);
-    finalObj.insert(QStringLiteral("matches"), QJsonValue(allFiles));
-    if (encryptedSkippedCount != 0) {
-      finalObj.insert(QLatin1String(vxcore::kJsonKeyEncryptedSkippedCount), encryptedSkippedCount);
-    }
-
-    SearchResult result = SearchResult::fromContentSearchJson(finalObj, p_notebookId);
+    content.m_encryptedSkippedCount = encryptedSkippedCount;
+    content.m_truncated = applyMaxResultsTruncation(content.m_files, maxResults);
+    SearchResult result = SearchResult::fromContentSearchResult(content, p_notebookId);
     {
       QMutexLocker locker(m_mutex);
       const bool replacementSupportedAtFinish = m_coreService->isReplacementSupported();
@@ -187,7 +166,7 @@ public slots:
 
     qDebug() << "SearchWorker::doSearchContent: [worker thread streaming] completed, matchCount:"
              << result.m_matchCount << "truncated:" << result.m_truncated
-             << "batches:" << batchMatchesByIndex.size();
+             << "batches:" << batchesByIndex.size();
     emit progress(p_token, 100);
     emit finished(p_token, result);
   }
@@ -202,11 +181,11 @@ public slots:
       return;
     }
 
-    QJsonArray matches;
+    SearchResult result;
     Error error;
     {
       QMutexLocker locker(m_mutex);
-      error = m_coreService->searchByTags(p_notebookId, p_queryJson, p_inputFilesJson, &matches);
+      error = m_coreService->searchByTags(p_notebookId, p_queryJson, p_inputFilesJson, &result);
     }
 
     if (error) {
@@ -219,14 +198,10 @@ public slots:
       return;
     }
 
-    QJsonObject wrapped;
-    wrapped.insert(QStringLiteral("matchCount"), matches.size());
-    wrapped.insert(QStringLiteral("truncated"), false);
-    wrapped.insert(QStringLiteral("matches"), QJsonValue(matches));
-
-    SearchResult result = SearchResult::fromFileSearchJson(wrapped, p_notebookId);
+    // Preserve the existing async UI policy; the core service retains the native fact.
+    result.m_truncated = false;
     qDebug() << "SearchWorker::doSearchByTags: [worker thread] completed, matches:"
-             << matches.size();
+             << result.m_matchCount;
     emit progress(p_token, 100);
     emit finished(p_token, result);
   }
@@ -256,39 +231,23 @@ private:
     return doc.object().value(QStringLiteral("maxResults")).toInt(kDefaultContentSearchMaxResults);
   }
 
-  // In-place file-boundary maxResults truncation over the raw reassembled matched-file array,
-  // byte-identical to SimpleSearchBackend::Search. Each element of |p_files| is a matched-file
-  // object whose "matches" array holds one entry per occurrence. Returns whether truncation
-  // occurred. A non-positive |p_maxResults| is a no-op (returns false).
-  static bool applyMaxResultsTruncation(QJsonArray &p_files, int p_maxResults) {
+  // Match SimpleSearchBackend's cap, including truncated=true at the exact limit.
+  // A non-positive cap is unbounded. Never cap grouped line rows.
+  static bool applyMaxResultsTruncation(QVector<SearchContentFile> &p_files, int p_maxResults) {
     if (p_maxResults <= 0) {
       return false;
     }
-
     int total = 0;
-    for (int i = 0; i < p_files.size(); ++i) {
-      QJsonObject fileObj = p_files[i].toObject();
-      QJsonArray occurrences = fileObj.value(QStringLiteral("matches")).toArray();
-      for (int j = 0; j < occurrences.size(); ++j) {
-        ++total;
-        if (total >= p_maxResults) {
-          // Keep occurrences [0..j] of this file, drop the rest and every later file.
-          while (occurrences.size() > j + 1) {
-            occurrences.removeLast();
-          }
-          fileObj.insert(QStringLiteral("matches"), occurrences);
-          if (fileObj.contains(QStringLiteral("matchCount"))) {
-            fileObj.insert(QStringLiteral("matchCount"), occurrences.size());
-          }
-          p_files[i] = fileObj;
-          while (p_files.size() > i + 1) {
-            p_files.removeLast();
-          }
-          return true;
-        }
+    for (qsizetype i = 0; i < p_files.size(); ++i) {
+      auto &occurrences = p_files[i].m_matches;
+      const int remaining = p_maxResults - total;
+      if (occurrences.size() >= remaining) {
+        occurrences.resize(remaining);
+        p_files.resize(i + 1);
+        return true;
       }
+      total += static_cast<int>(occurrences.size());
     }
-
     return false;
   }
 

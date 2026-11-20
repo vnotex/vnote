@@ -163,9 +163,8 @@ void TagViewer2::updateTagList() {
   auto *tagSvc = m_services.get<TagService>();
   if (tagSvc) {
     const auto allTags = tagSvc->listTags(notebookId());
-    for (const auto &tagVal : allTags) {
-      const auto tagObj = tagVal.toObject();
-      const auto tagName = tagObj.value(QStringLiteral("name")).toString();
+    for (const auto &tag : allTags) {
+      const auto &tagName = tag.m_name;
       if (tagName.isEmpty() || addedNames.contains(tagName)) {
         continue;
       }

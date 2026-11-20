@@ -2,8 +2,10 @@
 #include <QtTest>
 
 #include <memory>
+#include <mutex>
 
-#include <QJsonObject>
+#include <QFile>
+#include <QMap>
 
 #include <core/searchresulttypes.h>
 #include <core/services/searchcoreservice.h>
@@ -21,9 +23,10 @@ namespace tests {
 // per-file match count, per-line number/text, and every match segment's column span).
 static QString canonicalizeContentResult(const SearchResult &p_result) {
   QString out;
-  out += QStringLiteral("matchCount=%1;truncated=%2|")
+  out += QStringLiteral("matchCount=%1;truncated=%2;encryptedSkipped=%3|")
              .arg(p_result.m_matchCount)
-             .arg(p_result.m_truncated ? 1 : 0);
+             .arg(p_result.m_truncated ? 1 : 0)
+             .arg(p_result.m_encryptedSkippedCount);
   for (const SearchFileResult &fr : p_result.m_fileResults) {
     out += QStringLiteral("[path=%1;id=%2;fmc=%3;").arg(fr.m_path, fr.m_id).arg(fr.m_matchCount);
     for (const SearchLineMatch &lm : fr.m_lineMatches) {
@@ -123,6 +126,10 @@ private slots:
   // streaming path, matching the blob baseline (absent key != uncapped).
   void testStreamingFinishedMatchesBlobBaselineDefaultCap();
 
+  void testFileAndTagTruncationPolicy();
+  void testCoreSnapshotsOutliveContext();
+  void testTypedStreamingBoundaries();
+
 private:
   VxCoreContextHandle m_context = nullptr;
   TempDirFixture m_tempDir;
@@ -164,11 +171,13 @@ void TestSearchService::cleanupTestCase() {
 void TestSearchService::testNullContext() {
   SearchCoreService service(nullptr);
   QVERIFY(!service.isReplacementSupported());
-  QJsonArray results;
+  SearchResult results;
+  results.m_matchCount = 99;
 
   Error err = service.searchFiles(m_notebookId, "{}", QString(), &results);
   QVERIFY(!err.isOk());
   QCOMPARE(err.code(), ErrorCode::InvalidArgument);
+  QCOMPARE(results.m_matchCount, 0);
 }
 
 void TestSearchService::testNullResultsParameter() {
@@ -181,30 +190,30 @@ void TestSearchService::testNullResultsParameter() {
 
 void TestSearchService::testSearchFilesEmptyNotebook() {
   SearchCoreService service(m_context);
-  QJsonArray results;
+  SearchResult results;
 
   // Search with empty pattern should return empty results
   Error err = service.searchFiles(m_notebookId, "{\"pattern\":\"*.txt\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchFiles failed: %1").arg(err.message())));
-  QVERIFY(results.isEmpty());
+  QVERIFY(results.m_fileResults.isEmpty());
 }
 
 void TestSearchService::testSearchContentEmptyNotebook() {
   SearchCoreService service(m_context);
-  QJsonArray results;
+  SearchContentResult results;
 
   Error err = service.searchContent(m_notebookId, "{\"pattern\":\"test\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchContent failed: %1").arg(err.message())));
-  QVERIFY(results.isEmpty());
+  QVERIFY(results.m_files.isEmpty());
 }
 
 void TestSearchService::testSearchByTagsEmptyNotebook() {
   SearchCoreService service(m_context);
-  QJsonArray results;
+  SearchResult results;
 
   Error err = service.searchByTags(m_notebookId, "{\"tags\":[\"test\"]}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchByTags failed: %1").arg(err.message())));
-  QVERIFY(results.isEmpty());
+  QVERIFY(results.m_fileResults.isEmpty());
 }
 
 void TestSearchService::testSearchFilesWithFiles() {
@@ -217,17 +226,15 @@ void TestSearchService::testSearchFilesWithFiles() {
   vxcore_string_free(fileId);
 
   SearchCoreService service(m_context);
-  QJsonArray results;
+  SearchResult results;
 
   // Search for markdown files
   Error err = service.searchFiles(m_notebookId, "{\"pattern\":\"*.md\"}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchFiles failed: %1").arg(err.message())));
-  QCOMPARE(results.size(), 1);
-
-  // Verify result structure
-  QJsonObject result = results.first().toObject();
-  QVERIFY(result.contains("path"));
-  QVERIFY(result.contains("id"));
+  QCOMPARE(results.m_fileResults.size(), 1);
+  QCOMPARE(results.m_matchCount, 1);
+  QCOMPARE(results.m_fileResults.first().m_path, QStringLiteral("test_file.md"));
+  QVERIFY(!results.m_fileResults.first().m_id.isEmpty());
 }
 
 void TestSearchService::testSimpleSearchUnicodeReplacement() {
@@ -282,9 +289,10 @@ void TestSearchService::testSimpleSearchUnicodeReplacement() {
   QCOMPARE(preview.m_fileResults.size(), 1);
   QVERIFY(!preview.m_fileResults.first().m_replacementSupported);
 
-  QJsonObject json;
-  QVERIFY(coreService.searchContentCancellable(m_notebookId, query, input, nullptr, &json).isOk());
-  const SearchResult parsed = SearchResult::fromContentSearchJson(json, m_notebookId);
+  SearchContentResult content;
+  QVERIFY(
+      coreService.searchContentCancellable(m_notebookId, query, input, nullptr, &content).isOk());
+  const SearchResult parsed = SearchResult::fromContentSearchResult(content, m_notebookId);
   QCOMPARE(parsed.m_fileResults.size(), 1);
   QVERIFY(!parsed.m_fileResults.first().m_replacementSupported);
 }
@@ -570,12 +578,13 @@ void TestSearchService::testSearchByTagsWithTags() {
   QCOMPARE(vxerr, VXCORE_OK);
 
   SearchCoreService service(m_context);
-  QJsonArray results;
+  SearchResult results;
 
   // Search by tag
   Error err = service.searchByTags(m_notebookId, "{\"tags\":[\"test-tag\"]}", QString(), &results);
   QVERIFY2(err.isOk(), qPrintable(QString("searchByTags failed: %1").arg(err.message())));
-  // Note: May need to rebuild cache or wait for indexing
+  QCOMPARE(results.m_fileResults.size(), 1);
+  QCOMPARE(results.m_fileResults.first().m_tags, QStringList{QStringLiteral("test-tag")});
 }
 
 void TestSearchService::testIsSearchingInitiallyFalse() {
@@ -872,11 +881,151 @@ void TestSearchService::testSearchContentStreamingBatchUnion() {
   QCOMPARE(streamedFiles, finishedResult.m_fileResults.size());
 }
 
+void TestSearchService::testFileAndTagTruncationPolicy() {
+  SearchCoreService core(m_context);
+  const QString input = QStringLiteral("{\"files\":[\"tagged_file.md\"]}");
+  for (bool byTags : {false, true}) {
+    const QString query = byTags ? QStringLiteral("{\"tags\":[\"test-tag\"],\"maxResults\":1}")
+                                 : QStringLiteral("{\"pattern\":\"*.md\",\"maxResults\":1}");
+    SearchResult native;
+    const auto error = byTags ? core.searchByTags(m_notebookId, query, input, &native)
+                              : core.searchFiles(m_notebookId, query, input, &native);
+    QVERIFY(error.isOk());
+    QVERIFY(native.m_truncated);
+    QCOMPARE(native.m_matchCount, 1);
+    SearchService service(&core);
+    QSignalSpy finished(&service, &SearchService::searchFinished);
+    QSignalSpy failed(&service, &SearchService::searchFailed);
+    const int token = byTags ? service.searchByTags(m_notebookId, query, input)
+                             : service.searchFiles(m_notebookId, query, input);
+    QTRY_VERIFY_WITH_TIMEOUT(!finished.isEmpty() || !failed.isEmpty(), 10000);
+    QVERIFY(failed.isEmpty());
+    QCOMPARE(finished.first().at(0).toInt(), token);
+    const auto result = finished.first().at(1).value<SearchResult>();
+    QVERIFY(!result.m_truncated);
+    QCOMPARE(result.m_matchCount, native.m_matchCount);
+    QCOMPARE(result.m_fileResults.first().m_tags, native.m_fileResults.first().m_tags);
+    QCOMPARE(result.m_fileResults.first().m_createdUtc, native.m_fileResults.first().m_createdUtc);
+    QCOMPARE(result.m_fileResults.first().m_modifiedUtc,
+             native.m_fileResults.first().m_modifiedUtc);
+  }
+}
+
+void TestSearchService::testCoreSnapshotsOutliveContext() {
+  SearchResult files;
+  SearchContentResult content;
+  SearchContentResult streamed;
+  const QString name = QStringLiteral("\u7b14\u8bb0.md");
+  const QString line = QStringLiteral("\U0001f600 needle needle");
+  {
+    VxCoreContextHandle context = nullptr;
+    QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+    const std::unique_ptr<VxCoreContext, decltype(&vxcore_context_destroy)> owner(
+        context, vxcore_context_destroy);
+    QCOMPARE(vxcore_context_update_config(context, "{\"search\":{\"backends\":[\"simple\"]}}"),
+             VXCORE_OK);
+    char *rawId = nullptr;
+    const auto root = m_tempDir.filePath("typed_lifetime").toUtf8();
+    QCOMPARE(vxcore_notebook_create(context, root.constData(), "{\"name\":\"Lifetime\"}",
+                                    VXCORE_NOTEBOOK_BUNDLED, &rawId),
+             VXCORE_OK);
+    const QByteArray id(rawId);
+    vxcore_string_free(rawId);
+    char *fileId = nullptr;
+    QCOMPARE(vxcore_file_create(context, id.constData(), ".", name.toUtf8().constData(), &fileId),
+             VXCORE_OK);
+    vxcore_string_free(fileId);
+    QFile file(QString::fromUtf8(root) + QLatin1Char('/') + name);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    const auto bytes = line.toUtf8();
+    QCOMPARE(file.write(bytes), bytes.size());
+    file.close();
+    SearchCoreService core(context);
+    const QString notebook = QString::fromUtf8(id);
+    QVERIFY(
+        core.searchFiles(notebook, QStringLiteral("{\"pattern\":\"*.md\"}"), {}, &files).isOk());
+    const QString query = QStringLiteral("{\"pattern\":\"needle\",\"maxResults\":0}");
+    QVERIFY(core.searchContent(notebook, query, {}, &content).isOk());
+    QVERIFY(core.searchContentStreaming(
+                    notebook, query, {}, 1, nullptr,
+                    [&](int, int, const SearchContentResult &batch) { streamed = batch; })
+                .isOk());
+    QCOMPARE(vxcore_notebook_close(context, id.constData()), VXCORE_OK);
+  }
+  QCOMPARE(files.m_fileResults.size(), 1);
+  QCOMPARE(files.m_fileResults.first().m_path, name);
+  QCOMPARE(content.m_files.size(), 1);
+  QCOMPARE(streamed.m_files.size(), 1);
+  for (const auto *result : {&content, &streamed}) {
+    QCOMPARE(result->m_files.first().m_matches.size(), 2);
+    QCOMPARE(result->m_files.first().m_matches.first().m_lineText, line);
+    QCOMPARE(result->m_files.first().m_matches.first().m_columnStart, 3);
+    QCOMPARE(result->m_files.first().m_matches.first().m_columnEnd, 9);
+  }
+}
+
+void TestSearchService::testTypedStreamingBoundaries() {
+  const auto id = m_notebookId.toUtf8();
+  char *fileId = nullptr;
+  QCOMPARE(vxcore_file_create(m_context, id.constData(), ".", "typed_protected.md", &fileId),
+           VXCORE_OK);
+  vxcore_string_free(fileId);
+  QCOMPARE(vxcore_node_update_metadata(m_context, id.constData(), "typed_protected.md",
+                                       "{\"encrypted\":true}"),
+           VXCORE_OK);
+  SearchCoreService core(m_context);
+  std::mutex mutex;
+  QMap<int, SearchContentResult> batches;
+  const auto collect = [&](int index, int, const SearchContentResult &batch) {
+    std::lock_guard<std::mutex> guard(mutex);
+    batches.insert(index, batch);
+  };
+  const QString input =
+      QStringLiteral("{\"files\":[\"unicode.md\",\"test_file.md\",\"typed_protected.md\"]}");
+  const QString query = QStringLiteral("{\"pattern\":\"foo\",\"maxResults\":1}");
+  QVERIFY(core.searchContentStreaming(m_notebookId, query, input, 1, nullptr, collect).isOk());
+  QCOMPARE(batches.size(), 2);
+  QCOMPARE(batches.value(0).m_encryptedSkippedCount, 1);
+  QCOMPARE(batches.value(1).m_encryptedSkippedCount, 0);
+  QVERIFY(!batches.value(0).m_truncated);
+  QCOMPARE(batches.value(0).m_files.first().m_matches.size(), 2); // Streaming is uncapped.
+  QVERIFY(batches.value(1).m_files.isEmpty()); // No-match chunks still report progress.
+
+  batches.clear();
+  const QString protectedInput = QStringLiteral("{\"files\":[\"typed_protected.md\"]}");
+  QVERIFY(
+      core.searchContentStreaming(m_notebookId, query, protectedInput, 1, nullptr, collect).isOk());
+  QCOMPARE(batches.size(), 1);
+  QVERIFY(batches.value(0).m_files.isEmpty());
+  QCOMPARE(batches.value(0).m_encryptedSkippedCount, 1);
+
+  batches.clear();
+  std::atomic<int> cancel{1};
+  QCOMPARE(core.searchContentStreaming(m_notebookId, query, input, 1, &cancel, collect).code(),
+           ErrorCode::Cancelled);
+  QVERIFY(batches.isEmpty());
+  SearchContentResult cancelled = SearchContentResult::fromView({nullptr, 0, 9, 1});
+  QCOMPARE(core.searchContentCancellable(m_notebookId, query, input, &cancel, &cancelled).code(),
+           ErrorCode::Cancelled);
+  QVERIFY(cancelled.m_files.isEmpty());
+  QCOMPARE(cancelled.m_encryptedSkippedCount, 0);
+  QVERIFY(!cancelled.m_truncated);
+
+  SearchService service(&core);
+  QSignalSpy finished(&service, &SearchService::searchFinished);
+  QSignalSpy failed(&service, &SearchService::searchFailed);
+  service.searchContent(m_notebookId, query, input);
+  QTRY_VERIFY_WITH_TIMEOUT(!finished.isEmpty() || !failed.isEmpty(), 10000);
+  QVERIFY(failed.isEmpty());
+  const auto final = finished.first().at(1).value<SearchResult>();
+  QCOMPARE(final.m_encryptedSkippedCount, 1);
+  QCOMPARE(final.m_fileResults.first().m_matchCount, 1);
+  QVERIFY(final.m_truncated);
+}
+
 void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
-  // Seed two files. capfile_a.md has THREE occurrences on three distinct lines; capfile_b.md
-  // has more. With maxResults=2 the deterministic file-boundary cap lands INSIDE a file
-  // (keeps the first two occurrences, drops the third line and every later file), exactly the
-  // case the async streaming worker must reproduce byte-for-byte from the blob baseline.
+  // The cap cuts inside three SAME-LINE occurrences. Grouping before capping would
+  // incorrectly retain all three, so compare against the independently capped blob.
   auto seedFile = [&](const char *p_name, const QByteArray &p_content) {
     char *fileId = nullptr;
     VxCoreError e =
@@ -897,21 +1046,23 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineWithCap() {
     vxcore_string_free(bufferId);
   };
 
-  seedFile("capfile_a.md",
-           QByteArrayLiteral("capneedle one\nfiller\ncapneedle two\ncapneedle three\n"));
+  seedFile("capfile_a.md", QByteArrayLiteral("capneedle one capneedle two capneedle three\n"));
   seedFile("capfile_b.md", QByteArrayLiteral("capneedle b1\ncapneedle b2\n"));
 
   const QString queryJson = QStringLiteral("{\"pattern\":\"capneedle\",\"maxResults\":2}");
 
   // Blob baseline: authoritative capped result the async path must match exactly.
   SearchCoreService coreService(m_context);
-  QJsonObject blobObj;
+  SearchContentResult blobObj;
   const Error blobErr =
       coreService.searchContentCancellable(m_notebookId, queryJson, QString(), nullptr, &blobObj);
   QVERIFY(!blobErr);
-  const SearchResult blobResult = SearchResult::fromContentSearchJson(blobObj, m_notebookId);
+  const SearchResult blobResult = SearchResult::fromContentSearchResult(blobObj, m_notebookId);
   // Precondition: the cap actually truncated (otherwise the test would not exercise the path).
   QVERIFY2(blobResult.m_truncated, "expected blob baseline to be truncated by maxResults=2");
+  QCOMPARE(blobResult.m_fileResults.first().m_matchCount, 2);
+  QCOMPARE(blobResult.m_fileResults.first().m_lineMatches.size(), 1);
+  QCOMPARE(blobResult.m_fileResults.first().m_lineMatches.first().m_segments.size(), 2);
 
   // Streaming async path.
   SearchService service(&coreService);
@@ -969,11 +1120,11 @@ void TestSearchService::testStreamingFinishedMatchesBlobBaselineDefaultCap() {
   const QString queryJson = QStringLiteral("{\"pattern\":\"defcapneedle\"}");
 
   SearchCoreService coreService(m_context);
-  QJsonObject blobObj;
+  SearchContentResult blobObj;
   const Error blobErr =
       coreService.searchContentCancellable(m_notebookId, queryJson, QString(), nullptr, &blobObj);
   QVERIFY(!blobErr);
-  const SearchResult blobResult = SearchResult::fromContentSearchJson(blobObj, m_notebookId);
+  const SearchResult blobResult = SearchResult::fromContentSearchResult(blobObj, m_notebookId);
   // Precondition: the implicit default cap of 100 actually truncated the 150 occurrences.
   QVERIFY2(blobResult.m_truncated,
            "expected blob baseline to be truncated by the implicit default maxResults=100");

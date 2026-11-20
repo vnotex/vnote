@@ -13,6 +13,7 @@
 
 #include <core/nodeidentifier.h>
 #include <core/noncopyable.h>
+#include <core/notebookresulttypes.h>
 #include <core/services/isyncnotebookservice.h>
 
 #include <vxcore/vxcore.h>
@@ -437,17 +438,13 @@ public:
   QString copyFolder(const QString &p_notebookId, const QString &p_srcPath,
                      const QString &p_destParentPath, const QString &p_newName);
 
-  // List direct children of a folder (files and subfolders).
-  // Returns JSON with "files" and "folders" arrays. For bundled notebooks each
-  // child object additionally carries a transient "exists" bool (vxcore::
-  // kJsonKeyNodeExists) reflecting whether the child's content is present on
-  // disk; this field is passed straight through from the C-API JSON.
-  // p_outErr: optional out-pointer for the raw VxCoreError from the underlying
-  // vxcore_folder_list_children. Set to VXCORE_OK on success, or the failure
-  // code (e.g. VXCORE_ERR_NODE_NOT_EXISTS when the listed FOLDER's content is
-  // gone from disk). The returned QJsonObject is empty on failure, as before.
-  QJsonObject listFolderChildren(const QString &p_notebookId, const QString &p_folderPath,
-                                 VxCoreError *p_outErr = nullptr) const;
+  // Owning direct-child snapshot. Bundled existence flags are transient; raw
+  // listings reconcile disk state and leave existence unknown. Empty results
+  // are valid: p_outErr distinguishes success from a missing parent or failure.
+  FolderListing listFolderChildren(const QString &p_notebookId, const QString &p_folderPath,
+                                   VxCoreError *p_outErr = nullptr) const;
+  // Pure conversion of a borrowed C view into independently owned Qt values.
+  static FolderListing folderListingFromView(const VxCoreFolderListingView &p_view);
 
   // Atomically rewrite the order of a folder's children (subfolders / files)
   // in its vx.json. Returns immediately; the actual disk write happens on a

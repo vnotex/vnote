@@ -820,7 +820,7 @@ void TestWebDavSyncService::incomingChangesReloadCleanBuffersAndMetadata() {
   auto clean = open(QStringLiteral("clean.md"));
   QVERIFY(clean.isValid());
   const auto before = m_notebooks->listFolderChildren(m_id, QString());
-  QVERIFY(!before.value(QStringLiteral("files")).toArray().isEmpty());
+  QVERIFY(!before.m_files.isEmpty());
   auto config = QJsonDocument::fromJson(remoteBytes(c_config)).object();
   config.insert(QStringLiteral("description"), QStringLiteral("remote metadata revision"));
   // Even a foreign client cannot change this device's routing through config projection.
@@ -861,12 +861,9 @@ void TestWebDavSyncService::incomingChangesReloadCleanBuffersAndMetadata() {
   QVERIFY(changedPaths().contains(c_config));
   QVERIFY(changedPaths().contains(c_folderConfig));
   const auto after = m_notebooks->listFolderChildren(m_id, QString());
-  QCOMPARE(after.value(QStringLiteral("files"))
-               .toArray()
-               .first()
-               .toObject()
-               .value(QStringLiteral("name")),
-           reversed.first().toObject().value(QStringLiteral("name")));
+  QVERIFY(!after.m_files.isEmpty());
+  QCOMPARE(after.m_files.first().m_name,
+           reversed.first().toObject().value(QStringLiteral("name")).toString());
   bool visible = false;
   for (const auto &entry :
        m_notebooks->listFolderExternal(m_id, QString()).value(QStringLiteral("files")).toArray()) {

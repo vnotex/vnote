@@ -13,12 +13,9 @@ TagService::TagService(VxCoreContextHandle p_context, HookManager *p_hookMgr, QO
   Q_ASSERT(m_hookMgr);
 }
 
-TagService::~TagService() {
-}
+TagService::~TagService() {}
 
-QObject *TagService::asQObject() {
-  return this;
-}
+QObject *TagService::asQObject() { return this; }
 
 // ============ Tag Lifecycle (with hooks) ============
 
@@ -150,15 +147,19 @@ bool TagService::createTagPath(const QString &p_notebookId, const QString &p_tag
   return ok;
 }
 
-QJsonArray TagService::listTags(const QString &p_notebookId) const {
+QVector<TagRecord> TagService::listTags(const QString &p_notebookId) const {
   return TagCoreService::listTags(p_notebookId);
 }
 
-QJsonArray TagService::searchByTags(const QString &p_notebookId, const QStringList &p_tags) {
+QVector<TagCountRecord> TagService::countFilesByTag(const QString &p_notebookId) const {
+  return TagCoreService::countFilesByTag(p_notebookId);
+}
+
+SearchResult TagService::searchByTags(const QString &p_notebookId, const QStringList &p_tags) {
   return TagCoreService::searchByTags(p_notebookId, p_tags);
 }
 
-QJsonArray TagService::findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
-                                       const QString &p_op) {
+QVector<TagFileMatch> TagService::findFilesByTags(const QString &p_notebookId,
+                                                  const QStringList &p_tags, const QString &p_op) {
   return TagCoreService::findFilesByTags(p_notebookId, p_tags, p_op);
 }

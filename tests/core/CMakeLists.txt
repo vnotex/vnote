@@ -1130,3 +1130,23 @@ add_qt_test(test_jianguoyun_sync_service
   GUILESS
 )
 set_tests_properties(test_jianguoyun_sync_service PROPERTIES TIMEOUT 1800)
+
+# Explicit performance experiment, not a timing-sensitive CTest or default target.
+add_executable(benchmark_vxcore_typed_results EXCLUDE_FROM_ALL
+  benchmark_vxcore_typed_results.cpp
+)
+target_compile_features(benchmark_vxcore_typed_results PRIVATE cxx_std_17)
+target_include_directories(benchmark_vxcore_typed_results PRIVATE
+  "${CMAKE_SOURCE_DIR}/src"
+  "${CMAKE_SOURCE_DIR}/libs/vxcore/include"
+  "${CMAKE_SOURCE_DIR}/libs/vxcore/src"
+)
+target_link_libraries(benchmark_vxcore_typed_results PRIVATE
+  core_services vxcore Qt6::Core nlohmann_json
+)
+if(WIN32)
+  target_link_libraries(benchmark_vxcore_typed_results PRIVATE Psapi)
+endif()
+set_target_properties(benchmark_vxcore_typed_results PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "$<1:${CMAKE_BINARY_DIR}/benchmarks>"
+)

@@ -3,6 +3,9 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -74,6 +77,8 @@ private slots:
   void testDeleteFolder();
   void testRenameFolderAndMove();
   void testCopyFolder();
+  void testFolderListingOwnsValues();
+  void testRawFolderListingTracksFilesystem();
 
   // File operations tests.
   void testCreateFile();
@@ -433,16 +438,16 @@ void TestNotebookService::testImportFile() {
     QVERIFY(!m_service->createFolder(nbId, "", folderPath).isEmpty());
   }
   // Load the explorer's listing before import, then reload without reopening.
-  QVERIFY(m_service->listFolderChildren(nbId, folderPath)["files"].toArray().isEmpty());
+  QVERIFY(m_service->listFolderChildren(nbId, folderPath).m_files.isEmpty());
 
   QString importedId = m_service->importFile(nbId, folderPath, externalFilePath);
   QVERIFY(!importedId.isEmpty());
 
   QVERIFY(m_service->listFolderExternal(nbId, folderPath)["files"].toArray().isEmpty());
-  const auto files = m_service->listFolderChildren(nbId, folderPath)["files"].toArray();
+  const auto files = m_service->listFolderChildren(nbId, folderPath).m_files;
   QCOMPARE(files.size(), 1);
-  QCOMPARE(files.first().toObject()["name"].toString(), QStringLiteral("external_file.md"));
-  QCOMPARE(files.first().toObject()["id"].toString(), importedId);
+  QCOMPARE(files.first().m_name, QStringLiteral("external_file.md"));
+  QCOMPARE(files.first().m_id, importedId);
 
   const QString relativePath =
       folderPath.isEmpty() ? QStringLiteral("external_file.md") : folderPath + "/external_file.md";
@@ -473,6 +478,114 @@ void TestNotebookService::testGetFileInfo() {
 
   QJsonObject metadata = m_service->getFileMetadata(nbId, "info.md");
   QVERIFY(!metadata.isEmpty());
+}
+
+void TestNotebookService::testFolderListingOwnsValues() {
+  const QString nbId = createTestNotebook(m_tempDir.filePath("listing_values_notebook"));
+  QVERIFY(!nbId.isEmpty());
+  const QString folderName = QStringLiteral("folder \u6587\u4ef6");
+  const QString fileName = QStringLiteral("note \u7b14\u8bb0.md");
+  const QString folderId = m_service->createFolder(nbId, QString(), folderName);
+  const QString fileId = m_service->createFile(nbId, QString(), fileName);
+  QVERIFY(!folderId.isEmpty());
+  QVERIFY(!fileId.isEmpty());
+
+  VxCoreError error = VXCORE_ERR_UNKNOWN;
+  const FolderListing initial = m_service->listFolderChildren(nbId, QString(), &error);
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(initial.m_folders.size(), 1);
+  QCOMPARE(initial.m_files.size(), 1);
+
+  const QJsonObject metadata{
+      {QStringLiteral("empty"), QJsonObject()},
+      {QStringLiteral("null"), QJsonValue(QJsonValue::Null)},
+      {QStringLiteral("values"), QJsonArray{true, 42.5, QStringLiteral("text \u7b14\u8bb0"),
+                                            QJsonValue(QJsonValue::Null), QJsonArray{false, -7}}}};
+  const QString metadataJson =
+      QString::fromUtf8(QJsonDocument(metadata).toJson(QJsonDocument::Compact));
+  QVERIFY(m_service->updateFolderMetadata(nbId, folderName, metadataJson));
+  QVERIFY(m_service->updateFileMetadata(nbId, fileName, metadataJson));
+  const QStringList tags{QStringLiteral("first"), QStringLiteral("\u6807\u7b7e")};
+  for (const QString &tag : tags) {
+    QVERIFY(m_service->createTag(nbId, tag));
+  }
+  QVERIFY(m_service->updateFileTags(nbId, fileName, tags));
+  const QStringList attachments{QStringLiteral("image \u56fe.png"), QStringLiteral("details.txt")};
+  QVERIFY(m_service->updateFileAttachments(nbId, fileName, attachments));
+  const qint64 created = Q_INT64_C(1700000000123);
+  const qint64 modified = Q_INT64_C(1700000000456);
+  QVERIFY(m_service->updateNodeTimestamps(nbId, folderName, created, modified));
+  QVERIFY(m_service->updateNodeTimestamps(nbId, fileName, created, modified));
+
+  const FolderListing owned = m_service->listFolderChildren(nbId, QString(), &error);
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(owned.m_folders.size(), 1);
+  QCOMPARE(owned.m_files.size(), 1);
+
+  // Both service calls have released their native result owners. Mutate the
+  // backend and close the notebook before consuming either retained Qt value.
+  QVERIFY(m_service->updateFileMetadata(nbId, fileName, QStringLiteral(R"({"later":true})")));
+  QVERIFY(m_service->updateFolderMetadata(nbId, folderName, QStringLiteral(R"({"later":true})")));
+  QVERIFY(m_service->updateFileTags(nbId, fileName, {}));
+  QVERIFY(m_service->updateFileAttachments(nbId, fileName, {}));
+  QVERIFY(m_service->closeNotebook(nbId));
+
+  QCOMPARE(initial.m_files.first().m_metadata, QJsonValue(QJsonObject()));
+  QCOMPARE(initial.m_folders.first().m_metadata, QJsonValue(QJsonObject()));
+  QVERIFY(initial.m_files.first().m_tags.isEmpty());
+  QVERIFY(initial.m_files.first().m_attachments.isEmpty());
+  const FolderEntry &file = owned.m_files.first();
+  QCOMPARE(file.m_id, fileId);
+  QCOMPARE(file.m_name, fileName);
+  QCOMPARE(file.m_createdUtc, created);
+  QCOMPARE(file.m_modifiedUtc, modified);
+  QCOMPARE(file.m_metadata, QJsonValue(metadata));
+  QCOMPARE(file.m_tags, tags);
+  QCOMPARE(file.m_attachments, attachments);
+  QVERIFY(file.m_existsKnown);
+  QVERIFY(file.m_exists);
+  const FolderEntry &folder = owned.m_folders.first();
+  QCOMPARE(folder.m_id, folderId);
+  QCOMPARE(folder.m_name, folderName);
+  QCOMPARE(folder.m_createdUtc, created);
+  QCOMPARE(folder.m_modifiedUtc, modified);
+  QCOMPARE(folder.m_metadata, QJsonValue(metadata));
+  QVERIFY(folder.m_existsKnown);
+  QVERIFY(folder.m_exists);
+}
+
+void TestNotebookService::testRawFolderListingTracksFilesystem() {
+  const QString root = m_tempDir.filePath("raw_listing_notebook");
+  const QString nbId = m_service->createNotebook(root, QStringLiteral(R"({"name":"Raw listing"})"),
+                                                 NotebookType::Raw);
+  QVERIFY(!nbId.isEmpty());
+  QVERIFY(QDir().mkpath(QDir(root).filePath(QStringLiteral("external-folder"))));
+  QFile file(QDir(root).filePath(QStringLiteral("external.md")));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  QCOMPARE(file.write("raw content"), qint64(11));
+  file.close();
+
+  VxCoreError error = VXCORE_ERR_UNKNOWN;
+  const FolderListing listed = m_service->listFolderChildren(nbId, QString(), &error);
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(listed.m_files.size(), 1);
+  QCOMPARE(listed.m_folders.size(), 1);
+  QCOMPARE(listed.m_files.first().m_name, QStringLiteral("external.md"));
+  QCOMPARE(listed.m_folders.first().m_name, QStringLiteral("external-folder"));
+  QVERIFY(!listed.m_files.first().m_existsKnown);
+  QVERIFY(!listed.m_folders.first().m_existsKnown);
+  QVERIFY(listed.m_files.first().m_exists);
+  QVERIFY(listed.m_folders.first().m_exists);
+
+  // Raw listings reconcile disk state rather than retaining missing entries.
+  QVERIFY(file.remove());
+  QVERIFY(QDir(root).rmdir(QStringLiteral("external-folder")));
+  const FolderListing removed = m_service->listFolderChildren(nbId, QString(), &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(removed.isEmpty());
+  QVERIFY(m_service->closeNotebook(nbId));
+  QCOMPARE(listed.m_files.first().m_name, QStringLiteral("external.md"));
+  QCOMPARE(listed.m_folders.first().m_name, QStringLiteral("external-folder"));
 }
 
 // ===== Hook tests: Delete =====

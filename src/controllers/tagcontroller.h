@@ -1,13 +1,12 @@
 #ifndef TAGCONTROLLER_H
 #define TAGCONTROLLER_H
 
-#include <QJsonArray>
-#include <QJsonValue>
 #include <QObject>
 #include <QString>
 #include <QStringList>
 
 #include <core/nodeidentifier.h>
+#include <core/notebookresulttypes.h>
 
 namespace vnotex {
 
@@ -40,7 +39,7 @@ signals:
   void newTagRequested(const QString &p_notebookId);
   void deleteTagRequested(const QString &p_notebookId, const QString &p_tagName);
   void errorOccurred(const QString &p_title, const QString &p_message);
-  void matchingNodesChanged(const QJsonArray &p_nodes);
+  void matchingNodesChanged(const QVector<TagFileMatch> &p_nodes);
   void tagCompatibilityChanged(const QStringList &p_incompatibleTags);
   void openNodeRequested(const NodeIdentifier &p_nodeId);
   void tagOperationCompleted();
@@ -49,12 +48,10 @@ signals:
 
 private:
   QString resolveNotebookId(const QString &p_notebookId) const;
-  QString extractTagName(const QJsonValue &p_tagValue) const;
-  NodeIdentifier extractNodeIdentifier(const QJsonValue &p_nodeValue) const;
 
   ServiceLocator &m_services;
   QString m_notebookId;
-  QJsonArray m_matchingNodes;
+  QVector<TagFileMatch> m_matchingNodes;
 };
 
 } // namespace vnotex

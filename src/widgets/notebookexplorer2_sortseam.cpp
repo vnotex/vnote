@@ -15,9 +15,6 @@
 #include <QDateTime>
 #include <QDialog>
 #include <QFileInfo>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonValue>
 #include <QStringList>
 #include <QVector>
 #include <QWidget>
@@ -29,34 +26,22 @@ namespace vnotex {
 
 namespace {
 
-// vxcore's FileRecord/FolderRecord default both timestamps to 0 and emit them
-// unconditionally, so a "missing" timestamp arrives as the NUMBER zero, not as
-// an absent key. Treat a non-numeric value or a value <= 0 as unknown —
-// otherwise legacy entries would render as 1970-01-01.
-QDateTime readUtcTimestamp(const QJsonObject &p_obj, const QString &p_key) {
-  const QJsonValue v = p_obj.value(p_key);
-  if (!v.isDouble()) {
+// Legacy records use zero for unknown timestamps, not the Unix epoch.
+QDateTime readUtcTimestamp(qint64 p_timestamp) {
+  if (p_timestamp <= 0 || p_timestamp > Q_INT64_C(9000000000000000)) {
     return QDateTime();
   }
-  // Range-check BEFORE narrowing: a JSON number is an unbounded double, and a
-  // float->integer conversion whose result does not fit the target type is
-  // undefined behavior. Anything beyond ~year 286000 is corruption anyway.
-  const double raw = v.toDouble();
-  if (!(raw > 0.0) || raw > 9.0e15) {
-    return QDateTime();
-  }
-  return QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(raw), Qt::UTC);
+  return QDateTime::fromMSecsSinceEpoch(p_timestamp, Qt::UTC);
 }
 
-QVector<SortDialog2::Entry> buildEntries(const QJsonArray &p_arr) {
+QVector<SortDialog2::Entry> buildEntries(const QVector<FolderEntry> &p_children) {
   QVector<SortDialog2::Entry> entries;
-  entries.reserve(p_arr.size());
-  for (const auto &v : p_arr) {
-    const QJsonObject o = v.toObject();
+  entries.reserve(p_children.size());
+  for (const auto &child : p_children) {
     SortDialog2::Entry entry;
-    entry.m_name = o.value(QStringLiteral("name")).toString();
-    entry.m_createdUtc = readUtcTimestamp(o, QStringLiteral("createdUtc"));
-    entry.m_modifiedUtc = readUtcTimestamp(o, QStringLiteral("modifiedUtc"));
+    entry.m_name = child.m_name;
+    entry.m_createdUtc = readUtcTimestamp(child.m_createdUtc);
+    entry.m_modifiedUtc = readUtcTimestamp(child.m_modifiedUtc);
     entries.append(entry);
   }
   return entries;
@@ -75,13 +60,11 @@ QStringList namesOf(const QVector<SortDialog2::Entry> &p_entries) {
 
 SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
                                            const NodeIdentifier &p_currentNodeId,
-                                           const QJsonObject &p_childrenJson, QWidget *p_parent) {
+                                           const FolderListing &p_children, QWidget *p_parent) {
   SortDialogResult result;
 
-  const QJsonArray foldersArr = p_childrenJson.value(QStringLiteral("folders")).toArray();
-  const QJsonArray filesArr = p_childrenJson.value(QStringLiteral("files")).toArray();
-  const QVector<SortDialog2::Entry> folderEntries = buildEntries(foldersArr);
-  const QVector<SortDialog2::Entry> fileEntries = buildEntries(filesArr);
+  const QVector<SortDialog2::Entry> folderEntries = buildEntries(p_children.m_folders);
+  const QVector<SortDialog2::Entry> fileEntries = buildEntries(p_children.m_files);
   const QStringList currentFolders = namesOf(folderEntries);
   const QStringList currentFiles = namesOf(fileEntries);
 

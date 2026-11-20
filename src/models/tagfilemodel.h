@@ -2,10 +2,10 @@
 #define TAGFILEMODEL_H
 
 #include <QAbstractListModel>
-#include <QJsonArray>
 #include <QVector>
 
 #include <core/nodeinfo.h>
+#include <core/notebookresulttypes.h>
 #include <models/inodelistmodel.h>
 
 namespace vnotex {
@@ -16,14 +16,12 @@ class TagFileModel : public QAbstractListModel, public INodeListModel {
   Q_OBJECT
 
 public:
-  explicit TagFileModel(NotebookCoreService *p_notebookService,
-                        QObject *p_parent = nullptr);
+  explicit TagFileModel(NotebookCoreService *p_notebookService, QObject *p_parent = nullptr);
   ~TagFileModel() override = default;
 
-  // Set nodes from tag search JSON results.
-  // p_nodes: array of objects with "filePath", "fileName", "tags", optionally "notebookId"
-  // p_notebookId: fallback notebook ID if not present in individual objects
-  void setNodes(const QJsonArray &p_nodes, const QString &p_notebookId);
+  // Set owning tag matches; a null per-item notebook ID uses p_notebookId.
+  // An explicitly empty per-item notebook ID remains empty.
+  void setNodes(const QVector<TagFileMatch> &p_nodes, const QString &p_notebookId);
 
   // QAbstractListModel overrides.
   int rowCount(const QModelIndex &p_parent = QModelIndex()) const override;

@@ -1,6 +1,6 @@
 # Typed vxcore results for VNote
 
-Status: proposed implementation plan; no runtime changes implemented or benchmark results claimed.
+Status: implemented. The original design and acceptance plan are retained below; the final section records exercised verification and platform limits.
 
 ## Goal and scope
 
@@ -10,8 +10,8 @@ serialization, copying, parsing, and reconstruction where it is only an in-proce
 Do not expose live notebook objects, STL containers, nlohmann JSON objects, or writable memory.
 
 Planning baseline: VNote `f7c9edbd`; vxcore `f9b19e66b9698e636931c5867e8c2655eacc11c6`.
-The current planning change creates only `docs/vxcore-typed-results-plan.md`. `docs/` exists;
-`docs/plans/` does not. All source/test paths below are prospective implementation scope.
+Planning commit `4c2add63` created this document. The source/test scope below describes the
+implementation; the three explicitly new files have now been created.
 
 Included operations:
 
@@ -268,11 +268,11 @@ P2/P3/P4 can use separate implementation owners after P1 if explicitly paralleli
 `vxcore.h`, `notebookresulttypes.h`, `TagCoreService`, tests, and CMake edits need one integration
 owner. They are implementation phases, not permission to deliver a partial migration.
 
-## Exact prospective file scope
+## Implementation file scope
 
-Only the new plan document is created now. Existing paths below were confirmed in this checkout;
-new implementation paths are explicitly labeled. Reconfirm before editing and update this list at
-review if a newly discovered caller requires additional files. Do not touch unrelated user edits.
+Existing paths below were confirmed before implementation; newly introduced paths are listed
+separately. The checkpoint review included any newly discovered callers. Unrelated user edits
+are outside this scope.
 
 ### New implementation files
 
@@ -477,4 +477,75 @@ Acceptance gates:
 5. If performance gates cannot be met, present the measurements and revise the plan with user
    approval. Do not silently drop a domain, weaken a behavior test, or add unrelated optimization.
 
-No speedup, build, test, or UI-smoke result is asserted by this planning document.
+## Implementation verification record
+
+Verified with Qt 6.10.3, MSVC 19.51 and Release builds on Windows. Successfully built the
+application, `core_services`, `vnote_httpapi`, shared/installed vxcore and the explicit benchmark.
+All nine native regression targets and all 27 scoped Qt targets passed. New fixture mistakes
+(a byte-view literal length and assumptions about unindexed/zero-count tag rows) were corrected
+without changing production semantics. A real C17 client exercised all nine typed entry points,
+callback occurrence coordinates, output reset, and snapshots after mutation, notebook closure,
+and context destruction against the shared build and installed headers/import library/DLL.
+The VNote application and benchmark exercise the static-library integration.
+
+The real application exercised explorer expansion, direct tag counts and activation, content
+search grouping/cancellation, literal replacement with saved UTF-8 bytes checked, persisted
+reordering, and missing-file detection/restoration. Protected-containing folder export remained
+fail-closed: no format/action and no output. Both bundled and raw HTTP smoke runs passed
+authorization, listing/read, conditional writes, append, search, rename/identity checks and their
+respective recoverable-trash/unsupported-trash behavior. Protected metadata/content returned 422.
+Owned app processes exited normally, with startup registration absent before/after checks.
+
+### Measured results
+
+Three warm-ups and 30 interleaved JSON/typed pairs per case completed: 16 folder cases,
+144 tag cases, 120 Simple search cases, and 40 rg cases at 100 files. Full primary matrices
+cover 100/1,000/10,000 sizes, raw/bundled notebooks where supported, metadata variants,
+50-level folder trees, and wide/deep/sparse/dense tag structures. Wide folder fixtures contain
+the selected number of files **and** folders (20,000 entries at size 10,000).
+
+| Isolated Qt conversion, outputs of at least 1,000 records | Median reduction range |
+|---|---|
+| Folder results | 57.4%-92.8% |
+| Simple search results, including grouped/streaming variants | 85.9%-94.6% |
+| Tag list/count/find/search results | 41.8%-93.7% |
+
+These are conversion measurements, not claimed end-to-end application speedups. No measured
+case's total median regressed by more than 5%. The C ABI acquisition phase includes native
+work plus transport; those are not falsely reported as isolated stages. Production pure Qt
+converters are shared with the benchmark rather than copied or estimated by subtraction.
+
+Fresh rendered application runs used equal-length isolated profiles and identical 1702x854
+geometry. Median HTTP listing changed from 69.90 to 52.50 ms (bundled) and 521.47 to 62.49 ms
+(raw); content search changed from 300.10 to 305.06 ms (bundled, +1.66%) and 1633.44 to
+743.76 ms (raw). Parent-process peak working set changed from 201,240,576 to 200,466,432 bytes.
+The application baseline was the preserved pre-cutover binary, not a claimed baseline rebuild.
+
+An independent 80-process native memory experiment used five pairs for four operations at
+100 and 10,000 files, comparing the original JSON DLL with final typed results. Median peak
+working set/private commit stayed within the 5% gate in every case; 10,000-file folder/content
+peak working sets decreased about 34%/31%. These process metrics include context/index setup
+and exclude host JSON decoding and Qt conversion; they are not allocation counts.
+
+### Limits and implementation refinements
+
+- Arbitrary metadata remains JSON; queries, persisted formats and actual wire responses are
+  unchanged. No configuration migration is needed. Native tag reads borrow only internally,
+  synchronously, like `GetConfig`; public typed owners copy into stable pooled storage.
+- The initial raw populated-metadata benchmark setup hit a command deadline because the public
+  setter rescans its folder per file. The non-shipping benchmark now seeds the native store in
+  one untimed transaction after filesystem indexing, verifies every value through public reads,
+  and flushes completed cases outside timed spans. Production reads/mutations retain their APIs.
+- Large rg commands hit an existing Windows CRT boundary. A 1,000-file probe reached a
+  64,135-byte command; LLDB identified `_popen` calling `_invoke_watson`. The preserved original
+  DLL failed identically after explicit rg configuration. Large rg timing claims are unavailable;
+  no fallback, truncation or backend policy change was added. `vxcore_context_create` ignores
+  its JSON argument, so diagnostic backend selection uses `vxcore_context_update_config`.
+- WPR PID-only heap snapshot enabling was denied (`0xd0000061`, privilege not held). No
+  elevation, global tracing configuration or allocation-count claims were introduced.
+- Desktop changes invalidated an initial window-memory comparison; the controlled geometry
+  runs replaced it. Owned-window messages and actual window captures were used when system
+  cursor input became unavailable. A generated 265-character trash payload path also failed
+  safely; the complete smoke passed with shorter owned fixture paths, without a trash change.
+- Linux/macOS, sanitizers and other packaging gates were not exercised. This record does not
+  claim cross-platform verification or a push.

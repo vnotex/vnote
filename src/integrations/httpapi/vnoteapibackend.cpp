@@ -124,6 +124,29 @@ QString lineEnding(const QString &p_text) {
   return crlf ? QStringLiteral("CRLF") : cr ? QStringLiteral("CR") : QStringLiteral("LF");
 }
 
+struct NodeInfo {
+  enum class Type { Unknown, File, Folder };
+  QString id, name;
+  Type type = Type::Unknown;
+  bool encrypted = false;
+};
+
+NodeInfo nodeInfo(const QJsonObject &p_info) {
+  const auto type = p_info.value(QLatin1String(vxcore::kJsonKeyType)).toString();
+  return {p_info.value(QLatin1String(vxcore::kJsonKeyId)).toString(),
+          p_info.value(QLatin1String(vxcore::kJsonKeyName)).toString(),
+          type == QLatin1String("folder") ? NodeInfo::Type::Folder
+          : type == QLatin1String("file") ? NodeInfo::Type::File
+                                          : NodeInfo::Type::Unknown,
+          p_info.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()};
+}
+
+NodeInfo nodeInfo(const FolderEntry &p_entry, bool p_folder) {
+  // Listings have no top-level encrypted flag. metadata.encrypted is a different policy.
+  return {p_entry.m_id, p_entry.m_name, p_folder ? NodeInfo::Type::Folder : NodeInfo::Type::File,
+          false};
+}
+
 struct DiskSnapshot {
   ApiResult error;
   QByteArray digest;
@@ -405,21 +428,19 @@ struct VNoteApiBackend::Impl {
     const auto info = core->getFileInfo(nb, path, &error);
     if (error != VXCORE_OK)
       return unavailable();
-    return resolveWithMetadata(nb, id, path, core->buildAbsolutePath(nb, QStringLiteral(".")), info,
-                               allowFolder, out);
+    return resolveWithMetadata(nb, id, path, core->buildAbsolutePath(nb, QStringLiteral(".")),
+                               nodeInfo(info), allowFolder, out);
   }
   ApiResult resolveWithMetadata(const QString &p_nb, const QString &p_id, const QString &p_path,
-                                const QString &p_root, const QJsonObject &p_info,
-                                bool p_allowFolder, Node *p_out) const {
-    if (p_id.isEmpty() || p_info.value(QLatin1String(vxcore::kJsonKeyId)).toString() != p_id)
+                                const QString &p_root, const NodeInfo &p_info, bool p_allowFolder,
+                                Node *p_out) const {
+    if (p_id.isEmpty() || p_info.id != p_id)
       return unavailable();
-    const auto type = p_info.value(QLatin1String(vxcore::kJsonKeyType)).toString();
-    const bool folder = type == QLatin1String("folder");
-    if (p_info.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
-        p_path.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
+    const bool folder = p_info.type == NodeInfo::Type::Folder;
+    if (p_info.encrypted || p_path.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
       return failure(422, "protected_note_unavailable",
                      "Protected notes are unavailable through this API.");
-    if ((!folder && type != QLatin1String("file")) || (folder && !p_allowFolder))
+    if (p_info.type == NodeInfo::Type::Unknown || (folder && !p_allowFolder))
       return failure(422, "unsupported_note_type", "This resource is not an ordinary note.");
     if (p_root.isEmpty() || !allowedPath(p_root, p_path, folder))
       return unavailable();
@@ -429,7 +450,7 @@ struct VNoteApiBackend::Impl {
     node.id = p_id;
     node.path = p_path;
     node.root = QFileInfo(p_root).canonicalFilePath();
-    node.name = p_info.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+    node.name = p_info.name;
     node.folder = folder;
     node.readOnly = core->isNotebookReadOnly(p_nb);
     node.trash = !node.readOnly && !folder && !core->getRecycleBinPath(p_nb).isEmpty();
@@ -565,20 +586,16 @@ struct VNoteApiBackend::Impl {
       return;
     }
     QList<QJsonObject> nodes;
-    for (const auto key : {vxcore::kJsonKeyFolders, vxcore::kJsonKeyFiles}) {
-      for (const auto &value : children.value(QLatin1String(key)).toArray()) {
-        const auto child = value.toObject();
-        if (child.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
-            child.value(QLatin1String(vxcore::kJsonKeyName))
-                .toString()
-                .endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
+    for (const bool folder : {true, false}) {
+      for (const auto &child : folder ? children.m_folders : children.m_files) {
+        const auto &name = child.m_name;
+        if (name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
           continue;
-        if (child.value(QLatin1String(vxcore::kJsonKeyId)).toString().isEmpty()) {
-          const auto name = child.value(QLatin1String(vxcore::kJsonKeyName)).toString();
-          const auto relative = path.isEmpty() ? name : path + QLatin1Char('/') + name;
-          const bool folder = QLatin1String(key) == QLatin1String(vxcore::kJsonKeyFolders);
-          if (!ordinaryRelativePath(name) || name.contains(QLatin1Char('/')) ||
-              !allowedPath(root, relative, folder))
+        const auto relative = path.isEmpty() ? name : path + QLatin1Char('/') + name;
+        if (!ordinaryRelativePath(name) || name.contains(QLatin1Char('/')))
+          continue;
+        if (child.m_id.isEmpty()) {
+          if (!allowedPath(root, relative, folder))
             continue;
           const auto info = core->getFileInfo(cmd.notebookId, relative);
           if (info.isEmpty() ||
@@ -608,8 +625,8 @@ struct VNoteApiBackend::Impl {
           continue;
         }
         Node node;
-        if (!resolve(cmd.notebookId, child.value(QLatin1String(vxcore::kJsonKeyId)).toString(),
-                     item->context, &node, true)
+        if (!resolveWithMetadata(cmd.notebookId, child.m_id, relative, root,
+                                 nodeInfo(child, folder), true, &node)
                  .error.status)
           nodes.append(node.metadata);
         if (nodes.size() > kMaxScannedNodes) {
@@ -900,28 +917,28 @@ struct VNoteApiBackend::Impl {
         seen.insert(folder);
         if (!allowedPath(root, folder, true))
           continue;
-        const auto children = core->listFolderChildren(nb, folder);
-        for (const auto key : {vxcore::kJsonKeyFolders, vxcore::kJsonKeyFiles}) {
-          for (const auto &value : children.value(QLatin1String(key)).toArray()) {
+        VxCoreError error = VXCORE_OK;
+        const auto children = core->listFolderChildren(nb, folder, &error);
+        if (error != VXCORE_OK)
+          continue;
+        for (const bool childFolder : {true, false}) {
+          for (const auto &child : childFolder ? children.m_folders : children.m_files) {
             if (++scanned > kMaxScannedNodes || files >= kMaxSearchFiles) {
               item->truncated = true;
               break;
             }
-            const auto child = value.toObject();
-            if (child.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
-                child.value(QLatin1String(vxcore::kJsonKeyName))
-                    .toString()
-                    .endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
+            if (child.m_name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))
               continue;
-            const auto id = child.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+            const auto &id = child.m_id;
             Node node;
-            if (target.raw && key == vxcore::kJsonKeyFiles) {
-              const auto name = child.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+            if (target.raw && !childFolder) {
+              const auto &name = child.m_name;
               if (name.isEmpty() || name.contains(QLatin1Char('/')) ||
                   name.contains(QLatin1Char('\\')))
                 continue;
               const auto path = folder.isEmpty() ? name : folder + QLatin1Char('/') + name;
-              if (resolveWithMetadata(nb, id, path, root, child, false, &node).error.status)
+              if (resolveWithMetadata(nb, id, path, root, nodeInfo(child, false), false, &node)
+                      .error.status)
                 continue;
             } else if (resolve(nb, id, item->context, &node, true).error.status) {
               continue;
@@ -1014,7 +1031,7 @@ struct VNoteApiBackend::Impl {
           item->current.paths = {};
           // Raw per-file metadata lookup rescans its parent. Refresh each parent
           // once in this owner-thread phase; final hits still use full resolve().
-          QHash<QString, QHash<QString, QJsonObject>> listings;
+          QHash<QString, QHash<QString, NodeInfo>> listings;
           auto *core = services.get<NotebookCoreService>();
           const auto nb = item->current.notebook;
           const bool raw = item->current.raw;
@@ -1029,21 +1046,21 @@ struct VNoteApiBackend::Impl {
               const auto parent = node.path.left(qMax(0, int(node.path.lastIndexOf('/'))));
               auto listing = listings.find(parent);
               if (listing == listings.end()) {
-                QHash<QString, QJsonObject> byId;
+                QHash<QString, NodeInfo> byId;
                 if (!root.isEmpty() && allowedPath(root, parent, true)) {
-                  const auto files = core->listFolderChildren(nb, parent)
-                                         .value(QLatin1String(vxcore::kJsonKeyFiles))
-                                         .toArray();
-                  for (const auto &entry : files) {
-                    const auto info = entry.toObject();
-                    byId.insert(info.value(QLatin1String(vxcore::kJsonKeyId)).toString(), info);
+                  VxCoreError error = VXCORE_OK;
+                  const auto children = core->listFolderChildren(nb, parent, &error);
+                  if (error == VXCORE_OK) {
+                    byId.reserve(children.m_files.size());
+                    for (const auto &entry : children.m_files)
+                      byId.insert(entry.m_id, nodeInfo(entry, false));
                   }
                 }
                 listing = listings.insert(parent, std::move(byId));
               }
-              const auto info = listing.value().value(node.id);
-              if (info.value(QLatin1String(vxcore::kJsonKeyName)).toString() != node.name ||
-                  resolveWithMetadata(nb, node.id, node.path, root, info, false, &fresh)
+              const auto info = listing->constFind(node.id);
+              if (info == listing->cend() || info->name != node.name ||
+                  resolveWithMetadata(nb, node.id, node.path, root, *info, false, &fresh)
                       .error.status)
                 continue;
             } else if (resolve(nb, node.id, item->context, &fresh).error.status) {

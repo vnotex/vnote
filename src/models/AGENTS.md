@@ -28,6 +28,18 @@ Notify changed roles only after every cache is consistent. The real proxy/tree
 regression in `tests/models/test_notebooknodemodel.cpp` covers expanded descendants,
 later fetching, persistent selection and repeated collapse/expand without Reload.
 
+## Typed notebook and tag records
+
+`NotebookNodeModel` consumes `FolderListing` directly while retaining the separate external-node
+JSON path. Preserve source order, per-node metadata/color interpretation, and transient missing
+flags: unknown existence is not missing. Never retain a borrowed vxcore pointer in model state.
+
+`TagModel` remains the sole hierarchy builder and requests one tag list plus one batched direct
+count list. Missing count records stay unknown, not zero. Keep deferred invalidation and update
+count/metadata roles without resetting an unchanged hierarchy. `TagController` and `TagFileModel`
+exchange owning `QVector<TagFileMatch>` values. A null notebook ID uses the caller fallback;
+an explicitly empty ID does not. Cached value equality preserves that distinction.
+
 ## Related Modules
 
 - [`../controllers/AGENTS.md`](../controllers/AGENTS.md) — Controllers that manipulate models

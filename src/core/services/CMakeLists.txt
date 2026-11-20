@@ -115,6 +115,7 @@ set(SERVICES_HEADERS
   eventbridge.h
   updateservice.h
   ${CMAKE_SOURCE_DIR}/src/core/logging.h
+  ${CMAKE_SOURCE_DIR}/src/core/notebookresulttypes.h
 )
 
 add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})

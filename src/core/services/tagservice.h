@@ -1,7 +1,6 @@
 #ifndef TAGSERVICE_H
 #define TAGSERVICE_H
 
-#include <QJsonArray>
 #include <QString>
 #include <QStringList>
 
@@ -64,15 +63,18 @@ public:
   bool createTagPath(const QString &p_notebookId, const QString &p_tagPath);
 
   // List all tags in a notebook. No hooks.
-  QJsonArray listTags(const QString &p_notebookId) const;
+  QVector<TagRecord> listTags(const QString &p_notebookId) const;
+
+  // Direct note associations for every indexed tag. No hooks.
+  QVector<TagCountRecord> countFilesByTag(const QString &p_notebookId) const;
 
   // Search files by tags. No hooks.
-  QJsonArray searchByTags(const QString &p_notebookId, const QStringList &p_tags);
+  SearchResult searchByTags(const QString &p_notebookId, const QStringList &p_tags);
 
   // Find files by tags using efficient database lookup. No hooks.
   // p_op: "AND" to match files with ALL tags, "OR" to match files with ANY tag.
-  QJsonArray findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
-                             const QString &p_op = QString(QLatin1String("AND")));
+  QVector<TagFileMatch> findFilesByTags(const QString &p_notebookId, const QStringList &p_tags,
+                                        const QString &p_op = QString(QLatin1String("AND")));
 
 signals:
   // Emitted after any tag mutation (create, delete, move, tag/untag file, update).

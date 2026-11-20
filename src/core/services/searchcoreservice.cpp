@@ -3,6 +3,9 @@
 #include <memory>
 
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 #include <vxcore/vxcore.h>
 
@@ -12,29 +15,26 @@ namespace {
 
 // Bridges the vxcore C batch callback back to the Qt SearchBatchCallback. A pointer to this
 // struct is threaded through vxcore as the opaque userdata; it stays alive on the calling
-// thread's stack for the full (blocking) duration of vxcore_search_content_streaming.
+// thread's stack until the blocking streaming call and all its callbacks have settled.
 struct StreamingCallbackContext {
   const SearchCoreService::SearchBatchCallback *onBatch = nullptr;
+  std::atomic<bool> failed{false};
 };
 
-// C trampoline matching VxCoreSearchBatchCallback. May run concurrently on vxcore drain
-// threads. batch_json is valid ONLY for this call's duration, so it is parsed immediately.
-void streamingBatchTrampoline(int p_batchIndex, int p_totalBatches, const char *p_batchJson,
-                              void *p_userdata) {
+// Convert while the native chunk is alive. Neither conversion nor a consumer exception
+// may unwind across the C callback boundary; report failure after every callback settles.
+void streamingBatchTrampoline(int p_batchIndex, int p_totalBatches,
+                              const VxCoreContentSearchView *p_batch, void *p_userdata) noexcept {
   auto *ctx = static_cast<StreamingCallbackContext *>(p_userdata);
-  if (!ctx || !ctx->onBatch || !(*ctx->onBatch)) {
+  if (ctx->failed.load(std::memory_order_relaxed)) {
     return;
   }
-
-  QJsonObject batchObj;
-  if (p_batchJson) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_batchJson));
-    if (doc.isObject()) {
-      batchObj = doc.object();
-    }
+  try {
+    const auto batch = SearchContentResult::fromView(*p_batch);
+    (*ctx->onBatch)(p_batchIndex, p_totalBatches, batch);
+  } catch (...) {
+    ctx->failed.store(true, std::memory_order_relaxed);
   }
-
-  (*ctx->onBatch)(p_batchIndex, p_totalBatches, batchObj);
 }
 
 } // namespace
@@ -87,140 +87,77 @@ bool SearchCoreService::isReplacementSupported() const {
 }
 
 Error SearchCoreService::searchFiles(const QString &p_notebookId, const QString &p_queryJson,
-                                     const QString &p_inputFilesJson, QJsonArray *p_results) const {
-  qDebug() << "SearchCoreService::searchFiles: notebookId:" << p_notebookId;
-
-  if (!m_context) {
-    qWarning() << "SearchCoreService::searchFiles: context is null";
-    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+                                     const QString &p_inputFilesJson,
+                                     SearchResult *p_results) const {
+  if (p_results) {
+    *p_results = {};
   }
-
-  if (!p_results) {
-    qWarning() << "SearchCoreService::searchFiles: results output parameter is null";
-    return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
+  if (!m_context || !p_results) {
+    return Error::error(ErrorCode::InvalidArgument, "Context or results output parameter is null");
   }
-
-  // Local QByteArray variables ensure data lives until vxcore call completes.
-  QByteArray notebookUtf8 = p_notebookId.toUtf8();
-  QByteArray queryUtf8 = p_queryJson.toUtf8();
-  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
-  const char *notebookCStr = notebookUtf8.constData();
-  const char *queryCStr = queryUtf8.constData();
-  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
-
-  char *json = nullptr;
-  VxCoreError err = vxcore_search_files(m_context, notebookCStr, queryCStr, inputCStr, &json);
-
+  const auto notebook = p_notebookId.toUtf8();
+  const auto query = p_queryJson.toUtf8();
+  const auto input = p_inputFilesJson.toUtf8();
+  VxCoreFileSearchResult *raw = nullptr;
+  const auto err =
+      vxcore_search_files_typed(m_context, notebook.constData(), query.constData(),
+                                p_inputFilesJson.isEmpty() ? nullptr : input.constData(), &raw);
+  const std::unique_ptr<VxCoreFileSearchResult, decltype(&vxcore_file_search_result_free)> owner(
+      raw, vxcore_file_search_result_free);
   if (err != VXCORE_OK) {
-    qWarning() << "SearchCoreService::searchFiles: vxcore_search_files failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchFiles"));
   }
-
-  qDebug() << "SearchCoreService::searchFiles: vxcore call succeeded, parsing response";
-  return parseSearchResponse(json, p_results);
+  *p_results = SearchResult::fromFileSearchView(*vxcore_file_search_result_view(raw), p_notebookId);
+  return Error::ok();
 }
 
 Error SearchCoreService::searchContent(const QString &p_notebookId, const QString &p_queryJson,
                                        const QString &p_inputFilesJson,
-                                       QJsonArray *p_results) const {
-  qDebug() << "SearchCoreService::searchContent: notebookId:" << p_notebookId;
-
-  if (!m_context) {
-    qWarning() << "SearchCoreService::searchContent: context is null";
-    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+                                       SearchContentResult *p_results) const {
+  if (p_results) {
+    *p_results = {};
   }
-
-  if (!p_results) {
-    qWarning() << "SearchCoreService::searchContent: results output parameter is null";
-    return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
+  if (!m_context || !p_results) {
+    return Error::error(ErrorCode::InvalidArgument, "Context or results output parameter is null");
   }
-
-  // Local QByteArray variables ensure data lives until vxcore call completes.
-  QByteArray notebookUtf8 = p_notebookId.toUtf8();
-  QByteArray queryUtf8 = p_queryJson.toUtf8();
-  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
-  const char *notebookCStr = notebookUtf8.constData();
-  const char *queryCStr = queryUtf8.constData();
-  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
-
-  char *json = nullptr;
-  VxCoreError err = vxcore_search_content(m_context, notebookCStr, queryCStr, inputCStr, &json);
-
+  const auto notebook = p_notebookId.toUtf8();
+  const auto query = p_queryJson.toUtf8();
+  const auto input = p_inputFilesJson.toUtf8();
+  VxCoreContentSearchResult *raw = nullptr;
+  const auto err =
+      vxcore_search_content_typed(m_context, notebook.constData(), query.constData(),
+                                  p_inputFilesJson.isEmpty() ? nullptr : input.constData(), &raw);
+  const std::unique_ptr<VxCoreContentSearchResult, decltype(&vxcore_content_search_result_free)>
+      owner(raw, vxcore_content_search_result_free);
   if (err != VXCORE_OK) {
-    qWarning() << "SearchCoreService::searchContent: vxcore_search_content failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContent"));
   }
-
-  qDebug() << "SearchCoreService::searchContent: vxcore call succeeded, parsing response";
-  return parseSearchResponse(json, p_results);
+  *p_results = SearchContentResult::fromView(*vxcore_content_search_result_view(raw));
+  return Error::ok();
 }
 
 Error SearchCoreService::searchByTags(const QString &p_notebookId, const QString &p_queryJson,
                                       const QString &p_inputFilesJson,
-                                      QJsonArray *p_results) const {
-  qDebug() << "SearchCoreService::searchByTags: notebookId:" << p_notebookId;
-
-  if (!m_context) {
-    qWarning() << "SearchCoreService::searchByTags: context is null";
-    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+                                      SearchResult *p_results) const {
+  if (p_results) {
+    *p_results = {};
   }
-
-  if (!p_results) {
-    qWarning() << "SearchCoreService::searchByTags: results output parameter is null";
-    return Error::error(ErrorCode::InvalidArgument, "Results output parameter is null");
+  if (!m_context || !p_results) {
+    return Error::error(ErrorCode::InvalidArgument, "Context or results output parameter is null");
   }
-
-  // Local QByteArray variables ensure data lives until vxcore call completes.
-  QByteArray notebookUtf8 = p_notebookId.toUtf8();
-  QByteArray queryUtf8 = p_queryJson.toUtf8();
-  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
-  const char *notebookCStr = notebookUtf8.constData();
-  const char *queryCStr = queryUtf8.constData();
-  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
-
-  char *json = nullptr;
-  VxCoreError err = vxcore_search_by_tags(m_context, notebookCStr, queryCStr, inputCStr, &json);
-
+  const auto notebook = p_notebookId.toUtf8();
+  const auto query = p_queryJson.toUtf8();
+  const auto input = p_inputFilesJson.toUtf8();
+  VxCoreFileSearchResult *raw = nullptr;
+  const auto err =
+      vxcore_search_by_tags_typed(m_context, notebook.constData(), query.constData(),
+                                  p_inputFilesJson.isEmpty() ? nullptr : input.constData(), &raw);
+  const std::unique_ptr<VxCoreFileSearchResult, decltype(&vxcore_file_search_result_free)> owner(
+      raw, vxcore_file_search_result_free);
   if (err != VXCORE_OK) {
-    qWarning() << "SearchCoreService::searchByTags: vxcore_search_by_tags failed, error:" << err;
     return vxcoreErrorToError(err, QStringLiteral("searchByTags"));
   }
-
-  qDebug() << "SearchCoreService::searchByTags: vxcore call succeeded, parsing response";
-  return parseSearchResponse(json, p_results);
-}
-
-Error SearchCoreService::parseSearchResponse(char *p_json, QJsonArray *p_results) const {
-  if (p_json) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_json));
-    vxcore_string_free(p_json);
-    if (doc.isObject()) {
-      QJsonObject obj = doc.object();
-
-      // Extract matchCount and truncated from the vxcore response.
-      const QString matchCountKey = QStringLiteral("matchCount");
-      const QString truncatedKey = QStringLiteral("truncated");
-      const QString matchesKey = QStringLiteral("matches");
-      int matchCount = obj.value(matchCountKey).toInt(0);
-      bool truncated = obj.value(truncatedKey).toBool(false);
-
-      if (obj.contains(matchesKey) && obj[matchesKey].isArray()) {
-        *p_results = obj[matchesKey].toArray();
-      } else {
-        *p_results = QJsonArray();
-      }
-
-      qDebug() << "SearchCoreService::parseSearchResponse: matchCount:" << matchCount
-               << "truncated:" << truncated << "resultsArraySize:" << p_results->size();
-    } else {
-      qWarning() << "SearchCoreService::parseSearchResponse: invalid JSON object response";
-      return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
-    }
-  } else {
-    qDebug() << "SearchCoreService::parseSearchResponse: null JSON response, returning empty";
-    *p_results = QJsonArray();
-  }
-
+  *p_results = SearchResult::fromFileSearchView(*vxcore_file_search_result_view(raw), p_notebookId);
   return Error::ok();
 }
 
@@ -272,46 +209,28 @@ Error SearchCoreService::searchContentCancellable(const QString &p_notebookId,
                                                   const QString &p_queryJson,
                                                   const QString &p_inputFilesJson,
                                                   std::atomic<int> *p_cancelFlag,
-                                                  QJsonObject *p_resultObj) const {
-  qDebug() << "SearchCoreService::searchContentCancellable: notebookId:" << p_notebookId
-           << "hasCancelFlag:" << (p_cancelFlag != nullptr);
-
-  if (!m_context) {
-    qWarning() << "SearchCoreService::searchContentCancellable: context is null";
-    return Error::error(ErrorCode::InvalidArgument, "Context is null");
+                                                  SearchContentResult *p_result) const {
+  if (p_result) {
+    *p_result = {};
   }
-
-  if (!p_resultObj) {
-    qWarning() << "SearchCoreService::searchContentCancellable: result output parameter is null";
-    return Error::error(ErrorCode::InvalidArgument, "Result output parameter is null");
+  if (!m_context || !p_result) {
+    return Error::error(ErrorCode::InvalidArgument, "Context or result output parameter is null");
   }
-
-  // Local QByteArray variables ensure data lives until vxcore call completes.
-  QByteArray notebookUtf8 = p_notebookId.toUtf8();
-  QByteArray queryUtf8 = p_queryJson.toUtf8();
-  QByteArray inputUtf8 = p_inputFilesJson.toUtf8();
-  const char *notebookCStr = notebookUtf8.constData();
-  const char *queryCStr = queryUtf8.constData();
-  const char *inputCStr = p_inputFilesJson.isEmpty() ? nullptr : inputUtf8.constData();
-
-  // Cast std::atomic<int>* to volatile int* at the C boundary.
-  volatile int *cancelFlagPtr =
-      p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
-
-  char *json = nullptr;
-  VxCoreError err =
-      vxcore_search_content_ex(m_context, notebookCStr, queryCStr, inputCStr, cancelFlagPtr, &json);
-
+  const auto notebook = p_notebookId.toUtf8();
+  const auto query = p_queryJson.toUtf8();
+  const auto input = p_inputFilesJson.toUtf8();
+  volatile int *cancel = p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
+  VxCoreContentSearchResult *raw = nullptr;
+  const auto err = vxcore_search_content_ex_typed(
+      m_context, notebook.constData(), query.constData(),
+      p_inputFilesJson.isEmpty() ? nullptr : input.constData(), cancel, &raw);
+  const std::unique_ptr<VxCoreContentSearchResult, decltype(&vxcore_content_search_result_free)>
+      owner(raw, vxcore_content_search_result_free);
   if (err != VXCORE_OK) {
-    qWarning()
-        << "SearchCoreService::searchContentCancellable: vxcore_search_content_ex failed, error:"
-        << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContentCancellable"));
   }
-
-  qDebug()
-      << "SearchCoreService::searchContentCancellable: vxcore call succeeded, parsing response";
-  return parseSearchResponseFull(json, p_resultObj);
+  *p_result = SearchContentResult::fromView(*vxcore_content_search_result_view(raw));
+  return Error::ok();
 }
 
 Error SearchCoreService::searchContentStreaming(const QString &p_notebookId,
@@ -344,14 +263,13 @@ Error SearchCoreService::searchContentStreaming(const QString &p_notebookId,
   volatile int *cancelFlagPtr =
       p_cancelFlag ? reinterpret_cast<volatile int *>(p_cancelFlag) : nullptr;
 
-  // vxcore_search_content_streaming BLOCKS until the scan completes, so cbCtx (and the
-  // p_onBatch it references) remain valid on this stack for every trampoline invocation.
+  // The typed streaming call blocks until every callback settles, so cbCtx remains alive.
   StreamingCallbackContext cbCtx;
   cbCtx.onBatch = &p_onBatch;
 
-  VxCoreError err =
-      vxcore_search_content_streaming(m_context, notebookCStr, queryCStr, inputCStr, p_batchSize,
-                                      streamingBatchTrampoline, &cbCtx, cancelFlagPtr);
+  VxCoreError err = vxcore_search_content_streaming_typed(
+      m_context, notebookCStr, queryCStr, inputCStr, p_batchSize, streamingBatchTrampoline, &cbCtx,
+      cancelFlagPtr);
 
   if (err != VXCORE_OK) {
     qWarning() << "SearchCoreService::searchContentStreaming: vxcore_search_content_streaming "
@@ -359,34 +277,10 @@ Error SearchCoreService::searchContentStreaming(const QString &p_notebookId,
                << err;
     return vxcoreErrorToError(err, QStringLiteral("searchContentStreaming"));
   }
-
-  qDebug() << "SearchCoreService::searchContentStreaming: vxcore call succeeded";
-  return Error::ok();
-}
-
-Error SearchCoreService::parseSearchResponseFull(char *p_json, QJsonObject *p_resultObj) const {
-  if (p_json) {
-    QJsonDocument doc = QJsonDocument::fromJson(QByteArray(p_json));
-    vxcore_string_free(p_json);
-    if (doc.isObject()) {
-      *p_resultObj = doc.object();
-
-      // Extract matchCount and truncated from the response.
-      const QString matchCountKey = QStringLiteral("matchCount");
-      const QString truncatedKey = QStringLiteral("truncated");
-      int matchCount = p_resultObj->value(matchCountKey).toInt(0);
-      bool truncated = p_resultObj->value(truncatedKey).toBool(false);
-
-      qDebug() << "SearchCoreService::parseSearchResponseFull: matchCount:" << matchCount
-               << "truncated:" << truncated;
-    } else {
-      qWarning() << "SearchCoreService::parseSearchResponseFull: invalid JSON object response";
-      return Error::error(ErrorCode::InvalidArgument, "Invalid JSON object response");
-    }
-  } else {
-    qDebug() << "SearchCoreService::parseSearchResponseFull: null JSON response, returning empty";
-    *p_resultObj = QJsonObject();
+  if (cbCtx.failed.load(std::memory_order_relaxed)) {
+    return Error::error(ErrorCode::InvalidArgument, "Search batch conversion or callback failed");
   }
 
+  qDebug() << "SearchCoreService::searchContentStreaming: vxcore call succeeded";
   return Error::ok();
 }

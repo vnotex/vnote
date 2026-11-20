@@ -48,8 +48,9 @@ private slots:
   void notebookSwitchBeforeReveal();
 
 private:
-  using Tags = QMap<QString, QJsonObject>;
+  using Tags = QMap<QString, TagRecord>;
   Tags tags(const QString &p_notebookId) const;
+  static void verifyTags(const Tags &p_actual, const Tags &p_expected);
   QModelIndex index(const QString &p_name) const;
   std::unique_ptr<QMimeData> mime(const QString &p_name) const;
   QString createNotebook(const QString &p_name);
@@ -69,8 +70,8 @@ private:
   std::unique_ptr<TagController> m_controller;
   std::unique_ptr<TagView> m_view;
   QString m_notebookId;
-  QJsonArray m_matches;
-  QJsonArray m_displayedMatches;
+  QVector<TagFileMatch> m_matches;
+  QVector<TagFileMatch> m_displayedMatches;
   int m_beforeMoves = 0;
   int m_afterMoves = 0;
 };
@@ -100,10 +101,8 @@ void TestTagViewDragDrop::init() {
   QVERIFY(m_core->tagFile(m_notebookId, QStringLiteral("tagged.md"), QStringLiteral("Child")));
   m_matches = m_core->findFilesByTags(m_notebookId, {QStringLiteral("Child")});
   QCOMPARE(m_matches.size(), 1);
-  QCOMPARE(m_matches.first().toObject().value(QStringLiteral("filePath")).toString(),
-           QStringLiteral("tagged.md"));
-  QCOMPARE(m_matches.first().toObject().value(QStringLiteral("tags")).toArray(),
-           QJsonArray{QStringLiteral("Child")});
+  QCOMPARE(m_matches.first().m_filePath, QStringLiteral("tagged.md"));
+  QCOMPARE(m_matches.first().m_tags, QStringList{QStringLiteral("Child")});
 
   m_model = std::make_unique<TagModel>(*m_services);
   m_proxy = std::make_unique<TreeFilterProxyModel>();
@@ -122,7 +121,7 @@ void TestTagViewDragDrop::init() {
   connect(m_controller.get(), &TagController::tagCompatibilityChanged, m_model.get(),
           &TagModel::setIncompatibleTags);
   connect(m_controller.get(), &TagController::matchingNodesChanged, m_view.get(),
-          [this](const QJsonArray &p_matches) { m_displayedMatches = p_matches; });
+          [this](const QVector<TagFileMatch> &p_matches) { m_displayedMatches = p_matches; });
   connect(
       m_controller.get(), &TagController::tagMoved, m_view.get(),
       [this](const QString &p_notebookId, const QString &p_name) {
@@ -133,7 +132,7 @@ void TestTagViewDragDrop::init() {
       Qt::QueuedConnection);
   selectNotebook(m_notebookId);
   m_beforeMoves = m_afterMoves = 0;
-  m_displayedMatches = QJsonArray();
+  m_displayedMatches.clear();
   m_hooks->addAction(HookNames::TagBeforeMove,
                      [this](HookContext &, const QVariantMap &) { ++m_beforeMoves; });
   m_hooks->addAction(HookNames::TagAfterMove,
@@ -178,11 +177,20 @@ void TestTagViewDragDrop::selectNotebook(const QString &p_id) {
 
 TestTagViewDragDrop::Tags TestTagViewDragDrop::tags(const QString &p_notebookId) const {
   Tags result;
-  for (const auto &value : m_core->listTags(p_notebookId)) {
-    const auto tag = value.toObject();
-    result.insert(tag.value(QStringLiteral("name")).toString(), tag);
+  for (const auto &tag : m_core->listTags(p_notebookId)) {
+    result.insert(tag.m_name, tag);
   }
   return result;
+}
+
+void TestTagViewDragDrop::verifyTags(const Tags &p_actual, const Tags &p_expected) {
+  QCOMPARE(p_actual.keys(), p_expected.keys());
+  for (auto it = p_actual.cbegin(); it != p_actual.cend(); ++it) {
+    const auto expected = p_expected.constFind(it.key());
+    QCOMPARE(it->m_name, expected->m_name);
+    QCOMPARE(it->m_parent, expected->m_parent);
+    QCOMPARE(it->m_metadata, expected->m_metadata);
+  }
 }
 
 QModelIndex TestTagViewDragDrop::index(const QString &p_name) const {
@@ -195,8 +203,8 @@ std::unique_ptr<QMimeData> TestTagViewDragDrop::mime(const QString &p_name) cons
 
 void TestTagViewDragDrop::verifyMove(const Tags &p_before, const QString &p_parent) {
   Tags expected = p_before;
-  expected[QStringLiteral("Child")].insert(QStringLiteral("parent"), p_parent);
-  QCOMPARE(tags(m_notebookId), expected);
+  expected[QStringLiteral("Child")].m_parent = p_parent;
+  verifyTags(tags(m_notebookId), expected);
   QCOMPARE(m_core->findFilesByTags(m_notebookId, {QStringLiteral("Child")}), m_matches);
   QCOMPARE(m_model->fullTagPath(QStringLiteral("Grandchild")),
            (p_parent.isEmpty() ? QString() : p_parent + QLatin1Char('/')) +
@@ -243,9 +251,10 @@ void TestTagViewDragDrop::moveSubtree() {
   }
   QVERIFY(
       m_view->visualRect(index(QStringLiteral("Child"))).intersects(m_view->viewport()->rect()));
-  QJsonObject displayed = m_displayedMatches.first().toObject();
-  QCOMPARE(displayed.take(QStringLiteral("notebookId")).toString(), m_notebookId);
-  QCOMPARE(QJsonArray{displayed}, m_matches);
+  auto displayed = m_displayedMatches;
+  QCOMPARE(displayed.first().m_notebookId, m_notebookId);
+  displayed.first().m_notebookId = QString();
+  QCOMPARE(displayed, m_matches);
 
   const QString id = m_notebookId;
   selectNotebook(QString());
@@ -276,7 +285,7 @@ void TestTagViewDragDrop::invalidHierarchy() {
   QVERIFY(data);
   QVERIFY(!m_proxy->canDropMimeData(data.get(), Qt::MoveAction, -1, -1, index(parent)));
   QVERIFY(!m_proxy->dropMimeData(data.get(), Qt::MoveAction, -1, -1, index(parent)));
-  QCOMPARE(tags(m_notebookId), before);
+  verifyTags(tags(m_notebookId), before);
   QCOMPARE(m_beforeMoves, 0);
   QCOMPARE(m_afterMoves, 0);
 }
@@ -308,7 +317,7 @@ void TestTagViewDragDrop::filteredHierarchy() {
   QVERIFY(!index(QStringLiteral("Beta")).isValid());
   QVERIFY(!m_proxy->dropMimeData(cycle.get(), Qt::MoveAction, -1, -1,
                                  index(QStringLiteral("Grandchild"))));
-  QCOMPARE(tags(m_notebookId), before);
+  verifyTags(tags(m_notebookId), before);
   m_proxy->setFilterText(QStringLiteral("a"));
   auto data = mime(QStringLiteral("Child"));
   QVERIFY(data);
@@ -348,8 +357,8 @@ void TestTagViewDragDrop::stalePayload() {
   // Reacquire the destination after reset; stale QModelIndex is not a supported Qt API input.
   QVERIFY(
       !m_proxy->dropMimeData(data.get(), Qt::MoveAction, -1, -1, index(QStringLiteral("Beta"))));
-  QCOMPARE(tags(originalId), originalBefore);
-  QCOMPARE(tags(m_notebookId), currentBefore);
+  verifyTags(tags(originalId), originalBefore);
+  verifyTags(tags(m_notebookId), currentBefore);
   QCOMPARE(m_beforeMoves, 0);
 }
 
@@ -418,7 +427,7 @@ void TestTagViewDragDrop::invalidPayload() {
     data.reset();
   QVERIFY(!m_model->canDropMimeData(data.get(), action, row, column, parent));
   QVERIFY(!m_model->dropMimeData(data.get(), action, row, column, parent));
-  QCOMPARE(tags(m_notebookId), before);
+  verifyTags(tags(m_notebookId), before);
   QCOMPARE(m_beforeMoves, 0);
 }
 
@@ -429,8 +438,7 @@ void TestTagViewDragDrop::singleSourceOnly() {
   m_view->selectionModel()->select(index(QStringLiteral("Beta")), QItemSelectionModel::Select);
   QCOMPARE(m_view->selectedTagNames(),
            (QStringList{QStringLiteral("Child"), QStringLiteral("Beta")}));
-  QCOMPARE(m_displayedMatches.first().toObject().value(QStringLiteral("filePath")).toString(),
-           QStringLiteral("tagged.md"));
+  QCOMPARE(m_displayedMatches.first().m_filePath, QStringLiteral("tagged.md"));
   QVERIFY(!m_proxy->mimeData(m_view->selectionModel()->selectedRows()));
   QVERIFY(!m_model->mimeData({}));
   QVERIFY(!m_model->mimeData({QModelIndex()}));
@@ -438,7 +446,7 @@ void TestTagViewDragDrop::singleSourceOnly() {
   QVERIFY(!m_model->mimeData({foreign.index(0, 0)}));
   QVERIFY(!m_model->mimeData({foreign.index(0, 1)}));
   QCOMPARE(m_model->flags(foreign.index(0, 0)), Qt::NoItemFlags);
-  QCOMPARE(tags(m_notebookId), before);
+  verifyTags(tags(m_notebookId), before);
   QCOMPARE(m_beforeMoves, 0);
 }
 
@@ -477,7 +485,7 @@ void TestTagViewDragDrop::failedPersistence() {
   QVERIFY(moved.isEmpty());
   QCOMPARE(m_beforeMoves, 1);
   QCOMPARE(m_afterMoves, 0);
-  QCOMPARE(tags(m_notebookId), before);
+  verifyTags(tags(m_notebookId), before);
   QCOMPARE(m_model->fullTagPath(QStringLiteral("Grandchild")),
            QStringLiteral("Alpha/Child/Grandchild"));
   QVERIFY(index(QStringLiteral("Child")).isValid());
@@ -500,9 +508,8 @@ void TestTagViewDragDrop::notebookSwitchBeforeReveal() {
   m_view->selectAndScrollToTag(QStringLiteral("Beta"));
   QCoreApplication::sendPostedEvents(m_view.get(), QEvent::MetaCall);
   QCOMPARE(m_view->selectedTagNames(), QStringList{QStringLiteral("Beta")});
-  QCOMPARE(tags(other), otherBefore);
-  QCOMPARE(tags(original).value(QStringLiteral("Child")).value(QStringLiteral("parent")).toString(),
-           QStringLiteral("Beta"));
+  verifyTags(tags(other), otherBefore);
+  QCOMPARE(tags(original).value(QStringLiteral("Child")).m_parent, QStringLiteral("Beta"));
 }
 
 } // namespace tests

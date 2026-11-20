@@ -24,6 +24,7 @@ target_sources(vnote PRIVATE
     markdowneditorconfig.cpp markdowneditorconfig.h
     mindmapeditorconfig.cpp mindmapeditorconfig.h
     nodeinfo.h
+    notebookresulttypes.h
     noncopyable.h
     vxcorelogbridge.cpp vxcorelogbridge.h
     pdfviewerconfig.cpp pdfviewerconfig.h

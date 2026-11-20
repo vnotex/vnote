@@ -324,21 +324,15 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
   const auto folderPath = normalizedRelativePath(p_folderPath);
   const auto children = notebookService->listFolderChildren(p_notebookId, folderPath);
 
-  const auto fileArray = children.value(QStringLiteral("files")).toArray();
-  for (const auto &fileValue : fileArray) {
-    const auto fileObj = fileValue.toObject();
-    const auto name = fileObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+  for (const auto &file : children.m_files) {
+    const auto &name = file.m_name;
     if (name.isEmpty()) {
       continue;
     }
 
     const auto relativePath = folderPath.isEmpty() ? name : folderPath + QLatin1Char('/') + name;
     if (name.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) ||
-        fileObj.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() ||
-        fileObj.value(QLatin1String(vxcore::kJsonKeyMetadata))
-            .toObject()
-            .value(QLatin1String(vxcore::kJsonKeyEncrypted))
-            .toBool()) {
+        file.m_metadata.toObject().value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()) {
       p_protectedFiles.append(relativePath);
       continue;
     }
@@ -363,10 +357,8 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
     return;
   }
 
-  const auto folderArray = children.value(QStringLiteral("folders")).toArray();
-  for (const auto &folderValue : folderArray) {
-    const auto folderObj = folderValue.toObject();
-    const auto name = folderObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+  for (const auto &folder : children.m_folders) {
+    const auto &name = folder.m_name;
     if (name.isEmpty()) {
       continue;
     }

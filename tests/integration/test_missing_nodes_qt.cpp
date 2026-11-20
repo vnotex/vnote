@@ -333,25 +333,21 @@ void TestMissingNodesQt::testListFolderChildrenMarksMissing() {
   QVERIFY(!bId.isEmpty());
 
   VxCoreError err = VXCORE_ERR_UNKNOWN;
-  const QJsonObject children =
+  const FolderListing children =
       m_notebookService->listFolderChildren(m_notebookId, QStringLiteral("f"), &err);
   QCOMPARE(err, VXCORE_OK);
 
-  const QJsonArray files = children.value(QStringLiteral("files")).toArray();
   bool sawA = false;
   bool sawB = false;
-  for (const QJsonValue &v : files) {
-    const QJsonObject child = v.toObject();
-    const QString name = child.value(QStringLiteral("name")).toString();
-    const QString existsKey = QString::fromUtf8(vxcore::kJsonKeyNodeExists);
-    if (name == QStringLiteral("a.md")) {
+  for (const FolderEntry &child : children.m_files) {
+    if (child.m_name == QStringLiteral("a.md")) {
       sawA = true;
-      QVERIFY2(child.contains(existsKey), "phantom child missing the 'exists' field");
-      QCOMPARE(child.value(existsKey).toBool(), false);
-    } else if (name == QStringLiteral("b.md")) {
+      QVERIFY2(child.m_existsKnown, "phantom child must have known existence");
+      QCOMPARE(child.m_exists, false);
+    } else if (child.m_name == QStringLiteral("b.md")) {
       sawB = true;
-      QVERIFY2(child.contains(existsKey), "healthy child missing the 'exists' field");
-      QCOMPARE(child.value(existsKey).toBool(), true);
+      QVERIFY2(child.m_existsKnown, "healthy child must have known existence");
+      QCOMPARE(child.m_exists, true);
     }
   }
   QVERIFY2(sawA, "phantom child a.md absent from listing (must be MARKED, not filtered)");
@@ -363,7 +359,7 @@ void TestMissingNodesQt::testListFolderChildrenMissingFolder() {
   QVERIFY2(!rel.isEmpty(), "Failed to create phantom folder (delete on-disk content dir)");
 
   VxCoreError err = VXCORE_OK;
-  const QJsonObject children = m_notebookService->listFolderChildren(m_notebookId, rel, &err);
+  const FolderListing children = m_notebookService->listFolderChildren(m_notebookId, rel, &err);
   QCOMPARE(err, VXCORE_ERR_NODE_NOT_EXISTS);
   QVERIFY(children.isEmpty());
 }
@@ -682,14 +678,13 @@ void TestMissingNodesQt::testControllerRevalidateSkipsReappeared() {
 
   // B was unindexed -> dropped from the parent listing; A remains listed.
   VxCoreError listErr = VXCORE_ERR_UNKNOWN;
-  const QJsonObject children =
+  const FolderListing children =
       m_notebookService->listFolderChildren(m_notebookId, folder, &listErr);
   QCOMPARE(listErr, VXCORE_OK);
-  const QJsonArray files = children.value(QStringLiteral("files")).toArray();
   bool sawA = false;
   bool sawB = false;
-  for (const QJsonValue &v : files) {
-    const QString name = v.toObject().value(QStringLiteral("name")).toString();
+  for (const FolderEntry &child : children.m_files) {
+    const QString &name = child.m_name;
     if (name == QStringLiteral("a.md")) {
       sawA = true;
     } else if (name == QStringLiteral("b.md")) {
@@ -735,11 +730,11 @@ void TestMissingNodesQt::testControllerFolderUnindexCascades() {
 
   // casc no longer appears in the root listing...
   VxCoreError rootErr = VXCORE_ERR_UNKNOWN;
-  const QJsonObject root = m_notebookService->listFolderChildren(m_notebookId, QString(), &rootErr);
+  const FolderListing root =
+      m_notebookService->listFolderChildren(m_notebookId, QString(), &rootErr);
   QCOMPARE(rootErr, VXCORE_OK);
-  const QJsonArray folders = root.value(QStringLiteral("folders")).toArray();
-  for (const QJsonValue &v : folders) {
-    QVERIFY2(v.toObject().value(QStringLiteral("name")).toString() != QStringLiteral("casc"),
+  for (const FolderEntry &child : root.m_folders) {
+    QVERIFY2(child.m_name != QStringLiteral("casc"),
              "unindexed folder casc must be gone from the root listing");
   }
 
@@ -798,11 +793,10 @@ void TestMissingNodesQt::testControllerPastePhantomSourceRoutesToRemoval() {
 
   // No copy landed in root: there must be no file named "ghost.md" at root.
   VxCoreError rootErr = VXCORE_ERR_UNKNOWN;
-  const QJsonObject root = m_notebookService->listFolderChildren(m_notebookId, QString(), &rootErr);
+  const auto root = m_notebookService->listFolderChildren(m_notebookId, QString(), &rootErr);
   QCOMPARE(rootErr, VXCORE_OK);
-  const QJsonArray files = root.value(QStringLiteral("files")).toArray();
-  for (const QJsonValue &v : files) {
-    QVERIFY2(v.toObject().value(QStringLiteral("name")).toString() != QStringLiteral("ghost.md"),
+  for (const auto &file : root.m_files) {
+    QVERIFY2(file.m_name != QStringLiteral("ghost.md"),
              "phantom source must NOT have been pasted into root");
   }
 }

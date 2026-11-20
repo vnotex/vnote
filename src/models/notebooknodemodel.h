@@ -9,6 +9,7 @@
 #include <QVector>
 
 #include <core/nodeinfo.h>
+#include <core/notebookresulttypes.h>
 #include <core/servicelocator.h>
 #include <models/inodelistmodel.h>
 
@@ -107,11 +108,11 @@ private:
   int childRow(const NodeIdentifier &p_parentId, const NodeIdentifier &p_childId) const;
   quintptr indexIdForNode(const NodeIdentifier &p_nodeId) const;
   NodeIdentifier nodeIdForIndexId(quintptr p_indexId) const;
-  QVector<NodeInfo> parseChildrenFromJson(const QJsonObject &p_json,
-                                          const NodeIdentifier &p_parentId) const;
+  QVector<NodeInfo> parseChildren(const FolderListing &p_listing,
+                                  const NodeIdentifier &p_parentId) const;
   QVector<NodeInfo> parseExternalNodesFromJson(const QJsonObject &p_json,
                                                const NodeIdentifier &p_parentId) const;
-  NodeInfo parseNodeInfoFromJson(const QJsonObject &p_json, const NodeIdentifier &p_parentId) const;
+  NodeInfo parseNodeInfo(const FolderEntry &p_entry, const NodeIdentifier &p_parentId) const;
 
   ServiceLocator &m_services;
   QString m_notebookId;

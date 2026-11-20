@@ -21,6 +21,37 @@ If a service here needs to tell the user something, use one of these three sanct
 
 The compile error is the enforcement: losing the `Qt::Widgets` link removes the QtWidgets include directories, so a regression fails to compile rather than silently re-introducing the dependency.
 
+## Typed vxcore read results
+
+Folder children and tag reads return owning Qt records from `core/notebookresulttypes.h`;
+search returns owning records from `core/searchresulttypes.h`. Services release native
+snapshot owners through their matching vxcore free function after conversion. No C view
+pointer may enter a model cache or queued signal. Empty folder results are not errors:
+preserve the explicit `VxCoreError` output.
+
+`NotebookCoreService::folderListingFromView()` and `TagCoreService`'s `*FromView()`
+functions are pure production conversions, also used by the opt-in benchmark. Metadata
+uses `QJsonValue::fromJson()` to preserve null versus `{}`; only a zero-length native
+metadata view is shorthand for an empty object. Result arrays must not be reconstructed
+as Qt JSON. Queries, events/hooks, configuration, and actual HTTP responses remain JSON.
+There is no persisted setting/schema change and no configuration migration.
+
+`SearchContentResult::fromView()` retains ungrouped occurrences. The worker stores batches
+by index, caps occurrences, then builds grouped `SearchResult` values. It sums the
+batch-zero-only skipped count and grants replacement capability only at existing successful
+Simple-search completion checks. Native file/tag truncation remains a service fact; the
+async worker explicitly preserves its existing `truncated=false` UI policy.
+
+Build `benchmark_vxcore_typed_results` explicitly; it is excluded from default builds and
+CTest. It compares retained JSON APIs with production typed conversion, reports warm-cache
+phase timings, and keeps fixture setup outside timing. Process high-water memory is not
+per-path allocation evidence. API acquisition includes native work and transport; do not
+claim those are isolated by subtracting noisy samples.
+Completed cases are flushed to stderr outside timed spans. Raw populated fixtures use one
+native-store transaction after filesystem indexing, then verify every seeded value through
+public C reads; this avoids the public setter's per-file directory rescan. That internal
+store access is fixture-only: production services and measured reads must stay on the C ABI.
+
 ## On-demand note file size
 
 `NotebookCoreService::getFileSize()` wraps `vxcore_node_get_file_size()` and returns

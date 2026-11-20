@@ -25,8 +25,6 @@
 #include <QDialog>
 #include <QFileInfo>
 #include <QHeaderView>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QLabel>
 #include <QList>
 #include <QMenu>
@@ -99,51 +97,30 @@ void clickDialogHeader(SortDialog2 *p_dlg, int p_column) {
                             Q_ARG(int, p_column));
 }
 
-// Build a childrenJson value matching the shape returned by
-// NotebookCoreService::listFolderChildren. Each entry carries "name", "type"
-// and the two epoch-ms timestamps vxcore always emits.
-//
-// The timestamps are derived from the entry's position so each child gets a
-// distinct, predictable key: created = (index+1) * 1000, modified in the
-// REVERSE order so a Created sort and a Modified sort cannot both pass with a
-// swapped field. Two special cases are injected to pin the "unknown timestamp"
-// rule: a name ending in "!zero" emits a literal 0 (vxcore's default for a
-// legacy record), and one ending in "!missing" omits the keys entirely. Both
-// must reach the dialog as an INVALID QDateTime — 0 must not render 1970.
-QJsonObject makeChildrenJson(const QStringList &p_folders, const QStringList &p_files) {
-  auto fill = [](QJsonObject &p_o, const QString &p_name, int p_index, int p_total) {
-    if (p_name.endsWith(QStringLiteral("!missing"))) {
-      return;
+// Created timestamps increase in source order; modified timestamps decrease,
+// so the two header sorts cannot pass with accidentally swapped fields.
+// Zero and negative timestamps must remain unknown rather than render 1970.
+FolderListing makeChildren(const QStringList &p_folders, const QStringList &p_files) {
+  auto fill = [](QVector<FolderEntry> &p_entries, const QStringList &p_names) {
+    p_entries.reserve(p_names.size());
+    for (int i = 0; i < p_names.size(); ++i) {
+      FolderEntry entry;
+      entry.m_name = p_names.at(i);
+      if (entry.m_name.endsWith(QStringLiteral("!negative"))) {
+        entry.m_createdUtc = -1;
+        entry.m_modifiedUtc = -1000;
+      } else if (!entry.m_name.endsWith(QStringLiteral("!zero"))) {
+        entry.m_createdUtc = (i + 1) * Q_INT64_C(1000);
+        entry.m_modifiedUtc = (p_names.size() - i) * Q_INT64_C(1000);
+      }
+      p_entries.append(entry);
     }
-    if (p_name.endsWith(QStringLiteral("!zero"))) {
-      p_o.insert(QStringLiteral("createdUtc"), 0);
-      p_o.insert(QStringLiteral("modifiedUtc"), 0);
-      return;
-    }
-    p_o.insert(QStringLiteral("createdUtc"), static_cast<double>((p_index + 1) * 1000));
-    p_o.insert(QStringLiteral("modifiedUtc"), static_cast<double>((p_total - p_index) * 1000));
   };
 
-  QJsonArray foldersArr;
-  for (int i = 0; i < p_folders.size(); ++i) {
-    QJsonObject o;
-    o.insert(QStringLiteral("name"), p_folders.at(i));
-    o.insert(QStringLiteral("type"), QStringLiteral("folder"));
-    fill(o, p_folders.at(i), i, p_folders.size());
-    foldersArr.append(o);
-  }
-  QJsonArray filesArr;
-  for (int i = 0; i < p_files.size(); ++i) {
-    QJsonObject o;
-    o.insert(QStringLiteral("name"), p_files.at(i));
-    o.insert(QStringLiteral("type"), QStringLiteral("file"));
-    fill(o, p_files.at(i), i, p_files.size());
-    filesArr.append(o);
-  }
-  QJsonObject root;
-  root.insert(QStringLiteral("folders"), foldersArr);
-  root.insert(QStringLiteral("files"), filesArr);
-  return root;
+  FolderListing children;
+  fill(children.m_folders, p_folders);
+  fill(children.m_files, p_files);
+  return children;
 }
 
 // Polling-based dialog automation: drives a sequence of script steps against
@@ -218,15 +195,15 @@ private slots:
   void testAcceptUnchangedOrderNoChange();      // (4)
   void testOnlyFilesShowsOnlyFilesDialog();     // (5)
   void testOnlyFoldersShowsOnlyFoldersDialog(); // (6)
-  void testEmptyJsonSkipsBothDialogs();         // (7)
+  void testEmptyListingSkipsBothDialogs();      // (7)
   void testTriggeringNodeSelection_data();
   void testTriggeringNodeSelection();
+  void testHeaderSortByNameInSeam();
 
-  // Column plumbing: the seam must read createdUtc/modifiedUtc off each child
-  // and hand them to the dialog, treating 0 / missing as unknown.
-  void testHeaderSortByCreatedInSeam();        // (8)
-  void testHeaderSortByModifiedInSeam();       // (9)
-  void testZeroAndMissingTimestampsAreBlank(); // (10)
+  // Timestamp sorting must keep nonpositive values unknown.
+  void testHeaderSortByCreatedInSeam();     // (8)
+  void testHeaderSortByModifiedInSeam();    // (9)
+  void testNonpositiveTimestampsAreBlank(); // (10)
 
   // CombinedNodeExplorer chain.
   void testCombinedExplorerForwardsSortRequested();
@@ -357,9 +334,8 @@ void TestNotebookExplorer2Sort::testFoldersAndFilesShowTwoDialogs() {
   parentId.notebookId = QStringLiteral("nb-test");
   parentId.relativePath = QStringLiteral("docs");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
-                       {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const FolderListing children = makeChildren({QStringLiteral("alpha"), QStringLiteral("beta")},
+                                              {QStringLiteral("one.md"), QStringLiteral("two.md")});
 
   QStringList firstTitle;
   QStringList secondTitle;
@@ -382,7 +358,7 @@ void TestNotebookExplorer2Sort::testFoldersAndFilesShowTwoDialogs() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
 
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY2(folderSubtitle.contains(QStringLiteral("(docs)")), qPrintable(folderSubtitle));
@@ -403,9 +379,8 @@ void TestNotebookExplorer2Sort::testAcceptFoldersCancelFiles() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
-                       {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const FolderListing children = makeChildren({QStringLiteral("alpha"), QStringLiteral("beta")},
+                                              {QStringLiteral("one.md"), QStringLiteral("two.md")});
 
   DialogDriver driver({
       [](SortDialog2 *p_dlg) {
@@ -416,7 +391,7 @@ void TestNotebookExplorer2Sort::testAcceptFoldersCancelFiles() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QCOMPARE(result.newFolderOrder, (QStringList{QStringLiteral("beta"), QStringLiteral("alpha")}));
   QVERIFY(result.newFileOrder.isEmpty());
@@ -427,9 +402,8 @@ void TestNotebookExplorer2Sort::testCancelBoth() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
-                       {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const FolderListing children = makeChildren({QStringLiteral("alpha"), QStringLiteral("beta")},
+                                              {QStringLiteral("one.md"), QStringLiteral("two.md")});
 
   DialogDriver driver({
       [](SortDialog2 *p_dlg) { p_dlg->reject(); },
@@ -437,7 +411,7 @@ void TestNotebookExplorer2Sort::testCancelBoth() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY(result.newFolderOrder.isEmpty());
   QVERIFY(result.newFileOrder.isEmpty());
@@ -450,9 +424,8 @@ void TestNotebookExplorer2Sort::testAcceptUnchangedOrderNoChange() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
-                       {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const FolderListing children = makeChildren({QStringLiteral("beta"), QStringLiteral("alpha")},
+                                              {QStringLiteral("two.md"), QStringLiteral("one.md")});
 
   DialogDriver driver({
       [](SortDialog2 *p_dlg) { p_dlg->accept(); }, // unchanged
@@ -460,7 +433,7 @@ void TestNotebookExplorer2Sort::testAcceptUnchangedOrderNoChange() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 2);
   QVERIFY2(result.newFolderOrder.isEmpty(),
            "Accepted-but-unchanged folder order must be reported as empty (no-op).");
@@ -473,8 +446,8 @@ void TestNotebookExplorer2Sort::testOnlyFilesShowsOnlyFilesDialog() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({}, {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const FolderListing children =
+      makeChildren({}, {QStringLiteral("one.md"), QStringLiteral("two.md")});
 
   QString seenTitle;
 
@@ -487,7 +460,7 @@ void TestNotebookExplorer2Sort::testOnlyFilesShowsOnlyFilesDialog() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QVERIFY2(seenTitle.contains(QStringLiteral("Note")),
            qPrintable(QStringLiteral("Expected Notes dialog, got: %1").arg(seenTitle)));
@@ -500,8 +473,8 @@ void TestNotebookExplorer2Sort::testOnlyFoldersShowsOnlyFoldersDialog() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")}, {});
+  const FolderListing children =
+      makeChildren({QStringLiteral("alpha"), QStringLiteral("beta")}, {});
 
   QString seenTitle;
 
@@ -514,7 +487,7 @@ void TestNotebookExplorer2Sort::testOnlyFoldersShowsOnlyFoldersDialog() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QVERIFY2(seenTitle.contains(QStringLiteral("Folder")),
            qPrintable(QStringLiteral("Expected Folders dialog, got: %1").arg(seenTitle)));
@@ -522,14 +495,12 @@ void TestNotebookExplorer2Sort::testOnlyFoldersShowsOnlyFoldersDialog() {
   QVERIFY(result.newFileOrder.isEmpty());
 }
 
-// (7) listFolderChildren returns an EMPTY QJsonObject (e.g., the notebook is
-//     unloaded or the parent path is invalid). Both dialogs are skipped; no
-//     error, no service call.
-void TestNotebookExplorer2Sort::testEmptyJsonSkipsBothDialogs() {
+// (7) An empty listing skips both dialogs and never requests a reorder.
+void TestNotebookExplorer2Sort::testEmptyListingSkipsBothDialogs() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject empty;
+  const FolderListing empty;
 
   // Fail-safe driver: if a dialog erroneously opens, accept it so the test
   // doesn't hang. The modalsObserved counter then becomes the failure
@@ -551,7 +522,7 @@ void TestNotebookExplorer2Sort::testEmptyJsonSkipsBothDialogs() {
 // Column plumbing sub-tests
 // ============================================================================
 
-// (8) The seam feeds createdUtc through to the dialog. makeChildrenJson gives
+// (8) The seam feeds createdUtc through to the dialog. makeChildren gives
 //     created keys in list order, so an ascending Created sort is a no-op and
 //     a descending one is the exact reverse — which a swapped or misread field
 //     could not reproduce (modifiedUtc runs the OTHER way).
@@ -559,8 +530,8 @@ void TestNotebookExplorer2Sort::testHeaderSortByCreatedInSeam() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson = makeChildrenJson(
-      {QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")}, {});
+  const FolderListing children =
+      makeChildren({QStringLiteral("alpha"), QStringLiteral("beta"), QStringLiteral("gamma")}, {});
 
   DialogDriver driver({
       [](SortDialog2 *p_dlg) {
@@ -571,7 +542,7 @@ void TestNotebookExplorer2Sort::testHeaderSortByCreatedInSeam() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QCOMPARE(result.newFolderOrder,
            (QStringList{QStringLiteral("gamma"), QStringLiteral("beta"), QStringLiteral("alpha")}));
@@ -583,7 +554,7 @@ void TestNotebookExplorer2Sort::testHeaderSortByModifiedInSeam() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson = makeChildrenJson(
+  const FolderListing children = makeChildren(
       {}, {QStringLiteral("one.md"), QStringLiteral("two.md"), QStringLiteral("three.md")});
 
   DialogDriver driver({
@@ -594,24 +565,22 @@ void TestNotebookExplorer2Sort::testHeaderSortByModifiedInSeam() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
   QCOMPARE(result.newFileOrder, (QStringList{QStringLiteral("three.md"), QStringLiteral("two.md"),
                                              QStringLiteral("one.md")}));
 }
 
-// (10) vxcore defaults both timestamps to 0 and emits them unconditionally, so
-//      a legacy child arrives as the NUMBER zero rather than an absent key.
-//      Both that and a genuinely absent key must render as an EMPTY cell (not
-//      1970-01-01) and sort LAST.
-void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
+// (10) Zero and negative timestamps render as EMPTY cells (not 1970-01-01)
+//      and sort LAST, while positive timestamps still retain their order.
+void TestNotebookExplorer2Sort::testNonpositiveTimestampsAreBlank() {
   NodeIdentifier parentId;
   parentId.notebookId = QStringLiteral("nb-test");
 
-  const QJsonObject childrenJson =
-      makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("legacy!zero"),
-                        QStringLiteral("old!missing"), QStringLiteral("beta")},
-                       {});
+  const FolderListing children =
+      makeChildren({QStringLiteral("alpha"), QStringLiteral("legacy!zero"),
+                    QStringLiteral("old!negative"), QStringLiteral("beta")},
+                   {});
 
   QStringList blanks;
   QStringList ascOrder;
@@ -633,11 +602,11 @@ void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
   });
   driver.start();
 
-  const auto result = runSortDialogsForChildren(parentId, {}, childrenJson, nullptr);
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
   QCOMPARE(driver.modalsObserved(), 1);
 
   std::sort(blanks.begin(), blanks.end());
-  QCOMPARE(blanks, (QStringList{QStringLiteral("legacy!zero"), QStringLiteral("old!missing")}));
+  QCOMPARE(blanks, (QStringList{QStringLiteral("legacy!zero"), QStringLiteral("old!negative")}));
 
   // Unknown timestamps sort last, so the two dated folders lead.
   ascOrder = result.newFolderOrder;
@@ -645,7 +614,29 @@ void TestNotebookExplorer2Sort::testZeroAndMissingTimestampsAreBlank() {
   QCOMPARE(ascOrder.at(0), QStringLiteral("alpha"));
   QCOMPARE(ascOrder.at(1), QStringLiteral("beta"));
   QVERIFY(ascOrder.mid(2).contains(QStringLiteral("legacy!zero")));
-  QVERIFY(ascOrder.mid(2).contains(QStringLiteral("old!missing")));
+  QVERIFY(ascOrder.mid(2).contains(QStringLiteral("old!negative")));
+}
+
+void TestNotebookExplorer2Sort::testHeaderSortByNameInSeam() {
+  const NodeIdentifier parentId{QStringLiteral("nb-test"), QStringLiteral("docs")};
+  const QStringList sourceOrder{QStringLiteral("zeta.md"), QStringLiteral("alpha.md"),
+                                QStringLiteral("beta.md")};
+  const FolderListing children = makeChildren({}, sourceOrder);
+  QStringList initialOrder;
+  DialogDriver driver({
+      [&](SortDialog2 *p_dlg) {
+        initialOrder = p_dlg->getSortedOrder();
+        clickDialogHeader(p_dlg, 0);
+        p_dlg->accept();
+      },
+  });
+  driver.start();
+  const auto result = runSortDialogsForChildren(parentId, {}, children, nullptr);
+  QCOMPARE(driver.modalsObserved(), 1);
+  QCOMPARE(initialOrder, sourceOrder);
+  QVERIFY(result.newFolderOrder.isEmpty());
+  QCOMPARE(result.newFileOrder, (QStringList{QStringLiteral("alpha.md"), QStringLiteral("beta.md"),
+                                             QStringLiteral("zeta.md")}));
 }
 
 // ============================================================================
@@ -782,8 +773,8 @@ void TestNotebookExplorer2Sort::testTriggeringNodeSelection() {
   QFETCH(QString, folderSelection);
   QFETCH(QString, fileSelection);
   const NodeIdentifier parentId{QStringLiteral("nb-test"), QStringLiteral("docs")};
-  const auto children = makeChildrenJson({QStringLiteral("alpha"), QStringLiteral("beta")},
-                                         {QStringLiteral("one.md"), QStringLiteral("two.md")});
+  const auto children = makeChildren({QStringLiteral("alpha"), QStringLiteral("beta")},
+                                     {QStringLiteral("one.md"), QStringLiteral("two.md")});
   QStringList observedSelections;
   bool currentMatchesSelection = true;
   const auto step = [&](SortDialog2 *p_dlg) {

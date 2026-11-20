@@ -1,10 +1,10 @@
 #ifndef NOTEBOOKEXPLORER2_SORTSEAM_H
 #define NOTEBOOKEXPLORER2_SORTSEAM_H
 
-#include <QJsonObject>
 #include <QStringList>
 
 #include <core/nodeidentifier.h>
+#include <core/notebookresulttypes.h>
 
 class QWidget;
 
@@ -22,11 +22,9 @@ namespace vnotex {
 // linked in to resolve).
 //
 // Behavior:
-//   1. Parses p_childrenJson (shape:
-//      {"folders":[{name,createdUtc,modifiedUtc,...}], "files":[...]}) into
-//      SortDialog2::Entry rows. vxcore emits both timestamps unconditionally
-//      and defaults them to 0, so a value <= 0 (or a non-numeric one) is
-//      mapped to an INVALID QDateTime — "unknown", not 1970-01-01.
+//   1. Projects p_children into SortDialog2::Entry rows in source order.
+//      Nonpositive timestamps are mapped to an INVALID QDateTime —
+//      "unknown", not 1970-01-01.
 //   2. Shows a SortDialog2 for folders (only if non-empty); if the user
 //      accepts with a CHANGED order, records the new order.
 //   3. Shows a SortDialog2 for files (only if non-empty) with the same
@@ -43,7 +41,7 @@ struct SortDialogResult {
 
 SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
                                            const NodeIdentifier &p_currentNodeId,
-                                           const QJsonObject &p_childrenJson, QWidget *p_parent);
+                                           const FolderListing &p_children, QWidget *p_parent);
 
 } // namespace vnotex
 

@@ -90,16 +90,19 @@ private:
   QString m_notebookId;
   QString m_largeNotebookId;
 
-  static constexpr int kFileCount = 60;        // > kParallelSearchThreshold (50)
-  static constexpr int kLargeFileCount = 300;  // Deep backlog so cancel can win.
+  static constexpr int kFileCount = 130;      // Multiple default 64-file chunks.
+  static constexpr int kLargeFileCount = 300; // Deep backlog so cancel can win.
 };
 
 QString TestSearchServiceDrain::canonicalize(const SearchResult &p_result) {
   QStringList lines;
   lines << QStringLiteral("matchCount=%1").arg(p_result.m_matchCount);
   lines << QStringLiteral("truncated=%1").arg(p_result.m_truncated ? 1 : 0);
+  lines << QStringLiteral("encryptedSkipped=%1").arg(p_result.m_encryptedSkippedCount);
   for (const auto &fileResult : p_result.m_fileResults) {
-    lines << QStringLiteral("file=%1").arg(fileResult.m_path);
+    lines << QStringLiteral("file=%1;id=%2;count=%3")
+                 .arg(fileResult.m_path, fileResult.m_id)
+                 .arg(fileResult.m_matchCount);
     for (const auto &lineMatch : fileResult.m_lineMatches) {
       QStringList segs;
       for (const auto &seg : lineMatch.m_segments) {
@@ -142,9 +145,9 @@ void TestSearchServiceDrain::createFilledNotebook(const QString &p_name, int p_f
   const QByteArray configUtf8 = QStringLiteral("{\"name\":\"%1\"}").arg(p_name).toUtf8();
 
   char *notebookId = nullptr;
-  VxCoreError err = vxcore_notebook_create(m_context, notebookPathUtf8.constData(),
-                                           configUtf8.constData(), VXCORE_NOTEBOOK_BUNDLED,
-                                           &notebookId);
+  VxCoreError err =
+      vxcore_notebook_create(m_context, notebookPathUtf8.constData(), configUtf8.constData(),
+                             VXCORE_NOTEBOOK_BUNDLED, &notebookId);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(notebookId != nullptr);
   const QString id = QString::fromUtf8(notebookId);
@@ -159,9 +162,8 @@ void TestSearchServiceDrain::createFilledNotebook(const QString &p_name, int p_f
     const QByteArray fileNameUtf8 = fileName.toUtf8();
 
     char *fileId = nullptr;
-    VxCoreError vxerr =
-        vxcore_file_create(m_context, notebookIdUtf8.constData(), "", fileNameUtf8.constData(),
-                           &fileId);
+    VxCoreError vxerr = vxcore_file_create(m_context, notebookIdUtf8.constData(), "",
+                                           fileNameUtf8.constData(), &fileId);
     QCOMPARE(vxerr, VXCORE_OK);
     QVERIFY(fileId != nullptr);
     vxcore_string_free(fileId);
@@ -201,9 +203,9 @@ void TestSearchServiceDrain::initTestCase() {
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
   QCOMPARE(err, VXCORE_OK);
   QVERIFY(m_context != nullptr);
-
-  // Baseline / idle / teardown notebook (> 50 files so the parallel drain path
-  // is exercised).
+  QCOMPARE(vxcore_context_update_config(m_context, "{\"search\":{\"backends\":[\"simple\"]}}"),
+           VXCORE_OK);
+  // Baseline / idle / teardown notebook spans multiple default 64-file chunks.
   createFilledNotebook(QStringLiteral("drain_notebook"), kFileCount, &m_notebookId);
   QVERIFY(!m_notebookId.isEmpty());
 
@@ -220,22 +222,22 @@ void TestSearchServiceDrain::cleanupTestCase() {
 }
 
 void TestSearchServiceDrain::testDrainPoolResultsMatchBaseline() {
-  const QString queryJson = QStringLiteral("{\"pattern\":\"needle\"}");
+  const QString queryJson = QStringLiteral("{\"pattern\":\"needle\",\"maxResults\":25}");
 
   // Baseline: direct single-threaded content search (no drain pool, no worker
   // thread). This uses the caller-helps-drain path with no auxiliary drainers.
   SearchCoreService baselineCore(m_context);
-  QJsonObject baselineObj;
-  Error baselineErr =
-      baselineCore.searchContentCancellable(m_notebookId, queryJson, QString(), nullptr,
-                                            &baselineObj);
-  QVERIFY2(baselineErr.isOk(),
-           qPrintable(QStringLiteral("baseline searchContent failed: %1").arg(baselineErr.message())));
-  SearchResult baselineResult = SearchResult::fromContentSearchJson(baselineObj, m_notebookId);
+  SearchContentResult baselineObj;
+  Error baselineErr = baselineCore.searchContentCancellable(m_notebookId, queryJson, QString(),
+                                                            nullptr, &baselineObj);
+  QVERIFY2(
+      baselineErr.isOk(),
+      qPrintable(QStringLiteral("baseline searchContent failed: %1").arg(baselineErr.message())));
+  SearchResult baselineResult = SearchResult::fromContentSearchResult(baselineObj, m_notebookId);
 
-  // Sanity: the needle must actually be present so the comparison is meaningful.
-  QVERIFY(baselineResult.m_matchCount > 0);
-  QVERIFY(!baselineResult.m_fileResults.isEmpty());
+  // The backend cap crosses the first chunk; the independent worker cap must agree.
+  QCOMPARE(baselineResult.m_matchCount, 25);
+  QVERIFY(baselineResult.m_truncated);
 
   // Async path: SearchService owns the worker thread AND the drain pool.
   SearchCoreService asyncCore(m_context);
@@ -249,9 +251,9 @@ void TestSearchServiceDrain::testDrainPoolResultsMatchBaseline() {
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 15000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QStringLiteral("async searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QStringLiteral("async searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
   QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
 
   SearchResult asyncResult = finishedSpy.at(0).at(1).value<SearchResult>();
@@ -350,9 +352,8 @@ void TestSearchServiceDrain::testCancelWithBacklog() {
   QThread::msleep(2);
   svc->cancel(token);
 
-  QTRY_VERIFY_WITH_TIMEOUT(cancelledSpy.count() > 0 || finishedSpy.count() > 0 ||
-                               failedSpy.count() > 0,
-                           15000);
+  QTRY_VERIFY_WITH_TIMEOUT(
+      cancelledSpy.count() > 0 || finishedSpy.count() > 0 || failedSpy.count() > 0, 15000);
 
   const bool cancelWon = cancelledSpy.count() > 0;
   const bool finishWon = finishedSpy.count() > 0;
@@ -423,17 +424,18 @@ void TestSearchServiceDrain::testStreamingIncrementalBatchDelivery() {
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 20000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QStringLiteral("streaming searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QStringLiteral("streaming searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
   QCOMPARE(finishedSpy.at(0).at(0).toInt(), token);
 
   // Qt posts the queued batch events (from drain threads) before the worker
   // posts finished, so by the time we observe finished, every batch has already
   // been delivered. Delivery must have been incremental (more than one chunk).
-  QVERIFY2(batchSpy.count() >= 2,
-           qPrintable(QStringLiteral("expected multiple incremental batches, got %1")
-                          .arg(batchSpy.count())));
+  QVERIFY2(
+      batchSpy.count() >= 2,
+      qPrintable(
+          QStringLiteral("expected multiple incremental batches, got %1").arg(batchSpy.count())));
 
   // Every batch carries the search token and a non-empty slice (zero-match
   // chunks are suppressed by the worker).
@@ -473,9 +475,9 @@ void TestSearchServiceDrain::testStreamingProgressIncrements() {
 
   QTRY_VERIFY_WITH_TIMEOUT(finishedSpy.count() > 0 || failedSpy.count() > 0, 20000);
   QVERIFY2(finishedSpy.count() > 0,
-           qPrintable(QStringLiteral("streaming searchContent failed unexpectedly (%1)")
-                          .arg(failedSpy.isEmpty() ? QString()
-                                                   : failedSpy.takeFirst().at(1).toString())));
+           qPrintable(
+               QStringLiteral("streaming searchContent failed unexpectedly (%1)")
+                   .arg(failedSpy.isEmpty() ? QString() : failedSpy.takeFirst().at(1).toString())));
 
   // Progress must move through at least one intermediate value strictly between
   // 0 and 100 (multi-batch streaming counts completed callbacks), not just the
@@ -516,9 +518,8 @@ void TestSearchServiceDrain::testStreamingCancellationStopsDelivery() {
   QThread::msleep(2);
   service.cancel(token);
 
-  QTRY_VERIFY_WITH_TIMEOUT(cancelledSpy.count() > 0 || finishedSpy.count() > 0 ||
-                               failedSpy.count() > 0,
-                           20000);
+  QTRY_VERIFY_WITH_TIMEOUT(
+      cancelledSpy.count() > 0 || finishedSpy.count() > 0 || failedSpy.count() > 0, 20000);
   QVERIFY2(cancelledSpy.count() > 0 || finishedSpy.count() > 0,
            qPrintable(QStringLiteral("search neither cancelled nor finished (failed=%1)")
                           .arg(failedSpy.count())));

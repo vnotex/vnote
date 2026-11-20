@@ -98,6 +98,14 @@ normal drain/reconciliation semantics and all privacy exclusions above.
   delete can permanently remove a file if recycling fails. Keep recovery-required,
   committed and saved outcomes distinct.
 
+Folder listing, search candidates, and per-parent raw revalidation caches use typed service
+records. Serialize JSON only at the authorized response boundary; do not reconstruct listing
+JSON for validation. Keep per-parent batching and the empty-ID `getFileInfo()` recheck with
+display-only capabilities. The normalized input's encrypted bit preserves the existing
+top-level get-info field (absent in current folder listings), independently of the `.vne`
+suffix check. Do not silently substitute the explorer/export `metadata.encrypted` predicate
+during representation changes; their policies remain separate.
+
 ## Configuration and settings
 
 `HttpApiConfig` is a typed `SessionConfig` child in both app and core_configs builds.

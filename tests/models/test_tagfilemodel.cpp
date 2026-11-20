@@ -1,9 +1,5 @@
 #include <QtTest>
 
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QJsonValue>
-
 #include <core/nodeidentifier.h>
 #include <core/nodeinfo.h>
 #include <models/inodelistmodel.h>
@@ -53,54 +49,33 @@ private slots:
 private:
   vnotex::TagFileModel *m_model = nullptr;
 
-  // Helper to build a JSON node object.
-  static QJsonObject makeNode(const QString &p_filePath,
-                              const QString &p_fileName = QString(),
-                              const QStringList &p_tags = QStringList(),
-                              const QString &p_notebookId = QString());
+  // Helpers build owning tag matches without result-envelope JSON.
+  static vnotex::TagFileMatch makeNode(const QString &p_filePath,
+                                       const QString &p_fileName = QString(),
+                                       const QStringList &p_tags = QStringList(),
+                                       const QString &p_notebookId = QString());
 
-  // Helper to build a 3-element test array.
-  static QJsonArray makeThreeNodeArray();
+  static QVector<vnotex::TagFileMatch> makeThreeNodeArray();
 };
 
 // ===== Helpers =====
 
-QJsonObject TestTagFileModel::makeNode(const QString &p_filePath,
-                                       const QString &p_fileName,
-                                       const QStringList &p_tags,
-                                       const QString &p_notebookId) {
-  QJsonObject obj;
-  obj.insert(QStringLiteral("filePath"), p_filePath);
-  if (!p_fileName.isEmpty()) {
-    obj.insert(QStringLiteral("fileName"), p_fileName);
-  }
-  if (!p_tags.isEmpty()) {
-    QJsonArray tagsArr;
-    for (const auto &t : p_tags) {
-      tagsArr.append(QJsonValue(t));
-    }
-    obj.insert(QStringLiteral("tags"), tagsArr);
-  }
-  if (!p_notebookId.isEmpty()) {
-    obj.insert(QStringLiteral("notebookId"), p_notebookId);
-  }
-  return obj;
+vnotex::TagFileMatch TestTagFileModel::makeNode(const QString &p_filePath,
+                                                const QString &p_fileName,
+                                                const QStringList &p_tags,
+                                                const QString &p_notebookId) {
+  return {p_filePath, p_fileName, p_tags, p_notebookId};
 }
 
-QJsonArray TestTagFileModel::makeThreeNodeArray() {
-  QJsonArray arr;
+QVector<vnotex::TagFileMatch> TestTagFileModel::makeThreeNodeArray() {
+  QVector<vnotex::TagFileMatch> arr;
   QStringList tags1;
   tags1 << QStringLiteral("tag1") << QStringLiteral("tag2");
-  arr.append(QJsonValue(makeNode(QStringLiteral("notes/hello.md"),
-                                 QStringLiteral("hello.md"),
-                                 tags1)));
+  arr.append(makeNode(QStringLiteral("notes/hello.md"), QStringLiteral("hello.md"), tags1));
   QStringList tags2;
   tags2 << QStringLiteral("docs");
-  arr.append(QJsonValue(makeNode(QStringLiteral("docs/readme.md"),
-                                 QStringLiteral("readme.md"),
-                                 tags2)));
-  arr.append(QJsonValue(makeNode(QStringLiteral("archive/old.txt"),
-                                 QStringLiteral("old.txt"))));
+  arr.append(makeNode(QStringLiteral("docs/readme.md"), QStringLiteral("readme.md"), tags2));
+  arr.append(makeNode(QStringLiteral("archive/old.txt"), QStringLiteral("old.txt")));
   return arr;
 }
 
@@ -128,7 +103,7 @@ void TestTagFileModel::testEmptyModel() {
 // ===== 2. testSetNodesBasic =====
 
 void TestTagFileModel::testSetNodesBasic() {
-  QJsonArray arr = makeThreeNodeArray();
+  const auto arr = makeThreeNodeArray();
   m_model->setNodes(arr, QStringLiteral("nb-fallback"));
 
   QCOMPARE(m_model->rowCount(), 3);
@@ -145,31 +120,29 @@ void TestTagFileModel::testSetNodesBasic() {
 // ===== 3. testNodeInfoFields =====
 
 void TestTagFileModel::testNodeInfoFields() {
-  QJsonArray arr;
+  QVector<vnotex::TagFileMatch> arr;
   QStringList tags;
   tags << QStringLiteral("tag1") << QStringLiteral("tag2");
-  arr.append(QJsonValue(makeNode(QStringLiteral("notes/hello.md"),
-                                 QStringLiteral("hello.md"),
-                                 tags,
-                                 QStringLiteral("nb-123"))));
+  arr.append(makeNode(QStringLiteral("notes/hello.md"), QStringLiteral("hello.md"), tags,
+                      QStringLiteral("nb-123")));
   m_model->setNodes(arr, QStringLiteral("nb-fallback"));
 
   QVariant v = m_model->data(m_model->index(0, 0), vnotex::INodeListModel::NodeInfoRole);
   auto info = v.value<vnotex::NodeInfo>();
 
-  // name == fileName from JSON
+  // name == fileName from the match.
   QCOMPARE(info.name, QStringLiteral("hello.md"));
 
-  // id.notebookId == per-object notebookId (not fallback)
+  // id.notebookId == per-item notebookId (not fallback).
   QCOMPARE(info.id.notebookId, QStringLiteral("nb-123"));
 
-  // id.relativePath == filePath from JSON
+  // id.relativePath == filePath from the match.
   QCOMPARE(info.id.relativePath, QStringLiteral("notes/hello.md"));
 
   // isFolder is always false for tag file results
   QCOMPARE(info.isFolder, false);
 
-  // tags match JSON array
+  // Preserve the complete tag list.
   QStringList expectedTags;
   expectedTags << QStringLiteral("tag1") << QStringLiteral("tag2");
   QCOMPARE(info.tags, expectedTags);
@@ -178,11 +151,9 @@ void TestTagFileModel::testNodeInfoFields() {
 // ===== 4. testNodeIdentifierRole =====
 
 void TestTagFileModel::testNodeIdentifierRole() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("docs/guide.md"),
-                                 QStringLiteral("guide.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-abc"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("docs/guide.md"), QStringLiteral("guide.md"), QStringList(),
+                      QStringLiteral("nb-abc")));
   m_model->setNodes(arr, QStringLiteral("nb-fallback"));
 
   QVariant v = m_model->data(m_model->index(0, 0), vnotex::INodeListModel::NodeIdentifierRole);
@@ -206,9 +177,8 @@ void TestTagFileModel::testIsFolderRole() {
 // ===== 6. testPathRole =====
 
 void TestTagFileModel::testPathRole() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("folder/sub/file.md"),
-                                 QStringLiteral("file.md"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("folder/sub/file.md"), QStringLiteral("file.md")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   QVariant v = m_model->data(m_model->index(0, 0), vnotex::INodeListModel::PathRole);
@@ -218,8 +188,8 @@ void TestTagFileModel::testPathRole() {
 // ===== 7. testPreviewRole =====
 
 void TestTagFileModel::testPreviewRole() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("a.md"), QStringLiteral("a.md"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("a.md"), QStringLiteral("a.md")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   QVariant v = m_model->data(m_model->index(0, 0), vnotex::INodeListModel::PreviewRole);
@@ -229,9 +199,8 @@ void TestTagFileModel::testPreviewRole() {
 // ===== 8. testDisplayRole =====
 
 void TestTagFileModel::testDisplayRole() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("notes/hello.md"),
-                                 QStringLiteral("hello.md"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("notes/hello.md"), QStringLiteral("hello.md")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   QVariant v = m_model->data(m_model->index(0, 0), Qt::DisplayRole);
@@ -241,9 +210,8 @@ void TestTagFileModel::testDisplayRole() {
 // ===== 9. testToolTipRole =====
 
 void TestTagFileModel::testToolTipRole() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("deep/path/note.md"),
-                                 QStringLiteral("note.md"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("deep/path/note.md"), QStringLiteral("note.md")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   QVariant v = m_model->data(m_model->index(0, 0), Qt::ToolTipRole);
@@ -258,12 +226,10 @@ void TestTagFileModel::testSetNodesReset() {
   QCOMPARE(m_model->rowCount(), 3);
 
   // Second call with 1 item - model must reflect the new data.
-  QJsonArray arr;
+  QVector<vnotex::TagFileMatch> arr;
   QStringList tags;
   tags << QStringLiteral("only");
-  arr.append(QJsonValue(makeNode(QStringLiteral("single.md"),
-                                 QStringLiteral("single.md"),
-                                 tags)));
+  arr.append(makeNode(QStringLiteral("single.md"), QStringLiteral("single.md"), tags));
   m_model->setNodes(arr, QStringLiteral("nb-2"));
   QCOMPARE(m_model->rowCount(), 1);
 
@@ -278,16 +244,16 @@ void TestTagFileModel::testSetNodesEmpty() {
   m_model->setNodes(makeThreeNodeArray(), QStringLiteral("nb-1"));
   QCOMPARE(m_model->rowCount(), 3);
 
-  m_model->setNodes(QJsonArray(), QStringLiteral("nb-1"));
+  m_model->setNodes({}, QStringLiteral("nb-1"));
   QCOMPARE(m_model->rowCount(), 0);
 }
 
 // ===== 12. testFallbackFileName =====
 
 void TestTagFileModel::testFallbackFileName() {
-  // No "fileName" key - name should be last component of filePath.
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("folder/deep/myfile.md")))); // no fileName
+  // Empty fileName falls back to the last component of filePath.
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("folder/deep/myfile.md")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   QVariant v = m_model->data(m_model->index(0, 0), Qt::DisplayRole);
@@ -297,29 +263,35 @@ void TestTagFileModel::testFallbackFileName() {
 // ===== 13. testFallbackNotebookId =====
 
 void TestTagFileModel::testFallbackNotebookId() {
-  // No "notebookId" key in the JSON object - should use the fallback parameter.
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("note.md"),
-                                 QStringLiteral("note.md")))); // no notebookId in object
-  m_model->setNodes(arr, QStringLiteral("nb-fallback-id"));
+  const auto absent = makeNode(QStringLiteral("note.md"), QStringLiteral("note.md"));
+  auto explicitEmpty = absent;
+  explicitEmpty.m_notebookId = QStringLiteral("");
+  auto explicitNotebook = absent;
+  explicitNotebook.m_notebookId = QStringLiteral("nb-explicit");
+  QVERIFY(absent.m_notebookId.isNull());
+  QVERIFY(!explicitEmpty.m_notebookId.isNull());
+  QVERIFY(absent != explicitEmpty);
+  QVERIFY((QVector<vnotex::TagFileMatch>{absent} != QVector<vnotex::TagFileMatch>{explicitEmpty}));
 
-  QVariant v = m_model->data(m_model->index(0, 0), vnotex::INodeListModel::NodeIdentifierRole);
-  auto id = v.value<vnotex::NodeIdentifier>();
-  QCOMPARE(id.notebookId, QStringLiteral("nb-fallback-id"));
+  m_model->setNodes({absent, explicitEmpty, explicitNotebook}, QStringLiteral("nb-fallback-id"));
+  const auto fallbackId = m_model->nodeIdFromIndex(m_model->index(0, 0));
+  QCOMPARE(fallbackId.notebookId, QStringLiteral("nb-fallback-id"));
+  const auto emptyId = m_model->nodeIdFromIndex(m_model->index(1, 0));
+  QVERIFY(emptyId.notebookId.isEmpty());
+  QVERIFY(!emptyId.notebookId.isNull());
+  QCOMPARE(m_model->nodeIdFromIndex(m_model->index(2, 0)).notebookId,
+           QStringLiteral("nb-explicit"));
+  QCOMPARE(m_model->getNotebookId(), QStringLiteral("nb-fallback-id"));
 }
 
 // ===== 14. testNodeIdFromIndex =====
 
 void TestTagFileModel::testNodeIdFromIndex() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("a/b.md"),
-                                 QStringLiteral("b.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-x"))));
-  arr.append(QJsonValue(makeNode(QStringLiteral("c/d.md"),
-                                 QStringLiteral("d.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-y"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("a/b.md"), QStringLiteral("b.md"), QStringList(),
+                      QStringLiteral("nb-x")));
+  arr.append(makeNode(QStringLiteral("c/d.md"), QStringLiteral("d.md"), QStringList(),
+                      QStringLiteral("nb-y")));
   m_model->setNodes(arr, QStringLiteral("nb-fallback"));
 
   vnotex::NodeIdentifier id0 = m_model->nodeIdFromIndex(m_model->index(0, 0));
@@ -338,13 +310,11 @@ void TestTagFileModel::testNodeIdFromIndex() {
 // ===== 15. testNodeInfoFromIndex =====
 
 void TestTagFileModel::testNodeInfoFromIndex() {
-  QJsonArray arr;
+  QVector<vnotex::TagFileMatch> arr;
   QStringList tags;
   tags << QStringLiteral("t1");
-  arr.append(QJsonValue(makeNode(QStringLiteral("x/y.md"),
-                                 QStringLiteral("y.md"),
-                                 tags,
-                                 QStringLiteral("nb-z"))));
+  arr.append(
+      makeNode(QStringLiteral("x/y.md"), QStringLiteral("y.md"), tags, QStringLiteral("nb-z")));
   m_model->setNodes(arr, QStringLiteral("nb-fallback"));
 
   vnotex::NodeInfo info = m_model->nodeInfoFromIndex(m_model->index(0, 0));
@@ -364,19 +334,13 @@ void TestTagFileModel::testNodeInfoFromIndex() {
 // ===== 16. testIndexFromNodeId =====
 
 void TestTagFileModel::testIndexFromNodeId() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("first.md"),
-                                 QStringLiteral("first.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-1"))));
-  arr.append(QJsonValue(makeNode(QStringLiteral("second.md"),
-                                 QStringLiteral("second.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-1"))));
-  arr.append(QJsonValue(makeNode(QStringLiteral("third.md"),
-                                 QStringLiteral("third.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-1"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("first.md"), QStringLiteral("first.md"), QStringList(),
+                      QStringLiteral("nb-1")));
+  arr.append(makeNode(QStringLiteral("second.md"), QStringLiteral("second.md"), QStringList(),
+                      QStringLiteral("nb-1")));
+  arr.append(makeNode(QStringLiteral("third.md"), QStringLiteral("third.md"), QStringList(),
+                      QStringLiteral("nb-1")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   vnotex::NodeIdentifier target;
@@ -391,11 +355,9 @@ void TestTagFileModel::testIndexFromNodeId() {
 // ===== 17. testIndexFromNodeIdNotFound =====
 
 void TestTagFileModel::testIndexFromNodeIdNotFound() {
-  QJsonArray arr;
-  arr.append(QJsonValue(makeNode(QStringLiteral("exists.md"),
-                                 QStringLiteral("exists.md"),
-                                 QStringList(),
-                                 QStringLiteral("nb-1"))));
+  QVector<vnotex::TagFileMatch> arr;
+  arr.append(makeNode(QStringLiteral("exists.md"), QStringLiteral("exists.md"), QStringList(),
+                      QStringLiteral("nb-1")));
   m_model->setNodes(arr, QStringLiteral("nb-1"));
 
   vnotex::NodeIdentifier unknown;

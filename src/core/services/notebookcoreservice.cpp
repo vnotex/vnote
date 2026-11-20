@@ -1,5 +1,6 @@
 #include "notebookcoreservice.h"
 
+#include <QByteArrayView>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -11,6 +12,7 @@
 #include <QVariantMap>
 #include <QtConcurrent>
 
+#include <memory>
 #include <utility>
 
 #include <nlohmann/json.hpp>
@@ -1402,9 +1404,9 @@ QString NotebookCoreService::copyFolder(const QString &p_notebookId, const QStri
   return cstrToQString(folderId);
 }
 
-QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
-                                                    const QString &p_folderPath,
-                                                    VxCoreError *p_outErr) const {
+FolderListing NotebookCoreService::listFolderChildren(const QString &p_notebookId,
+                                                      const QString &p_folderPath,
+                                                      VxCoreError *p_outErr) const {
   if (p_outErr) {
     *p_outErr = VXCORE_OK;
   }
@@ -1412,23 +1414,59 @@ QJsonObject NotebookCoreService::listFolderChildren(const QString &p_notebookId,
     if (p_outErr) {
       *p_outErr = VXCORE_ERR_NOT_INITIALIZED;
     }
-    return QJsonObject();
+    return {};
   }
 
-  char *json = nullptr;
-  VxCoreError err = vxcore_folder_list_children(
+  VxCoreFolderListing *result = nullptr;
+  const auto err = vxcore_folder_list_children_typed(
       m_context, p_notebookId.toUtf8().constData(),
-      p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(), &json);
+      p_folderPath.isEmpty() ? "." : p_folderPath.toUtf8().constData(), &result);
+  const std::unique_ptr<VxCoreFolderListing, decltype(&vxcore_folder_listing_free)> owner(
+      result, vxcore_folder_listing_free);
   if (p_outErr) {
     *p_outErr = err;
   }
   if (err != VXCORE_OK) {
     qWarning() << "listFolderChildren failed:" << QString::fromUtf8(vxcore_error_message(err));
-    return QJsonObject();
+    return {};
   }
-  // The per-child transient "exists" field (vxcore::kJsonKeyNodeExists) emitted
-  // by vxcore for bundled notebooks rides along in this JSON untouched.
-  return parseJsonObjectFromCStr(json);
+  return folderListingFromView(*vxcore_folder_listing_view(owner.get()));
+}
+
+FolderListing NotebookCoreService::folderListingFromView(const VxCoreFolderListingView &p_view) {
+  const auto text = [](VxCoreUtf8View value) {
+    return QString::fromUtf8(value.data, static_cast<qsizetype>(value.size));
+  };
+  const auto copyEntries = [&text](const VxCoreFolderEntryView *entries, size_t count) {
+    QVector<FolderEntry> values;
+    values.reserve(static_cast<qsizetype>(count));
+    for (size_t i = 0; i < count; ++i) {
+      const auto &entry = entries[i];
+      FolderEntry value;
+      value.m_id = text(entry.id);
+      value.m_name = text(entry.name);
+      value.m_createdUtc = entry.created_utc;
+      value.m_modifiedUtc = entry.modified_utc;
+      value.m_existsKnown = entry.exists_known != 0;
+      value.m_exists = entry.exists != 0;
+      if (entry.metadata_json.size) {
+        value.m_metadata = QJsonValue::fromJson(QByteArrayView(
+            entry.metadata_json.data, static_cast<qsizetype>(entry.metadata_json.size)));
+      }
+      value.m_tags.reserve(static_cast<qsizetype>(entry.tag_count));
+      for (size_t j = 0; j < entry.tag_count; ++j) {
+        value.m_tags.append(text(entry.tags[j]));
+      }
+      value.m_attachments.reserve(static_cast<qsizetype>(entry.attachment_count));
+      for (size_t j = 0; j < entry.attachment_count; ++j) {
+        value.m_attachments.append(text(entry.attachments[j]));
+      }
+      values.append(std::move(value));
+    }
+    return values;
+  };
+  return {copyEntries(p_view.files, p_view.file_count),
+          copyEntries(p_view.folders, p_view.folder_count)};
 }
 
 // T6 (notebook-explorer-drag-reorder): async reorder with hooks + IoGate.
@@ -1463,14 +1501,16 @@ void NotebookCoreService::reorderFolderChildren(const QString &p_notebookId,
 
   // Snapshot current order so the event payload carries the "previous" state
   // and the no-op check has something to compare against.
-  const QJsonObject children = listFolderChildren(p_notebookId, p_folderRelPath);
+  const auto children = listFolderChildren(p_notebookId, p_folderRelPath);
   QStringList previousFolderOrder;
-  for (const QJsonValue &v : children.value(QStringLiteral("folders")).toArray()) {
-    previousFolderOrder.append(v.toObject().value(QStringLiteral("name")).toString());
+  previousFolderOrder.reserve(children.m_folders.size());
+  for (const auto &folder : children.m_folders) {
+    previousFolderOrder.append(folder.m_name);
   }
   QStringList previousFileOrder;
-  for (const QJsonValue &v : children.value(QStringLiteral("files")).toArray()) {
-    previousFileOrder.append(v.toObject().value(QStringLiteral("name")).toString());
+  previousFileOrder.reserve(children.m_files.size());
+  for (const auto &file : children.m_files) {
+    previousFileOrder.append(file.m_name);
   }
 
   // No-op short-circuit: an absent sub-array means "do not reorder this kind";
@@ -1915,21 +1955,16 @@ NoteOperationResult NotebookCoreService::createFileWithContent(const QString &p_
 #else
           constexpr auto sensitivity = Qt::CaseSensitive;
 #endif
-          for (const auto &value :
-               children.value(QLatin1String(vxcore::kJsonKeyFolders)).toArray()) {
-            if (value.toObject()
-                    .value(QLatin1String(vxcore::kJsonKeyName))
-                    .toString()
-                    .compare(request.name, sensitivity) == 0)
+          for (const auto &folder : children.m_folders) {
+            if (folder.m_name.compare(request.name, sensitivity) == 0)
               return fail(QStringLiteral("precondition_failed"),
                           tr("The file destination changed."));
           }
-          for (const auto &value : children.value(QLatin1String(vxcore::kJsonKeyFiles)).toArray()) {
-            const auto record = value.toObject();
-            const auto name = record.value(QLatin1String(vxcore::kJsonKeyName)).toString();
+          for (const auto &record : children.m_files) {
+            const auto &name = record.m_name;
             if (name.compare(request.name, sensitivity) != 0)
               continue;
-            const auto id = record.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+            const auto &id = record.m_id;
             if (name != request.name || id.isEmpty() || !result.nodeId.isEmpty())
               return fail(QStringLiteral("precondition_failed"),
                           tr("The file destination changed."));

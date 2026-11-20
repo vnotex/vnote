@@ -1223,10 +1223,8 @@ void TestVNote3MigrationService::testConvertRealXpayNotebook() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted xpay notebook");
 
   // Verify notebook has content.
-  QJsonObject children = m_notebookService->listFolderChildren(nbId, QString());
-  QJsonArray files = children[QStringLiteral("files")].toArray();
-  QJsonArray folders = children[QStringLiteral("folders")].toArray();
-  QVERIFY2(files.size() + folders.size() > 0, "Converted xpay notebook has no content at root");
+  const auto children = m_notebookService->listFolderChildren(nbId, QString());
+  QVERIFY2(!children.isEmpty(), "Converted xpay notebook has no content at root");
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -1748,13 +1746,12 @@ void TestVNote3MigrationService::testConvertPreservesTagGraph() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundChild = false;
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    if (tagObj[QStringLiteral("name")].toString() == QStringLiteral("child")) {
+    if (tagVal.m_name == QStringLiteral("child")) {
       foundChild = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("parent"));
+      QCOMPARE(tagVal.m_parent, QStringLiteral("parent"));
     }
   }
   QVERIFY2(foundChild, "Tag 'child' not found in listTags output");
@@ -1801,15 +1798,14 @@ void TestVNote3MigrationService::testConvertEmptyTagGraphNoOp() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
   // All tags should be root-level (no parent).
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    QString name = tagObj[QStringLiteral("name")].toString();
+    const QString &name = tagVal.m_name;
     if (name == QStringLiteral("alpha") || name == QStringLiteral("beta")) {
-      QVERIFY2(!tagObj.contains(QStringLiteral("parent")) ||
-                   tagObj[QStringLiteral("parent")].toString().isEmpty(),
-               qPrintable(QStringLiteral("Tag '%1' unexpectedly has parent '%2'")
-                              .arg(name, tagObj[QStringLiteral("parent")].toString())));
+      QVERIFY2(
+          tagVal.m_parent.isEmpty(),
+          qPrintable(
+              QStringLiteral("Tag '%1' unexpectedly has parent '%2'").arg(name, tagVal.m_parent)));
     }
   }
 
@@ -1853,18 +1849,17 @@ void TestVNote3MigrationService::testConvertTagGraphOrphanTagsDegrades() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
   // Both orphan tags should be pre-created with correct hierarchy.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundGhost1 = false;
   bool foundGhost2 = false;
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    QString name = tagObj[QStringLiteral("name")].toString();
+    const QString &name = tagVal.m_name;
     if (name == QStringLiteral("ghost1")) {
       foundGhost1 = true;
     }
     if (name == QStringLiteral("ghost2")) {
       foundGhost2 = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("ghost1"));
+      QCOMPARE(tagVal.m_parent, QStringLiteral("ghost1"));
     }
   }
   QVERIFY2(foundGhost1, "Orphan tag 'ghost1' not pre-created");
@@ -1914,19 +1909,18 @@ void TestVNote3MigrationService::testConvertMalformedTagGraphPairsSkipped() {
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
   // Valid pairs: valid>child and good>pair should be applied.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundChild = false;
   bool foundPair = false;
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    QString name = tagObj[QStringLiteral("name")].toString();
+    const QString &name = tagVal.m_name;
     if (name == QStringLiteral("child")) {
       foundChild = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("valid"));
+      QCOMPARE(tagVal.m_parent, QStringLiteral("valid"));
     }
     if (name == QStringLiteral("pair")) {
       foundPair = true;
-      QCOMPARE(tagObj[QStringLiteral("parent")].toString(), QStringLiteral("good"));
+      QCOMPARE(tagVal.m_parent, QStringLiteral("good"));
     }
   }
   QVERIFY2(foundChild, "Tag 'child' not found with parent 'valid'");
@@ -1978,15 +1972,12 @@ void TestVNote3MigrationService::testConvertPreservesMultiLevelTagGraph() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
 
   // Build a name->parent map for easy verification.
   QHash<QString, QString> parentMap;
   for (const auto &tagVal : tags) {
-    QJsonObject tagObj = tagVal.toObject();
-    QString name = tagObj[QStringLiteral("name")].toString();
-    QString parent = tagObj[QStringLiteral("parent")].toString();
-    parentMap[name] = parent;
+    parentMap[tagVal.m_name] = tagVal.m_parent;
   }
 
   // Root-level tags: tag1 and tag5 have no parent.
@@ -2081,9 +2072,9 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   QString nbId = m_notebookService->openNotebook(destPath);
   QVERIFY2(!nbId.isEmpty(), "Failed to open converted notebook");
 
-  QJsonObject children = m_notebookService->listFolderChildren(nbId, QString());
-  QJsonArray files = children[QStringLiteral("files")].toArray();
-  QJsonArray folders = children[QStringLiteral("folders")].toArray();
+  const auto children = m_notebookService->listFolderChildren(nbId, QString());
+  const auto &files = children.m_files;
+  const auto &folders = children.m_folders;
 
   // Should have exactly 17 files and 1 folder at root.
   QCOMPARE(files.size(), 17);
@@ -2094,7 +2085,7 @@ void TestVNote3MigrationService::testConvertFolderWith17FilesAndSubfolder() {
   // interpretation reason documented above on expectedFiles.
   const QString expectedSubfolder = QString::fromUtf8(
       "\xe6\x95\xb0\xe6\x8d\xae\xe5\xba\x93\xe9\x83\xa8\xe7\xbd\xb2"); // 数据库部署
-  QCOMPARE(folders[0].toObject()[QStringLiteral("name")].toString(), expectedSubfolder);
+  QCOMPARE(folders[0].m_name, expectedSubfolder);
 
   QVERIFY(m_notebookService->closeNotebook(nbId));
 }
@@ -2651,9 +2642,8 @@ void TestVNote3MigrationService::testDedupPreservesLegacyOnCopyFailure() {
       break;
     }
   }
-  QVERIFY2(foundWarning,
-           qPrintable(QStringLiteral("Expected an incomplete-copy warning. Got: %1")
-                          .arg(result.warnings.join(QStringLiteral("; ")))));
+  QVERIFY2(foundWarning, qPrintable(QStringLiteral("Expected an incomplete-copy warning. Got: %1")
+                                        .arg(result.warnings.join(QStringLiteral("; ")))));
 }
 
 } // namespace tests

@@ -67,12 +67,9 @@ NoteValidationResult NewNoteController::validateName(const QString &p_notebookId
   // Check for conflicts with existing files in the parent folder.
   auto *notebookService = m_services.get<NotebookCoreService>();
   if (notebookService) {
-    QJsonObject children = notebookService->listFolderChildren(p_notebookId, p_parentPath);
-    QJsonArray files = children.value("files").toArray();
-    for (const auto &file : files) {
-      QJsonObject fileObj = file.toObject();
-      QString existingName = fileObj.value(QLatin1String(vxcore::kJsonKeyName)).toString();
-      if (existingName.compare(name, Qt::CaseInsensitive) == 0) {
+    const auto children = notebookService->listFolderChildren(p_notebookId, p_parentPath);
+    for (const auto &file : children.m_files) {
+      if (file.m_name.compare(name, Qt::CaseInsensitive) == 0) {
         result.valid = false;
         result.message = tr("Name conflicts with existing note.");
         return result;

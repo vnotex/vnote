@@ -413,19 +413,13 @@ bool TodoStickerController::ensureBackingFile(const QString &p_path, NodeIdentif
       *p_error = tr("The TODO notebook folder cannot be read.");
       return false;
     }
-    for (const auto &entry : children.value(QLatin1String(vxcore::kJsonKeyFiles)).toArray()) {
-      if (entry.toObject()
-              .value(QLatin1String(vxcore::kJsonKeyName))
-              .toString()
-              .compare(file.fileName(), c_pathSensitivity) == 0) {
+    for (const auto &entry : children.m_files) {
+      if (entry.m_name.compare(file.fileName(), c_pathSensitivity) == 0) {
         return true;
       }
     }
-    for (const auto &entry : children.value(QLatin1String(vxcore::kJsonKeyFolders)).toArray()) {
-      if (entry.toObject()
-              .value(QLatin1String(vxcore::kJsonKeyName))
-              .toString()
-              .compare(file.fileName(), c_pathSensitivity) == 0) {
+    for (const auto &entry : children.m_folders) {
+      if (entry.m_name.compare(file.fileName(), c_pathSensitivity) == 0) {
         *p_error = tr("A notebook folder already occupies the TODO file path.");
         return false;
       }

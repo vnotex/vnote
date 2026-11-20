@@ -349,7 +349,7 @@ NavigationMode *TagExplorer2::getTagNavigationWrapper() const { return m_tagNavW
 
 NavigationMode *TagExplorer2::getFileNavigationWrapper() const { return m_fileNavWrapper.data(); }
 
-void TagExplorer2::onMatchingNodesChanged(const QJsonArray &p_nodes) {
+void TagExplorer2::onMatchingNodesChanged(const QVector<TagFileMatch> &p_nodes) {
   m_fileModel->setNodes(p_nodes, m_notebookId);
 }
 

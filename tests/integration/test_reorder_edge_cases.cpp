@@ -401,9 +401,10 @@ QString TestReorderEdgeCases::seedNotebook(const QString &p_baseName,
 QStringList TestReorderEdgeCases::listFolders(const QString &p_notebookId,
                                               const QString &p_folderRelPath) {
   QStringList out;
-  const QJsonObject obj = m_service->listFolderChildren(p_notebookId, p_folderRelPath);
-  for (const QJsonValue &v : obj.value(QStringLiteral("folders")).toArray()) {
-    out.append(v.toObject().value(QStringLiteral("name")).toString());
+  const vnotex::FolderListing children =
+      m_service->listFolderChildren(p_notebookId, p_folderRelPath);
+  for (const vnotex::FolderEntry &child : children.m_folders) {
+    out.append(child.m_name);
   }
   return out;
 }
@@ -411,9 +412,10 @@ QStringList TestReorderEdgeCases::listFolders(const QString &p_notebookId,
 QStringList TestReorderEdgeCases::listFiles(const QString &p_notebookId,
                                             const QString &p_folderRelPath) {
   QStringList out;
-  const QJsonObject obj = m_service->listFolderChildren(p_notebookId, p_folderRelPath);
-  for (const QJsonValue &v : obj.value(QStringLiteral("files")).toArray()) {
-    out.append(v.toObject().value(QStringLiteral("name")).toString());
+  const vnotex::FolderListing children =
+      m_service->listFolderChildren(p_notebookId, p_folderRelPath);
+  for (const vnotex::FolderEntry &child : children.m_files) {
+    out.append(child.m_name);
   }
   return out;
 }

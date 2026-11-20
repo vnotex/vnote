@@ -546,10 +546,10 @@ void TestTagViewer2::testInlineCreateTag() {
   QVERIFY(search->text().isEmpty());
 
   // Verify tag was actually created in the service.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool found = false;
-  for (const auto &tagVal : tags) {
-    if (tagVal.toObject()["name"].toString() == "brandnew") {
+  for (const auto &tag : tags) {
+    if (tag.m_name == "brandnew") {
       found = true;
       break;
     }
@@ -588,18 +588,17 @@ void TestTagViewer2::testInlineCreateTagPath() {
   QVERIFY(search->text().isEmpty());
 
   // Verify both parent and leaf tags were created in the service.
-  QJsonArray tags = m_tagCoreService->listTags(nbId);
+  const auto tags = m_tagCoreService->listTags(nbId);
   bool foundProgramming = false;
   bool foundPython = false;
   QString pythonParent;
-  for (const auto &tagVal : tags) {
-    QJsonObject obj = tagVal.toObject();
-    QString name = obj["name"].toString();
+  for (const auto &tag : tags) {
+    const auto &name = tag.m_name;
     if (name == "programming") {
       foundProgramming = true;
     } else if (name == "python") {
       foundPython = true;
-      pythonParent = obj["parent"].toString();
+      pythonParent = tag.m_parent;
     }
   }
   QVERIFY(foundProgramming);

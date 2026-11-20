@@ -28,6 +28,7 @@ private slots:
   // Regression test: empty-state contract
   void testEmptyStateAfterSetNotebookId();
   void testRenameExpandedSubtree();
+  void testFolderListingPreservesDisplayData();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -232,6 +233,59 @@ void TestNotebookNodeModel::testRenameExpandedSubtree() {
                           "renamed/nested/grandchild/renamed.md", "renamed/root.md"}));
     QCOMPARE(proxy.mapToSource(view.currentIndex()), QModelIndex(note));
   }
+}
+
+void TestNotebookNodeModel::testFolderListingPreservesDisplayData() {
+  QTemporaryDir tmpDir;
+  QVERIFY(tmpDir.isValid());
+  const QString nbId = m_service->createNotebook(
+      tmpDir.filePath("nb"), R"({"name":"Listing display"})", NotebookType::Bundled);
+  QVERIFY(!nbId.isEmpty());
+  const auto closeNotebook = qScopeGuard([&]() { m_service->closeNotebook(nbId); });
+  QVERIFY(!m_service->createFile(nbId, QString(), QStringLiteral("z.md")).isEmpty());
+  QVERIFY(!m_service->createFolder(nbId, QString(), QStringLiteral("z-folder")).isEmpty());
+  QVERIFY(!m_service->createFolder(nbId, QString(), QStringLiteral("a-folder")).isEmpty());
+  QVERIFY(!m_service->createFile(nbId, QString(), QStringLiteral("a.md")).isEmpty());
+  const QStringList tags{QStringLiteral("first"), QStringLiteral("second")};
+  for (const QString &tag : tags) {
+    QVERIFY(m_service->createTag(nbId, tag));
+  }
+  QVERIFY(m_service->updateFileTags(nbId, QStringLiteral("z.md"), tags));
+  const QString metadata = QStringLiteral(R"({"backgroundColor":"#112233","borderColor":"#445566",)"
+                                          R"("textColor":"#778899","unrelated":null})");
+  QVERIFY(m_service->updateFileMetadata(nbId, QStringLiteral("z.md"), metadata));
+  QVERIFY(m_service->updateFolderMetadata(nbId, QStringLiteral("z-folder"), metadata));
+  const qint64 created = Q_INT64_C(1700000000123);
+  const qint64 modified = Q_INT64_C(1700000000456);
+  QVERIFY(m_service->updateNodeTimestamps(nbId, QStringLiteral("z.md"), created, modified));
+  QVERIFY(m_service->updateNodeTimestamps(nbId, QStringLiteral("z-folder"), created, modified));
+
+  NotebookNodeModel model(m_services);
+  model.setNotebookId(nbId);
+  model.fetchMore({});
+  QCOMPARE(model.rowCount(), 4);
+  const QStringList expected{QStringLiteral("z-folder"), QStringLiteral("a-folder"),
+                             QStringLiteral("z.md"), QStringLiteral("a.md")};
+  for (int row = 0; row < expected.size(); ++row) {
+    const QModelIndex index = model.index(row, 0);
+    const NodeInfo info = model.nodeInfoFromIndex(index);
+    QCOMPARE(index.data().toString(), expected.at(row));
+    QCOMPARE(info.name, expected.at(row));
+    QCOMPARE(info.id.notebookId, nbId);
+    QCOMPARE(info.id.relativePath, expected.at(row));
+    QCOMPARE(info.isFolder, row < 2);
+    QVERIFY(!info.isMissing);
+    QVERIFY(!info.isExternal);
+  }
+  for (const int row : {0, 2}) {
+    const NodeInfo info = model.nodeInfoFromIndex(model.index(row, 0));
+    QCOMPARE(info.createdTimeUtc.toMSecsSinceEpoch(), created);
+    QCOMPARE(info.modifiedTimeUtc.toMSecsSinceEpoch(), modified);
+    QCOMPARE(info.backgroundColor, QStringLiteral("#112233"));
+    QCOMPARE(info.borderColor, QStringLiteral("#445566"));
+    QCOMPARE(info.textColor, QStringLiteral("#778899"));
+  }
+  QCOMPARE(model.nodeInfoFromIndex(model.index(2, 0)).tags, tags);
 }
 
 } // namespace tests
