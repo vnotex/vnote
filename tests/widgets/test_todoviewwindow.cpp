@@ -273,10 +273,16 @@ bool selectedTitleReadable(QListView *p_view, const QModelIndex &p_index) {
   return contrast >= 4.5;
 }
 
-QPoint taskControlPoint(QListView *p_view, const QModelIndex &p_index, bool p_star = false) {
+enum class TaskControl { Check, Star, MyDay };
+
+QPoint taskControlPoint(QListView *p_view, const QModelIndex &p_index,
+                        TaskControl p_control = TaskControl::Check) {
   const auto row = p_view->visualRect(p_index);
   const int side = qMax(20, p_view->fontMetrics().height());
-  return QPoint(p_star ? row.right() - 16 - side / 2 : row.left() + 16 + side / 2,
+  const int star = row.right() - 16 - side / 2;
+  return QPoint(p_control == TaskControl::Check   ? row.left() + 16 + side / 2
+                : p_control == TaskControl::MyDay ? star - side - 12
+                                                  : star,
                 row.center().y());
 }
 
@@ -797,6 +803,7 @@ private slots:
   void stickerTaskActivation();
   void stickerSharedTaskControls_data();
   void stickerSharedTaskControls();
+  void stickerMyDayCapturesDisplayedDate();
   void stickerSharedControlRejectsReset_data();
   void stickerSharedControlRejectsReset();
 
@@ -1419,7 +1426,7 @@ void TestTodoViewWindow::immediateNotesDatesAndSteps() {
   QTest::keyClick(note->getTextEdit(), Qt::Key_Y, Qt::ControlModifier);
   QCOMPARE(fields().m_note, markdown);
   auto *due = control<QPushButton>(window, "todoDue");
-  auto *myDay = control<QPushButton>(window, "todoMyDay");
+  auto *myDay = control<QToolButton>(window, "todoMyDay");
   QVERIFY(due && myDay);
   QVERIFY(chooseButtonMenu(due, "todoDueTomorrowAction"));
   QCOMPARE(fields().m_due, controller->getProjection().m_today.addDays(1));
@@ -4893,7 +4900,7 @@ void TestTodoViewWindow::storedMyDayRemainsVisible() {
   auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
   fields.m_myDay = today.addDays(-1);
   QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
-  auto *day = control<QPushButton>(window, "todoMyDay");
+  auto *day = control<QToolButton>(window, "todoMyDay");
   QVERIFY(day);
   QVERIFY(!day->isChecked());
   const auto oldDay = QLocale().toString(fields.m_myDay, QLocale::ShortFormat);
@@ -4920,6 +4927,45 @@ void TestTodoViewWindow::storedMyDayRemainsVisible() {
   QCOMPARE(window->getSourceEditor()->toPlainText(), before);
   QVERIFY(day->toolTip().contains(oldDay));
   QVERIFY(day->accessibleDescription().contains(oldDay));
+
+  auto *tasks = control<TodoTaskView>(window, "todoTasks");
+  QVERIFY(tasks && activate(tasks));
+  auto *model = controller->getTaskModel();
+  const auto key = QStringLiteral("id:alpha");
+  const auto clickMark = [&]() {
+    const auto index = model->index(model->rowForKey(key));
+    if (!index.isValid() || !activate(tasks))
+      return false;
+    tasks->scrollTo(index);
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      taskControlPoint(tasks, index, TaskControl::MyDay));
+    return true;
+  };
+  QSignalSpy opened(tasks, &TodoTaskView::taskClicked);
+  QVERIFY(clickMark());
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_myDay, today);
+  QVERIFY(day->isChecked());
+  QCOMPARE(opened.size(), 0);
+  const auto markedSource = window->getLatestContent();
+  controller->setToday(today.addDays(1));
+  QVERIFY(!day->isChecked());
+  QVERIFY(!model->index(model->rowForKey(key)).data(TodoTaskModel::InMyDayRole).toBool());
+  QCOMPARE(window->getLatestContent(), markedSource);
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(!day->isEnabled());
+  QVERIFY(clickMark());
+  QCOMPARE(window->getLatestContent(), markedSource);
+  window->setMode(ViewWindowMode::Edit);
+  controller->setToday(today);
+  controller->setView(TodoViewKind::MyDay);
+  QVERIFY(clickMark());
+  QCOMPARE(controller->getProjection().m_view, TodoViewKind::MyDay);
+  QCOMPARE(model->rowForKey(key), -1);
+  QVERIFY(!controller->getDocument().findItem(key)->m_fields.m_myDay.isValid());
+  QCOMPARE(opened.size(), 0);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), markedSource);
+  QVERIFY(model->rowForKey(key) >= 0);
 }
 
 void TestTodoViewWindow::ownPendingSaveKeepsNewerEdits() {
@@ -6452,16 +6498,35 @@ void TestTodoViewWindow::stickerSharedTaskControls() {
   QVERIFY(controller && tasks && controller->isReady());
   auto *model = controller->getTaskModel();
   QSignalSpy activated(tasks, &TodoTaskView::taskActivated);
-  const auto click = [&](const QString &p_key, bool p_star) {
+  const auto click = [&](const QString &p_key, TaskControl p_control) {
     const auto index = model->index(model->rowForKey(p_key));
     if (!index.isValid() || !activate(tasks))
       return false;
     tasks->scrollTo(index);
     QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
-                      taskControlPoint(tasks, index, p_star));
+                      taskControlPoint(tasks, index, p_control));
     return true;
   };
-  QVERIFY(click(QStringLiteral("id:alpha"), true));
+  const auto today = QDate::currentDate();
+  controller->setToday(today);
+  QVERIFY(click(QStringLiteral("id:alpha"), TaskControl::MyDay));
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay,
+           readOnly ? QDate() : today);
+  auto daySaved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QCOMPARE(daySaved.findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay,
+           readOnly ? QDate() : today);
+  QVERIFY(!current());
+  QCOMPARE(activated.size(), 0);
+  const auto dayIndex = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  const auto dayPoint = taskControlPoint(tasks, dayIndex, TaskControl::MyDay);
+  QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, dayPoint);
+  QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, dayPoint);
+  QTRY_VERIFY(!controller->isBusy());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay,
+           readOnly ? QDate() : today);
+  QCOMPARE(activated.size(), 0);
+  QVERIFY(click(QStringLiteral("id:alpha"), TaskControl::Star));
   QTRY_VERIFY(!controller->isBusy());
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_important,
            !readOnly);
@@ -6471,7 +6536,7 @@ void TestTodoViewWindow::stickerSharedTaskControls() {
   QCOMPARE(activated.size(), 0);
   // A control's double-click/trailing release must not become body activation or another toggle.
   auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
-  auto point = taskControlPoint(tasks, index, true);
+  auto point = taskControlPoint(tasks, index, TaskControl::Star);
   QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   QTRY_VERIFY(!controller->isBusy());
@@ -6479,7 +6544,7 @@ void TestTodoViewWindow::stickerSharedTaskControls() {
            !readOnly);
   QVERIFY(!current());
   QCOMPARE(activated.size(), 0);
-  QVERIFY(click(QStringLiteral("id:alpha"), false));
+  QVERIFY(click(QStringLiteral("id:alpha"), TaskControl::Check));
   QTRY_VERIFY(!controller->isBusy());
   QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_checked,
            !readOnly);
@@ -6511,8 +6576,15 @@ void TestTodoViewWindow::stickerSharedTaskControls() {
   if (readOnly) {
     QCOMPARE(readBytes(absolute(name)), c_source);
   } else {
+    controller->setView(TodoViewKind::MyDay);
+    QVERIFY(click(QStringLiteral("id:alpha"), TaskControl::MyDay));
+    QTRY_VERIFY(!controller->isBusy());
+    QCOMPARE(controller->getViewKind(), TodoViewKind::MyDay);
+    QCOMPARE(model->rowForKey(QStringLiteral("id:alpha")), -1);
+    saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+    QVERIFY(!saved.findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay.isValid());
     controller->setView(TodoViewKind::Important);
-    QVERIFY(click(QStringLiteral("id:alpha"), true));
+    QVERIFY(click(QStringLiteral("id:alpha"), TaskControl::Star));
     QTRY_VERIFY(!controller->isBusy());
     QCOMPARE(controller->getViewKind(), TodoViewKind::Important);
     QCOMPARE(model->rowForKey(QStringLiteral("id:alpha")), -1);
@@ -6521,14 +6593,71 @@ void TestTodoViewWindow::stickerSharedTaskControls() {
   }
 }
 
+void TestTodoViewWindow::stickerMyDayCapturesDisplayedDate() {
+  const auto name = QStringLiteral("captured-my-day.todo");
+  QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
+  QVERIFY(writeBytes(absolute(name), c_source));
+  m_config->getSessionConfig().setTodoStickerFilePath(absolute(name));
+  TodoSticker sticker(*m_services);
+  sticker.resize(480, 460);
+  sticker.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&sticker));
+  auto *controller = sticker.findChild<TodoStickerController *>();
+  auto *tasks = control<TodoTaskView>(&sticker, "todoStickerTasks");
+  QVERIFY(controller && tasks && controller->isReady());
+  const QDate day(2025, 4, 20);
+  const auto key = QStringLiteral("id:alpha");
+  controller->setToday(day);
+  controller->setView(TodoViewKind::List, QStringLiteral("id:work"));
+  auto *model = controller->getTaskModel();
+  const auto clickMark = [&]() {
+    const auto index = model->index(model->rowForKey(key));
+    if (!index.isValid() || !activate(tasks))
+      return false;
+    tasks->scrollTo(index);
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      taskControlPoint(tasks, index, TaskControl::MyDay));
+    return true;
+  };
+  {
+    SaveGateBarrier barrier(*m_gate, m_notebook);
+    QVERIFY(clickMark());
+    QVERIFY(controller->isBusy());
+    controller->setToday(day.addDays(1));
+    barrier.release();
+    QTRY_VERIFY(!controller->isBusy());
+  }
+  const auto saved = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QCOMPARE(saved.findItem(key)->m_fields.m_myDay, day);
+  QCOMPARE(controller->getViewKind(), TodoViewKind::List);
+  QVERIFY(!model->index(model->rowForKey(key)).data(TodoTaskModel::InMyDayRole).toBool());
+  controller->setView(TodoViewKind::MyDay);
+  QCOMPARE(model->rowForKey(key), -1);
+  controller->setToday(day);
+  QVERIFY(model->rowForKey(key) >= 0);
+  {
+    SaveGateBarrier barrier(*m_gate, m_notebook);
+    QVERIFY(clickMark());
+    QVERIFY(controller->isBusy());
+    controller->setToday(day.addDays(1));
+    barrier.release();
+    QTRY_VERIFY(!controller->isBusy());
+  }
+  const auto removed = TodoDocument::parse(QString::fromUtf8(readBytes(absolute(name))));
+  QVERIFY(!removed.findItem(key)->m_fields.m_myDay.isValid());
+  QCOMPARE(controller->getViewKind(), TodoViewKind::MyDay);
+  QCOMPARE(model->rowForKey(key), -1);
+}
+
 void TestTodoViewWindow::stickerSharedControlRejectsReset_data() {
-  QTest::addColumn<bool>("star");
-  QTest::newRow("completion") << false;
-  QTest::newRow("importance") << true;
+  QTest::addColumn<int>("controlPart");
+  QTest::newRow("completion") << int(TaskControl::Check);
+  QTest::newRow("importance") << int(TaskControl::Star);
+  QTest::newRow("my-day") << int(TaskControl::MyDay);
 }
 
 void TestTodoViewWindow::stickerSharedControlRejectsReset() {
-  QFETCH(bool, star);
+  QFETCH(int, controlPart);
   const auto name = QStringLiteral("stale-controls.todo");
   QVERIFY(!m_notebooks->createFile(m_notebook, {}, name).isEmpty());
   QVERIFY(writeBytes(absolute(name), c_source));
@@ -6543,7 +6672,7 @@ void TestTodoViewWindow::stickerSharedControlRejectsReset() {
   auto *model = controller->getTaskModel();
   const auto index = model->index(model->rowForKey(QStringLiteral("id:alpha")));
   QVERIFY(activate(tasks));
-  const auto point = taskControlPoint(tasks, index, star);
+  const auto point = taskControlPoint(tasks, index, static_cast<TaskControl>(controlPart));
   QTest::mousePress(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   controller->setView(TodoViewKind::List, QStringLiteral("id:personal"));
   QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
@@ -6551,6 +6680,8 @@ void TestTodoViewWindow::stickerSharedControlRejectsReset() {
   QCOMPARE(readBytes(absolute(name)), c_source);
   QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_fields.m_checked);
   QVERIFY(!controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_fields.m_important);
+  QVERIFY(
+      !controller->getDocument().findItem(QStringLiteral("id:gamma"))->m_fields.m_myDay.isValid());
 }
 
 } // namespace tests

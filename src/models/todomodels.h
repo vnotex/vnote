@@ -140,7 +140,8 @@ public:
     RevisionRole,
     // IDs retain the logical source owner; names omit internal Default for presentation.
     SourceGroupIdRole,
-    SourceGroupNameRole
+    SourceGroupNameRole,
+    InMyDayRole
   };
 
   explicit TodoTaskModel(ServiceLocator &p_services, QObject *p_parent = nullptr);
@@ -177,6 +178,7 @@ signals:
   // Intents refer to the displayed snapshot; only the controller edits source.
   void checkedChangeRequested(const QString &p_key, bool p_checked, int p_revision);
   void importanceChangeRequested(const QString &p_key, bool p_important, int p_revision);
+  void myDayChangeRequested(const QString &p_key, bool p_inMyDay, int p_revision);
   void moveRequested(const QString &p_key, const QString &p_listKey, const QString &p_beforeKey,
                      int p_revision);
   void completedExpansionRequested(bool p_expanded);

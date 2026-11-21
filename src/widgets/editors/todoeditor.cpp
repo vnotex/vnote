@@ -798,6 +798,11 @@ void TodoEditor::createDetails() {
   m_title = named(new QLineEdit(m_details), "todoTitle", tr("Task title"));
   m_title->setPlaceholderText(tr("Untitled task"));
   m_title->setStyleSheet(QStringLiteral("QLineEdit { padding: 8px 4px; min-height: 24px; }"));
+  m_myDay = named(new QToolButton(m_details), "todoMyDay", tr("Add to My Day"));
+  m_myDay->setCheckable(true);
+  m_myDay->setAutoRaise(true);
+  m_myDay->setIconSize(QSize(20, 20));
+  m_myDay->setStyleSheet(QStringLiteral("QToolButton { padding: 8px; }"));
   m_important = named(new QToolButton(m_details), "todoImportant", tr("Task important"));
   m_important->setCheckable(true);
   m_important->setAutoRaise(true);
@@ -805,7 +810,15 @@ void TodoEditor::createDetails() {
   m_important->setStyleSheet(QStringLiteral("QToolButton { padding: 8px; }"));
   task->addWidget(m_checked, 0, Qt::AlignVCenter);
   task->addWidget(m_title, 1);
-  task->addWidget(m_important, 0, Qt::AlignVCenter);
+  // Keep the sun physically left of the star without changing the title's RTL layout.
+  auto *marks = new QWidget(m_details);
+  marks->setLayoutDirection(Qt::LeftToRight);
+  auto *markLayout = new QHBoxLayout(marks);
+  markLayout->setContentsMargins(0, 0, 0, 0);
+  markLayout->setSpacing(8);
+  markLayout->addWidget(m_myDay);
+  markLayout->addWidget(m_important);
+  task->addWidget(marks, 0, Qt::AlignVCenter);
   layout->addLayout(task);
 
   m_steps = named(new QWidget(m_details), "todoSteps", tr("Task steps"));
@@ -825,20 +838,13 @@ void TodoEditor::createDetails() {
   m_addStep->setPlaceholderText(tr("Add a step"));
   m_addStep->setStyleSheet(QStringLiteral("QLineEdit { padding: 10px 12px; min-height: 20px; }"));
   layout->addWidget(m_addStep);
-  m_myDay =
-      named(new QPushButton(tr("Add to My Day"), m_details), "todoMyDay", tr("Add to My Day"));
-  m_myDay->setCheckable(true);
-  m_myDay->setIconSize(QSize(20, 20));
-  layout->addWidget(m_myDay);
   m_due = named(new QPushButton(m_details), "todoDue", tr("Task due date"));
   m_due->setIconSize(QSize(20, 20));
   // Keep the icon and text together at the requested physical left edge, including in RTL.
-  for (auto *button : {m_myDay, m_due}) {
-    button->setLayoutDirection(Qt::LeftToRight);
-    button->setStyleSheet(
-        QStringLiteral("QPushButton { text-align: left; padding: 12px; min-height: 20px; "
-                       "min-width: 0; }"));
-  }
+  m_due->setLayoutDirection(Qt::LeftToRight);
+  m_due->setStyleSheet(
+      QStringLiteral("QPushButton { text-align: left; padding: 12px; min-height: 20px; "
+                     "min-width: 0; }"));
   layout->addWidget(m_due);
   m_note = named(new SimpleMarkdownEditor(m_services, m_details), "todoNote",
                  tr("Task note in Markdown"));
@@ -867,8 +873,6 @@ void TodoEditor::createDetails() {
 
   auto *theme = m_services.get<ThemeService>();
   const auto refreshIcons = [this, theme]() {
-    m_myDay->setIcon(
-        IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("sun.svg"))));
     m_due->setIcon(
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("calendar.svg"))));
     m_deleteTask->setIcon(
@@ -890,6 +894,7 @@ void TodoEditor::createDetails() {
     }
     path.closeSubpath();
     QIcon star;
+    QIcon sun;
     const qreal scale = devicePixelRatioF();
     for (const auto mode : {QIcon::Normal, QIcon::Disabled}) {
       const QColor color(theme->paletteColor(mode == QIcon::Normal
@@ -906,9 +911,18 @@ void TodoEditor::createDetails() {
         painter.drawPath(path);
         painter.end();
         star.addPixmap(pixmap, mode, state);
+        QPixmap sunPixmap(qCeil(20 * scale), qCeil(20 * scale));
+        sunPixmap.setDevicePixelRatio(scale);
+        sunPixmap.fill(Qt::transparent);
+        QPainter sunPainter(&sunPixmap);
+        sunPainter.setRenderHint(QPainter::Antialiasing);
+        paintTodoMyDayIndicator(&sunPainter, QRect(0, 0, 20, 20), state == QIcon::On, color);
+        sunPainter.end();
+        sun.addPixmap(sunPixmap, mode, state);
       }
     }
     m_important->setIcon(star);
+    m_myDay->setIcon(sun);
     const auto more =
         IconUtils::fetchIconWithDisabledState(theme->getIconFile(QStringLiteral("menu.svg")));
     for (const auto &row : m_stepRows) {
@@ -928,7 +942,7 @@ void TodoEditor::createDetails() {
   connect(m_important, &QToolButton::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_important = p_checked; });
   });
-  connect(m_myDay, &QPushButton::toggled, this, [this](bool p_checked) {
+  connect(m_myDay, &QToolButton::toggled, this, [this](bool p_checked) {
     updateTask([&](TodoTaskFields &p_fields) {
       p_fields.m_myDay = p_checked ? m_controller->getProjection().m_today : QDate();
     });
@@ -1149,13 +1163,13 @@ void TodoEditor::refreshDetails() {
   m_important->setToolTip(fields.m_important ? tr("Remove importance") : tr("Mark as important"));
   m_myDay->setChecked(m_controller && fields.m_myDay.isValid() &&
                       fields.m_myDay == m_controller->getProjection().m_today);
-  m_myDay->setText(m_myDay->isChecked() ? tr("Added to My Day") : tr("Add to My Day"));
-  m_myDay->setAccessibleName(m_myDay->text());
+  const auto dayAction = m_myDay->isChecked() ? tr("Remove from My Day") : tr("Add to My Day");
+  m_myDay->setAccessibleName(dayAction);
   const auto dayDescription =
       fields.m_myDay.isValid()
           ? tr("My Day: %1").arg(QLocale().toString(fields.m_myDay, QLocale::ShortFormat))
           : tr("Include task in My Day");
-  m_myDay->setToolTip(dayDescription);
+  m_myDay->setToolTip(dayAction + QLatin1Char('\n') + dayDescription);
   m_myDay->setAccessibleDescription(dayDescription);
   m_due->setText(fields.m_due.isValid() ? QLocale().toString(fields.m_due, QLocale::ShortFormat)
                                         : tr("Add Due Date"));

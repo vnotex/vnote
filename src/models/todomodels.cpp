@@ -572,6 +572,8 @@ QVariant TodoTaskModel::data(const QModelIndex &p_index, int p_role) const {
     return fields.m_due;
   case MyDayRole:
     return fields.m_myDay;
+  case InMyDayRole:
+    return m_projection.m_today.isValid() && fields.m_myDay == m_projection.m_today;
   case TagsRole:
     return fields.m_tags;
   case NoteRole:
@@ -647,7 +649,11 @@ bool TodoTaskModel::setData(const QModelIndex &p_index, const QVariant &p_value,
       return false;
     }
     value = state == Qt::Checked;
-  } else if ((p_role != CheckedRole && p_role != ImportantRole) || !readBoolean(p_value, &value)) {
+  } else if ((p_role != CheckedRole && p_role != ImportantRole && p_role != InMyDayRole) ||
+             !readBoolean(p_value, &value)) {
+    return false;
+  }
+  if (p_role == InMyDayRole && value && !m_projection.m_today.isValid()) {
     return false;
   }
 
@@ -656,6 +662,12 @@ bool TodoTaskModel::setData(const QModelIndex &p_index, const QVariant &p_value,
   if (p_role == ImportantRole) {
     if (value != item->m_fields.m_important) {
       emit importanceChangeRequested(key, value, m_revision);
+    }
+  } else if (p_role == InMyDayRole) {
+    const bool inMyDay =
+        m_projection.m_today.isValid() && item->m_fields.m_myDay == m_projection.m_today;
+    if (value != inMyDay) {
+      emit myDayChangeRequested(key, value, m_revision);
     }
   } else if (value != item->m_fields.m_checked) {
     emit checkedChangeRequested(key, value, m_revision);
@@ -704,6 +716,7 @@ QHash<int, QByteArray> TodoTaskModel::roleNames() const {
   roles.insert(ExpandedRole, "expanded");
   roles.insert(CompletedCountRole, "completedCount");
   roles.insert(RevisionRole, "revision");
+  roles.insert(InMyDayRole, "inMyDay");
   return roles;
 }
 

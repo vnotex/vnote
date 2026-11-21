@@ -56,7 +56,7 @@ private slots:
   void handleBufferChanged(const QString &p_bufferId);
 
 private:
-  enum class TaskFlag { Checked, Important };
+  enum class TaskFlag { Checked, Important, MyDay };
 
   void subscribe();
   void scheduleRefresh();

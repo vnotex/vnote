@@ -641,18 +641,20 @@ One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 and applies source commands without widgets or direct storage writes. Projected task notes use a
 separate `SimpleMarkdownEditor` input with local undo disabled and source-history routing.
 Typing coalesces by field until focus, selection, mode or another command ends the group.
-The details panel has a right-aligned close icon, then completion/title/star, inline steps,
-Add a step, Add to My Day, due date and Markdown note, in that order. The note placeholder is
+The details panel has a right-aligned close icon, then completion/title/My Day/star, inline
+steps, Add a step, due date and Markdown note, in that order. The note placeholder is
 "Add note (markdown supported)". Task and step completion share the central list's circular
 outline/checkmark drawing, but retain independent, reversible checkbox interaction and
 accessibility. The circle stays unfilled when checked; the tick uses the same theme-resolved
 foreground as its outline (including selected/disabled states), never the palette's highlight
-fill/text pair. The theme accent supplies a visible keyboard focus ring. My Day is a checkable
-button with a themed Lucide `sun.svg` and left-aligned text: "Add to My Day" when off and
-"Added to My Day" when on; clicking it again removes membership. Quick-add due controls remain
-ordinary checkboxes.
+fill/text pair. The theme accent supplies a visible keyboard focus ring. My Day is an icon-only
+sun immediately left of the importance star in task rows and the details header, including RTL.
+Its center is filled only for the displayed day's membership; clicking adds to that day or removes
+membership. The details mark is checkable, theme-aware and disabled in Read; its tooltip and
+accessible name describe Add/Remove. There is no full-width My Day button. Quick-add due controls
+remain ordinary checkboxes.
 Details use 12px outer margins and section gaps, padded title/step inputs and icon actions,
-and full-width My Day/due-date rows with 12px padding. Quick-add uses a matching padded input
+and a full-width due-date row with 12px padding. Quick-add uses a matching padded input
 and Add button; control heights are minimums, not fixed text-clipping heights. The Markdown
 note has a 144px minimum height and expands to fill the remaining space above the bottom footer;
 long notes scroll inside the editor and long detail content scrolls in the existing outer pane.
@@ -869,7 +871,7 @@ owned comment JSON. Normal notebook content search still reads raw `.todo` sourc
 metadata. Sort/filter/Completed expansion never reorder or dirty source. The visible window
 refreshes today's date on activation and each minute, without reminders or persisted UI state.
 Quick-add due controls appear and apply only in unfiltered Planned; a remembered choice never
-leaks into another view or filtered result. The My Day toggle button tooltip and accessible
+leaks into another view or filtered result. The My Day mark's tooltip and accessible
 description retain the stored date even when it is not today, before a user replaces it. Step
 rows fit the 320px details pane without outer horizontal scrolling. These presentation changes
 reuse existing document fields and require no document or configuration migration.
@@ -1904,20 +1906,24 @@ no layout migration. The combo offers My Day, Important and Planned before the r
 (with group-qualified names, including collisions with smart labels). Both sticker and editor
 use `TodoDocument::parse()` and the same `TodoTaskModel` predicates: today's My Day date,
 importance, or any valid due date (including overdue). Completed tasks remain visible, and
-completion and importance changes preserve the chosen smart view rather than switching to the
-task's source list.
+completion, My Day and importance changes preserve the chosen smart view rather than switching
+to the task's source list.
 A visible-only minute timer updates My Day's stored projection date without polling storage;
 showing the sticker refreshes that date. View selection is transient, so no migration is needed.
 The editor and sticker share `TodoTaskView`: circular completion controls, summary text,
-importance stars, struck-through completed titles, and an expandable Completed header/count.
+My Day suns, importance stars, struck-through completed titles, and an expandable Completed
+header/count.
 The view owns hit geometry and gestures; model/controller intents own changes. Only a matching
 press/release on a live control commits; resets cancel pending control gestures. Controls select
-their row without activating it, and read-only tasks refuse completion/importance changes while
-the Completed header remains expandable with click or Space/Return/Enter.
+their row without activating it, and read-only tasks refuse completion/My Day/importance changes.
+The Completed header remains expandable with click or Space/Return/Enter.
 
 Single-click selects a task in the sticker; only double-click or Return/Enter opens the internal
 TODO view at its containing list and task, even under single-click-activation Qt styles.
-Completion circles/Space toggle completion and stars toggle importance without opening the editor.
+Completion circles/Space toggle completion, suns toggle My Day, and stars toggle importance without
+opening the editor. My Day marks use the model's displayed-day membership rather than merely testing
+for a stored date. Date changes refresh marks in every view without rewriting historical dates;
+sticker edits capture the displayed day before reserving a save, even if the day changes while busy.
 Completed expansion is transient and survives refresh/filter/mutations until the backing file
 changes; no configuration migration is needed. The editor retains single-click details and its
 existing keyboard/drag policy; hosts choose navigation, not the shared renderer.
@@ -1930,8 +1936,9 @@ smart views ask for a destination only when several lists exist. Planned always 
 explicit due date, even with zero or one list. My Day stamps the displayed day, Important sets
 importance, and the calendar-date view uses its selected due date. Other views never inherit
 that stored due date. An empty document uses the editor controller's native initial-list creation.
-Add, completion and importance commands share the same reserved edit lifecycle. The input becomes
-read-only while busy and clears only for its matching confirmed new task, without replacing newer input.
+Add, completion, My Day and importance commands share the same reserved edit lifecycle. The input
+becomes read-only while busy and clears only for its matching confirmed new task, without replacing
+newer input.
 Cancelled, stale or precommit-rejected additions retain the draft. Installed-but-unsaved tasks
 consume the submitted title to avoid duplicate retry while preserving the normal save error.
 

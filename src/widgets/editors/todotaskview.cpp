@@ -54,6 +54,11 @@ public:
     return QRect(row.right() - side - 16, row.center().y() - side / 2, side, side);
   }
 
+  static QRect myDayRect(const QStyleOptionViewItem &p_option) {
+    const auto star = starRect(p_option);
+    return star.translated(-star.width() - 12, 0);
+  }
+
   void paint(QPainter *p_painter, const QStyleOptionViewItem &p_option,
              const QModelIndex &p_index) const override {
     QStyleOptionViewItem option(p_option);
@@ -142,6 +147,9 @@ public:
     const QRect circle = checkRect(option);
     const bool checked = p_index.data(TodoTaskModel::CheckedRole).toBool();
     paintTodoCompletionIndicator(p_painter, circle, checked, textColor);
+    const QRect sun = myDayRect(option);
+    paintTodoMyDayIndicator(p_painter, sun, p_index.data(TodoTaskModel::InMyDayRole).toBool(),
+                            textColor);
     const QRect star = starRect(option);
     QPainterPath path;
     constexpr double pi = 3.14159265358979323846;
@@ -198,7 +206,7 @@ public:
     const int titleHeight = option.fontMetrics.height();
     const int textHeight = titleHeight + (summaries.isEmpty() ? 0 : secondaryMetrics.height() + 4);
     const QRect textRect(circle.right() + 14, row.center().y() - textHeight / 2,
-                         qMax(0, star.left() - circle.right() - 28), textHeight);
+                         qMax(0, sun.left() - circle.right() - 28), textHeight);
     p_painter->setFont(titleFont);
     p_painter->setPen(textColor);
     p_painter->drawText(textRect, Qt::AlignLeft | Qt::AlignTop,
@@ -245,6 +253,25 @@ void vnotex::paintTodoCompletionIndicator(QPainter *p_painter, const QRect &p_re
     p_painter->drawLine(QPoint(p_rect.left() + p_rect.width() / 4, p_rect.center().y()), middle);
     p_painter->drawLine(
         middle, QPoint(p_rect.right() - p_rect.width() / 4, p_rect.top() + p_rect.height() / 3));
+  }
+}
+
+void vnotex::paintTodoMyDayIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
+                                     const QColor &p_foreground) {
+  p_painter->setPen(QPen(p_foreground, 1.5, Qt::SolidLine, Qt::RoundCap));
+  p_painter->setBrush(p_checked ? QBrush(p_foreground) : Qt::NoBrush);
+  const QPointF center(p_rect.center());
+  const qreal side = qMin(p_rect.width(), p_rect.height());
+  const qreal radius = side * 0.20;
+  p_painter->drawEllipse(center, radius, radius);
+  constexpr qreal diagonal = 0.70710678118654752440;
+  static constexpr QPointF directions[] = {
+      {1, 0}, {0, 1}, {diagonal, diagonal}, {diagonal, -diagonal}};
+  for (const auto &direction : directions) {
+    const auto inner = direction * (side * 0.34);
+    const auto outer = direction * (side * 0.46);
+    p_painter->drawLine(center + inner, center + outer);
+    p_painter->drawLine(center - inner, center - outer);
   }
 }
 
@@ -331,6 +358,9 @@ TodoTaskView::HitPart TodoTaskView::hitPart(const QModelIndex &p_index,
   if (TaskDelegate::checkRect(option).contains(p_position)) {
     return HitPart::Check;
   }
+  if (TaskDelegate::myDayRect(option).contains(p_position)) {
+    return HitPart::MyDay;
+  }
   if (TaskDelegate::starRect(option).contains(p_position)) {
     return HitPart::Star;
   }
@@ -355,6 +385,8 @@ void TodoTaskView::toggleControl(const QModelIndex &p_index, HitPart p_part) {
   } else if (!section && (p_index.flags() & Qt::ItemIsUserCheckable)) {
     if (p_part == HitPart::Check) {
       role = TodoTaskModel::CheckedRole;
+    } else if (p_part == HitPart::MyDay) {
+      role = TodoTaskModel::InMyDayRole;
     } else if (p_part == HitPart::Star) {
       role = TodoTaskModel::ImportantRole;
     }

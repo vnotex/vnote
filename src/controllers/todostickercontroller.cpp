@@ -72,6 +72,10 @@ TodoStickerController::TodoStickerController(ServiceLocator &p_services, QObject
           [this](const QString &p_key, bool p_important, int p_revision) {
             setTaskFlag(p_key, p_important, p_revision, TaskFlag::Important);
           });
+  connect(m_taskModel, &TodoTaskModel::myDayChangeRequested, this,
+          [this](const QString &p_key, bool p_inMyDay, int p_revision) {
+            setTaskFlag(p_key, p_inMyDay, p_revision, TaskFlag::MyDay);
+          });
   connect(m_taskModel, &TodoTaskModel::completedExpansionRequested, this, [this](bool p_expanded) {
     if (m_completedExpanded == p_expanded) {
       return;
@@ -757,11 +761,9 @@ void TodoStickerController::setToday(const QDate &p_today) {
     return;
   }
   m_today = p_today;
-  if (m_view == TodoViewKind::MyDay) {
-    ++m_revision;
-    publishModel();
-    emit stateChanged();
-  }
+  ++m_revision;
+  publishModel();
+  emit stateChanged();
 }
 
 void TodoStickerController::setDueDate(const QDate &p_dueDate) {
@@ -923,8 +925,21 @@ void TodoStickerController::setTaskFlag(const QString &p_key, bool p_value, int 
     reportError(tr("The selected task no longer exists."));
     return;
   }
-  const bool current =
-      p_flag == TaskFlag::Checked ? item->m_fields.m_checked : item->m_fields.m_important;
+  bool current = false;
+  switch (p_flag) {
+  case TaskFlag::Checked:
+    current = item->m_fields.m_checked;
+    break;
+  case TaskFlag::Important:
+    current = item->m_fields.m_important;
+    break;
+  case TaskFlag::MyDay:
+    if (p_value && !m_today.isValid()) {
+      return;
+    }
+    current = m_today.isValid() && item->m_fields.m_myDay == m_today;
+    break;
+  }
   if (current == p_value) {
     return;
   }
@@ -938,6 +953,7 @@ int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_value,
   const QString expected = m_document.m_source;
   const auto node = m_node;
   const auto generation = m_generation;
+  const auto today = m_today;
   const bool adding = p_newTask.has_value();
   const QPointer<TodoStickerController> self(this);
   auto *buffers = m_services.get<BufferService>();
@@ -952,7 +968,7 @@ int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_value,
   }
   const int token = buffers->editTextSnapshot(
       node, expected,
-      [self, services, generation, key, p_value, p_flag,
+      [self, services, generation, key, today, p_value, p_flag,
        newTask = std::move(p_newTask)](const Buffer2 &p_buffer, const QString &p_source,
                                        QString *p_replacement, QString *p_error) {
         if (!self || self->m_generation != generation) {
@@ -993,10 +1009,16 @@ int TodoStickerController::applyTaskEdit(const QString &p_key, bool p_value,
           }
           auto fields = current->m_fields;
           controller.setView(TodoViewKind::List, current->m_listKey);
-          if (p_flag == TaskFlag::Checked) {
+          switch (p_flag) {
+          case TaskFlag::Checked:
             fields.m_checked = p_value;
-          } else {
+            break;
+          case TaskFlag::Important:
             fields.m_important = p_value;
+            break;
+          case TaskFlag::MyDay:
+            fields.m_myDay = p_value ? today : QDate();
+            break;
           }
           if (!controller.updateTask(key, fields)) {
             *p_error = rejection.isEmpty() ? tr("The task could not be updated.") : rejection;

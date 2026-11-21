@@ -256,6 +256,23 @@ TodoViewWindowController::TodoViewWindowController(ServiceLocator &p_services,
               }
             }
           });
+  connect(m_taskModel, &TodoTaskModel::myDayChangeRequested, this,
+          [this](const QString &p_key, bool p_inMyDay, int p_revision) {
+            if (admitModelIntent(p_revision, m_taskModel->getRevision())) {
+              if (const auto *item = m_snapshot.findItem(p_key)) {
+                const auto today = m_projection.m_today;
+                const bool inMyDay = today.isValid() && item->m_fields.m_myDay == today;
+                if (p_inMyDay == inMyDay || (p_inMyDay && !today.isValid())) {
+                  return;
+                }
+                auto fields = item->m_fields;
+                fields.m_myDay = p_inMyDay ? today : QDate();
+                updateTask(p_key, fields);
+              } else {
+                reject(tr("The task no longer exists."));
+              }
+            }
+          });
   connect(m_taskModel, &TodoTaskModel::moveRequested, this,
           [this](const QString &p_key, const QString &p_listKey, const QString &p_beforeKey,
                  int p_revision) {

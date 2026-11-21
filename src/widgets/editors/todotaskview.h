@@ -14,6 +14,8 @@ class ServiceLocator;
 
 void paintTodoCompletionIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
                                   const QColor &p_foreground);
+void paintTodoMyDayIndicator(QPainter *p_painter, const QRect &p_rect, bool p_checked,
+                             const QColor &p_foreground);
 
 class TodoTaskView : public QListView {
   Q_OBJECT
@@ -37,7 +39,7 @@ protected:
   void changeEvent(QEvent *p_event) override;
 
 private:
-  enum class HitPart { None, Body, Check, Star, Section };
+  enum class HitPart { None, Body, Check, MyDay, Star, Section };
 
   HitPart hitPart(const QModelIndex &p_index, const QPoint &p_position) const;
   bool isTaskIndex(const QModelIndex &p_index) const;

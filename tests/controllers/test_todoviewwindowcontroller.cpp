@@ -171,6 +171,7 @@ private slots:
   void timestampSorting();
   void completedExpansionPreservesIndexes();
   void modelRolesAndIntents();
+  void myDayMembershipIntents();
   void nativeDragUsesMoveCommand();
   void dragCompletionGroupsAndStaleness();
   void formattingKeepsSourceIntents();
@@ -2149,6 +2150,15 @@ void TestTodoViewWindowController::readOnlyAndUnavailable() {
   fields.m_checked = true;
   QVERIFY(!m_controller->updateTask(key("a"), fields));
   QVERIFY(!(m_controller->getTaskModel()->index(0).flags() & Qt::ItemIsUserCheckable));
+  auto *model = m_controller->getTaskModel();
+  const auto index = model->index(model->rowForKey(key("a")));
+  QVERIFY(index.data(TodoTaskModel::InMyDayRole).toBool());
+  QVERIFY(!model->setData(index, false, TodoTaskModel::InMyDayRole));
+  QSignalSpy myDayRejected(m_controller.get(), &TodoViewWindowController::operationRejected);
+  model->myDayChangeRequested(key("a"), false, model->getRevision());
+  QCOMPARE(myDayRejected.count(), 1);
+  QCOMPARE(item("a").m_fields.m_myDay, QDate(2026, 11, 12));
+  QVERIFY(!m_document->isUndoAvailable());
   m_controller->setSearch(QStringLiteral("Alpha"));
   QVERIFY(m_controller->getTaskModel()->rowCount() > 0);
   QCOMPARE(m_document->toPlainText(), projectionSource());
@@ -2174,6 +2184,8 @@ void TestTodoViewWindowController::staleSourceAndRowIntents() {
   QVERIFY(load(projectionSource()));
   const int revision = m_controller->getSnapshotRevision();
   const auto fields = item("a").m_fields;
+  auto *model = m_controller->getTaskModel();
+  const auto oldIndex = model->index(model->rowForKey(key("a")));
   m_controller->setSourceRefreshEnabled(false);
   QTextCursor cursor(m_document.get());
   cursor.movePosition(QTextCursor::End);
@@ -2182,14 +2194,20 @@ void TestTodoViewWindowController::staleSourceAndRowIntents() {
   auto checked = fields;
   checked.m_checked = true;
   QVERIFY(!m_controller->updateTask(key("a"), checked));
+  QSignalSpy staleRejected(m_controller.get(), &TodoViewWindowController::operationRejected);
+  QVERIFY(model->setData(oldIndex, false, TodoTaskModel::InMyDayRole));
+  QCOMPARE(staleRejected.count(), 1);
   QCOMPARE(m_document->toPlainText(), changedSource);
   m_controller->setSourceRefreshEnabled(true);
+  QVERIFY(!model->setData(oldIndex, false, TodoTaskModel::InMyDayRole));
   QVERIFY(m_controller->getDocument().isValid());
   QSignalSpy rejected(m_controller.get(), &TodoViewWindowController::operationRejected);
   m_controller->getTaskModel()->checkedChangeRequested(key("a"), true, revision);
   m_controller->getTaskModel()->moveRequested(key("a"), key("home"), {}, revision);
-  QCOMPARE(rejected.count(), 2);
+  model->myDayChangeRequested(key("a"), false, revision);
+  QCOMPARE(rejected.count(), 3);
   QVERIFY(!item("a").m_fields.m_checked);
+  QCOMPARE(item("a").m_fields.m_myDay, fields.m_myDay);
   QCOMPARE(item("a").m_listKey, key("work"));
   QCOMPARE(m_document->toPlainText(), changedSource);
 }
@@ -2204,6 +2222,11 @@ void TestTodoViewWindowController::mutationGuardRejectsChangedGeneration() {
   });
   QVERIFY(!m_controller->removeTask(key("a")));
   QCOMPARE(calls, 1);
+  auto *model = m_controller->getTaskModel();
+  QVERIFY(
+      model->setData(model->index(model->rowForKey(key("a"))), false, TodoTaskModel::InMyDayRole));
+  QCOMPARE(calls, 2);
+  QCOMPARE(item("a").m_fields.m_myDay, QDate(2026, 11, 12));
   QCOMPARE(m_document->toPlainText(), source);
   m_controller->setMutationGuard([this]() {
     m_controller->setBuffer(m_buffer);
@@ -2556,15 +2579,30 @@ void TestTodoViewWindowController::modelRolesAndIntents() {
   QVERIFY(!index.data(Qt::AccessibleTextRole).toString().isEmpty());
   QCOMPARE(index.data(TodoTaskModel::SourceListNameRole).toString(), QStringLiteral("Work"));
   QCOMPARE(index.data(TodoTaskModel::DueRole).toDate(), QDate(2026, 11, 11));
+  QCOMPARE(index.data(TodoTaskModel::MyDayRole).metaType().id(), int(QMetaType::QDate));
+  QCOMPARE(index.data(TodoTaskModel::MyDayRole).toDate(), QDate(2026, 11, 12));
+  QCOMPARE(index.data(TodoTaskModel::InMyDayRole).metaType().id(), int(QMetaType::Bool));
+  QVERIFY(index.data(TodoTaskModel::InMyDayRole).toBool());
   QCOMPARE(index.data(TodoTaskModel::StepsCompletedRole).toInt(), 1);
   QCOMPARE(index.data(TodoTaskModel::StepsTotalRole).toInt(), 2);
   QCOMPARE(index.data(TodoTaskModel::RevisionRole).toInt(), m_document->revision());
   QVERIFY(!model->setData(index, Qt::PartiallyChecked, Qt::CheckStateRole));
   QVERIFY(!model->setData(index, QStringLiteral("true"), TodoTaskModel::CheckedRole));
+  for (const QVariant &value : {QVariant(), QVariant(0), QVariant(1), QVariant(Qt::Checked),
+                                QVariant(QStringLiteral("true")), QVariant(QDate(2026, 11, 12))}) {
+    QVERIFY(!model->setData(index, value, TodoTaskModel::InMyDayRole));
+  }
+  QVERIFY(!model->setData(index, QDate(2026, 11, 13), TodoTaskModel::MyDayRole));
+  QVERIFY(!model->setData({}, false, TodoTaskModel::InMyDayRole));
+  QVERIFY(!model->setData(model->index(model->getActiveCount()), true, TodoTaskModel::InMyDayRole));
+  QCOMPARE(m_document->toPlainText(), projectionSource());
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
   TodoTaskModel detached(*m_services);
   detached.setSnapshot(m_controller->getDocument(), m_controller->getProjection(), true,
                        m_document->revision());
   QSignalSpy intent(&detached, &TodoTaskModel::checkedChangeRequested);
+  QVERIFY(!model->setData(detached.index(0), false, TodoTaskModel::InMyDayRole));
   QVERIFY(detached.setData(detached.index(0), true, TodoTaskModel::CheckedRole));
   QCOMPARE(intent.count(), 1);
   QCOMPARE(intent.first()[0].toString(), key("a"));
@@ -2580,9 +2618,87 @@ void TestTodoViewWindowController::modelRolesAndIntents() {
   m_controller->setEditable(false);
   index = model->index(model->rowForKey(key("a")));
   QVERIFY(!model->setData(index, false, TodoTaskModel::CheckedRole));
+  QVERIFY(!model->setData(index, false, TodoTaskModel::InMyDayRole));
+  QSignalSpy rejected(m_controller.get(), &TodoViewWindowController::operationRejected);
+  const auto source = m_document->toPlainText();
+  model->myDayChangeRequested(key("a"), false, model->getRevision());
+  QCOMPARE(rejected.count(), 1);
+  QCOMPARE(m_document->toPlainText(), source);
   const int section = model->getActiveCount();
   QVERIFY(model->setData(model->index(section), false, TodoTaskModel::ExpandedRole));
   QVERIFY(!m_controller->getProjection().m_completedExpanded);
+}
+
+void TestTodoViewWindowController::myDayMembershipIntents() {
+  const auto source = projectionSource();
+  QVERIFY(load(source));
+  m_controller->setView(TodoViewKind::List, key("work"));
+  auto *model = m_controller->getTaskModel();
+  const auto taskIndex = [model](const char *p_id) {
+    return model->index(model->rowForKey(key(p_id)));
+  };
+  QVERIFY(model->setData(taskIndex("a"), true, TodoTaskModel::InMyDayRole));
+  QVERIFY(!taskIndex("b").data(TodoTaskModel::InMyDayRole).toBool());
+  QVERIFY(model->setData(taskIndex("b"), false, TodoTaskModel::InMyDayRole));
+
+  const QDate displayedToday(2031, 4, 9);
+  m_controller->setToday(displayedToday);
+  QVERIFY(!taskIndex("a").data(TodoTaskModel::InMyDayRole).toBool());
+  QCOMPARE(taskIndex("a").data(TodoTaskModel::MyDayRole).toDate(), QDate(2026, 11, 12));
+  QVERIFY(model->setData(taskIndex("a"), false, TodoTaskModel::InMyDayRole));
+  // Even direct same-membership intents must not discard a historical assignment.
+  model->myDayChangeRequested(key("a"), false, model->getRevision());
+  QCOMPARE(item("a").m_fields.m_myDay, QDate(2026, 11, 12));
+  m_controller->setToday({});
+  QVERIFY(!taskIndex("a").data(TodoTaskModel::InMyDayRole).toBool());
+  QVERIFY(!taskIndex("b").data(TodoTaskModel::InMyDayRole).toBool());
+  QVERIFY(!model->setData(taskIndex("a"), true, TodoTaskModel::InMyDayRole));
+  QVERIFY(!model->setData(taskIndex("b"), true, TodoTaskModel::InMyDayRole));
+  QVERIFY(model->setData(taskIndex("a"), false, TodoTaskModel::InMyDayRole));
+  model->myDayChangeRequested(key("a"), true, model->getRevision());
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isModified());
+  QVERIFY(!m_document->isUndoAvailable());
+
+  m_controller->setToday(displayedToday);
+  const auto oldIndex = taskIndex("a");
+  QVERIFY(model->setData(oldIndex, true, TodoTaskModel::InMyDayRole));
+  QCOMPARE(item("a").m_fields.m_myDay, displayedToday);
+  QVERIFY(taskIndex("a").data(TodoTaskModel::InMyDayRole).toBool());
+  QCOMPARE(taskIndex("a").data(TodoTaskModel::MyDayRole).toDate(), displayedToday);
+  QCOMPARE(item("a").m_properties.value(QStringLiteral("hidden")).toString(),
+           QStringLiteral("item-secret"));
+  QCOMPARE(m_controller->getProjection().m_view, TodoViewKind::List);
+  QCOMPARE(m_controller->getProjection().m_listKey, key("work"));
+  QVERIFY(!model->setData(oldIndex, false, TodoTaskModel::InMyDayRole));
+  const auto assigned = m_document->toPlainText();
+  const int undoSteps = m_document->availableUndoSteps();
+  QVERIFY(model->setData(taskIndex("a"), true, TodoTaskModel::InMyDayRole));
+  QCOMPARE(m_document->toPlainText(), assigned);
+  QCOMPARE(m_document->availableUndoSteps(), undoSteps);
+
+  m_controller->setView(TodoViewKind::MyDay);
+  QCOMPARE(visibleKeys(model), QStringList{key("a")});
+  QVERIFY(model->setData(taskIndex("a"), false, TodoTaskModel::InMyDayRole));
+  QVERIFY(!item("a").m_fields.m_myDay.isValid());
+  QVERIFY(!item("a").m_properties.contains(QStringLiteral("myDay")));
+  QVERIFY(visibleKeys(model).isEmpty());
+  QCOMPARE(m_controller->getProjection().m_view, TodoViewKind::MyDay);
+  m_document->undo();
+  QCOMPARE(item("a").m_fields.m_myDay, displayedToday);
+  QCOMPARE(visibleKeys(model), QStringList{key("a")});
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
+
+  m_controller->setView(TodoViewKind::List, key("work"));
+  QVERIFY(model->setData(taskIndex("b"), true, TodoTaskModel::InMyDayRole));
+  QCOMPARE(item("b").m_fields.m_myDay, displayedToday);
+  QVERIFY(taskIndex("b").data(TodoTaskModel::InMyDayRole).toBool());
+  m_document->undo();
+  QVERIFY(!item("b").m_fields.m_myDay.isValid());
+  QCOMPARE(m_document->toPlainText(), source);
+  QVERIFY(!m_document->isUndoAvailable());
 }
 
 void TestTodoViewWindowController::listModelDrops() {
