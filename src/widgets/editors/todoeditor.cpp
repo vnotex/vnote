@@ -44,6 +44,7 @@
 #include <functional>
 
 #include <controllers/todoviewwindowcontroller.h>
+#include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -335,7 +336,8 @@ public:
       glyphFont.setPixelSize(side);
       p_painter->setFont(glyphFont);
       p_painter->setPen(foreground);
-      p_painter->drawText(icon, Qt::AlignCenter, glyph);
+      // Emoji fallback fonts can extend beyond the em square; keep only the row clip.
+      p_painter->drawText(icon, Qt::AlignCenter | Qt::TextDontClip, glyph);
     } else {
       p_painter->save();
       p_painter->translate(icon.topLeft());
@@ -485,7 +487,8 @@ private:
 } // namespace
 
 TodoEditor::TodoEditor(ServiceLocator &p_services, QWidget *p_parent)
-    : QWidget(p_parent), m_services(p_services) {
+    : QWidget(p_parent), m_services(p_services),
+      m_paneLayout(p_services.get<ConfigMgr2>()->getSessionConfig().getTodoEditorLayout()) {
   named(this, "todoEditor", tr("TODO planner"));
   createUi();
   qApp->installEventFilter(this);
@@ -673,7 +676,19 @@ void TodoEditor::createUi() {
   m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
   m_splitter->setStretchFactor(2, 0);
-  m_splitter->setSizes({260, 480, 320});
+  m_splitter->setSizes({m_paneLayout.m_listsWidth, 480, m_paneLayout.m_detailsWidth});
+  connect(m_splitter, &QSplitter::splitterMoved, this, [this]() {
+    if (m_narrow) {
+      return;
+    }
+    const auto sizes = m_splitter->sizes();
+    m_paneLayout.m_listsWidth = sizes[0];
+    // A hidden pane has zero geometry, not a new preferred width.
+    if (!m_detailsScroll->isHidden()) {
+      m_paneLayout.m_detailsWidth = sizes[2];
+    }
+    m_services.get<ConfigMgr2>()->getSessionConfig().setTodoEditorLayout(m_paneLayout);
+  });
   m_navigation->hide();
 
   connect(m_search, &QLineEdit::textChanged, this, [this](const QString &p_text) {
@@ -1277,9 +1292,10 @@ void TodoEditor::refreshQuickAdd() {
                             : QString());
 }
 
-void TodoEditor::updateLayout() {
+void TodoEditor::updateLayout(bool p_resized) {
   const bool narrow = width() < 840;
-  if (narrow != m_narrow) {
+  const bool layoutChanged = narrow != m_narrow;
+  if (layoutChanged) {
     const QPointer<QWidget> focused = QApplication::focusWidget();
     const bool sidebarFocused = focused && m_sidebar->isAncestorOf(focused);
     m_narrow = narrow;
@@ -1299,7 +1315,9 @@ void TodoEditor::updateLayout() {
       m_sidebar->show();
       m_navigation->hide();
       m_pages->setCurrentWidget(m_taskPane);
-      m_splitter->setSizes({260, qMax(1, width() - 596), 320});
+      m_splitter->setStretchFactor(0, 0);
+      m_splitter->setStretchFactor(1, 1);
+      m_splitter->setStretchFactor(2, 0);
       if (sidebarFocused && focused) {
         focused->setFocus(Qt::OtherFocusReason);
       }
@@ -1309,16 +1327,16 @@ void TodoEditor::updateLayout() {
     m_pages->setCurrentWidget(m_detailsOpen ? static_cast<QWidget *>(m_detailsScroll) : m_taskPane);
     updateSidebarGeometry();
   } else {
-    const bool opening = m_detailsOpen && m_detailsScroll->isHidden();
+    const bool detailsChanged = m_detailsScroll->isHidden() == m_detailsOpen;
     m_detailsScroll->setVisible(m_detailsOpen);
-    if (opening) {
-      auto sizes = m_splitter->sizes();
-      // A pane first shown after hidden layout can retain a zero splitter allocation.
-      if (sizes[2] == 0) {
-        sizes[1] = qMax(1, sizes[1] - 320);
-        sizes[2] = 320;
-        m_splitter->setSizes(sizes);
-      }
+    if (p_resized || layoutChanged || detailsChanged) {
+      // Restore after visibility/reparenting changes; hidden Qt allocations may be zero.
+      const int available =
+          m_splitter->contentsRect().width() - m_splitter->handleWidth() * (m_detailsOpen ? 2 : 1);
+      const int tasksWidth =
+          static_cast<int>(qMax<qint64>(1, qint64(available) - m_paneLayout.m_listsWidth -
+                                               (m_detailsOpen ? m_paneLayout.m_detailsWidth : 0)));
+      m_splitter->setSizes({m_paneLayout.m_listsWidth, tasksWidth, m_paneLayout.m_detailsWidth});
     }
   }
 }
@@ -1358,7 +1376,7 @@ void TodoEditor::setSidebarOpen(bool p_open) {
 
 void TodoEditor::resizeEvent(QResizeEvent *p_event) {
   QWidget::resizeEvent(p_event);
-  updateLayout();
+  updateLayout(true);
 }
 
 void TodoEditor::selectView(int p_row) {

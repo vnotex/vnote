@@ -658,8 +658,15 @@ and a full-width due-date row with 12px padding. Quick-add uses a matching padde
 and Add button; control heights are minimums, not fixed text-clipping heights. The Markdown
 note has a 144px minimum height and expands to fill the remaining space above the bottom footer;
 long notes scroll inside the editor and long detail content scrolls in the existing outer pane.
-The dynamic step layout enforces its minimum content size. Opening a wide details pane restores
-its 320px allocation only if the hidden splitter pane retained zero width; nonzero user sizes stay.
+The dynamic step layout enforces its minimum content size. `SessionConfig` owns the shared
+`stateGeometry.todoEditor` preferred `listsWidth` and `detailsWidth` (260px and 320px by default).
+Splitter drags persist through the normal session debounce; Tasks takes the remaining space.
+Hidden Details retain their last width, including when Lists is resized while Details are closed.
+Restore after visibility/reparenting changes and window resizes. Narrow layouts and temporary
+minimum-size constraints must not overwrite preferences; closing an untouched editor must not
+replace another editor's last saved drag. Existing editors keep their own layout; new editors
+load the latest session values. Missing or nonpositive values use defaults, so no migration is needed.
+Sidebar emoji retain the row clip but not the icon em-square clip, allowing fallback-font descenders.
 Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Completed step titles use strikethrough, including on initial load and in Read mode. Completion

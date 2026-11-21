@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Remember TODO Lists and Task details panel widths across list switches, narrow layouts and restarts
+* Fix cropped emoji icons in the TODO Lists panel
 * Fix deleting notebook folders whose ordinary descendants have missing index metadata, while retaining protected-file and unsafe-path checks
 
 ## v4.15.0

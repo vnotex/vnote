@@ -37,6 +37,15 @@ public:
     QSize m_toolsDockSize;
   };
 
+  struct TodoEditorLayout {
+    bool operator==(const TodoEditorLayout &p_other) const {
+      return m_listsWidth == p_other.m_listsWidth && m_detailsWidth == p_other.m_detailsWidth;
+    }
+
+    int m_listsWidth = 260;
+    int m_detailsWidth = 320;
+  };
+
   struct QuickNoteScheme {
     bool operator==(const QuickNoteScheme &p_other) const;
 
@@ -128,6 +137,9 @@ public:
 
   SessionConfig::MainWindowStateGeometry getMainWindowStateGeometry() const;
   void setMainWindowStateGeometry(const SessionConfig::MainWindowStateGeometry &p_state);
+
+  const TodoEditorLayout &getTodoEditorLayout() const;
+  void setTodoEditorLayout(const TodoEditorLayout &p_layout);
 
   OpenGL getOpenGL() const;
   void setOpenGL(OpenGL p_option);
@@ -267,6 +279,8 @@ private:
   QString m_newNotebookDefaultRootFolderPath;
 
   MainWindowStateGeometry m_mainWindowStateGeometry;
+
+  TodoEditorLayout m_todoEditorLayout;
 
   OpenGL m_openGL = OpenGL::None;
 

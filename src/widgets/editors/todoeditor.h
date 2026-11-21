@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QWidget>
 
+#include <core/sessionconfig.h>
 #include <core/tododocument.h>
 
 class QCheckBox;
@@ -74,7 +75,7 @@ private:
   void showDueMenu();
   void pickDueDate();
   void refreshQuickAdd();
-  void updateLayout();
+  void updateLayout(bool p_resized = false);
   void updateSidebarGeometry();
   void setSidebarOpen(bool p_open);
   void selectView(int p_row);
@@ -117,6 +118,7 @@ private:
 
   ServiceLocator &m_services;
   QPointer<TodoViewWindowController> m_controller;
+  SessionConfig::TodoEditorLayout m_paneLayout;
   QSplitter *m_splitter = nullptr;
   QWidget *m_sidebar = nullptr;
   QWidget *m_navigation = nullptr;

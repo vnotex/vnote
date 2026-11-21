@@ -379,6 +379,9 @@ QJsonObject SessionConfig::saveStateAndGeometry() const {
   };
   writeSize(QStringLiteral("commentDockSize"), m_mainWindowStateGeometry.m_commentDockSize);
   writeSize(QStringLiteral("toolsDockSize"), m_mainWindowStateGeometry.m_toolsDockSize);
+  obj[QStringLiteral("todoEditor")] =
+      QJsonObject{{QStringLiteral("listsWidth"), m_todoEditorLayout.m_listsWidth},
+                  {QStringLiteral("detailsWidth"), m_todoEditorLayout.m_detailsWidth}};
   return obj;
 }
 
@@ -389,6 +392,14 @@ SessionConfig::MainWindowStateGeometry SessionConfig::getMainWindowStateGeometry
 void SessionConfig::setMainWindowStateGeometry(
     const SessionConfig::MainWindowStateGeometry &p_state) {
   updateConfig(m_mainWindowStateGeometry, p_state, this);
+}
+
+const SessionConfig::TodoEditorLayout &SessionConfig::getTodoEditorLayout() const {
+  return m_todoEditorLayout;
+}
+
+void SessionConfig::setTodoEditorLayout(const TodoEditorLayout &p_layout) {
+  updateConfig(m_todoEditorLayout, p_layout, this);
 }
 
 SessionConfig::OpenGL SessionConfig::getOpenGL() const { return m_openGL; }
@@ -522,6 +533,16 @@ void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session) {
   };
   m_mainWindowStateGeometry.m_commentDockSize = readSize(QStringLiteral("commentDockSize"));
   m_mainWindowStateGeometry.m_toolsDockSize = readSize(QStringLiteral("toolsDockSize"));
+  m_todoEditorLayout = {};
+  const auto todo = obj.value(QStringLiteral("todoEditor")).toObject();
+  const int listsWidth = todo.value(QStringLiteral("listsWidth")).toInt();
+  const int detailsWidth = todo.value(QStringLiteral("detailsWidth")).toInt();
+  if (listsWidth > 0) {
+    m_todoEditorLayout.m_listsWidth = listsWidth;
+  }
+  if (detailsWidth > 0) {
+    m_todoEditorLayout.m_detailsWidth = detailsWidth;
+  }
 }
 
 QByteArray SessionConfig::getViewAreaSessionAndClear() {

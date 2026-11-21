@@ -752,6 +752,7 @@ private slots:
   void sharedBufferRejectsStaleGestures();
   void foreignReloadAndSameTypeReplacement();
   void nativeLayoutsKeyboardAndTheme();
+  void paneWidthsSurviveLayoutChanges();
   void groupSourceNavigation_data();
   void groupSourceNavigation();
   void tasksOnlyNavigation_data();
@@ -4435,6 +4436,116 @@ void TestTodoViewWindow::foreignReloadAndSameTypeReplacement() {
   QVERIFY(window->save());
   QCOMPARE(readBytes(absolute(QStringLiteral("reload.todo"))), replacement);
   QVERIFY(readBytes(absolute(QStringLiteral("next.todo"))).contains("Only new buffer"));
+}
+
+void TestTodoViewWindow::paneWidthsSurviveLayoutChanges() {
+  createArea();
+  m_area->resize(1400, 760);
+  QVERIFY(openNote(QStringLiteral("pane-widths.todo"),
+                   c_source + "\n## Empty\n<!-- todo-list: {\"id\":\"empty\"} -->\n")
+              .isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *splitter = control<QSplitter>(window, "todoSplitter");
+  auto *details = control<QScrollArea>(window, "todoDetailsScroll");
+  QVERIFY(splitter && details);
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  QTRY_VERIFY(details->width() > 0);
+  const auto drag = [splitter](int p_index, int p_delta) {
+    auto *handle = splitter->handle(p_index);
+    QTRY_VERIFY(handle->isVisible());
+    const auto start = handle->rect().center();
+    const auto end = start + QPoint(p_delta, 0);
+    QMouseEvent press(QEvent::MouseButtonPress, start, handle->mapToGlobal(start), Qt::LeftButton,
+                      Qt::LeftButton, Qt::NoModifier);
+    QCoreApplication::sendEvent(handle, &press);
+    QMouseEvent move(QEvent::MouseMove, end, handle->mapToGlobal(end), Qt::NoButton, Qt::LeftButton,
+                     Qt::NoModifier);
+    QCoreApplication::sendEvent(handle, &move);
+    const auto releasePosition = handle->rect().center();
+    QMouseEvent release(QEvent::MouseButtonRelease, releasePosition,
+                        handle->mapToGlobal(releasePosition), Qt::LeftButton, Qt::NoButton,
+                        Qt::NoModifier);
+    QCoreApplication::sendEvent(handle, &release);
+  };
+  const int originalLists = splitter->sizes()[0];
+  drag(1, 60);
+  QTRY_COMPARE(splitter->sizes()[0], originalLists + 60);
+  const int originalDetails = details->width();
+  drag(2, -100);
+  QTRY_COMPARE(details->width(), originalDetails + 100);
+  const int listsWidth = splitter->sizes()[0];
+  const int detailsWidth = details->width();
+
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:empty")));
+  QTRY_VERIFY(details->isHidden());
+  QTRY_COMPARE(splitter->sizes()[2], 0);
+  QTRY_COMPARE(splitter->sizes()[0], listsWidth);
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:personal")));
+  QVERIFY(openTask(window, QStringLiteral("id:gamma")));
+  QTRY_COMPARE(details->width(), detailsWidth);
+  window->getTodoEditor()->closeDetails();
+  QTRY_VERIFY(details->isHidden());
+  QTRY_COMPARE(splitter->sizes()[2], 0);
+  drag(1, 40);
+  QCOMPARE(m_config->getSessionConfig().getTodoEditorLayout().m_detailsWidth, detailsWidth);
+  QTRY_COMPARE(splitter->sizes()[0], listsWidth + 40);
+  QVERIFY(openTask(window, QStringLiteral("id:gamma")));
+  QTRY_COMPARE(details->width(), detailsWidth);
+
+  m_area->resize(600, 760);
+  QTRY_COMPARE(splitter->count(), 1);
+  m_area->resize(1400, 760);
+  QTRY_COMPARE(splitter->count(), 3);
+  QTRY_COMPARE(splitter->sizes()[0], listsWidth + 40);
+  QTRY_COMPARE(details->width(), detailsWidth);
+  window->getTodoEditor()->closeDetails();
+  m_area->resize(600, 760);
+  QTRY_COMPARE(splitter->count(), 1);
+  m_area->resize(1400, 760);
+  QTRY_COMPARE(splitter->count(), 3);
+  QVERIFY(openTask(window, QStringLiteral("id:gamma")));
+  QTRY_COMPARE(splitter->sizes()[0], listsWidth + 40);
+  QTRY_COMPARE(details->width(), detailsWidth);
+
+  // A tighter wide window can clamp geometry, but must not replace the preferred widths.
+  m_area->resize(860, 760);
+  QTRY_VERIFY(window->getTodoEditor()->width() < 900);
+  m_area->resize(1400, 760);
+  QTRY_COMPARE(splitter->sizes()[0], listsWidth + 40);
+  QTRY_COMPARE(details->width(), detailsWidth);
+  window->getTodoEditor()->closeDetails();
+  QTRY_COMPARE(splitter->sizes()[2], 0);
+  m_area->resize(600, 760);
+  QTRY_COMPARE(splitter->count(), 1);
+
+  QVERIFY(QMetaObject::invokeMethod(m_config.get(), "doWriteSessionConfig", Qt::DirectConnection));
+  const auto resourcePaths = QDir::searchPaths(QStringLiteral("app"));
+  ConfigMgr2 restarted(m_configCore.get());
+  restarted.init();
+  QDir::setSearchPaths(QStringLiteral("app"), resourcePaths);
+  QCOMPARE(restarted.getSessionConfig().getTodoEditorLayout().m_listsWidth, listsWidth + 40);
+  QCOMPARE(restarted.getSessionConfig().getTodoEditorLayout().m_detailsWidth, detailsWidth);
+  ServiceLocator restoredServices;
+  restoredServices.registerService(&restarted);
+  restoredServices.registerService(m_theme.get());
+  TodoEditor restored(restoredServices);
+  restored.bindController(window->getController());
+  restored.resize(600, 760);
+  restored.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&restored));
+  restored.resize(1400, 760);
+  auto *restoredSplitter = control<QSplitter>(&restored, "todoSplitter");
+  auto *restoredTasks = control<QListView>(&restored, "todoTasks");
+  auto *restoredDetails = control<QScrollArea>(&restored, "todoDetailsScroll");
+  QVERIFY(restoredSplitter && restoredTasks && restoredDetails);
+  QTRY_COMPARE(restoredSplitter->sizes()[0], listsWidth + 40);
+  QVERIFY(activate(restoredTasks));
+  restoredTasks->setCurrentIndex(window->getController()->getTaskModel()->index(0));
+  QTest::keyClick(restoredTasks, Qt::Key_Return);
+  QTRY_VERIFY(restoredDetails->isVisible());
+  QTRY_COMPARE(restoredDetails->width(), detailsWidth);
 }
 
 void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {
