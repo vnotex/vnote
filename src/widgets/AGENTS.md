@@ -654,8 +654,8 @@ ordinary checkboxes.
 Details use 12px outer margins and section gaps, padded title/step inputs and icon actions,
 and full-width My Day/due-date rows with 12px padding. Quick-add uses a matching padded input
 and Add button; control heights are minimums, not fixed text-clipping heights. The Markdown
-note stays between 144px and 240px high, with remaining space before the bottom footer; long
-notes scroll inside the editor and long detail content scrolls in the existing outer pane.
+note has a 144px minimum height and expands to fill the remaining space above the bottom footer;
+long notes scroll inside the editor and long detail content scrolls in the existing outer pane.
 The dynamic step layout enforces its minimum content size. Opening a wide details pane restores
 its 320px allocation only if the hidden splitter pane retained zero width; nonzero user sizes stay.
 Step rows have a 16px leading inset (mirrored in RTL);

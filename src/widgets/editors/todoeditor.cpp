@@ -767,9 +767,7 @@ void TodoEditor::createDetails() {
   m_note->getTextEdit()->setPlaceholderText(tr("Add note (markdown supported)"));
   m_note->getTextEdit()->setUndoRedoEnabled(false);
   m_note->setMinimumHeight(144);
-  m_note->setMaximumHeight(240);
-  layout->addWidget(m_note);
-  layout->addStretch(1);
+  layout->addWidget(m_note, 1);
   auto *footer = new QHBoxLayout;
   footer->setContentsMargins(0, 4, 0, 0);
   footer->setSpacing(8);
