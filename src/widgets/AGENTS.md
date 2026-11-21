@@ -834,10 +834,12 @@ the cached list count. `groupAt()` still resolves a root list's internal Default
 its presentation `GroupIdRole` / `GroupTitleRole` are empty and `rowForGroup(Default)` is absent.
 New List and the accessible icon-only New Group control stay below the scrolling list. New Group
 uses `new_group.svg`: the group-row outline with an upper-right plus, recolored by `IconUtils`
-for normal and disabled states. Group rows select on single click (including the chevron);
-only a group-row double click toggles mouse expansion. Child-list double clicks never toggle
-their parent. Keyboard Enter/Space and Left/Right expansion remain available, including in Read
-mode; expansion and reordering are no longer separate context-menu actions.
+for normal and disabled states. Single click selects and toggles a group row, including its
+chevron; a double click toggles only once. Group rows use a pointing-hand cursor; list rows,
+smart views, empty space and leaving the viewport restore the inherited cursor. Layout changes
+and scrolling refresh stationary hover. Child-list double clicks never toggle their parent.
+Keyboard Enter/Space and Left/Right expansion remain available, including in Read mode;
+expansion and reordering are no longer separate context-menu actions.
 Group actions use the row context menu at every width, including for empty groups. Collapse and
 group selection do not change task projection/history or invalidate task drags; group-title
 search ignores collapse state. New Group/New List use post-commit output keys, never a guessed

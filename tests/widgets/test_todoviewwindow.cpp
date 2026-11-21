@@ -3506,7 +3506,7 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   const auto originalSelection = controller->getSelectedItemKey();
   editor->focusGroup(teamKey);
   QSignalSpy taskReset(taskModel, &QAbstractItemModel::modelReset);
-  if (width >= 840) {
+  {
     QVERIFY(activate(lists));
     const auto index = model->index(teamRow);
     lists->scrollTo(index);
@@ -3520,14 +3520,27 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
       return count;
     };
     const auto center = lists->visualRect(index).center();
+    movePointer(lists->viewport(), center);
+    QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::PointingHandCursor);
     QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier, center);
     QCOMPARE(editor->selectedGroupKey(), teamKey);
-    QVERIFY(!controller->getProjection().m_collapsedGroups.contains(teamKey));
-    QVERIFY(!lists->isRowHidden(workRow));
+    QVERIFY(controller->getProjection().m_collapsedGroups.contains(teamKey));
+    QVERIFY(lists->isRowHidden(workRow));
     const auto chevron = QPoint(lists->visualRect(index).right() - 22, center.y());
     QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier, chevron);
-    QCOMPARE(expansionChanges(), 0);
     QVERIFY(!lists->isRowHidden(workRow));
+    movePointer(lists->viewport(), lists->visualRect(model->index(workRow)).center());
+    QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::ArrowCursor);
+    movePointer(lists->viewport(), lists->visualRect(model->index(0)).center());
+    QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::ArrowCursor);
+    movePointer(lists->viewport(),
+                QPoint(lists->viewport()->width() / 2, lists->viewport()->height() - 8));
+    QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::ArrowCursor);
+    movePointer(lists->viewport(), center);
+    QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::PointingHandCursor);
+    movePointer(newGroup, newGroup->rect().center());
+    QTRY_VERIFY(!lists->viewport()->testAttribute(Qt::WA_SetCursor));
+    changes.clear();
     // Include the first click and the final release, not just MouseButtonDblClick.
     const auto doubleClick = [&]() {
       QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier, center);
@@ -3542,8 +3555,6 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
     QVERIFY(!lists->isRowHidden(workRow));
     doubleClick();
     QCOMPARE(expansionChanges(), 3);
-  } else {
-    QVERIFY(toggleGroupInSidebar(window));
   }
   QVERIFY(controller->getProjection().m_collapsedGroups.contains(teamKey));
   QVERIFY(lists->isRowHidden(workRow));
@@ -3754,9 +3765,16 @@ void TestTodoViewWindow::nativeGroupsWideAndNarrow() {
   const auto archiveIndex = model->index(model->rowForGroup(archiveKey));
   QVERIFY(activate(lists));
   lists->scrollTo(archiveIndex);
+  movePointer(lists->viewport(), lists->visualRect(archiveIndex).center());
+  QTRY_COMPARE(lists->viewport()->cursor().shape(), Qt::PointingHandCursor);
   QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
                     lists->visualRect(archiveIndex).center());
   QCOMPARE(editor->selectedGroupKey(), archiveKey);
+  QVERIFY(controller->getProjection().m_collapsedGroups.contains(archiveKey));
+  QVERIFY(lists->isRowHidden(model->rowForKey(referenceList)));
+  QTest::mouseClick(lists->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    lists->visualRect(archiveIndex).center());
+  QVERIFY(!lists->isRowHidden(model->rowForKey(referenceList)));
   QVERIFY(openGroupMenu(window));
   auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
   for (auto *action : menu->actions()) {

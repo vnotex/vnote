@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -24,6 +25,7 @@
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
@@ -102,7 +104,68 @@ class TodoListView final : public QListView {
 public:
   using QListView::QListView;
 
+  void doItemsLayout() override {
+    QListView::doItemsLayout();
+    updateGroupCursor();
+  }
+
 protected:
+  void mousePressEvent(QMouseEvent *p_event) override {
+    m_suppressGroupRelease = false;
+    m_groupPress = p_event->button() == Qt::LeftButton &&
+                   indexAt(p_event->position().toPoint()).data(TodoListModel::GroupRole).toBool();
+    QListView::mousePressEvent(p_event);
+  }
+
+  void mouseDoubleClickEvent(QMouseEvent *p_event) override {
+    if (p_event->button() == Qt::LeftButton && m_groupPress) {
+      // The first click already toggled the group. Consume the second click and release.
+      m_suppressGroupRelease = true;
+      p_event->accept();
+      return;
+    }
+    QListView::mouseDoubleClickEvent(p_event);
+  }
+
+  void mouseReleaseEvent(QMouseEvent *p_event) override {
+    if (p_event->button() == Qt::LeftButton && m_suppressGroupRelease) {
+      m_suppressGroupRelease = false;
+      p_event->accept();
+      return;
+    }
+    QListView::mouseReleaseEvent(p_event);
+  }
+
+  void mouseMoveEvent(QMouseEvent *p_event) override {
+    setGroupCursor(indexAt(p_event->position().toPoint()));
+    QListView::mouseMoveEvent(p_event);
+  }
+
+  bool viewportEvent(QEvent *p_event) override {
+    const QPointer<TodoListView> self(this);
+    const bool handled = QListView::viewportEvent(p_event);
+    if (self) {
+      if (p_event->type() == QEvent::Enter) {
+        setGroupCursor(indexAt(static_cast<QEnterEvent *>(p_event)->position().toPoint()));
+      } else if (p_event->type() == QEvent::Leave) {
+        setGroupCursor({});
+      }
+    }
+    return handled;
+  }
+
+  void scrollContentsBy(int p_dx, int p_dy) override {
+    QListView::scrollContentsBy(p_dx, p_dy);
+    updateGroupCursor();
+  }
+
+  void changeEvent(QEvent *p_event) override {
+    QListView::changeEvent(p_event);
+    if (p_event->type() == QEvent::EnabledChange) {
+      updateGroupCursor();
+    }
+  }
+
   void startDrag(Qt::DropActions p_supportedActions) override {
     if (!(p_supportedActions & Qt::MoveAction) || !model()) {
       return;
@@ -132,6 +195,27 @@ protected:
     // Sidebar viewport drops can change ownership even for the final row.
     QAbstractItemView::dropEvent(p_event);
   }
+
+private:
+  void updateGroupCursor() {
+    const auto *port = viewport();
+    setGroupCursor(port->underMouse() ? indexAt(port->mapFromGlobal(QCursor::pos()))
+                                      : QModelIndex());
+  }
+
+  void setGroupCursor(const QModelIndex &p_index) {
+    auto *port = viewport();
+    if (isEnabled() && p_index.data(TodoListModel::GroupRole).toBool()) {
+      if (port->cursor().shape() != Qt::PointingHandCursor) {
+        port->setCursor(Qt::PointingHandCursor);
+      }
+    } else if (port->testAttribute(Qt::WA_SetCursor)) {
+      port->unsetCursor();
+    }
+  }
+
+  bool m_groupPress = false;
+  bool m_suppressGroupRelease = false;
 };
 
 class ListDelegate : public TreeChildCountDelegate {
@@ -603,14 +687,9 @@ void TodoEditor::createUi() {
   connect(m_archiveCompleted, &QPushButton::clicked, this, &TodoEditor::archiveCompletedTasks);
   connect(m_lists, &QListView::clicked, this, [this](const QModelIndex &p_index) {
     if (p_index.data(TodoListModel::GroupRole).toBool()) {
-      focusGroup(p_index.data(TodoListModel::GroupIdRole).toString());
+      toggleGroup(p_index.data(TodoListModel::GroupIdRole).toString());
     } else {
       selectView(p_index.row());
-    }
-  });
-  connect(m_lists, &QListView::doubleClicked, this, [this](const QModelIndex &p_index) {
-    if (p_index.data(TodoListModel::GroupRole).toBool()) {
-      toggleGroup(p_index.data(TodoListModel::GroupIdRole).toString());
     }
   });
   connect(m_lists, &QListView::activated, this, [this](const QModelIndex &p_index) {
