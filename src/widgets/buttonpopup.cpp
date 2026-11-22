@@ -83,6 +83,11 @@ void ButtonPopup::beginOpening() {
   if (m_transferring) {
     return;
   }
+  if (windowType() == Qt::Tool && m_button) {
+    // Tool panels do not grab the mouse. Opening the menu consumes the button
+    // gesture; its release must not also trigger the default action.
+    m_button->setDown(false);
+  }
   ++m_openGeneration;
   m_open = true;
   m_restoreFocus = true;
@@ -320,6 +325,12 @@ bool ButtonPopup::eventFilter(QObject *p_object, QEvent *p_event) {
   }
   if (windowType() != Qt::Tool) {
     return QMenu::eventFilter(p_object, p_event);
+  }
+  if (p_object == m_button && type == QEvent::MouseButtonRelease &&
+      static_cast<QMouseEvent *>(p_event)->button() == Qt::LeftButton) {
+    // Moving over the held button can re-arm it after beginOpening(). Let Qt
+    // finish the release bookkeeping, but not click the action underneath us.
+    m_button->setDown(false);
   }
   if (type == QEvent::ApplicationStateChange || type == QEvent::ApplicationDeactivate) {
     dismissWhenInactive();

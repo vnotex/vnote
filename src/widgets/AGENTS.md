@@ -64,6 +64,14 @@ causing overflow menu before Qt finishes its submenu bookkeeping. Post handoff/a
 only after base `setVisible()` returns, not from `showEvent()`. Explicit `requestActivate()`
 then establishes the input-method target.
 
+Opening a Tool panel consumes its originating button gesture: clear the button's
+down state at opening and again before its mouse release, since a held-pointer move
+can re-arm it. Without a popup grab, that release otherwise triggers the default
+action as well (Insert Table opens both the grid and dialog). Do not disconnect the
+action: explicit dialog requests and keyboard shortcuts must still work. Regression
+clicks must deliver the release inside `QToolButton::showMenu()`'s nested loop;
+`showMenu()` alone does not exercise a pressed button.
+
 An overflow submenu must release its ancestor popup grabs after Qt's opening stack
 unwinds, then reopen at the same anchor without changing QObject ownership. Accept
 no input during that handoff; cancellation must not strand an input-gated panel.

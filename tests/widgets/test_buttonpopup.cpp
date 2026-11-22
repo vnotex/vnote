@@ -116,6 +116,8 @@ private slots:
   void embeddedInputAndClickAwayDismissal();
   void nativeInputTargetsThePopup_data();
   void nativeInputTargetsThePopup();
+  void openingClickDoesNotTriggerAction_data();
+  void openingClickDoesNotTriggerAction();
   void ownedChildrenTakeEscapeFirst();
   void pendingActivationSurvivesCloseAndOwnerDestruction();
   void aCancelledAncestorCannotStrandTheInput();
@@ -249,6 +251,63 @@ void TestButtonPopup::embeddedInputAndClickAwayDismissal() {
                     window.mapFromGlobal(outside));
   QTRY_VERIFY(!popup.isVisible());
   QCOMPARE(hidden.count(), 2);
+}
+
+void TestButtonPopup::openingClickDoesNotTriggerAction_data() {
+  QTest::addColumn<bool>("moveBeforeRelease");
+  QTest::newRow("release") << false;
+  QTest::newRow("move-then-release") << true;
+}
+
+void TestButtonPopup::openingClickDoesNotTriggerAction() {
+  if (!nativeFocusPlatform()) {
+    QSKIP("The originating button receives releases on native Tool panels");
+  }
+  QFETCH(bool, moveBeforeRelease);
+  PopupFixture fixture;
+  QVERIFY(fixture.show());
+  QSignalSpy triggered(fixture.m_tagAction, &QAction::triggered);
+  bool finished = false;
+  bool passed = false;
+  QTimer watchdog;
+  watchdog.setSingleShot(true);
+  connect(&watchdog, &QTimer::timeout, fixture.m_popup, &QMenu::hide);
+  QTimer drive;
+  drive.setSingleShot(true);
+  connect(&drive, &QTimer::timeout, &fixture.m_window, [&]() {
+    const auto close = qScopeGuard([&]() {
+      fixture.m_popup->hide();
+      finished = true;
+    });
+    QVERIFY(fixture.m_popup->isVisible());
+    if (moveBeforeRelease) {
+      QMouseEvent move(QEvent::MouseMove, QPointF(4, 4),
+                       fixture.m_button->mapToGlobal(QPoint(4, 4)), Qt::NoButton, Qt::LeftButton,
+                       Qt::NoModifier);
+      QCoreApplication::sendEvent(fixture.m_button, &move);
+    }
+    // Send the release inside QToolButton's nested menu loop, not after it exits.
+    QTest::mouseRelease(fixture.m_button, Qt::LeftButton);
+    QCOMPARE(triggered.count(), 0);
+    QVERIFY(fixture.m_popup->isVisible());
+    QTest::keyClicks(fixture.m_input, "tag");
+    QCOMPARE(fixture.m_input->text(), QStringLiteral("tag"));
+    QCOMPARE(fixture.m_editor.toPlainText(), fixture.m_original);
+    passed = true;
+  });
+  watchdog.start(5000);
+  drive.start(0);
+  QTest::mousePress(fixture.m_button, Qt::LeftButton);
+  drive.stop();
+  watchdog.stop();
+  QVERIFY(finished);
+  QVERIFY(passed);
+  QCOMPARE(triggered.count(), 0);
+
+  // A primary action without a menu still receives an ordinary click.
+  fixture.m_tagAction->setMenu(nullptr);
+  QTest::mouseClick(fixture.m_button, Qt::LeftButton);
+  QCOMPARE(triggered.count(), 1);
 }
 
 void TestButtonPopup::nativeInputTargetsThePopup_data() {

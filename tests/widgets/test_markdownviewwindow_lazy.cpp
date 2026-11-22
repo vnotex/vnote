@@ -32,6 +32,8 @@
 #include <QTextLayout>
 #include <QThreadPool>
 #include <QTimer>
+#include <QToolBar>
+#include <QToolButton>
 #include <QUuid>
 #include <QVBoxLayout>
 #include <QWebChannel>
@@ -67,6 +69,7 @@
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/vtextedit.h>
 #include <vxcore/vxcore.h>
+#include <widgets/dialogs/tableinsertdialog.h>
 #include <widgets/editors/markdowneditor.h>
 #include <widgets/editors/markdownviewer.h>
 #include <widgets/editors/markdownvieweradapter.h>
@@ -75,6 +78,7 @@
 #include <widgets/editors/statusbar.h>
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/outlineprovider.h>
+#include <widgets/tableinsertpopup.h>
 
 using namespace vnotex;
 
@@ -274,6 +278,8 @@ private slots:
   void concealmentExperiencePrompt_data();
   void concealmentExperiencePrompt();
   void imagePopupCreatesOnlyRequestedSurface();
+  void tableInsertionRoutes_data();
+  void tableInsertionRoutes();
   void printUsesCurrentMode_data();
   void printUsesCurrentMode();
   void presentationCreatesReader_data();
@@ -1119,6 +1125,111 @@ void TestMarkdownViewWindowLazy::themeAndOptionsPreserveEditor() {
   QCOMPARE(textEdit->document()->availableUndoSteps(), undo);
   textEdit->document()->undo();
   QCOMPARE(editor->getText(), QStringLiteral("# Theme\n"));
+}
+
+void TestMarkdownViewWindowLazy::tableInsertionRoutes_data() {
+  QTest::addColumn<int>("entry");
+  QTest::newRow("toolbar-grid") << 0;
+  QTest::newRow("popup-dialog") << 1;
+  QTest::newRow("keyboard-dialog") << 2;
+}
+
+void TestMarkdownViewWindowLazy::tableInsertionRoutes() {
+  QFETCH(int, entry);
+  const auto buffer = openNote(QStringLiteral("table.md"), QByteArrayLiteral("\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  auto *popup = window.findChild<TableInsertPopup *>();
+  QVERIFY(editor && popup);
+  auto *toolbar = qobject_cast<QToolBar *>(popup->parentWidget());
+  QVERIFY(toolbar);
+  auto *button = qobject_cast<QToolButton *>(toolbar->widgetForAction(popup->menuAction()));
+  QVERIFY(button);
+  window.resize(qMax(window.width(), toolbar->sizeHint().width() + 100), window.height());
+  QTRY_VERIFY(button->isVisible());
+  QVERIFY(toolbar->rect().contains(button->geometry()));
+  const auto original = editor->getText();
+  auto cursor = editor->getTextEdit()->textCursor();
+  cursor.movePosition(QTextCursor::Start);
+  editor->getTextEdit()->setTextCursor(cursor);
+
+  int dialogs = 0;
+  bool dialogWithPopup = false;
+  QTimer dismissDialogs;
+  connect(&dismissDialogs, &QTimer::timeout, &window, [&]() {
+    for (auto *dialog : window.findChildren<TableInsertDialog *>()) {
+      if (dialog->isVisible()) {
+        ++dialogs;
+        dialogWithPopup |= popup->isVisible();
+        dialog->reject();
+      }
+    }
+  });
+  dismissDialogs.start(10);
+  if (entry == 2) {
+    const QKeySequence shortcut(m_config->getEditorConfig().getShortcut(EditorConfig::TypeTable));
+    QVERIFY(!shortcut.isEmpty());
+    QTest::keySequence(editor->getTextEdit(), shortcut);
+    QTRY_COMPARE(dialogs, 1);
+    QVERIFY(!popup->isVisible());
+    QVERIFY(!dialogWithPopup);
+    QCOMPARE(editor->getText(), original);
+    return;
+  }
+
+  bool finished = false;
+  bool passed = false;
+  QTimer watchdog;
+  watchdog.setSingleShot(true);
+  connect(&watchdog, &QTimer::timeout, popup, &QMenu::hide);
+  QTimer drive;
+  drive.setSingleShot(true);
+  connect(&drive, &QTimer::timeout, &window, [&]() {
+    const auto close = qScopeGuard([&]() {
+      popup->hide();
+      finished = true;
+    });
+    QVERIFY(popup->isVisible());
+    // The opening press is still inside QToolButton::showMenu().
+    QTest::mouseRelease(button, Qt::LeftButton);
+    QCOMPARE(dialogs, 0);
+    QVERIFY(!QApplication::activeModalWidget());
+    QCOMPARE(editor->getText(), original);
+    if (entry == 0) {
+      auto *grid = popup->findChild<QWidget *>(QStringLiteral("tableInsertGrid"));
+      QVERIFY(grid);
+      QTest::mouseClick(grid, Qt::LeftButton, Qt::NoModifier,
+                        QPoint(grid->width() * 3 / 14, grid->height() * 3 / 14));
+      QCOMPARE(dialogs, 0);
+    } else {
+      auto *dialogButton =
+          popup->findChild<QToolButton *>(QStringLiteral("tableInsertDialogButton"));
+      QVERIFY(dialogButton);
+      QTest::mouseClick(dialogButton, Qt::LeftButton);
+      QCOMPARE(dialogs, 1);
+      QVERIFY(!dialogWithPopup);
+      QCOMPARE(editor->getText(), original);
+    }
+    QVERIFY(!popup->isVisible());
+    passed = true;
+  });
+  watchdog.start(5000);
+  drive.start(0);
+  QTest::mousePress(button, Qt::LeftButton);
+  drive.stop();
+  watchdog.stop();
+  QVERIFY(finished);
+  QVERIFY(passed);
+  if (entry == 0) {
+    // Two body rows and two columns, excluding header/delimiter; no duplicate insertion.
+    auto table = editor->getText();
+    table.remove(QLatin1Char(' '));
+    QCOMPARE(table, QStringLiteral("|||\n|---|---|\n|||\n|||\n"));
+    editor->getTextEdit()->undo();
+    QCOMPARE(editor->getText(), original);
+  }
 }
 
 void TestMarkdownViewWindowLazy::imagePopupCreatesOnlyRequestedSurface() {
