@@ -2,6 +2,29 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>令牌管理必须在所有者线程中运行</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>令牌注册表无效</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>请选择笔记本、有效权限、标签和有效的有效期选项</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>已达到 64 个令牌的上限</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>令牌已不存在</translation>
+    </message>
+</context>
+<context>
     <name>CommandLineOptions</name>
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
@@ -982,7 +1005,7 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="-106"/>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="+52"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="+51"/>
         <source>Undo</source>
         <translation>撤销</translation>
     </message>
@@ -1100,7 +1123,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>TodoDocument</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+787"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+804"/>
         <location line="+222"/>
         <source>Default</source>
         <translation>默认</translation>
@@ -2365,8 +2388,8 @@ Trust is remembered until you close this notebook.</source>
         <translation>不支持的导出来源。</translation>
     </message>
     <message>
-        <location line="+142"/>
-        <location line="+95"/>
+        <location line="+136"/>
+        <location line="+93"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>无法解析(%1)的文件路径。</translation>
     </message>
@@ -4645,6 +4668,55 @@ Trust is remembered until you close this notebook.</source>
     </message>
 </context>
 <context>
+    <name>vnotex::InputModePage</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+50"/>
+        <source>Ctrl+C/X to copy/cut</source>
+        <translation>使用 Ctrl+C/X 复制/剪切</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Use Ctrl+C/X to copy/cut text</source>
+        <translation>使用 Ctrl+C/X 复制/剪切文本</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Vi Input Mode</source>
+        <translation>Vi输入模式</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <location line="+63"/>
+        <source>Input Mode</source>
+        <translation>输入模式</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>Input mode</source>
+        <translation>输入模式</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <source>Input mode for editors</source>
+        <translation>编辑器输入模式</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Normal</source>
+        <translation>普通</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vi</source>
+        <translation>Vi</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VSCode</source>
+        <translation>VSCode</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::LegacyImageMigrationBar</name>
     <message>
         <location filename="../../../widgets/legacyimagemigrationbar.cpp" line="+9"/>
@@ -6776,7 +6848,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NewFolderController</name>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="+25"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="+20"/>
         <source>Please specify a name for the folder.</source>
         <translation>请为文件夹指定名称。</translation>
     </message>
@@ -6786,12 +6858,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>请为文件夹指定有效的名称。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
         <source>Name conflicts with existing folder.</source>
         <translation>名称与现有文件夹冲突。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
         <source>Name conflicts with existing note.</source>
         <translation>名称与现有笔记冲突。</translation>
     </message>
@@ -7023,7 +7095,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>请为笔记指定有效名称。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
         <source>Name conflicts with existing note.</source>
         <translation>名称与现有笔记冲突。</translation>
     </message>
@@ -7296,7 +7368,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location line="-32"/>
+        <location line="-31"/>
         <source>Properties - %1</source>
         <translation>属性 - %1</translation>
     </message>
@@ -7326,7 +7398,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>类型</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+13"/>
         <source>Created</source>
         <translation>创建时间</translation>
     </message>
@@ -7624,17 +7696,17 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+762"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+764"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
     <message>
-        <location line="+698"/>
+        <location line="+734"/>
         <source>Invalid arguments</source>
         <translation>参数无效</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+40"/>
         <source>Cancelled by hook</source>
         <translation>已被钩子取消</translation>
     </message>
@@ -7714,8 +7786,8 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+6"/>
-        <location line="+47"/>
-        <location line="+10"/>
+        <location line="+43"/>
+        <location line="+9"/>
         <source>The file destination changed.</source>
         <translation>文件目标位置已改变。</translation>
     </message>
@@ -8442,7 +8514,7 @@ Open the bundle location?</source>
         <translation>分享文件夹失败。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+97"/>
+        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+80"/>
         <source>(notebook root)</source>
         <translation>（笔记本根目录）</translation>
     </message>
@@ -9016,7 +9088,7 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
 <context>
     <name>vnotex::NotebookNodeModel</name>
     <message>
-        <location filename="../../../models/notebooknodemodel.cpp" line="+544"/>
+        <location filename="../../../models/notebooknodemodel.cpp" line="+525"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
@@ -10566,23 +10638,19 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+4"/>
+        <location line="+8"/>
+        <location line="+36"/>
+        <location line="+43"/>
         <source>Run a new completed content search before replacing.</source>
         <translation>请重新执行内容搜索并等待搜索完成后再替换。</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-84"/>
         <source>Results are truncated. Narrow the search or increase the result limit before replacing.</source>
         <translation>搜索结果已截断。请缩小搜索范围或提高结果数量上限后再替换。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+36"/>
-        <location line="+43"/>
-        <source>Replacement is available only for Simple search results.</source>
-        <translation>仅支持替换简单搜索结果。</translation>
-    </message>
-    <message>
-        <location line="-33"/>
+        <location line="+51"/>
         <source>Too many matches. Narrow the search before replacing.</source>
         <translation>匹配项过多。请缩小搜索范围后再替换。</translation>
     </message>
@@ -10835,7 +10903,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchService</name>
     <message>
-        <location filename="../../../core/services/searchservice.cpp" line="+507"/>
+        <location filename="../../../core/services/searchservice.cpp" line="+455"/>
         <source>The search result contains an invalid match range.</source>
         <translation>搜索结果包含无效的匹配范围。</translation>
     </message>
@@ -11348,17 +11416,17 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagController</name>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="+31"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="+28"/>
         <location line="+10"/>
-        <location line="+66"/>
+        <location line="+64"/>
         <location line="+10"/>
         <location line="+16"/>
         <source>Tags</source>
         <translation>标签</translation>
     </message>
     <message>
-        <location line="-102"/>
-        <location line="+76"/>
+        <location line="-100"/>
+        <location line="+74"/>
         <location line="+10"/>
         <location line="+16"/>
         <location line="+27"/>
@@ -11367,8 +11435,8 @@ The legacy notebook would be kept for data backup.</source>
         <translation>未选择笔记本。</translation>
     </message>
     <message>
-        <location line="-152"/>
-        <location line="+103"/>
+        <location line="-150"/>
+        <location line="+101"/>
         <location line="+27"/>
         <location line="+33"/>
         <source>Tag service is not available.</source>
@@ -11529,7 +11597,7 @@ Notebook: %3</source>
         <translation>搜索标签...</translation>
     </message>
     <message>
-        <location line="+153"/>
+        <location line="+152"/>
         <source>Applied to %1 of %2 selected files</source>
         <translation>已应用于所选 %2 个文件中的 %1 个</translation>
     </message>
@@ -11939,18 +12007,18 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::TodoEditor</name>
     <message>
-        <location filename="../../../widgets/editors/todoeditor.cpp" line="+73"/>
+        <location filename="../../../widgets/editors/todoeditor.cpp" line="+76"/>
         <source>Untitled group</source>
         <translation>未命名分组</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+452"/>
+        <location line="+536"/>
         <source>Untitled list</source>
         <translation>未命名列表</translation>
     </message>
     <message>
-        <location line="-446"/>
+        <location line="-530"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
@@ -11961,12 +12029,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+606"/>
+        <location line="+714"/>
         <source>Untitled task</source>
         <translation>未命名任务</translation>
     </message>
     <message>
-        <location line="-298"/>
+        <location line="-322"/>
         <source>TODO planner</source>
         <translation>TODO 规划器</translation>
     </message>
@@ -12014,33 +12082,33 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+1148"/>
+        <location line="+1187"/>
         <location line="+193"/>
         <source>New List</source>
         <translation>新建列表</translation>
     </message>
     <message>
-        <location line="-1341"/>
-        <location line="+1147"/>
+        <location line="-1380"/>
+        <location line="+1186"/>
         <source>New list</source>
         <translation>新建列表</translation>
     </message>
     <message>
-        <location line="-1146"/>
+        <location line="-1185"/>
         <location line="+1"/>
-        <location line="+1206"/>
+        <location line="+1245"/>
         <source>New group</source>
         <translation>新建分组</translation>
     </message>
     <message>
-        <location line="-1203"/>
-        <location line="+458"/>
-        <location line="+778"/>
+        <location line="-1242"/>
+        <location line="+494"/>
+        <location line="+781"/>
         <source>Archive Completed Tasks</source>
         <translation>归档已完成的任务</translation>
     </message>
     <message>
-        <location line="-1205"/>
+        <location line="-1244"/>
         <source>Tasks or details</source>
         <translation>任务或详情</translation>
     </message>
@@ -12051,12 +12119,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1366"/>
+        <location line="+1405"/>
         <source>Add list icon</source>
         <translation>添加列表图标</translation>
     </message>
     <message>
-        <location line="-1358"/>
+        <location line="-1397"/>
         <source>List title</source>
         <translation>列表标题</translation>
     </message>
@@ -12068,18 +12136,18 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+3"/>
         <location line="+1"/>
-        <location line="+1572"/>
+        <location line="+1611"/>
         <source>List Options</source>
         <translation>列表选项</translation>
     </message>
     <message>
-        <location line="-1564"/>
-        <location line="+1317"/>
+        <location line="-1603"/>
+        <location line="+1356"/>
         <source>List description</source>
         <translation>列表描述</translation>
     </message>
     <message>
-        <location line="-1308"/>
+        <location line="-1347"/>
         <source>Tasks; Enter opens details, Space completes</source>
         <translation>任务；按 Enter 打开详情，按空格键完成任务</translation>
     </message>
@@ -12120,7 +12188,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>添加任务</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+124"/>
         <location line="+3"/>
         <source>Task details</source>
         <translation>任务详情</translation>
@@ -12147,12 +12215,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>任务标题</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+8"/>
         <source>Task important</source>
         <translation>重要任务</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+18"/>
         <source>Task steps</source>
         <translation>任务步骤</translation>
     </message>
@@ -12167,21 +12235,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>添加步骤</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+325"/>
-        <location line="+1188"/>
+        <location line="-37"/>
+        <location line="+365"/>
+        <location line="+1191"/>
         <source>Add to My Day</source>
         <translation>添加到我的一天</translation>
     </message>
     <message>
-        <location line="-1509"/>
-        <location line="+803"/>
+        <location line="-1516"/>
+        <location line="+810"/>
         <location line="+38"/>
         <source>Task due date</source>
         <translation>任务截止日期</translation>
     </message>
     <message>
-        <location line="-830"/>
+        <location line="-839"/>
         <location line="+1"/>
         <source>Task note in Markdown</source>
         <translation>Markdown 格式的任务备注</translation>
@@ -12192,20 +12260,20 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>添加备注（支持 Markdown）</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+7"/>
         <source>Task creation date</source>
         <translation>任务创建日期</translation>
     </message>
     <message>
         <location line="+6"/>
         <location line="+4"/>
-        <location line="+1211"/>
+        <location line="+1222"/>
         <location line="+322"/>
         <source>Delete task</source>
         <translation>删除任务</translation>
     </message>
     <message>
-        <location line="-1363"/>
+        <location line="-1366"/>
         <source>Archive Completed Tasks (requires completed tasks in an editable file)</source>
         <translation>归档已完成的任务（需要可编辑文件中有已完成的任务）</translation>
     </message>
@@ -12231,24 +12299,23 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1201"/>
+        <location line="+1204"/>
         <source>Remove importance</source>
         <translation>取消重要标记</translation>
     </message>
     <message>
-        <location line="-1201"/>
-        <location line="+1201"/>
+        <location line="-1204"/>
+        <location line="+1204"/>
         <source>Mark as important</source>
         <translation>标记为重要</translation>
     </message>
     <message>
-        <location line="-1198"/>
-        <location line="+1110"/>
+        <location line="-88"/>
         <source>Added to My Day</source>
         <translation>已添加到我的一天</translation>
     </message>
     <message>
-        <location line="-1106"/>
+        <location line="-1109"/>
         <source>My Day: %1</source>
         <translation>我的一天：%1</translation>
     </message>
@@ -12275,12 +12342,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-17"/>
-        <location line="+391"/>
+        <location line="+394"/>
         <source>Step options</source>
         <translation>步骤选项</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-376"/>
         <source>Complete step: %1</source>
         <translation>完成步骤：%1</translation>
     </message>
@@ -12295,7 +12362,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>添加到“计划”前请选择截止日期</translation>
     </message>
     <message>
-        <location line="+351"/>
+        <location line="+354"/>
         <source>Mark as Not Completed</source>
         <translation>标记为未完成</translation>
     </message>
@@ -12516,7 +12583,8 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>任务操作</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="-1168"/>
+        <location line="+1191"/>
         <source>Remove from My Day</source>
         <translation>从我的一天中移除</translation>
     </message>
@@ -12556,12 +12624,12 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>撤销</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+16"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+17"/>
         <source>Cut</source>
         <translation>剪切</translation>
     </message>
@@ -12764,7 +12832,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoStickerController</name>
     <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="+157"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="+161"/>
         <location line="+210"/>
         <source>The TODO notebook is closed. Reopen it or choose another file.</source>
         <translation>TODO 所在的笔记本已关闭。请重新打开或选择其他文件。</translation>
@@ -12815,7 +12883,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>无法读取 TODO 所在的笔记本文件夹。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+10"/>
         <source>A notebook folder already occupies the TODO file path.</source>
         <translation>TODO 文件路径已被笔记本文件夹占用。</translation>
     </message>
@@ -12916,18 +12984,18 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+25"/>
-        <location line="+137"/>
+        <location line="+135"/>
         <source>The TODO services are unavailable.</source>
         <translation>TODO 服务不可用。</translation>
     </message>
     <message>
-        <location line="-86"/>
+        <location line="-84"/>
         <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
         <translation>TODO 文件暂时不可用。请在当前操作完成后重试。</translation>
     </message>
     <message>
         <location line="+15"/>
-        <location line="+124"/>
+        <location line="+122"/>
         <source>Line %1: %2</source>
         <translation>第 %1 行：%2</translation>
     </message>
@@ -12948,13 +13016,13 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+5"/>
-        <location line="+68"/>
-        <location line="+81"/>
+        <location line="+82"/>
+        <location line="+87"/>
         <source>The selected task no longer exists.</source>
         <translation>所选任务已不存在。</translation>
     </message>
     <message>
-        <location line="-113"/>
+        <location line="-119"/>
         <source>The TODO selection changed before the operation could finish.</source>
         <translation>操作完成前，所选 TODO 已发生变化。</translation>
     </message>
@@ -12964,7 +13032,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>无法在不改变无关文本的情况下编辑 TODO 源文档。</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+41"/>
         <source>The task could not be updated.</source>
         <translation>无法更新任务。</translation>
     </message>
@@ -12994,7 +13062,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>无法打开 TODO 文件进行编辑。</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-249"/>
         <location line="+9"/>
         <source>Choose an existing destination list.</source>
         <translation>请选择已有的目标列表。</translation>
@@ -13006,7 +13074,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>请选择新任务的截止日期。</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+89"/>
         <location line="+5"/>
         <source>The task could not be added.</source>
         <translation>无法添加任务。</translation>
@@ -13021,12 +13089,12 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+454"/>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Completed</source>
         <translation>已完成</translation>
     </message>
     <message>
-        <location line="-48"/>
+        <location line="-50"/>
         <source>Completed, %1 tasks, expanded</source>
         <translation>已完成，%1 个任务，已展开</translation>
     </message>
@@ -13036,7 +13104,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>已完成，%1 个任务，已折叠</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+49"/>
         <source>Not completed</source>
         <translation>未完成</translation>
     </message>
@@ -13079,7 +13147,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoTaskView</name>
     <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="+172"/>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="+180"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
@@ -13142,7 +13210,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>请在源文档中修正任务数据，然后重新加载此文档。</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+92"/>
         <location line="+19"/>
         <source>Edit task fields to change this document.</source>
         <translation>编辑任务字段以更改此文档。</translation>
@@ -13151,13 +13219,14 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoViewWindowController</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-931"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-948"/>
         <source>Line %1: %2</source>
         <translation>第 %1 行：%2</translation>
     </message>
     <message>
         <location line="+165"/>
         <location line="+12"/>
+        <location line="+17"/>
         <location line="+1176"/>
         <source>The task no longer exists.</source>
         <translation>任务已不存在。</translation>
@@ -14138,55 +14207,6 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
 </context>
 <context>
-    <name>vnotex::InputModePage</name>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+52"/>
-        <source>Ctrl+C/X to copy/cut</source>
-        <translation>使用 Ctrl+C/X 复制/剪切</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Use Ctrl+C/X to copy/cut text</source>
-        <translation>使用 Ctrl+C/X 复制/剪切文本</translation>
-    </message>
-    <message>
-        <location line="-5"/>
-        <source>Vi Input Mode</source>
-        <translation>Vi输入模式</translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+63"/>
-        <source>Input Mode</source>
-        <translation>输入模式</translation>
-    </message>
-    <message>
-        <location line="-53"/>
-        <source>Input mode</source>
-        <translation>输入模式</translation>
-    </message>
-    <message>
-        <location line="-6"/>
-        <source>Input mode for editors</source>
-        <translation>编辑器输入模式</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Normal</source>
-        <translation>普通</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Vi</source>
-        <translation>Vi</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>VSCode</source>
-        <translation>VSCode</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViewArea2</name>
     <message>
         <location filename="../../../widgets/viewarea2.cpp" line="-83"/>
@@ -15139,29 +15159,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>适应页面</translation>
-    </message>
-</context>
-<context>
-    <name>ApiAuth</name>
-    <message>
-        <source>Token administration must run on the owner thread</source>
-        <translation>令牌管理必须在所有者线程中运行</translation>
-    </message>
-    <message>
-        <source>The token registry is invalid</source>
-        <translation>令牌注册表无效</translation>
-    </message>
-    <message>
-        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
-        <translation>请选择笔记本、有效权限、标签和有效的有效期选项</translation>
-    </message>
-    <message>
-        <source>The token limit of 64 has been reached</source>
-        <translation>已达到 64 个令牌的上限</translation>
-    </message>
-    <message>
-        <source>The token no longer exists</source>
-        <translation>令牌已不存在</translation>
     </message>
 </context>
 </TS>

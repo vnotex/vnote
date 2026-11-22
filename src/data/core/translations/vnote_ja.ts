@@ -2,6 +2,29 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ja_JP">
 <context>
+    <name>ApiAuth</name>
+    <message>
+        <source>Token administration must run on the owner thread</source>
+        <translation>トークン管理は所有スレッドで実行する必要があります</translation>
+    </message>
+    <message>
+        <source>The token registry is invalid</source>
+        <translation>トークンレジストリが無効です</translation>
+    </message>
+    <message>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>ノートブック、有効な権限、ラベル、有効な期限の選択肢を指定してください</translation>
+    </message>
+    <message>
+        <source>The token limit of 64 has been reached</source>
+        <translation>トークンの上限（64 個）に達しました</translation>
+    </message>
+    <message>
+        <source>The token no longer exists</source>
+        <translation>トークンはもう存在しません</translation>
+    </message>
+</context>
+<context>
     <name>CommandLineOptions</name>
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
@@ -982,7 +1005,7 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location filename="../../../widgets/editors/simplemarkdowneditor.cpp" line="-106"/>
-        <location filename="../../../widgets/textviewwindowhelper.h" line="+52"/>
+        <location filename="../../../widgets/textviewwindowhelper.h" line="+51"/>
         <source>Undo</source>
         <translation>元に戻す</translation>
     </message>
@@ -1100,7 +1123,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>TodoDocument</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+787"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+804"/>
         <location line="+222"/>
         <source>Default</source>
         <translation>デフォルト</translation>
@@ -2365,8 +2388,8 @@ Trust is remembered until you close this notebook.</source>
         <translation>サポートされていないエクスポート元です。</translation>
     </message>
     <message>
-        <location line="+142"/>
-        <location line="+95"/>
+        <location line="+136"/>
+        <location line="+93"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>(%1) のファイルパスを解決できませんでした。</translation>
     </message>
@@ -4645,6 +4668,55 @@ Trust is remembered until you close this notebook.</source>
     </message>
 </context>
 <context>
+    <name>vnotex::InputModePage</name>
+    <message>
+        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+50"/>
+        <source>Ctrl+C/X to copy/cut</source>
+        <translation>Ctrl+C/X でコピー/切り取り</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Use Ctrl+C/X to copy/cut text</source>
+        <translation>Ctrl+C/X でテキストをコピー/切り取り</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Vi Input Mode</source>
+        <translation>Vi 入力モード</translation>
+    </message>
+    <message>
+        <location line="-18"/>
+        <location line="+63"/>
+        <source>Input Mode</source>
+        <translation>入力モード</translation>
+    </message>
+    <message>
+        <location line="-53"/>
+        <source>Input mode</source>
+        <translation>入力モード</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <source>Input mode for editors</source>
+        <translation>エディターの入力モード</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Normal</source>
+        <translation>標準</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Vi</source>
+        <translation>Vi</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>VSCode</source>
+        <translation>VSCode</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::LegacyImageMigrationBar</name>
     <message>
         <location filename="../../../widgets/legacyimagemigrationbar.cpp" line="+9"/>
@@ -6776,7 +6848,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NewFolderController</name>
     <message>
-        <location filename="../../../controllers/newfoldercontroller.cpp" line="+25"/>
+        <location filename="../../../controllers/newfoldercontroller.cpp" line="+20"/>
         <source>Please specify a name for the folder.</source>
         <translation>フォルダの名前を指定してください。</translation>
     </message>
@@ -6786,12 +6858,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>フォルダーに有効な名前を指定してください。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
         <source>Name conflicts with existing folder.</source>
         <translation>名前が既存のフォルダと重複しています。</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+8"/>
         <source>Name conflicts with existing note.</source>
         <translation>名前が既存のノートと重複しています。</translation>
     </message>
@@ -7023,7 +7095,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>ノートに有効な名前を指定してください。</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+11"/>
         <source>Name conflicts with existing note.</source>
         <translation>名前が既存のノートと重複しています。</translation>
     </message>
@@ -7296,7 +7368,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>サイズ</translation>
     </message>
     <message>
-        <location line="-32"/>
+        <location line="-31"/>
         <source>Properties - %1</source>
         <translation>プロパティ - %1</translation>
     </message>
@@ -7326,7 +7398,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>種類</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+13"/>
         <source>Created</source>
         <translation>作成</translation>
     </message>
@@ -7624,17 +7696,17 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+762"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+764"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
     </message>
     <message>
-        <location line="+698"/>
+        <location line="+734"/>
         <source>Invalid arguments</source>
         <translation>引数が無効です</translation>
     </message>
     <message>
-        <location line="+38"/>
+        <location line="+40"/>
         <source>Cancelled by hook</source>
         <translation>フックによりキャンセルされました</translation>
     </message>
@@ -7714,8 +7786,8 @@ Trust is remembered until you close this notebook.</source>
     </message>
     <message>
         <location line="+6"/>
-        <location line="+47"/>
-        <location line="+10"/>
+        <location line="+43"/>
+        <location line="+9"/>
         <source>The file destination changed.</source>
         <translation>ファイルの保存先が変更されました。</translation>
     </message>
@@ -8442,7 +8514,7 @@ Open the bundle location?</source>
         <translation>フォルダーの共有に失敗しました。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+97"/>
+        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+80"/>
         <source>(notebook root)</source>
         <translation>（ノートブックのルート）</translation>
     </message>
@@ -9016,7 +9088,7 @@ Raw ノートブックの場合、ファイルを含む既存のフォルダー�
 <context>
     <name>vnotex::NotebookNodeModel</name>
     <message>
-        <location filename="../../../models/notebooknodemodel.cpp" line="+544"/>
+        <location filename="../../../models/notebooknodemodel.cpp" line="+525"/>
         <source>Error</source>
         <translation>エラー</translation>
     </message>
@@ -10566,23 +10638,19 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+4"/>
+        <location line="+8"/>
+        <location line="+36"/>
+        <location line="+43"/>
         <source>Run a new completed content search before replacing.</source>
         <translation>置換する前に、内容検索を新たに実行して完了させてください。</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-84"/>
         <source>Results are truncated. Narrow the search or increase the result limit before replacing.</source>
         <translation>検索結果が省略されています。置換する前に、検索を絞り込むか結果の上限を増やしてください。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+36"/>
-        <location line="+43"/>
-        <source>Replacement is available only for Simple search results.</source>
-        <translation>置換は Simple 検索の結果でのみ利用できます。</translation>
-    </message>
-    <message>
-        <location line="-33"/>
+        <location line="+51"/>
         <source>Too many matches. Narrow the search before replacing.</source>
         <translation>一致箇所が多すぎます。置換する前に検索を絞り込んでください。</translation>
     </message>
@@ -10835,7 +10903,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchService</name>
     <message>
-        <location filename="../../../core/services/searchservice.cpp" line="+507"/>
+        <location filename="../../../core/services/searchservice.cpp" line="+455"/>
         <source>The search result contains an invalid match range.</source>
         <translation>検索結果に無効な一致範囲が含まれています。</translation>
     </message>
@@ -11348,17 +11416,17 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagController</name>
     <message>
-        <location filename="../../../controllers/tagcontroller.cpp" line="+31"/>
+        <location filename="../../../controllers/tagcontroller.cpp" line="+28"/>
         <location line="+10"/>
-        <location line="+66"/>
+        <location line="+64"/>
         <location line="+10"/>
         <location line="+16"/>
         <source>Tags</source>
         <translation>タグ</translation>
     </message>
     <message>
-        <location line="-102"/>
-        <location line="+76"/>
+        <location line="-100"/>
+        <location line="+74"/>
         <location line="+10"/>
         <location line="+16"/>
         <location line="+27"/>
@@ -11367,8 +11435,8 @@ The legacy notebook would be kept for data backup.</source>
         <translation>ノートブックが選択されていません。</translation>
     </message>
     <message>
-        <location line="-152"/>
-        <location line="+103"/>
+        <location line="-150"/>
+        <location line="+101"/>
         <location line="+27"/>
         <location line="+33"/>
         <source>Tag service is not available.</source>
@@ -11529,7 +11597,7 @@ Notebook: %3</source>
         <translation>タグを検索...</translation>
     </message>
     <message>
-        <location line="+153"/>
+        <location line="+152"/>
         <source>Applied to %1 of %2 selected files</source>
         <translation>選択した %2 ファイルのうち %1 ファイルに適用しました</translation>
     </message>
@@ -11939,18 +12007,18 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::TodoEditor</name>
     <message>
-        <location filename="../../../widgets/editors/todoeditor.cpp" line="+73"/>
+        <location filename="../../../widgets/editors/todoeditor.cpp" line="+76"/>
         <source>Untitled group</source>
         <translation>無題のグループ</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+452"/>
+        <location line="+536"/>
         <source>Untitled list</source>
         <translation>無題のリスト</translation>
     </message>
     <message>
-        <location line="-446"/>
+        <location line="-530"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
@@ -11961,12 +12029,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+606"/>
+        <location line="+714"/>
         <source>Untitled task</source>
         <translation>無題のタスク</translation>
     </message>
     <message>
-        <location line="-298"/>
+        <location line="-322"/>
         <source>TODO planner</source>
         <translation>TODO プランナー</translation>
     </message>
@@ -12014,33 +12082,33 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+1148"/>
+        <location line="+1187"/>
         <location line="+193"/>
         <source>New List</source>
         <translation>新しいリスト</translation>
     </message>
     <message>
-        <location line="-1341"/>
-        <location line="+1147"/>
+        <location line="-1380"/>
+        <location line="+1186"/>
         <source>New list</source>
         <translation>新しいリスト</translation>
     </message>
     <message>
-        <location line="-1146"/>
+        <location line="-1185"/>
         <location line="+1"/>
-        <location line="+1206"/>
+        <location line="+1245"/>
         <source>New group</source>
         <translation>新しいグループ</translation>
     </message>
     <message>
-        <location line="-1203"/>
-        <location line="+458"/>
-        <location line="+778"/>
+        <location line="-1242"/>
+        <location line="+494"/>
+        <location line="+781"/>
         <source>Archive Completed Tasks</source>
         <translation>完了したタスクをアーカイブ</translation>
     </message>
     <message>
-        <location line="-1205"/>
+        <location line="-1244"/>
         <source>Tasks or details</source>
         <translation>タスクまたは詳細</translation>
     </message>
@@ -12051,12 +12119,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1366"/>
+        <location line="+1405"/>
         <source>Add list icon</source>
         <translation>リストのアイコンを追加</translation>
     </message>
     <message>
-        <location line="-1358"/>
+        <location line="-1397"/>
         <source>List title</source>
         <translation>リストのタイトル</translation>
     </message>
@@ -12068,18 +12136,18 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+3"/>
         <location line="+1"/>
-        <location line="+1572"/>
+        <location line="+1611"/>
         <source>List Options</source>
         <translation>リストのオプション</translation>
     </message>
     <message>
-        <location line="-1564"/>
-        <location line="+1317"/>
+        <location line="-1603"/>
+        <location line="+1356"/>
         <source>List description</source>
         <translation>リストの説明</translation>
     </message>
     <message>
-        <location line="-1308"/>
+        <location line="-1347"/>
         <source>Tasks; Enter opens details, Space completes</source>
         <translation>タスク: Enter キーで詳細を開き、Space キーで完了にします</translation>
     </message>
@@ -12120,7 +12188,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>タスクを追加</translation>
     </message>
     <message>
-        <location line="+100"/>
+        <location line="+124"/>
         <location line="+3"/>
         <source>Task details</source>
         <translation>タスクの詳細</translation>
@@ -12147,12 +12215,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>タスクのタイトル</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+8"/>
         <source>Task important</source>
         <translation>タスクの重要度</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+18"/>
         <source>Task steps</source>
         <translation>タスクのステップ</translation>
     </message>
@@ -12167,21 +12235,21 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>ステップを追加</translation>
     </message>
     <message>
-        <location line="+4"/>
-        <location line="+325"/>
-        <location line="+1188"/>
+        <location line="-37"/>
+        <location line="+365"/>
+        <location line="+1191"/>
         <source>Add to My Day</source>
         <translation>今日の予定に追加</translation>
     </message>
     <message>
-        <location line="-1509"/>
-        <location line="+803"/>
+        <location line="-1516"/>
+        <location line="+810"/>
         <location line="+38"/>
         <source>Task due date</source>
         <translation>タスクの期限</translation>
     </message>
     <message>
-        <location line="-830"/>
+        <location line="-839"/>
         <location line="+1"/>
         <source>Task note in Markdown</source>
         <translation>Markdown 形式のタスクのメモ</translation>
@@ -12192,20 +12260,20 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>メモを追加（Markdown 対応）</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+7"/>
         <source>Task creation date</source>
         <translation>タスクの作成日</translation>
     </message>
     <message>
         <location line="+6"/>
         <location line="+4"/>
-        <location line="+1211"/>
+        <location line="+1222"/>
         <location line="+322"/>
         <source>Delete task</source>
         <translation>タスクを削除</translation>
     </message>
     <message>
-        <location line="-1363"/>
+        <location line="-1366"/>
         <source>Archive Completed Tasks (requires completed tasks in an editable file)</source>
         <translation>完了したタスクをアーカイブ（編集可能なファイル内に完了したタスクが必要）</translation>
     </message>
@@ -12231,24 +12299,23 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1201"/>
+        <location line="+1204"/>
         <source>Remove importance</source>
         <translation>重要マークを解除</translation>
     </message>
     <message>
-        <location line="-1201"/>
-        <location line="+1201"/>
+        <location line="-1204"/>
+        <location line="+1204"/>
         <source>Mark as important</source>
         <translation>重要マークを付ける</translation>
     </message>
     <message>
-        <location line="-1198"/>
-        <location line="+1110"/>
+        <location line="-88"/>
         <source>Added to My Day</source>
         <translation>今日の予定に追加済み</translation>
     </message>
     <message>
-        <location line="-1106"/>
+        <location line="-1109"/>
         <source>My Day: %1</source>
         <translation>今日の予定: %1</translation>
     </message>
@@ -12275,12 +12342,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-17"/>
-        <location line="+391"/>
+        <location line="+394"/>
         <source>Step options</source>
         <translation>ステップのオプション</translation>
     </message>
     <message>
-        <location line="-373"/>
+        <location line="-376"/>
         <source>Complete step: %1</source>
         <translation>ステップを完了にする: %1</translation>
     </message>
@@ -12295,7 +12362,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>「予定」に追加する前に期限を選択してください</translation>
     </message>
     <message>
-        <location line="+351"/>
+        <location line="+354"/>
         <source>Mark as Not Completed</source>
         <translation>未完了にする</translation>
     </message>
@@ -12516,7 +12583,8 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>タスクの操作</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="-1168"/>
+        <location line="+1191"/>
         <source>Remove from My Day</source>
         <translation>今日の予定から除外</translation>
     </message>
@@ -12556,12 +12624,12 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>元に戻す</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+16"/>
         <source>Redo</source>
         <translation>やり直す</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+17"/>
         <source>Cut</source>
         <translation>切り取り</translation>
     </message>
@@ -12764,7 +12832,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoStickerController</name>
     <message>
-        <location filename="../../../controllers/todostickercontroller.cpp" line="+157"/>
+        <location filename="../../../controllers/todostickercontroller.cpp" line="+161"/>
         <location line="+210"/>
         <source>The TODO notebook is closed. Reopen it or choose another file.</source>
         <translation>TODO のノートブックは閉じられています。開き直すか、別のファイルを選択してください。</translation>
@@ -12815,7 +12883,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>TODO のノートブックフォルダーを読み取れません。</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+10"/>
         <source>A notebook folder already occupies the TODO file path.</source>
         <translation>TODO ファイルのパスには既にノートブックのフォルダーがあります。</translation>
     </message>
@@ -12916,18 +12984,18 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+25"/>
-        <location line="+137"/>
+        <location line="+135"/>
         <source>The TODO services are unavailable.</source>
         <translation>TODO サービスを利用できません。</translation>
     </message>
     <message>
-        <location line="-86"/>
+        <location line="-84"/>
         <source>The TODO file is temporarily unavailable. Try again after the current operation finishes.</source>
         <translation>TODO ファイルを一時的に利用できません。現在の操作が完了してから再試行してください。</translation>
     </message>
     <message>
         <location line="+15"/>
-        <location line="+124"/>
+        <location line="+122"/>
         <source>Line %1: %2</source>
         <translation>%1 行目: %2</translation>
     </message>
@@ -12948,13 +13016,13 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+5"/>
-        <location line="+68"/>
-        <location line="+81"/>
+        <location line="+82"/>
+        <location line="+87"/>
         <source>The selected task no longer exists.</source>
         <translation>選択したタスクはもう存在しません。</translation>
     </message>
     <message>
-        <location line="-113"/>
+        <location line="-119"/>
         <source>The TODO selection changed before the operation could finish.</source>
         <translation>操作が完了する前に TODO の選択が変更されました。</translation>
     </message>
@@ -12964,7 +13032,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>無関係なテキストを変更せずに TODO ソースを編集することはできません。</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+41"/>
         <source>The task could not be updated.</source>
         <translation>タスクを更新できませんでした。</translation>
     </message>
@@ -12994,7 +13062,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>TODO ファイルを編集用に開けませんでした。</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-249"/>
         <location line="+9"/>
         <source>Choose an existing destination list.</source>
         <translation>既存の追加先リストを選択してください。</translation>
@@ -13006,7 +13074,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>新しいタスクの期限を選択してください。</translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+89"/>
         <location line="+5"/>
         <source>The task could not be added.</source>
         <translation>タスクを追加できませんでした。</translation>
@@ -13021,12 +13089,12 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+454"/>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Completed</source>
         <translation>完了</translation>
     </message>
     <message>
-        <location line="-48"/>
+        <location line="-50"/>
         <source>Completed, %1 tasks, expanded</source>
         <translation>完了、タスク %1 件、展開済み</translation>
     </message>
@@ -13036,7 +13104,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>完了、タスク %1 件、折りたたみ済み</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+49"/>
         <source>Not completed</source>
         <translation>未完了</translation>
     </message>
@@ -13079,7 +13147,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoTaskView</name>
     <message>
-        <location filename="../../../widgets/editors/todotaskview.cpp" line="+172"/>
+        <location filename="../../../widgets/editors/todotaskview.cpp" line="+180"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
@@ -13142,7 +13210,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>ソース内のタスクデータを修正してから、このドキュメントを再読み込みしてください。</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+92"/>
         <location line="+19"/>
         <source>Edit task fields to change this document.</source>
         <translation>このドキュメントを変更するには、タスクの項目を編集してください。</translation>
@@ -13151,13 +13219,14 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoViewWindowController</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-931"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-948"/>
         <source>Line %1: %2</source>
         <translation>%1 行目: %2</translation>
     </message>
     <message>
         <location line="+165"/>
         <location line="+12"/>
+        <location line="+17"/>
         <location line="+1176"/>
         <source>The task no longer exists.</source>
         <translation>タスクはもう存在しません。</translation>
@@ -14138,55 +14207,6 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
 </context>
 <context>
-    <name>vnotex::InputModePage</name>
-    <message>
-        <location filename="../../../widgets/dialogs/settings/inputmodepage.cpp" line="+52"/>
-        <source>Ctrl+C/X to copy/cut</source>
-        <translation>Ctrl+C/X でコピー/切り取り</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Use Ctrl+C/X to copy/cut text</source>
-        <translation>Ctrl+C/X でテキストをコピー/切り取り</translation>
-    </message>
-    <message>
-        <location line="-5"/>
-        <source>Vi Input Mode</source>
-        <translation>Vi 入力モード</translation>
-    </message>
-    <message>
-        <location line="-19"/>
-        <location line="+63"/>
-        <source>Input Mode</source>
-        <translation>入力モード</translation>
-    </message>
-    <message>
-        <location line="-53"/>
-        <source>Input mode</source>
-        <translation>入力モード</translation>
-    </message>
-    <message>
-        <location line="-6"/>
-        <source>Input mode for editors</source>
-        <translation>エディターの入力モード</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Normal</source>
-        <translation>標準</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Vi</source>
-        <translation>Vi</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>VSCode</source>
-        <translation>VSCode</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::ViewArea2</name>
     <message>
         <location filename="../../../widgets/viewarea2.cpp" line="-83"/>
@@ -15139,29 +15159,6 @@ Continue?</source>
         <location line="+1"/>
         <source>Fit Page</source>
         <translation>ページに合わせる</translation>
-    </message>
-</context>
-<context>
-    <name>ApiAuth</name>
-    <message>
-        <source>Token administration must run on the owner thread</source>
-        <translation>トークン管理は所有スレッドで実行する必要があります</translation>
-    </message>
-    <message>
-        <source>The token registry is invalid</source>
-        <translation>トークンレジストリが無効です</translation>
-    </message>
-    <message>
-        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
-        <translation>ノートブック、有効な権限、ラベル、有効な期限の選択肢を指定してください</translation>
-    </message>
-    <message>
-        <source>The token limit of 64 has been reached</source>
-        <translation>トークンの上限（64 個）に達しました</translation>
-    </message>
-    <message>
-        <source>The token no longer exists</source>
-        <translation>トークンはもう存在しません</translation>
     </message>
 </context>
 </TS>
