@@ -13,6 +13,7 @@ A refinement release with smoother TODO planning, unified editor settings and fa
     * Centralize Normal, Vi and VSCode modes in shared Input Mode settings, preserving existing selections across text and Markdown editors
     * Keep empty concealed Markdown elements visible and use a sticky-note icon for mind-map node notes
     * Display Created and Modified timestamps in note and folder properties using the application locale, preserving local time and seconds
+    * Offer Open Link and Copy Link for bare URLs in Markdown edit mode, using parsed link destinations and excluding code
 * **Search and reliability**
     * Use typed vxcore results for folder listings, search and tags to avoid in-process JSON round trips while preserving metadata, ordering and existing JSON APIs
     * Remove the ripgrep backend and use built-in search for consistent Unicode replacement and cooperative cancellation

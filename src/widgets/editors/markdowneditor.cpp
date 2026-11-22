@@ -2052,7 +2052,7 @@ void MarkdownEditor::insertContextSensitiveMenu(QMenu *p_menu, const QPoint &p_p
     return;
   }
 
-  ret = prependLinkMenu(p_menu, p_before, pos, block);
+  ret = prependLinkMenu(p_menu, p_before, pos);
   if (ret) {
     return;
   }
@@ -2459,9 +2459,8 @@ bool MarkdownEditor::prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before,
   return true;
 }
 
-bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
-                                     const QTextBlock &p_block) {
-  const QString linkUrl = resolveLinkUrlAt(p_cursorPos, p_block);
+bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos) {
+  const QString linkUrl = resolveLinkUrlAt(p_cursorPos);
   if (linkUrl.isEmpty()) {
     return false;
   }
@@ -2527,16 +2526,10 @@ bool MarkdownEditor::prependHeaderMenu(QMenu *p_menu, QAction *p_before, int p_c
   return true;
 }
 
-QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const {
-  const auto text = p_block.text();
-
-  QRegularExpression regExp(vte::MarkdownUtils::c_linkRegExp);
-  const int pib = p_cursorPos - p_block.position();
-  auto matchIter = regExp.globalMatch(text);
-  while (matchIter.hasNext()) {
-    auto match = matchIter.next();
-    if (pib >= match.capturedStart() && pib < match.capturedEnd()) {
-      return resolveLinkUrl(match.captured(2));
+QString MarkdownEditor::resolveLinkUrlAt(int p_cursorPos) const {
+  for (const auto &link : getHighlighter()->getLinks()) {
+    if (link.m_region.contains(p_cursorPos)) {
+      return resolveLinkUrl(link.m_destination);
     }
   }
 
@@ -2746,7 +2739,7 @@ void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
   }
 
   auto cursor = m_textEdit->cursorForPosition(p_event->pos());
-  const QString linkUrl = resolveLinkUrlAt(cursor.position(), cursor.block());
+  const QString linkUrl = resolveLinkUrlAt(cursor.position());
   if (linkUrl.isEmpty()) {
     return;
   }

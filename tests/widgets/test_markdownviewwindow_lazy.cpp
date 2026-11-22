@@ -8,6 +8,7 @@
 #include <QBuffer>
 #include <QChildEvent>
 #include <QClipboard>
+#include <QContextMenuEvent>
 #include <QDialog>
 #include <QDir>
 #include <QFile>
@@ -269,6 +270,9 @@ private slots:
   void initialMode_data();
   void initialMode();
   void statusPlacementFollowsMode();
+  void sourceLinkContextMenu_data();
+  void sourceLinkContextMenu();
+  void sourceLinksDiscardStaleTargets();
   void assistanceBeforeReader();
   void endpointChangeReplaysCachedMath();
   void firstReaderUsesCurrentDraft_data();
@@ -489,6 +493,150 @@ void TestMarkdownViewWindowLazy::showWindow(Window &p_window) {
     QTRY_VERIFY(editor && editor->getTextEdit()->hasFocus());
   }
   QCoreApplication::processEvents();
+}
+
+void TestMarkdownViewWindowLazy::sourceLinkContextMenu_data() {
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<int>("position");
+  QTest::addColumn<bool>("linkify");
+  QTest::addColumn<QString>("target");
+  const QString url = QStringLiteral("https://docs.vnote.fun");
+  QTest::newRow("bare-https") << url << 8 << true << url;
+  QTest::newRow("unicode-prose-punctuation")
+      << QString::fromUtf8("文档 😀 (https://docs.vnote.fun/path?q=1#part).") << 15 << true
+      << url + QStringLiteral("/path?q=1#part");
+  QTest::newRow("second-url") << QStringLiteral("https://vnote.fun https://docs.vnote.fun") << 28
+                              << true << url;
+  QTest::newRow("explicit-link") << QStringLiteral("[docs](https://docs.vnote.fun)") << 3 << true
+                                 << url;
+  QTest::newRow("angle-autolink") << QStringLiteral("<https://docs.vnote.fun>") << 8 << false
+                                  << url;
+  QTest::newRow("reference-link") << QStringLiteral(
+                                         "[docs][ref]\n\n[ref]: https://docs.vnote.fun\n")
+                                  << 3 << true << url;
+  QTest::newRow("email") << QStringLiteral("hello@example.com") << 5 << true
+                         << QStringLiteral("mailto:hello@example.com");
+  QTest::newRow("fuzzy-domain") << QStringLiteral("www.example.com") << 5 << true
+                                << QStringLiteral("http://www.example.com");
+  QTest::newRow("inline-code") << QStringLiteral("`https://docs.vnote.fun`") << 8 << true
+                               << QString();
+  QTest::newRow("fenced-code") << QStringLiteral("```\nhttps://docs.vnote.fun\n```\n") << 12 << true
+                               << QString();
+  QTest::newRow("linkify-disabled") << url << 8 << false << QString();
+  QTest::newRow("trailing-punctuation")
+      << url + QLatin1Char('.') << int(url.size()) << true << QString();
+  QTest::newRow("after-link") << url + QStringLiteral(" text") << int(url.size() + 2) << true
+                              << QString();
+}
+
+void TestMarkdownViewWindowLazy::sourceLinkContextMenu() {
+  QFETCH(QString, source);
+  QFETCH(int, position);
+  QFETCH(bool, linkify);
+  QFETCH(QString, target);
+  markdownConfig().setLinkifyEnabled(linkify);
+  markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  const auto buffer = openNote(QStringLiteral("links.md"), source.toUtf8());
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  auto *textEdit = editor->getTextEdit();
+  QSignalSpy highlighted(editor->getHighlighter(), &vte::MarkdownHighlighter::highlightCompleted);
+  editor->getHighlighter()->updateHighlight();
+  QTRY_VERIFY(!highlighted.isEmpty());
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  // Observe the real menu action without invoking the window's desktop URL opener.
+  disconnect(editor, &MarkdownEditor::openFileRequested, &window, nullptr);
+  QSignalSpy opened(editor, &MarkdownEditor::openFileRequested);
+  auto cursor = textEdit->textCursor();
+  cursor.setPosition(position);
+  textEdit->setTextCursor(cursor);
+  const QPoint point = textEdit->cursorRect(cursor).center();
+  QCOMPARE(textEdit->cursorForPosition(point).position(), position);
+  const auto original = editor->getText();
+  const QString sentinel = QStringLiteral("unchanged clipboard");
+  QApplication::clipboard()->setText(sentinel);
+
+  const auto useMenu = [&](const QString &p_action) {
+    bool inspected = false;
+    bool hasOpen = false;
+    bool hasCopy = false;
+    QTimer driver;
+    connect(&driver, &QTimer::timeout, &window, [&]() {
+      auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+      if (!menu) {
+        return;
+      }
+      driver.stop();
+      inspected = true;
+      QAction *selected = nullptr;
+      for (auto *action : menu->actions()) {
+        hasOpen |= action->text() == QStringLiteral("Open Link") && action->isEnabled();
+        hasCopy |= action->text() == QStringLiteral("Copy Link") && action->isEnabled();
+        if (action->text() == p_action) {
+          selected = action;
+        }
+      }
+      if (selected) {
+        QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                          menu->actionGeometry(selected).center());
+      } else {
+        menu->close();
+      }
+    });
+    driver.start(10);
+    auto *viewport = textEdit->viewport();
+    QContextMenuEvent event(QContextMenuEvent::Mouse, point, viewport->mapToGlobal(point));
+    QCoreApplication::sendEvent(viewport, &event);
+    QVERIFY(inspected);
+    QCOMPARE(hasOpen, !target.isEmpty());
+    QCOMPARE(hasCopy, !target.isEmpty());
+  };
+  useMenu(QStringLiteral("Copy Link"));
+  QCOMPARE(QApplication::clipboard()->text(), target.isEmpty() ? sentinel : target);
+  if (!target.isEmpty()) {
+    useMenu(QStringLiteral("Open Link"));
+    QCOMPARE(opened.size(), 1);
+    QCOMPARE(opened.first().at(0).toString(), target);
+    QCOMPARE(opened.first().at(1).toBool(), true);
+  }
+  QCOMPARE(editor->getText(), original);
+  QVERIFY(!window.isModified());
+}
+
+void TestMarkdownViewWindowLazy::sourceLinksDiscardStaleTargets() {
+  markdownConfig().setLinkifyEnabled(true);
+  markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  const auto buffer =
+      openNote(QStringLiteral("stale-links.md"), QByteArrayLiteral("https://docs.vnote.fun"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  auto *highlighter = editor->getHighlighter();
+  QTRY_COMPARE(highlighter->getLinks().size(), 1);
+  QCOMPARE(highlighter->getLinks().first().m_destination, QStringLiteral("https://docs.vnote.fun"));
+
+  editor->setText(QStringLiteral("https://example.com"));
+  QVERIFY(highlighter->getLinks().isEmpty());
+  QTRY_COMPARE(highlighter->getLinks().size(), 1);
+  QCOMPARE(highlighter->getLinks().first().m_destination, QStringLiteral("https://example.com"));
+
+  markdownConfig().setLinkifyEnabled(false);
+  window.handleEditorConfigChange();
+  QVERIFY(highlighter->getLinks().isEmpty());
+  QSignalSpy highlighted(highlighter, &vte::MarkdownHighlighter::highlightCompleted);
+  highlighter->updateHighlight();
+  QTRY_VERIFY(!highlighted.isEmpty());
+  QVERIFY(highlighter->getLinks().isEmpty());
+
+  markdownConfig().setLinkifyEnabled(true);
+  window.handleEditorConfigChange();
+  QTRY_COMPARE(highlighter->getLinks().size(), 1);
+  QCOMPARE(highlighter->getLinks().first().m_destination, QStringLiteral("https://example.com"));
 }
 
 void TestMarkdownViewWindowLazy::initialMode_data() {

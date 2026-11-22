@@ -311,17 +311,16 @@ private:
   bool prependInPlacePreviewMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                                  const QTextBlock &p_block);
 
-  bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
-                       const QTextBlock &p_block);
+  bool prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos);
 
   // Offer a "Copy Link" action for the ATX heading on @p_block. The anchor is
   // resolved asynchronously on trigger via the installed HeadingLinkResolver.
   bool prependHeaderMenu(QMenu *p_menu, QAction *p_before, int p_cursorPos,
                          const QTextBlock &p_block);
 
-  // Resolve the markdown link URL at the given cursor position within p_block.
+  // Resolve the Markdown link URL at the given document cursor position.
   // Returns an empty string when there is no link at the position.
-  QString resolveLinkUrlAt(int p_cursorPos, const QTextBlock &p_block) const;
+  QString resolveLinkUrlAt(int p_cursorPos) const;
   QString resolveLinkUrl(const QString &p_linkText) const;
   QRect visibleLinkRect(const QTextBlock &p_block, int p_start, int p_end) const;
 
