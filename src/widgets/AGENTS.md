@@ -649,8 +649,9 @@ accessibility. The circle stays unfilled when checked; the tick uses the same th
 foreground as its outline (including selected/disabled states), never the palette's highlight
 fill/text pair. The theme accent supplies a visible keyboard focus ring. My Day is an icon-only
 sun immediately left of the importance star in task rows and the details header, including RTL.
-Its center is filled only for the displayed day's membership; clicking adds to that day or removes
-membership. The details mark is checkable, theme-aware and disabled in Read; its tooltip and
+Its center is filled only for the displayed day's membership. Clicking retains the displayed
+add/remove intent, but an addition uses the local date at execution, even before the minute timer.
+The details mark is checkable, theme-aware and disabled in Read; its tooltip and
 accessible name describe Add/Remove. There is no full-width My Day button. Quick-add due controls
 remain ordinary checkboxes.
 Details use 12px outer margins and section gaps, padded title/step inputs and icon actions,
@@ -688,8 +689,9 @@ rather than pushing the icon offscreen; no separator is drawn above the footer.
 Task context menus group My Day, importance and completion toggles; Due today, Due tomorrow
 and Pick a date; Move task to...; then Delete task. Toggle labels reflect the current task,
 with My Day membership determined by the projection's today. An offered My Day add/remove
-keeps that intent across a date rollover; adding uses the current day. Date actions share the existing
-picker and source-history commands. Lucide icons follow the theme; the trash icon uses the
+keeps that intent across a date rollover; adding resolves the local date when triggered, not
+when the menu opens. Date actions share the existing picker and source-history commands.
+Lucide icons follow the theme; the trash icon uses the
 error foreground rather than a literal color.
 The move submenu lists every other real list, including empty lists in collapsed groups, using
 escaped qualified names and stable destination keys. It is disabled without a destination or
@@ -877,6 +879,11 @@ current-file projections; search and exact-tag filters compose across this file 
 owned comment JSON. Normal notebook content search still reads raw `.todo` source, including
 metadata. Sort/filter/Completed expansion never reorder or dirty source. The visible window
 refreshes today's date on activation and each minute, without reminders or persisted UI state.
+Passive rollover never rewrites historical My Day dates or changes task completion. Editor
+marks, Ctrl+T and context menus use `TodoViewWindowController::setTaskInMyDay()` and refresh
+the projection after committing the captured intent. Unfiltered My Day quick-add captures its
+draft and destination, then refreshes to its execution date before insertion so the new task
+remains visible and selected. Explicit date fields in `addTask()` / `updateTask()` stay literal.
 Quick-add due controls appear and apply only in unfiltered Planned; a remembered choice never
 leaks into another view or filtered result. The My Day mark's tooltip and accessible
 description retain the stored date even when it is not today, before a user replaces it. Step

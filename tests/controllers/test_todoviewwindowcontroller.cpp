@@ -2660,12 +2660,14 @@ void TestTodoViewWindowController::myDayMembershipIntents() {
   QVERIFY(!m_document->isModified());
   QVERIFY(!m_document->isUndoAvailable());
 
+  const auto executionDay = QDate::currentDate();
   m_controller->setToday(displayedToday);
   const auto oldIndex = taskIndex("a");
   QVERIFY(model->setData(oldIndex, true, TodoTaskModel::InMyDayRole));
-  QCOMPARE(item("a").m_fields.m_myDay, displayedToday);
+  QCOMPARE(item("a").m_fields.m_myDay, executionDay);
+  QCOMPARE(m_controller->getProjection().m_today, executionDay);
   QVERIFY(taskIndex("a").data(TodoTaskModel::InMyDayRole).toBool());
-  QCOMPARE(taskIndex("a").data(TodoTaskModel::MyDayRole).toDate(), displayedToday);
+  QCOMPARE(taskIndex("a").data(TodoTaskModel::MyDayRole).toDate(), executionDay);
   QCOMPARE(item("a").m_properties.value(QStringLiteral("hidden")).toString(),
            QStringLiteral("item-secret"));
   QCOMPARE(m_controller->getProjection().m_view, TodoViewKind::List);
@@ -2685,7 +2687,7 @@ void TestTodoViewWindowController::myDayMembershipIntents() {
   QVERIFY(visibleKeys(model).isEmpty());
   QCOMPARE(m_controller->getProjection().m_view, TodoViewKind::MyDay);
   m_document->undo();
-  QCOMPARE(item("a").m_fields.m_myDay, displayedToday);
+  QCOMPARE(item("a").m_fields.m_myDay, executionDay);
   QCOMPARE(visibleKeys(model), QStringList{key("a")});
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
@@ -2693,12 +2695,30 @@ void TestTodoViewWindowController::myDayMembershipIntents() {
 
   m_controller->setView(TodoViewKind::List, key("work"));
   QVERIFY(model->setData(taskIndex("b"), true, TodoTaskModel::InMyDayRole));
-  QCOMPARE(item("b").m_fields.m_myDay, displayedToday);
+  QCOMPARE(item("b").m_fields.m_myDay, executionDay);
   QVERIFY(taskIndex("b").data(TodoTaskModel::InMyDayRole).toBool());
   m_document->undo();
   QVERIFY(!item("b").m_fields.m_myDay.isValid());
   QCOMPARE(m_document->toPlainText(), source);
   QVERIFY(!m_document->isUndoAvailable());
+
+  auto yesterdayTask = item("a").m_fields;
+  yesterdayTask.m_myDay = executionDay.addDays(-1);
+  QVERIFY(m_controller->updateTask(key("a"), yesterdayTask));
+  auto todayTask = item("b").m_fields;
+  todayTask.m_myDay = executionDay;
+  QVERIFY(m_controller->updateTask(key("b"), todayTask));
+  m_controller->setToday(executionDay.addDays(-1));
+  m_controller->setView(TodoViewKind::MyDay);
+  QCOMPARE(m_controller->getSelectedItemKey(), key("a"));
+  const auto beforeRemoval = m_document->toPlainText();
+  QVERIFY(model->setData(taskIndex("a"), false, TodoTaskModel::InMyDayRole));
+  QVERIFY(!item("a").m_fields.m_myDay.isValid());
+  QCOMPARE(item("b").m_fields.m_myDay, executionDay);
+  QCOMPARE(visibleKeys(model), QStringList{key("b")});
+  QCOMPARE(m_controller->getSelectedItemKey(), key("b"));
+  m_document->undo();
+  QCOMPARE(m_document->toPlainText(), beforeRemoval);
 }
 
 void TestTodoViewWindowController::listModelDrops() {

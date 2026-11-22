@@ -265,9 +265,7 @@ TodoViewWindowController::TodoViewWindowController(ServiceLocator &p_services,
                 if (p_inMyDay == inMyDay || (p_inMyDay && !today.isValid())) {
                   return;
                 }
-                auto fields = item->m_fields;
-                fields.m_myDay = p_inMyDay ? today : QDate();
-                updateTask(p_key, fields);
+                setTaskInMyDay(p_key, p_inMyDay);
               } else {
                 reject(tr("The task no longer exists."));
               }
@@ -1358,6 +1356,26 @@ bool TodoViewWindowController::addTask(const QString &p_listId, const TodoTaskFi
   change.m_edits.append(
       m_snapshot.edit({position, position}, separatedBlock(m_snapshot.m_source, position, block)));
   return commit(change);
+}
+
+bool TodoViewWindowController::setTaskInMyDay(const QString &p_itemId, bool p_inMyDay) {
+  const auto *item = m_snapshot.findItem(p_itemId);
+  if (!item) {
+    return reject(tr("The task no longer exists."));
+  }
+  const auto key = item->m_key;
+  auto fields = item->m_fields;
+  const auto today = QDate::currentDate();
+  fields.m_myDay = p_inMyDay ? today : QDate();
+  const QPointer<TodoViewWindowController> self(this);
+  if (!updateTask(key, fields)) {
+    return false;
+  }
+  // Refresh only after the captured task/intent is committed: rollover may change selection.
+  if (self) {
+    setToday(today);
+  }
+  return true;
 }
 
 bool TodoViewWindowController::updateTask(const QString &p_itemId, const TodoTaskFields &p_fields) {

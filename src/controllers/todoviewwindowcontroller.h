@@ -70,6 +70,8 @@ public:
   bool moveList(const QString &p_listId, const QString &p_groupKey, const QString &p_beforeListId);
   bool addTask(const QString &p_listId, const TodoTaskFields &p_fields);
   bool updateTask(const QString &p_itemId, const TodoTaskFields &p_fields);
+  // Preserve the offered intent; additions use the execution day's local date.
+  bool setTaskInMyDay(const QString &p_itemId, bool p_inMyDay);
   bool removeTask(const QString &p_itemId);
   bool moveTask(const QString &p_itemId, const QString &p_listId, const QString &p_beforeItemId);
   bool addStep(const QString &p_itemId, const QString &p_title);

@@ -699,6 +699,9 @@ private slots:
   void emptyAndAllTasksQuickAdd();
   void smartQuickAdd_data();
   void smartQuickAdd();
+  void myDayQuickAddBeforeTimer();
+  void myDayActionsBeforeTimer_data();
+  void myDayActionsBeforeTimer();
   void nativeTypingSharesSourceUndo();
   void completionCheckmarkContrast();
   void immediateNotesDatesAndSteps();
@@ -1260,6 +1263,112 @@ void TestTodoViewWindow::smartQuickAdd() {
     QVERIFY(taskTitles(window).isEmpty());
   window->undo();
   QCOMPARE(controller->getDocument().findList(QStringLiteral("id:personal"))->m_items.size(), 1);
+}
+
+void TestTodoViewWindow::myDayQuickAddBeforeTimer() {
+  createArea();
+  QVERIFY(openNote(QStringLiteral("midnight-add.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  auto *controller = window->getController();
+  const auto today = QDate::currentDate();
+  const auto yesterday = today.addDays(-1);
+  auto fields = controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields;
+  fields.m_myDay = yesterday;
+  QVERIFY(controller->updateTask(QStringLiteral("id:alpha"), fields));
+  fields = controller->getDocument().findItem(QStringLiteral("id:beta"))->m_fields;
+  fields.m_myDay = today;
+  QVERIFY(controller->updateTask(QStringLiteral("id:beta"), fields));
+  QVERIFY(selectView(window, TodoViewKind::MyDay));
+  auto *destination = control<QComboBox>(window, "todoDestination");
+  QVERIFY(destination);
+  QVERIFY(chooseCombo(destination, destination->findData(QStringLiteral("id:personal"))));
+  auto *add = control<QLineEdit>(window, "todoAddTask");
+  QVERIFY(add && typeText(add, QStringLiteral("After midnight")));
+  // Leave focus in quick-add, with yesterday's projection and no timer delivery.
+  controller->setToday(yesterday);
+  const auto before = window->getLatestContent();
+  QTest::keyClick(add, Qt::Key_Return);
+  const auto *list = controller->getDocument().findList(QStringLiteral("id:personal"));
+  QVERIFY(list && list->m_items.size() == 2);
+  const auto &added = list->m_items.last();
+  QCOMPARE(added.m_fields.m_title, QStringLiteral("After midnight"));
+  QCOMPARE(added.m_fields.m_myDay, today);
+  QCOMPARE(controller->getProjection().m_today, today);
+  QCOMPARE(controller->getProjection().m_view, TodoViewKind::MyDay);
+  QCOMPARE(controller->getSelectedItemKey(), added.m_key);
+  QCOMPARE(taskTitles(window),
+           QStringList({QStringLiteral("Beta"), QStringLiteral("After midnight")}));
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_myDay,
+           yesterday);
+  window->undo();
+  QCOMPARE(window->getLatestContent(), before);
+  QCOMPARE(taskTitles(window), QStringList{QStringLiteral("Beta")});
+}
+
+void TestTodoViewWindow::myDayActionsBeforeTimer_data() {
+  QTest::addColumn<int>("controlPart");
+  QTest::addColumn<bool>("included");
+  const char *names[] = {"details", "row", "shortcut", "menu"};
+  for (int controlPart = 0; controlPart < 4; ++controlPart) {
+    for (bool included : {false, true}) {
+      const auto name = QByteArray(names[controlPart]) + (included ? "-remove" : "-add");
+      QTest::newRow(name.constData()) << controlPart << included;
+    }
+  }
+}
+
+void TestTodoViewWindow::myDayActionsBeforeTimer() {
+  QFETCH(int, controlPart);
+  QFETCH(bool, included);
+  createArea();
+  QVERIFY(openNote(QStringLiteral("midnight-actions.todo")).isValid());
+  auto *window = current();
+  const auto key = QStringLiteral("id:alpha");
+  QVERIFY(window && selectView(window, TodoViewKind::All) && openTask(window, key));
+  auto *controller = window->getController();
+  const auto today = QDate::currentDate();
+  const auto yesterday = today.addDays(-1);
+  auto fields = controller->getDocument().findItem(key)->m_fields;
+  fields.m_myDay = included ? yesterday : yesterday.addDays(-1);
+  QVERIFY(controller->updateTask(key, fields));
+  auto *tasks = control<TodoTaskView>(window, "todoTasks");
+  auto *day = control<QToolButton>(window, "todoMyDay");
+  QVERIFY(tasks && day && activate(tasks));
+  controller->setToday(yesterday);
+  const auto before = window->getLatestContent();
+  QPointer<QMenu> menu;
+  const auto closeMenu = qScopeGuard([&] {
+    if (menu)
+      menu->close();
+  });
+  if (controlPart == 0) {
+    day->click();
+  } else if (controlPart == 1) {
+    auto *model = controller->getTaskModel();
+    const auto index = model->index(model->rowForKey(key));
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                      taskControlPoint(tasks, index, TaskControl::MyDay));
+  } else if (controlPart == 2) {
+    QTest::keyClick(tasks, Qt::Key_T, Qt::ControlModifier);
+  } else {
+    menu = openTaskMenu(window, key);
+    QVERIFY(menu);
+    auto *action = control<QAction>(menu, "todoToggleMyDayAction");
+    QVERIFY(action);
+    QCOMPARE(controller->getProjection().m_today, yesterday);
+    action->trigger();
+  }
+  QCOMPARE(controller->getDocument().findItem(key)->m_fields.m_myDay, included ? QDate() : today);
+  QCOMPARE(controller->getProjection().m_today, today);
+  QCOMPARE(controller->getSelectedItemKey(), key);
+  const auto index = controller->getTaskModel()->index(controller->getTaskModel()->rowForKey(key));
+  QCOMPARE(index.data(TodoTaskModel::InMyDayRole).toBool(), !included);
+  QCOMPARE(day->isChecked(), !included);
+  if (menu)
+    menu->close();
+  window->undo();
+  QCOMPARE(window->getLatestContent(), before);
 }
 
 void TestTodoViewWindow::nativeTypingSharesSourceUndo() {
@@ -1993,6 +2102,7 @@ void TestTodoViewWindow::taskMenuTogglesAndDueDates() {
   QVERIFY(window && selectView(window, TodoViewKind::All));
   auto *controller = window->getController();
   const QDate today(2040, 2, 28);
+  const auto executionDay = QDate::currentDate();
   controller->setToday(today);
   controller->setCompletedExpanded(true);
   const auto original = window->getLatestContent();
@@ -2001,7 +2111,7 @@ void TestTodoViewWindow::taskMenuTogglesAndDueDates() {
                            "todoToggleCompletedAction"};
   for (int i = 0; i < 3; ++i) {
     QVERIFY(chooseTaskMenu(window, key, toggles[i]));
-    QCOMPARE(fields().m_myDay, i == 0 ? today : QDate());
+    QCOMPARE(fields().m_myDay, i == 0 ? executionDay : QDate());
     QCOMPARE(fields().m_important, i == 1);
     QCOMPARE(fields().m_checked, i == 2);
     const auto enabled = window->getLatestContent();
@@ -2020,12 +2130,13 @@ void TestTodoViewWindow::taskMenuTogglesAndDueDates() {
   QVERIFY(controller->updateTask(key, pastDay));
   const auto pastSource = window->getLatestContent();
   QVERIFY(chooseTaskMenu(window, key, "todoToggleMyDayAction"));
-  QCOMPARE(fields().m_myDay, today);
+  QCOMPARE(fields().m_myDay, executionDay);
   window->undo();
   QCOMPARE(window->getLatestContent(), pastSource);
   window->undo();
   QCOMPARE(window->getLatestContent(), original);
 
+  controller->setToday(today);
   const char *presets[] = {"todoDueTodayAction", "todoDueTomorrowAction"};
   for (int i = 0; i < 2; ++i) {
     QVERIFY(chooseTaskMenu(window, key, presets[i]));
@@ -2062,7 +2173,7 @@ void TestTodoViewWindow::taskMenuTogglesAndDueDates() {
     QCOMPARE(window->getLatestContent(), original);
   }
   for (const bool included : {false, true}) {
-    const auto menuToday = QDate::currentDate();
+    const auto menuToday = QDate::currentDate().addDays(-1);
     controller->setToday(menuToday);
     auto initial = fields();
     initial.m_myDay = included ? menuToday : menuToday.addDays(1);

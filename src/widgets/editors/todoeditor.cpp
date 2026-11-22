@@ -958,9 +958,10 @@ void TodoEditor::createDetails() {
     updateTask([&](TodoTaskFields &p_fields) { p_fields.m_important = p_checked; });
   });
   connect(m_myDay, &QToolButton::toggled, this, [this](bool p_checked) {
-    updateTask([&](TodoTaskFields &p_fields) {
-      p_fields.m_myDay = p_checked ? m_controller->getProjection().m_today : QDate();
-    });
+    if (const auto *item = selectedItem()) {
+      const auto key = item->m_key;
+      command([this, key, p_checked]() { return m_controller->setTaskInMyDay(key, p_checked); });
+    }
   });
   connect(m_due, &QPushButton::clicked, this, &TodoEditor::showDueMenu);
   connect(m_note, &SimpleMarkdownEditor::textChanged, this, [this]() {
@@ -1574,7 +1575,7 @@ void TodoEditor::addTask() {
   TodoTaskFields fields;
   fields.m_title = m_addTask->text().trimmed();
   if (!filtered && projection.m_view == TodoViewKind::MyDay) {
-    fields.m_myDay = projection.m_today;
+    fields.m_myDay = QDate::currentDate();
   }
   if (!filtered && projection.m_view == TodoViewKind::Important) {
     fields.m_important = true;
@@ -1583,7 +1584,18 @@ void TodoEditor::addTask() {
     fields.m_due = m_addDue->date();
   }
   const QPointer<TodoEditor> self(this);
-  if (command([this, listKey, fields]() { return m_controller->addTask(listKey, fields); }) &&
+  const QPointer<TodoViewWindowController> controller(m_controller);
+  const auto generation = m_generation;
+  if (command([this, self, controller, generation, listKey, fields]() {
+        if (fields.m_myDay.isValid()) {
+          // Keep the captured draft/destination, but show the new day before selecting its task.
+          controller->setToday(fields.m_myDay);
+          if (!self || !controller || m_controller != controller || m_generation != generation) {
+            return false;
+          }
+        }
+        return controller->addTask(listKey, fields);
+      }) &&
       self) {
     if (const auto *added = selectedItem()) {
       m_lastDestination = added->m_listKey;
@@ -2118,10 +2130,9 @@ void TodoEditor::toggleTaskMyDay(const QString &p_key) {
   if (!item) {
     return;
   }
-  auto fields = item->m_fields;
   const auto today = m_controller->getProjection().m_today;
-  fields.m_myDay = fields.m_myDay == today ? QDate() : today;
-  command([this, p_key, fields]() { return m_controller->updateTask(p_key, fields); });
+  const bool inMyDay = today.isValid() && item->m_fields.m_myDay == today;
+  command([this, p_key, inMyDay]() { return m_controller->setTaskInMyDay(p_key, !inMyDay); });
 }
 
 void TodoEditor::moveTask(const QString &p_key, int p_direction) {
@@ -2371,11 +2382,9 @@ void TodoEditor::showTaskMenu(const QString &p_key, const QPoint &p_globalPositi
   add(
       menu, icon(QStringLiteral("sun.svg")), myDay ? tr("Remove from My Day") : tr("Add to My Day"),
       "todoToggleMyDayAction",
-      [this, myDay]() {
+      [this, p_key, myDay]() {
         // Keep the offered add/remove intent if today changes while the menu is open.
-        updateTask([&](TodoTaskFields &p_fields) {
-          p_fields.m_myDay = myDay ? QDate() : m_controller->getProjection().m_today;
-        });
+        command([this, p_key, myDay]() { return m_controller->setTaskInMyDay(p_key, !myDay); });
       },
       QKeySequence(Qt::CTRL | Qt::Key_T));
   add(menu, icon(QStringLiteral("star.svg")),
