@@ -915,9 +915,11 @@ clicking another task switches details, and clicking a closed task reopens them.
 opens and focuses details. Row controls do not toggle details. This is transient editor state;
 no document or configuration migration is needed.
 Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
-and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day
-dates, steps and note indicators remain in the secondary line; without any remaining details the
-title is vertically centered. The task pane uses 16px side/top insets and 12px section gaps.
+and Read views. Smart, search and tag-filter views retain it because they can span lists. Due dates,
+steps and note indicators remain in the secondary line. My Day dates appear there only for the
+projection's current-day membership, matching the sun; expired dates remain stored and available in
+tooltips and details. Without any remaining details the title is vertically centered.
+The task pane uses 16px side/top insets and 12px section gaps.
 Rows have a 56px minimum height (growing for two font-height lines), 16px icon insets and a
 14px icon-to-text gap; the title/metadata block is vertically centered with a 4px line gap.
 Painting and hit testing share completion/star rectangles. Rounded selection/hover fills have

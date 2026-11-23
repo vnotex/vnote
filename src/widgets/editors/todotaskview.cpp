@@ -184,8 +184,8 @@ public:
       summaries.append(
           TodoTaskView::tr("Due %1").arg(QLocale().toString(due, QLocale::ShortFormat)));
     }
-    const auto myDay = p_index.data(TodoTaskModel::MyDayRole).toDate();
-    if (myDay.isValid()) {
+    if (p_index.data(TodoTaskModel::InMyDayRole).toBool()) {
+      const auto myDay = p_index.data(TodoTaskModel::MyDayRole).toDate();
       summaries.append(
           TodoTaskView::tr("My Day: %1").arg(QLocale().toString(myDay, QLocale::ShortFormat)));
     }
