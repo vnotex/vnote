@@ -725,7 +725,15 @@ void TodoEditor::createUi() {
                    m_lists->viewport()->mapToGlobal(p_position));
     }
   });
-  connect(m_tasks, &TodoTaskView::taskClicked, this, &TodoEditor::openTask);
+  connect(m_tasks, &TodoTaskView::taskClicked, this, [this](const QModelIndex &p_index) {
+    const bool close = m_closeDetailsOnTaskClick;
+    m_closeDetailsOnTaskClick = false;
+    if (close && m_detailsOpen && p_index.data(TodoTaskModel::IdRole).toString() == m_detailsKey) {
+      closeDetails();
+    } else {
+      openTask(p_index);
+    }
+  });
   connect(m_tasks, &QWidget::customContextMenuRequested, this, [this](const QPoint &p_position) {
     auto index = m_tasks->indexAt(p_position);
     if (!index.isValid()) {
@@ -2591,6 +2599,17 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   if (!widget || (widget != this && !isAncestorOf(widget)) || widget->window() != window()) {
     return QWidget::eventFilter(p_object, p_event);
   }
+  if (p_object == m_tasks->viewport() && (p_event->type() == QEvent::MouseButtonPress ||
+                                          p_event->type() == QEvent::MouseButtonDblClick)) {
+    const auto *mouse = static_cast<QMouseEvent *>(p_event);
+    // Selection refreshes details during the press, before taskClicked is emitted.
+    // Let Qt handle double-clicks, but never reuse the first click's close intent.
+    m_closeDetailsOnTaskClick =
+        p_event->type() == QEvent::MouseButtonPress && mouse->button() == Qt::LeftButton &&
+        m_detailsOpen &&
+        m_tasks->indexAt(mouse->position().toPoint()).data(TodoTaskModel::IdRole).toString() ==
+            m_detailsKey;
+  }
   if (p_event->type() == QEvent::FocusOut && widget == m_typingField) {
     endTyping();
   }
@@ -2813,6 +2832,7 @@ QString TodoEditor::selectedText() const {
 
 void TodoEditor::invalidateGestures() {
   endTyping();
+  m_closeDetailsOnTaskClick = false;
   ++m_generation;
 }
 

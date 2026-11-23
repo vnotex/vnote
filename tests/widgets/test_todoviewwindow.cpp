@@ -756,6 +756,8 @@ private slots:
   void foreignReloadAndSameTypeReplacement();
   void nativeLayoutsKeyboardAndTheme();
   void paneWidthsSurviveLayoutChanges();
+  void taskClickTogglesDetails_data();
+  void taskClickTogglesDetails();
   void groupSourceNavigation_data();
   void groupSourceNavigation();
   void tasksOnlyNavigation_data();
@@ -4657,6 +4659,90 @@ void TestTodoViewWindow::paneWidthsSurviveLayoutChanges() {
   QTest::keyClick(restoredTasks, Qt::Key_Return);
   QTRY_VERIFY(restoredDetails->isVisible());
   QTRY_COMPARE(restoredDetails->width(), detailsWidth);
+}
+
+void TestTodoViewWindow::taskClickTogglesDetails_data() {
+  QTest::addColumn<bool>("readOnly");
+  QTest::newRow("editable") << false;
+  QTest::newRow("read-only") << true;
+}
+
+void TestTodoViewWindow::taskClickTogglesDetails() {
+  QFETCH(bool, readOnly);
+  createArea();
+  m_area->resize(1400, 760);
+  QVERIFY(openNote(QStringLiteral("click-details.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  if (readOnly)
+    window->setMode(ViewWindowMode::Read);
+  QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
+  auto *tasks = control<QListView>(window, "todoTasks");
+  auto *details = control<QScrollArea>(window, "todoDetailsScroll");
+  auto *title = control<QLineEdit>(window, "todoTitle");
+  auto *back = control<QToolButton>(window, "todoBack");
+  QVERIFY(tasks && details && title && back);
+  auto *controller = window->getController();
+  auto *model = controller->getTaskModel();
+  const auto source = window->getLatestContent();
+  const auto click = [&](const QString &p_key, bool p_double = false) {
+    const auto index = model->index(model->rowForKey(p_key));
+    QVERIFY(index.isValid());
+    QVERIFY(activate(tasks));
+    tasks->scrollTo(index);
+    const auto point = tasks->visualRect(index).center();
+    QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+    if (p_double) {
+      QTest::mouseDClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+      QTest::mouseRelease(tasks->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+    }
+  };
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(details->isVisible());
+  QCOMPARE(title->text(), QStringLiteral("Alpha"));
+  const int detailsWidth = details->width();
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(!details->isVisible());
+  QCOMPARE(controller->getSelectedItemKey(), QStringLiteral("id:alpha"));
+  QVERIFY(tasks->hasFocus());
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(details->isVisible());
+  QCOMPARE(details->width(), detailsWidth);
+
+  // Selection changes on press, before the body-click signal is delivered.
+  click(QStringLiteral("id:beta"));
+  QTRY_VERIFY(details->isVisible());
+  QCOMPARE(title->text(), QStringLiteral("Beta"));
+  QVERIFY(openTask(window, QStringLiteral("id:beta")));
+  QTRY_VERIFY(title->hasFocus());
+  click(QStringLiteral("id:beta"), true);
+  QTRY_VERIFY(!details->isVisible());
+  click(QStringLiteral("id:beta"));
+  QTRY_VERIFY(details->isVisible());
+  click(QStringLiteral("id:alpha"), true);
+  QTRY_VERIFY(details->isVisible());
+  QCOMPARE(title->text(), QStringLiteral("Alpha"));
+  QCOMPARE(window->getLatestContent(), source);
+  QVERIFY(!window->isModified());
+
+  const auto alpha = model->index(model->rowForKey(QStringLiteral("id:alpha")));
+  QTest::mouseClick(tasks->viewport(), Qt::LeftButton, Qt::NoModifier,
+                    taskControlPoint(tasks, alpha, TaskControl::Star));
+  QTRY_VERIFY(details->isVisible());
+  QCOMPARE(controller->getDocument().findItem(QStringLiteral("id:alpha"))->m_fields.m_important,
+           !readOnly);
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(!details->isVisible());
+
+  m_area->resize(600, 760);
+  QTRY_VERIFY(window->getTodoEditor()->width() < 840);
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(details->isVisible());
+  QVERIFY(!tasks->isVisible());
+  QTest::mouseClick(back, Qt::LeftButton);
+  QTRY_VERIFY(tasks->isVisible());
+  click(QStringLiteral("id:alpha"));
+  QTRY_VERIFY(details->isVisible());
 }
 
 void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {

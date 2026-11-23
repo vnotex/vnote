@@ -173,6 +173,7 @@ private:
   bool m_committing = false;
   bool m_narrow = false;
   bool m_detailsOpen = false;
+  bool m_closeDetailsOnTaskClick = false;
   bool m_groupFocused = false;
   bool m_searchComposing = false;
 };

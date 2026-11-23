@@ -910,6 +910,10 @@ splitter's leading edge in RTL. Sidebar and list backgrounds use normal widget/t
 without a sidebar-specific palette or background stylesheet. Auto-fill keeps the Native overlay
 opaque without selecting a custom color.
 Task details use a stacked page at narrow widths; the same close icon returns to tasks.
+Clicking the body of the task whose details are already open closes them while retaining selection;
+clicking another task switches details, and clicking a closed task reopens them. Return/Enter always
+opens and focuses details. Row controls do not toggle details. This is transient editor state;
+no document or configuration migration is needed.
 Task rows omit the redundant group/list location in a specific unfiltered list, including sorted
 and Read views. Smart, search and tag-filter views retain it because they can span lists. Due/My Day
 dates, steps and note indicators remain in the secondary line; without any remaining details the
@@ -1947,7 +1951,7 @@ opening the editor. My Day marks use the model's displayed-day membership rather
 for a stored date. Date changes refresh marks in every view without rewriting historical dates;
 sticker edits capture the displayed day before reserving a save, even if the day changes while busy.
 Completed expansion is transient and survives refresh/filter/mutations until the backing file
-changes; no configuration migration is needed. The editor retains single-click details and its
+changes; no configuration migration is needed. The editor owns click-to-toggle details and its
 existing keyboard/drag policy; hosts choose navigation, not the shared renderer.
 Edit forces Edit mode without replacing another note; an already-open backing note follows normal tab deduplication. Edit and Settings
 are icon-only, grouped at the top right, using the bundled `edit_editor.svg` and `settings.svg`.
