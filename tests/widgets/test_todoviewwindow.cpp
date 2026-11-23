@@ -23,6 +23,7 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDragEnterEvent>
+#include <QDragLeaveEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
 #include <QElapsedTimer>
@@ -544,21 +545,26 @@ bool showLists(TodoViewWindow *p_window) {
   return QTest::qWaitFor([=] { return lists->isVisible(); });
 }
 
-bool dropOnSidebar(QListView *p_lists, const QModelIndex &p_from, const QPoint &p_position) {
-  std::unique_ptr<QMimeData> mime(p_lists->model()->mimeData({p_from}));
-  if (!mime)
-    return false;
-  QDragEnterEvent enter(p_position, Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+bool dropOnSidebar(QListView *p_lists, const QMimeData *p_mime, const QPoint &p_position) {
+  QDragEnterEvent enter(p_position, Qt::MoveAction, p_mime, Qt::LeftButton, Qt::NoModifier);
   QCoreApplication::sendEvent(p_lists->viewport(), &enter);
   if (!enter.isAccepted())
     return false;
-  QDragMoveEvent move(p_position, Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+  QDragMoveEvent move(p_position, Qt::MoveAction, p_mime, Qt::LeftButton, Qt::NoModifier);
   QCoreApplication::sendEvent(p_lists->viewport(), &move);
-  if (!move.isAccepted())
+  if (!move.isAccepted()) {
+    QDragLeaveEvent leave;
+    QCoreApplication::sendEvent(p_lists->viewport(), &leave);
     return false;
-  QDropEvent drop(QPointF(p_position), Qt::MoveAction, mime.get(), Qt::LeftButton, Qt::NoModifier);
+  }
+  QDropEvent drop(QPointF(p_position), Qt::MoveAction, p_mime, Qt::LeftButton, Qt::NoModifier);
   QCoreApplication::sendEvent(p_lists->viewport(), &drop);
   return drop.isAccepted();
+}
+
+bool dropOnSidebar(QListView *p_lists, const QModelIndex &p_from, const QPoint &p_position) {
+  std::unique_ptr<QMimeData> mime(p_lists->model()->mimeData({p_from}));
+  return mime && dropOnSidebar(p_lists, mime.get(), p_position);
 }
 
 bool openGroupMenu(TodoViewWindow *p_window) {
@@ -730,6 +736,8 @@ private slots:
   void listIconPickerRejectsStaleOwner();
   void sidebarDropEvents_data();
   void sidebarDropEvents();
+  void sidebarGroupDropEvents_data();
+  void sidebarGroupDropEvents();
   void sidebarMenusAndDuplication_data();
   void sidebarMenusAndDuplication();
   void nativeGroupsWideAndNarrow_data();
@@ -3208,6 +3216,103 @@ void TestTodoViewWindow::sidebarDropEvents() {
     window->undo();
     QCOMPARE(window->getLatestContent().toUtf8(), source);
   }
+}
+
+void TestTodoViewWindow::sidebarGroupDropEvents_data() {
+  QTest::addColumn<int>("width");
+  QTest::addColumn<bool>("collapsed");
+  QTest::newRow("wide-expanded") << 1000 << false;
+  QTest::newRow("wide-collapsed") << 1000 << true;
+  QTest::newRow("narrow-expanded") << 600 << false;
+  QTest::newRow("narrow-collapsed") << 600 << true;
+}
+
+void TestTodoViewWindow::sidebarGroupDropEvents() {
+  QFETCH(int, width);
+  QFETCH(bool, collapsed);
+  const QByteArray projects =
+      "# Projects\n<!-- todo-group: {\"id\":\"projects\",\"extra\":true} -->\n\n"
+      "<!-- Group comment -->\n\n"
+      "## Project list\n<!-- todo-list: {\"id\":\"project-list\"} -->\n\n"
+      "- [ ] Project task\n  <!-- todo-item: {\"id\":\"project-task\"} -->\n\n";
+  const QByteArray leisure =
+      "# Leisure\n<!-- todo-group: {\"id\":\"leisure\"} -->\n\n"
+      "## Leisure list\n<!-- todo-list: {\"id\":\"leisure-list\"} -->\n\n"
+      "- [ ] Leisure task\n  <!-- todo-item: {\"id\":\"leisure-task\"} -->\n\n";
+  const auto source = c_source + "\n" + projects + leisure;
+  const auto reordered = c_source + "\n" + leisure + projects;
+  createArea();
+  const auto buffer = openNote(QStringLiteral("group-drops.todo"), source);
+  QVERIFY(buffer.isValid());
+  auto *window = current();
+  QVERIFY(window);
+  m_area->resize(width, 760);
+  QVERIFY(showLists(window));
+  auto *lists = control<QListView>(window, "todoLists");
+  QVERIFY(activate(lists));
+  auto *controller = window->getController();
+  auto *model = controller->getListModel();
+  controller->setGroupExpanded(QStringLiteral("id:projects"), !collapsed);
+  controller->setGroupExpanded(QStringLiteral("id:leisure"), !collapsed);
+  const auto groupIndex = [model](const char *p_key) {
+    return model->index(model->rowForGroup(QString::fromLatin1(p_key)));
+  };
+  const auto target = [lists, &groupIndex](const char *p_key, bool p_after) {
+    const auto index = groupIndex(p_key);
+    lists->scrollTo(index);
+    const auto rect = lists->visualRect(index);
+    return QPoint(rect.center().x(), rect.top() + rect.height() * (p_after ? 3 : 1) / 4);
+  };
+  // Header interiors, not the thin Qt insertion margins; downward skips all children.
+  QVERIFY(dropOnSidebar(lists, groupIndex("id:projects"), target("id:leisure", true)));
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+  QCOMPARE(model->rowForGroup(QStringLiteral("id:leisure")), 6);
+  QCOMPARE(model->rowForGroup(QStringLiteral("id:projects")), 8);
+  window->undo();
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  window->redo();
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+  window->undo();
+
+  // Adjacent unchanged gaps are accepted without adding an undo command.
+  QVERIFY(dropOnSidebar(lists, groupIndex("id:projects"), target("id:leisure", false)));
+  QCOMPARE(window->getLatestContent().toUtf8(), source);
+  QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+
+  std::unique_ptr<QMimeData> stale(model->mimeData({groupIndex("id:leisure")}));
+  QVERIFY(stale);
+  QVERIFY(dropOnSidebar(lists, groupIndex("id:leisure"), target("id:projects", false)));
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+  QVERIFY(!dropOnSidebar(lists, stale.get(), target("id:projects", true)));
+  TodoListModel foreign(*m_services);
+  foreign.setSnapshot(controller->getDocument(), controller->getProjection(), true,
+                      model->getRevision());
+  std::unique_ptr<QMimeData> foreignMime(
+      foreign.mimeData({foreign.index(foreign.rowForGroup(QStringLiteral("id:leisure")))}));
+  QVERIFY(foreignMime);
+  QVERIFY(!dropOnSidebar(lists, foreignMime.get(), target("id:projects", true)));
+  const auto root = model->index(model->rowForKey(QStringLiteral("id:work")));
+  lists->scrollTo(root);
+  QVERIFY(!dropOnSidebar(lists, groupIndex("id:projects"), lists->visualRect(root).center()));
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+
+  QVERIFY(window->save());
+  QTRY_VERIFY(!m_buffers->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(readBytes(absolute(QStringLiteral("group-drops.todo"))), reordered);
+  std::unique_ptr<QMimeData> writable(model->mimeData({groupIndex("id:leisure")}));
+  QVERIFY(writable);
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(!dropOnSidebar(lists, writable.get(), target("id:projects", true)));
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+  const auto node = buffer.nodeId();
+  QVERIFY(m_area->getController()->closeViewWindow(window->getViewWindowId(), false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(m_buffers->openBuffer(node).isValid());
+  window = current();
+  QVERIFY(window);
+  QCOMPARE(window->getLatestContent().toUtf8(), reordered);
+  QCOMPARE(window->getController()->getListModel()->rowForGroup(QStringLiteral("id:leisure")), 6);
 }
 
 void TestTodoViewWindow::sidebarMenusAndDuplication_data() {

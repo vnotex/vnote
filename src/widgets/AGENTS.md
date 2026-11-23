@@ -833,8 +833,12 @@ wide and overlay modes. Lists drop on a custom group to append, on/before a list
 that list's owner, or on empty viewport space to become root lists (creating Default if needed).
 The gap before the first custom group also returns a list to the root; a gap before a later
 custom group appends to the preceding visible custom group, never a hidden source neighbor.
-Groups reorder only at gaps before custom headers or at the end; they never nest among root
-lists or children. A gap before a hidden custom child still refers to that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
+The model admits group reordering only at gaps before custom headers or at the end; groups
+never nest among root lists or children. The view also accepts group drags over entire custom
+headers: the upper half maps to the gap before that group, the lower half to the gap after all
+its children. A themed insertion line marks that whole-group boundary, including when collapsed;
+list-on-header drops still append to the group. A gap before a hidden custom child still refers
+to that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
 of task search/sort/smart-view projection. Model UUID, snapshot epoch, revision and writable-source
 admission reject foreign/stale/read-only drags; unchanged source after formatting retains published
 intents. No-op drops add no identities or undo history. Controllers own all source mutations.

@@ -11,6 +11,8 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDrag>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
 #include <QDropEvent>
 #include <QEnterEvent>
 #include <QHBoxLayout>
@@ -37,6 +39,8 @@
 #include <QScrollBar>
 #include <QSplitter>
 #include <QStackedWidget>
+#include <QStyle>
+#include <QStyleOption>
 #include <QTextDocument>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -191,13 +195,79 @@ protected:
     }
   }
 
+  void dragMoveEvent(QDragMoveEvent *p_event) override {
+    setDropIndicatorShown(true);
+    QAbstractItemView::dragMoveEvent(p_event);
+    m_groupDropRow = groupDropRow(p_event);
+    if (m_groupDropRow >= 0) {
+      p_event->acceptProposedAction();
+    }
+    // Qt retains its previous indicator when a subsequent target is rejected.
+    setDropIndicatorShown(m_groupDropRow < 0 && p_event->isAccepted());
+    viewport()->update();
+  }
+
+  void dragLeaveEvent(QDragLeaveEvent *p_event) override {
+    m_groupDropRow = -1;
+    QAbstractItemView::dragLeaveEvent(p_event);
+    setDropIndicatorShown(true);
+  }
+
+  void paintEvent(QPaintEvent *p_event) override {
+    QListView::paintEvent(p_event);
+    if (m_groupDropRow < 0 || !model()) {
+      return;
+    }
+    int y = 0;
+    if (m_groupDropRow < model()->rowCount()) {
+      y = visualRect(model()->index(m_groupDropRow, 0)).top();
+    } else {
+      int last = model()->rowCount() - 1;
+      while (last >= 0 && isRowHidden(last)) {
+        --last;
+      }
+      y = visualRect(model()->index(last, 0)).bottom();
+    }
+    QStyleOption option;
+    option.initFrom(this);
+    option.rect = QRect(0, y, viewport()->width() - 1, 0);
+    QPainter painter(viewport());
+    style()->drawPrimitive(QStyle::PE_IndicatorItemViewItemDrop, &option, &painter, this);
+  }
+
   void dropEvent(QDropEvent *p_event) override {
+    const int row = groupDropRow(p_event);
+    m_groupDropRow = -1;
+    if (row >= 0 && model()->dropMimeData(p_event->mimeData(), p_event->dropAction(), row, 0, {})) {
+      // Accepted events make the base clean up without attempting a second source move.
+      p_event->acceptProposedAction();
+    }
     // QListView optimizes adjacent/end row moves before consulting the model.
     // Sidebar viewport drops can change ownership even for the final row.
     QAbstractItemView::dropEvent(p_event);
+    setDropIndicatorShown(true);
   }
 
 private:
+  int groupDropRow(const QDropEvent *p_event) const {
+    const auto position = p_event->position().toPoint();
+    const auto index = indexAt(position);
+    if (!index.data(TodoListModel::GroupRole).toBool() ||
+        model()->canDropMimeData(p_event->mimeData(), p_event->dropAction(), -1, 0, index)) {
+      // Lists already drop on headers to join groups; only group drags need a root gap.
+      return -1;
+    }
+    int row = index.row();
+    if (position.y() > visualRect(index).center().y()) {
+      do {
+        ++row;
+      } while (row < model()->rowCount() &&
+               !model()->index(row, 0).data(TodoListModel::GroupRole).toBool());
+    }
+    return model()->canDropMimeData(p_event->mimeData(), p_event->dropAction(), row, 0, {}) ? row
+                                                                                            : -1;
+  }
+
   void updateGroupCursor() {
     const auto *port = viewport();
     setGroupCursor(port->underMouse() ? indexAt(port->mapFromGlobal(QCursor::pos()))
@@ -215,6 +285,7 @@ private:
     }
   }
 
+  int m_groupDropRow = -1;
   bool m_groupPress = false;
   bool m_suppressGroupRelease = false;
 };
