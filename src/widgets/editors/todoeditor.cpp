@@ -259,10 +259,11 @@ private:
     }
     int row = index.row();
     if (position.y() > visualRect(index).center().y()) {
+      const auto groupKey = index.data(TodoListModel::GroupIdRole);
       do {
         ++row;
       } while (row < model()->rowCount() &&
-               !model()->index(row, 0).data(TodoListModel::GroupRole).toBool());
+               model()->index(row, 0).data(TodoListModel::GroupIdRole) == groupKey);
     }
     return model()->canDropMimeData(p_event->mimeData(), p_event->dropAction(), row, 0, {}) ? row
                                                                                             : -1;
@@ -2862,26 +2863,6 @@ void TodoEditor::scroll(bool p_up) {
           : m_tasks->verticalScrollBar();
   bar->triggerAction(p_up ? QAbstractSlider::SliderPageStepSub
                           : QAbstractSlider::SliderPageStepAdd);
-}
-
-void TodoEditor::zoom(int p_delta) {
-  const int next = qBound(-4, m_zoomDelta + p_delta, 12);
-  const int change = next - m_zoomDelta;
-  if (!change) {
-    return;
-  }
-  m_zoomDelta = next;
-  auto nextFont = font();
-  if (nextFont.pointSizeF() > 0) {
-    nextFont.setPointSizeF(qMax(1.0, nextFont.pointSizeF() + change));
-  } else {
-    nextFont.setPixelSize(qMax(1, nextFont.pixelSize() + change));
-  }
-  setFont(nextFont);
-  refreshHeadingFont();
-  m_note->zoom(change);
-  m_tasks->doItemsLayout();
-  m_lists->doItemsLayout();
 }
 
 QString TodoEditor::selectedText() const {

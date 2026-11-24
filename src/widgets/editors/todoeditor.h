@@ -43,8 +43,6 @@ public:
   QString selectedGroupKey() const;
   void closeDetails();
   void scroll(bool p_up);
-  void zoom(int p_delta);
-  int getZoomDelta() const { return m_zoomDelta; }
   QString selectedText() const;
   void invalidateGestures();
   void resetForBuffer();
@@ -167,7 +165,6 @@ private:
   QPointer<QWidget> m_typingField;
   quint64 m_generation = 0;
   quint64 m_typingSession = 0;
-  int m_zoomDelta = 0;
   bool m_editable = false;
   bool m_updating = false;
   bool m_committing = false;

@@ -47,7 +47,6 @@ protected:
   void scrollUp() override;
   void scrollDown() override;
   void zoom(bool p_zoomIn) override;
-  void resetZoom() override;
   QString selectedText() const override;
   void showFindAndReplaceWidget() override;
   void handleFindNext(const QStringList &p_texts, FindOptions p_options) override;

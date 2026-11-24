@@ -660,15 +660,8 @@ void TodoViewWindow::scrollUp() { m_todoEditor->scroll(true); }
 
 void TodoViewWindow::scrollDown() { m_todoEditor->scroll(false); }
 
-void TodoViewWindow::zoom(bool p_zoomIn) {
-  m_todoEditor->zoom(p_zoomIn ? 1 : -1);
-  showZoomDelta(m_todoEditor->getZoomDelta());
-}
-
-void TodoViewWindow::resetZoom() {
-  m_todoEditor->zoom(-m_todoEditor->getZoomDelta());
-  showZoomDelta(0);
-}
+// The TODO planner keeps theme/configured fonts; shared host zoom gestures are ignored.
+void TodoViewWindow::zoom(bool p_zoomIn) { Q_UNUSED(p_zoomIn); }
 
 void TodoViewWindow::prepareBufferReplacement() {
   m_controller->endCoalescing();

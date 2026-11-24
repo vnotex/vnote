@@ -278,16 +278,16 @@ void TodoListModel::setSnapshot(const TodoDocument &p_document, const TodoProjec
         m_rows.append(row);
       }
     };
-    // Project the internal Default owner first without changing source indexes or order.
+    // Project custom groups before root lists without changing source indexes or order.
+    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
+      if (!m_document.m_groups.at(groupIndex).m_isDefault) {
+        appendGroup(groupIndex);
+      }
+    }
     for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
       if (m_document.m_groups.at(groupIndex).m_isDefault) {
         appendGroup(groupIndex);
         break;
-      }
-    }
-    for (int groupIndex = 0; groupIndex < m_document.m_groups.size(); ++groupIndex) {
-      if (!m_document.m_groups.at(groupIndex).m_isDefault) {
-        appendGroup(groupIndex);
       }
     }
   }
@@ -409,11 +409,14 @@ bool TodoListModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
   QString beforeKey;
   bool unchanged = false;
   if (dragKind == DragKind::Group) {
-    // Groups can only occupy root gaps before headers or at the end, never nest.
-    if (p_parent.isValid() || (!atEnd && listAt(targetRow))) {
+    // The gap before the first root list is the end of the custom groups, not nesting.
+    const auto *targetGroup = atEnd ? nullptr : groupAt(targetRow);
+    const bool atGroupEnd = atEnd || (targetGroup && targetGroup->m_isDefault &&
+                                      m_rows.at(targetRow).m_list == targetGroup->m_firstList);
+    if (p_parent.isValid() || (!atGroupEnd && listAt(targetRow))) {
       return false;
     }
-    if (!atEnd) {
+    if (!atGroupEnd) {
       beforeKey = groupAt(targetRow)->m_key;
     }
     int nextGroup = source.m_group + 1;
@@ -422,9 +425,9 @@ bool TodoListModel::decodeDrop(const QMimeData *p_data, Qt::DropAction p_action,
       ++nextGroup;
     }
     unchanged =
-        beforeKey == key || (atEnd ? nextGroup == m_document.m_groups.size()
-                                   : nextGroup < m_document.m_groups.size() &&
-                                         beforeKey == m_document.m_groups.at(nextGroup).m_key);
+        beforeKey == key || (atGroupEnd ? nextGroup == m_document.m_groups.size()
+                                        : nextGroup < m_document.m_groups.size() &&
+                                              beforeKey == m_document.m_groups.at(nextGroup).m_key);
   } else {
     const TodoGroup *targetGroup = nullptr;
     int beforeList = -1;

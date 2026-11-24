@@ -679,7 +679,7 @@ Sidebar emoji retain the row clip but not the icon em-square clip, allowing fall
 Step rows have a 16px leading inset (mirrored in RTL);
 the empty list hides that inset too, while Add a step stays at the panel margin.
 Completed step titles use strikethrough, including on initial load and in Read mode. Completion
-changes and undo/redo keep it in sync; only strikeout is overridden so theme/zoom fonts still inherit.
+changes and undo/redo keep it in sync; only strikeout is overridden so theme fonts still inherit.
 Step rows retain their input widgets through typing echoes;
 structural changes retire old row callbacks. Each three-dot step menu offers completion toggle,
 Delete, and Promote to Task only for incomplete steps. Promotion appends a fresh task to the same
@@ -714,9 +714,12 @@ allowing a competing parent binding to run. Menus close before shortcut-triggere
 Captured source/binding/selection/group/writability guards apply to every menu action. Formatting-
 only revisions remain admissible; no extra document-revision guard replaces the source token.
 The central list/smart-view heading uses 1.35 times the editor's current font size, with
-24px leading/options icons and extra vertical spacing. Theme refresh and zoom derive that size
+24px leading/options icons and extra vertical spacing. Theme refresh derives that size
 from the editor font rather than repeatedly enlarging the heading; task rows keep their existing
-typography. The list-name field keeps typing local until Enter or focus loss, then applies one
+typography. The TODO editor has no zoom support: host zoom shortcuts and Ctrl-wheel do not resize
+the planner or task-note text, and no zoom notification is shown. Fonts still follow theme/editor
+configuration; ordinary scrolling is unchanged. Removed zoom state was transient, so no migration
+is needed. The list-name field keeps typing local until Enter or focus loss, then applies one
 source-history rename. Empty or whitespace-only input restores the last committed name without
 changing source or undo history. Keyboard and text-menu Undo/Redo stay local while the name has
 an uncommitted edit, then return to source history after completion. Text menus belong to their
@@ -831,13 +834,13 @@ existing-document migration; unassigned lists keep their previous sidebar render
 The sidebar accepts same-model Move drags for real groups/lists, never smart views, in both
 wide and overlay modes. Lists drop on a custom group to append, on/before a list to insert in
 that list's owner, or on empty viewport space to become root lists (creating Default if needed).
-The gap before the first custom group also returns a list to the root; a gap before a later
-custom group appends to the preceding visible custom group, never a hidden source neighbor.
-The model admits group reordering only at gaps before custom headers or at the end; groups
-never nest among root lists or children. The view also accepts group drags over entire custom
-headers: the upper half maps to the gap before that group, the lower half to the gap after all
-its children. A themed insertion line marks that whole-group boundary, including when collapsed;
-list-on-header drops still append to the group. A gap before a hidden custom child still refers
+The gap before the first custom group also returns a list to the trailing root-list block;
+a gap before a later custom group appends to the preceding visible custom group, never a hidden
+source neighbor. The model admits group reordering at gaps before custom headers, before the
+first root list, or at the viewport end; groups never nest among root lists or children. The view
+also accepts group drags over entire custom headers: the upper half maps to the gap before that group, the lower half to the gap after all
+its children, before any trailing root lists. A themed insertion line marks that whole-group
+boundary, including when collapsed; list-on-header drops still append to the group. A gap before a hidden custom child still refers
 to that actual child. Successful moves reveal the destination group. Sidebar dragging is independent
 of task search/sort/smart-view projection. Model UUID, snapshot epoch, revision and writable-source
 admission reject foreign/stale/read-only drags; unchanged source after formatting retains published
@@ -849,9 +852,10 @@ its group. Its drag lifecycle never asks Qt to remove source rows after the cont
 Organizational group selection and collapsed keys live only in `TodoProjection`, not config.
 The model retains all list and custom-group rows; the sidebar hides only collapsed custom
 children. The same sidebar at every width places search above icon-leading smart views,
-a separator, root lists, then custom groups and their indented lists; nonzero incomplete counts
-occupy trailing badges on list and smart-view rows. Custom groups use the notebook explorer's
-`TreeChildCountDelegate` renderer for their child-list count beside the chevron, with title
+a separator, custom groups and their indented lists, then root lists; nonzero incomplete counts
+occupy trailing badges on list and smart-view rows. This ordering is projection-only, preserving
+source order and requiring no document or configuration migration. Custom groups use the notebook
+explorer's `TreeChildCountDelegate` renderer for their child-list count beside the chevron, with title
 clearance mirrored in RTL. Zero counts are hidden; expansion and task filters do not change
 the cached list count. `groupAt()` still resolves a root list's internal Default owner, while
 its presentation `GroupIdRole` / `GroupTitleRole` are empty and `rowForGroup(Default)` is absent.

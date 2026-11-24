@@ -29,7 +29,7 @@ struct TodoProjection {
   QDate m_dueDate;
 };
 
-// Smart views, then always-expanded Default-owned root lists, then custom groups and children.
+// Smart views, then custom groups and children, then always-expanded Default-owned root lists.
 class TodoListModel : public QAbstractListModel {
   Q_OBJECT
 

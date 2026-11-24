@@ -1267,7 +1267,7 @@ void TestTodoViewWindowController::rootListProjection() {
   }
   const QStringList rootKeys{key("root"), key("spare")};
   for (int offset = 0; offset < rootCount; ++offset) {
-    const auto index = model->index(4 + offset);
+    const auto index = model->index(8 + offset);
     QCOMPARE(model->rowForKey(rootKeys.at(offset)), index.row());
     QCOMPARE(index.data(TodoListModel::IdRole).toString(), rootKeys.at(offset));
     QCOMPARE(index.data(TodoListModel::ViewKindRole).value<TodoViewKind>(), TodoViewKind::List);
@@ -1284,10 +1284,10 @@ void TestTodoViewWindowController::rootListProjection() {
     QCOMPARE(model->listAt(index.row())->m_key, rootKeys.at(offset));
     QVERIFY(!index.data(Qt::AccessibleTextRole).toString().contains(internalTitle));
   }
-  QCOMPARE(model->rowForGroup(key("office")), 4 + rootCount);
-  QCOMPARE(model->rowForKey(key("office-list")), 5 + rootCount);
-  QCOMPARE(model->rowForGroup(key("named-default")), 6 + rootCount);
-  QCOMPARE(model->rowForKey(key("custom-list")), 7 + rootCount);
+  QCOMPARE(model->rowForGroup(key("office")), 4);
+  QCOMPARE(model->rowForKey(key("office-list")), 5);
+  QCOMPARE(model->rowForGroup(key("named-default")), 6);
+  QCOMPARE(model->rowForKey(key("custom-list")), 7);
   const auto custom = model->index(model->rowForGroup(key("named-default")));
   QVERIFY(custom.data(TodoListModel::GroupRole).toBool());
   QCOMPARE(custom.data(TodoListModel::TitleRole).toString(), QStringLiteral("Default"));
@@ -1409,7 +1409,8 @@ void TestTodoViewWindowController::rootListDropBoundaries() {
                                model->index(model->rowForGroup(beta))));
   QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("one")), 0, {}));
   if (rootCount) {
-    QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("root")), 0, {}));
+    QVERIFY(
+        !model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("spare")), 0, {}));
     QVERIFY(!model->dropMimeData(mime.get(), Qt::MoveAction, -1, 0,
                                  model->index(model->rowForKey(key("root")))));
   }
@@ -1424,14 +1425,29 @@ void TestTodoViewWindowController::rootListDropBoundaries() {
 
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForGroup(alpha), 0, {}));
   QCOMPARE(groupMoves.count(), 1);
-  QCOMPARE(model->groupAt(4 + rootCount)->m_title, QStringLiteral("Beta"));
+  QCOMPARE(model->groupAt(4)->m_title, QStringLiteral("Beta"));
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
   mime.reset(model->mimeData({model->index(model->rowForGroup(alpha))}));
   QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowCount(), 0, {}));
-  QCOMPARE(model->groupAt(4 + rootCount)->m_title, QStringLiteral("Beta"));
+  QCOMPARE(model->groupAt(4)->m_title, QStringLiteral("Beta"));
   m_document->undo();
   QCOMPARE(m_document->toPlainText(), source);
+
+  if (rootCount) {
+    mime.reset(model->mimeData({model->index(model->rowForGroup(alpha))}));
+    QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("root")), 0, {}));
+    QCOMPARE(model->groupAt(4)->m_title, QStringLiteral("Beta"));
+    QCOMPARE(model->groupAt(6)->m_title, QStringLiteral("Alpha"));
+    QCOMPARE(model->rowForKey(key("root")), 8);
+    const auto movedAlpha = m_controller->getDocument().groupForList(list("one"))->m_key;
+    mime.reset(model->mimeData({model->index(model->rowForGroup(movedAlpha))}));
+    const auto undoSteps = m_document->availableUndoSteps();
+    QVERIFY(model->dropMimeData(mime.get(), Qt::MoveAction, model->rowForKey(key("root")), 0, {}));
+    QCOMPARE(m_document->availableUndoSteps(), undoSteps);
+    m_document->undo();
+    QCOMPARE(m_document->toPlainText(), source);
+  }
 
   // The first custom header gap always appends to Default, even if it must be created.
   mime.reset(model->mimeData({model->index(model->rowForKey(key("one")))}));
@@ -1439,7 +1455,7 @@ void TestTodoViewWindowController::rootListDropBoundaries() {
   const auto *owner = m_controller->getDocument().groupForList(list("one"));
   QVERIFY(owner && owner->m_isDefault);
   QCOMPARE(owner->m_listCount, rootCount + 1);
-  QCOMPARE(model->rowForKey(key("one")), 4 + rootCount);
+  QCOMPARE(model->rowForKey(key("one")), model->rowCount() - 1);
   QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList + rootCount).m_key,
            key("one"));
   m_document->undo();
@@ -1490,7 +1506,7 @@ void TestTodoViewWindowController::rootListDropBoundaries() {
       owner = m_controller->getDocument().groupForList(list("two"));
       QVERIFY(owner && owner->m_isDefault);
       QCOMPARE(owner->m_listCount, rootCount + 1);
-      QCOMPARE(model->rowForKey(key("two")), 4);
+      QCOMPARE(model->rowForKey(key("two")) + 1, model->rowForKey(key("root")));
       QCOMPARE(m_controller->getDocument().m_lists.at(owner->m_firstList).m_key, key("two"));
       m_document->undo();
       QCOMPARE(m_document->toPlainText(), source);
@@ -1502,7 +1518,7 @@ void TestTodoViewWindowController::rootListDropBoundaries() {
     owner = m_controller->getDocument().groupForList(list("two"));
     QVERIFY(owner && owner->m_isDefault);
     QCOMPARE(owner->m_listCount, rootCount + 1);
-    QCOMPARE(model->rowForKey(key("two")), 4 + rootCount);
+    QCOMPARE(model->rowForKey(key("two")), model->rowCount() - 1);
     m_document->undo();
     QCOMPARE(m_document->toPlainText(), source);
   }
@@ -2869,8 +2885,8 @@ void TestTodoViewWindowController::listModelDropAdmission() {
       model->mimeData({model->index(model->rowForGroup(key("work")))}));
   QVERIFY(!model->dropMimeData(groupMime.get(), Qt::MoveAction, -1, 0,
                                model->index(model->rowForGroup(key("empty")))));
-  QVERIFY(
-      !model->dropMimeData(groupMime.get(), Qt::MoveAction, model->rowForKey(key("first")), 0, {}));
+  QVERIFY(!model->dropMimeData(groupMime.get(), Qt::MoveAction, model->rowForKey(key("second")), 0,
+                               {}));
   QVERIFY(!model->dropMimeData(groupMime.get(), Qt::MoveAction, -1, 0,
                                model->index(model->rowForKey(key("first")))));
   QCOMPARE(model->rowForGroup(key("defaultgroup")), -1);
