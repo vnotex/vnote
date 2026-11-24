@@ -24,6 +24,7 @@
 #include <core/services/notificationservice.h>
 #include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
+#include <core/todoeditorconfig.h>
 #include <core/webresource.h>
 #include <core/widgetconfig.h>
 #include <gui/services/tooltipservice.h>
@@ -59,6 +60,8 @@ private slots:
   void testMarkdownExperienceMigration();
   void testEditorZoom_sessionPersistence_data();
   void testEditorZoom_sessionPersistence();
+  void testTodoEditor_sortOrderPersistence();
+  void testTodoEditor_invalidSortOrder();
   void testDebouncing();
   void testVersionUpgrade_data();
   void testVersionUpgrade();
@@ -1485,6 +1488,59 @@ void TestConfigMgr2::testConcealmentMode_persistsAllModes() {
     QCOMPARE(restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentMode(),
              testCase.m_expected);
     QCOMPARE(valueAt(restarted.getConfig().toJson(), path), QJsonValue(testCase.m_serialized));
+  }
+}
+
+void TestConfigMgr2::testTodoEditor_sortOrderPersistence() {
+  const auto original = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("todoEditor"),
+                         QStringLiteral("sortOrder")};
+  const auto loaded = loadThroughMergePath(QJsonObject());
+  QCOMPARE(valueAt(loaded, path), QJsonValue(QStringLiteral("manual")));
+  const struct {
+    TodoSortOrder m_order;
+    const char *m_name;
+  } cases[] = {{TodoSortOrder::Importance, "importance"},
+               {TodoSortOrder::DueDate, "dueDate"},
+               {TodoSortOrder::Title, "title"},
+               {TodoSortOrder::AddedToMyDay, "addedToMyDay"},
+               {TodoSortOrder::CreationDate, "creationDate"},
+               {TodoSortOrder::Manual, "manual"}};
+  for (const auto &entry : cases) {
+    {
+      ConfigMgr2 settings(m_configService);
+      settings.init();
+      settings.getEditorConfig().getTodoEditorConfig().setSortOrder(entry.m_order);
+      // Shutdown flushes the preference even before the debounce timer fires.
+    }
+    const auto persisted = m_configService->getConfigByName(DataLocation::App, "vnotex");
+    QCOMPARE(valueAt(persisted, path), QJsonValue(QString::fromLatin1(entry.m_name)));
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(restarted.getEditorConfig().getTodoEditorConfig().getSortOrder(), entry.m_order);
+  }
+}
+
+void TestConfigMgr2::testTodoEditor_invalidSortOrder() {
+  const auto original = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("todoEditor"),
+                         QStringLiteral("sortOrder")};
+  for (const auto &invalid :
+       {QJsonValue(), QJsonValue(QStringLiteral("unknown")), QJsonValue(2), QJsonValue(true),
+        QJsonValue(QJsonArray()), QJsonValue(QJsonObject())}) {
+    const auto normalized = loadThroughMergePath(
+        QJsonObject{{path[0], QJsonObject{{path[1], QJsonObject{{path[2], invalid}}}}}});
+    QCOMPARE(valueAt(normalized, path), QJsonValue(QStringLiteral("manual")));
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(restarted.getEditorConfig().getTodoEditorConfig().getSortOrder(),
+             TodoSortOrder::Manual);
   }
 }
 

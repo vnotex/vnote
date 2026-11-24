@@ -20,6 +20,7 @@ namespace vnotex {
 class TextEditorConfig;
 class MarkdownEditorConfig;
 class MindMapEditorConfig;
+class TodoEditorConfig;
 class PdfViewerConfig;
 class IConfigMgr;
 
@@ -107,6 +108,9 @@ public:
 
   MindMapEditorConfig &getMindMapEditorConfig();
   const MindMapEditorConfig &getMindMapEditorConfig() const;
+
+  TodoEditorConfig &getTodoEditorConfig();
+  const TodoEditorConfig &getTodoEditorConfig() const;
 
   PdfViewerConfig &getPdfViewerConfig();
   const PdfViewerConfig &getPdfViewerConfig() const;
@@ -210,6 +214,8 @@ private:
   QScopedPointer<MindMapEditorConfig> m_mindMapEditorConfig;
 
   QScopedPointer<PdfViewerConfig> m_pdfViewerConfig;
+
+  QScopedPointer<TodoEditorConfig> m_todoEditorConfig;
 
   bool m_spellCheckAutoDetectLanguageEnabled = false;
 

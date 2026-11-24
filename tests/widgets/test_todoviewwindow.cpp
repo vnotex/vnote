@@ -717,6 +717,7 @@ private slots:
   void dueDateMenuAndPicker();
   void detailsGesturesRejectStaleOwner();
   void filteringSortingAndDayRollover();
+  void globalSortOrderPersists();
   void completedToggleKeepsNativeSelection_data();
   void completedToggleKeepsNativeSelection();
   void nativeMoveReorderAndDeletion();
@@ -1859,6 +1860,95 @@ void TestTodoViewWindow::detailsGesturesRejectStaleOwner() {
   }
 }
 
+void TestTodoViewWindow::globalSortOrderPersists() {
+  createArea();
+  const auto firstBuffer = openNote(QStringLiteral("sort-first.todo"));
+  QVERIFY(firstBuffer.isValid());
+  auto *first = current();
+  QVERIFY(first);
+  const auto secondBuffer = openNote(QStringLiteral("sort-second.todo"));
+  QVERIFY(secondBuffer.isValid());
+  auto *second = current();
+  QVERIFY(second && second != first);
+
+  const auto checkMenu = [&](TodoViewWindow *p_window, const char *p_checked) {
+    auto *button = control<QPushButton>(p_window, "todoListMore");
+    QVERIFY(button && activate(button));
+    QTest::mouseClick(button, Qt::LeftButton);
+    auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+    QVERIFY(menu);
+    auto *sort = control<QAction>(menu, "todoSortByAction");
+    QVERIFY(sort && sort->menu());
+    int checked = 0;
+    for (auto *action : sort->menu()->actions()) {
+      if (action->isChecked()) {
+        ++checked;
+        QCOMPARE(action->objectName(), QString::fromLatin1(p_checked));
+      }
+    }
+    QCOMPARE(checked, 1);
+    menu->close();
+  };
+  checkMenu(second, "todoSortManualAction");
+  QVERIFY(chooseSortMenu(second, "todoSortImportanceAction"));
+  QCOMPARE(taskTitles(first).first(), QStringLiteral("Beta"));
+  QCOMPARE(taskTitles(second).first(), QStringLiteral("Beta"));
+  checkMenu(second, "todoSortImportanceAction");
+  QVERIFY(selectView(second, TodoViewKind::List, QStringLiteral("id:personal")));
+  checkMenu(second, "todoSortImportanceAction");
+  QVERIFY(selectView(second, TodoViewKind::List, QStringLiteral("id:work")));
+  QCOMPARE(taskTitles(second).first(), QStringLiteral("Beta"));
+
+  second->setMode(ViewWindowMode::Read);
+  QVERIFY(chooseSortMenu(second, "todoSortNameAction"));
+  QVERIFY(chooseSortMenu(second, "todoSortNameAction"));
+  QCOMPARE(second->getController()->getProjection().m_sort, TodoSortOrder::Title);
+  checkMenu(second, "todoSortNameAction");
+  QCOMPARE(taskTitles(first).first(), QStringLiteral("Alpha"));
+  QVERIFY(chooseSortMenu(second, "todoSortManualAction"));
+  second->setMode(ViewWindowMode::Edit);
+  QVERIFY(second->getController()->getTaskModel()->isReorderingEnabled());
+  checkMenu(second, "todoSortManualAction");
+  QVERIFY(chooseSortMenu(second, "todoSortImportanceAction"));
+
+  for (auto *window : {first, second}) {
+    QCOMPARE(window->getLatestContent().toUtf8(), c_source);
+    QVERIFY(!window->isModified());
+    QVERIFY(!window->getSourceEditor()->document()->isUndoAvailable());
+  }
+  QCOMPARE(readBytes(absolute(QStringLiteral("sort-first.todo"))), c_source);
+  QCOMPARE(readBytes(absolute(QStringLiteral("sort-second.todo"))), c_source);
+  const auto persistedSort = [&] {
+    return m_configCore->getConfigByName(DataLocation::App, "vnotex")
+        .value(QStringLiteral("editor"))
+        .toObject()
+        .value(QStringLiteral("todoEditor"))
+        .toObject()
+        .value(QStringLiteral("sortOrder"))
+        .toString();
+  };
+  QTRY_COMPARE(persistedSort(), QStringLiteral("importance"));
+
+  // Rebinding resets the controller projection, but must restore the global preference.
+  m_config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  const auto replacement = openNote(QStringLiteral("sort-replacement.todo"), c_source, settings);
+  QVERIFY(replacement.isValid());
+  QCOMPARE(current(), second);
+  QCOMPARE(taskTitles(second).first(), QStringLiteral("Beta"));
+  checkMenu(second, "todoSortImportanceAction");
+  QVERIFY(second->reload());
+  QCOMPARE(taskTitles(second).first(), QStringLiteral("Beta"));
+  QVERIFY(m_area->getController()->closeViewWindow(second->getViewWindowId(), false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(m_buffers->openBuffer(replacement.nodeId()).isValid());
+  second = current();
+  QVERIFY(second);
+  QCOMPARE(taskTitles(second).first(), QStringLiteral("Beta"));
+  checkMenu(second, "todoSortImportanceAction");
+}
+
 void TestTodoViewWindow::filteringSortingAndDayRollover() {
   createArea();
   QVERIFY(openNote(QStringLiteral("filters.todo")).isValid());
@@ -1898,7 +1988,7 @@ void TestTodoViewWindow::filteringSortingAndDayRollover() {
   QVERIFY(chooseSortMenu(window, "todoSortNameAction"));
   QCOMPARE(taskTitles(window),
            QStringList({QStringLiteral("Alpha"), QStringLiteral("Beta"), QStringLiteral("Gamma")}));
-  QVERIFY(chooseSortMenu(window, "todoSortNameAction"));
+  QVERIFY(chooseSortMenu(window, "todoSortManualAction"));
   QCOMPARE(controller->getProjection().m_sort, TodoSortOrder::Manual);
   QVERIFY(selectView(window, TodoViewKind::List, QStringLiteral("id:work")));
   QVERIFY(controller->getTaskModel()->isReorderingEnabled());

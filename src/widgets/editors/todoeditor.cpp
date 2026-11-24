@@ -49,6 +49,7 @@
 
 #include <controllers/todoviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
@@ -563,6 +564,8 @@ TodoEditor::TodoEditor(ServiceLocator &p_services, QWidget *p_parent)
       m_paneLayout(p_services.get<ConfigMgr2>()->getSessionConfig().getTodoEditorLayout()) {
   named(this, "todoEditor", tr("TODO planner"));
   createUi();
+  connect(m_services.get<ConfigMgr2>(), &ConfigMgr2::mainConfigChanged, this,
+          &TodoEditor::applySortOrder);
   qApp->installEventFilter(this);
   refresh();
 }
@@ -1079,6 +1082,8 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
   m_lists->setModel(p_controller ? p_controller->getListModel() : nullptr);
   m_tasks->setModel(p_controller ? p_controller->getTaskModel() : nullptr);
   if (p_controller) {
+    connect(p_controller, &TodoViewWindowController::documentChanged, this,
+            &TodoEditor::applySortOrder);
     connect(p_controller, &TodoViewWindowController::projectionChanged, this, &TodoEditor::refresh);
     connect(p_controller, &TodoViewWindowController::archiveStateChanged, this,
             &TodoEditor::refresh);
@@ -1102,7 +1107,15 @@ void TodoEditor::bindController(TodoViewWindowController *p_controller) {
               }
             });
   }
+  applySortOrder();
   resetForBuffer();
+}
+
+void TodoEditor::applySortOrder() {
+  if (m_controller) {
+    m_controller->setSortOrder(
+        m_services.get<ConfigMgr2>()->getEditorConfig().getTodoEditorConfig().getSortOrder());
+  }
 }
 
 void TodoEditor::setEditable(bool p_editable) {
@@ -2343,14 +2356,14 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
   auto *sort = menu->addMenu(tr("Sort by"));
   sort->menuAction()->setObjectName(QStringLiteral("todoSortByAction"));
   auto *sortGroup = new QActionGroup(sort);
-  sortGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::ExclusiveOptional);
+  sortGroup->setExclusionPolicy(QActionGroup::ExclusionPolicy::Exclusive);
   const auto addSort = [&](TodoSortOrder p_order, const QString &p_label, const char *p_name) {
     auto *action = sort->addAction(p_label);
     action->setObjectName(QString::fromLatin1(p_name));
     action->setCheckable(true);
     sortGroup->addAction(action);
     action->setChecked(m_controller->getProjection().m_sort == p_order);
-    connect(action, &QAction::triggered, this, [this, token, p_key, p_order](bool p_checked) {
+    connect(action, &QAction::triggered, this, [this, token, p_key, p_order]() {
       if (!acceptsNavigation(token)) {
         return;
       }
@@ -2374,12 +2387,13 @@ void TodoEditor::showListMenu(const QString &p_key, const QPoint &p_globalPositi
           return;
         }
       }
-      controller->setSortOrder(p_checked ? p_order : TodoSortOrder::Manual);
+      m_services.get<ConfigMgr2>()->getEditorConfig().getTodoEditorConfig().setSortOrder(p_order);
       if (self && controller && m_controller == controller && m_narrow) {
         closeDetails();
       }
     });
   };
+  addSort(TodoSortOrder::Manual, tr("Manual"), "todoSortManualAction");
   addSort(TodoSortOrder::Importance, tr("Importance"), "todoSortImportanceAction");
   addSort(TodoSortOrder::DueDate, tr("Due Date"), "todoSortDueDateAction");
   addSort(TodoSortOrder::AddedToMyDay, tr("Added to My Day"), "todoSortMyDayAction");

@@ -798,13 +798,22 @@ uses the themed three-dot `menu.svg`, retains a List Options tooltip/accessibili
 opens the same menu. In smart or filtered views it offers only Sort by; sorting remains available
 in Read mode while list mutations stay disabled.
 
-**Sort by** replaces the toolbar combo and offers Importance, Due Date, Added to My Day, Name,
-and Creation Date. Reselecting the checked choice restores manual order and permits dragging in
-an unfiltered editable list. Importance puts marked tasks first; Due Date is earliest-first;
-Added to My Day and Creation Date are newest-first; Name compares raw titles case-insensitively.
-Missing dates sort last and ties retain source order, separately within active/completed tasks.
-Sorting is transient for the document's projection, never a source edit. A sidebar list-menu
-choice targets that list and clears filters; the three-dot menu preserves smart/filtered views.
+**Sort by** offers an exclusive radio group: Manual, Importance, Due Date, Added to My Day,
+Name and Creation Date. Exactly one choice is checked; reselecting it leaves the order unchanged.
+Manual restores source order and permits dragging in an unfiltered editable list. Importance
+puts marked tasks first; Due Date is earliest-first; Added to My Day and Creation Date are
+newest-first; Name compares raw titles case-insensitively. Missing dates sort last and ties retain
+source order, separately within active/completed tasks.
+`EditorConfig::getTodoEditorConfig()` owns the global preference in
+`vnotex.json` at `editor.todoEditor.sortOrder`, shared by all TODO lists and smart/filtered views.
+Stable values are `manual`, `importance`, `dueDate`, `title`, `addedToMyDay` and `creationDate`.
+Missing or invalid values use Manual. This new optional preference needs no migration; there was
+no previously saved sort setting to override. Explicit Manual survives restart.
+Menu choices persist through the normal main-config debounce/shutdown flush, including in Read
+mode, without changing TODO source, modified state or undo history. `mainConfigChanged` applies
+the preference immediately to open TODO editors; binding and source refresh restore it after
+controller resets. A sidebar list-menu choice still targets that list and clears filters; the
+three-dot menu preserves smart/filtered views.
 
 Tasks may carry immutable `todo-item.createdAt` metadata: an ISO timestamp with `T`, seconds,
 optional 1–3 fractional digits, and an explicit `Z` or numeric offset. New tasks write UTC with

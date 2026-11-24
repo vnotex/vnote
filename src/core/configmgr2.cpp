@@ -427,6 +427,7 @@ QString ConfigMgr2::getDefaultNotebookPath(const QString &p_parentDir) {
 void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {
   m_pendingMainConfig = p_jobj;
   scheduleMainConfigWrite();
+  emit mainConfigChanged();
 }
 
 void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) {

@@ -358,6 +358,7 @@ add_qt_test(test_textviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/todoeditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
@@ -383,6 +384,7 @@ add_qt_test(test_pdfviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/pdfviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/todoeditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
@@ -407,6 +409,7 @@ add_qt_test(test_markdownviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/controllers/markdownviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/core/configmgr2.h
     ${CMAKE_SOURCE_DIR}/src/core/editorconfig.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/todoeditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp

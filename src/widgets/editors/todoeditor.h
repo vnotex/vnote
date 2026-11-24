@@ -67,6 +67,7 @@ private:
   void createUi();
   void createDetails();
   void refresh();
+  void applySortOrder();
   void refreshDetails();
   void refreshSteps(const TodoItem *p_item, bool p_reset);
   void showStepMenu(int p_index, const QPoint &p_globalPosition);

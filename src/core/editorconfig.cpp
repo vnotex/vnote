@@ -7,6 +7,7 @@
 #include "mindmapeditorconfig.h"
 #include "pdfviewerconfig.h"
 #include "texteditorconfig.h"
+#include "todoeditorconfig.h"
 
 #include <utils/sectionnumberutils.h>
 #include <vtextedit/viconfig.h>
@@ -57,7 +58,8 @@ EditorConfig::EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
       m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig, *this)),
       m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
       m_mindMapEditorConfig(new MindMapEditorConfig(p_mgr, p_topConfig)),
-      m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)) {
+      m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)),
+      m_todoEditorConfig(new TodoEditorConfig(p_mgr, p_topConfig)) {
   m_sectionName = QStringLiteral("editor");
   initDefaults();
 }
@@ -77,6 +79,7 @@ void EditorConfig::fromJson(const QJsonObject &p_jobj) {
       p_jobj.value(m_markdownEditorConfig->getSectionName()).toObject());
   m_mindMapEditorConfig->fromJson(p_jobj.value(m_mindMapEditorConfig->getSectionName()).toObject());
   m_pdfViewerConfig->fromJson(p_jobj.value(m_pdfViewerConfig->getSectionName()).toObject());
+  m_todoEditorConfig->fromJson(p_jobj.value(m_todoEditorConfig->getSectionName()).toObject());
 }
 
 void EditorConfig::loadCore(const QJsonObject &p_jobj) {
@@ -168,6 +171,7 @@ QJsonObject EditorConfig::toJson() const {
   obj[m_markdownEditorConfig->getSectionName()] = m_markdownEditorConfig->toJson();
   obj[m_mindMapEditorConfig->getSectionName()] = m_mindMapEditorConfig->toJson();
   obj[m_pdfViewerConfig->getSectionName()] = m_pdfViewerConfig->toJson();
+  obj[m_todoEditorConfig->getSectionName()] = m_todoEditorConfig->toJson();
   obj[QStringLiteral("core")] = saveCore();
   obj[QStringLiteral("imageHost")] = saveImageHost();
 
@@ -187,6 +191,10 @@ MarkdownEditorConfig &EditorConfig::getMarkdownEditorConfig() { return *m_markdo
 const MarkdownEditorConfig &EditorConfig::getMarkdownEditorConfig() const {
   return *m_markdownEditorConfig;
 }
+
+TodoEditorConfig &EditorConfig::getTodoEditorConfig() { return *m_todoEditorConfig; }
+
+const TodoEditorConfig &EditorConfig::getTodoEditorConfig() const { return *m_todoEditorConfig; }
 
 PdfViewerConfig &EditorConfig::getPdfViewerConfig() { return *m_pdfViewerConfig; }
 

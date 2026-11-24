@@ -160,6 +160,7 @@ public:
   void updateSessionConfig(const QJsonObject &p_jobj) override;
 
 signals:
+  void mainConfigChanged();
   void sessionConfigChanged();
 
 private slots:
