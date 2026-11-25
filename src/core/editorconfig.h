@@ -223,7 +223,7 @@ private:
 
   QVector<ImageHostItem> m_imageHosts;
 
-  QString m_defaultImageFormat = QStringLiteral("jpeg");
+  QString m_defaultImageFormat = QStringLiteral("png");
 
   QString m_defaultImageHost;
 

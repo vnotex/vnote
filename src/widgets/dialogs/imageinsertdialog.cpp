@@ -415,9 +415,8 @@ QByteArray ImageInsertDialog::getImageData() const {
   if (!m_imageData.isEmpty()) {
     return m_imageData;
   }
-  const bool png = insertAsBase64() ||
-                   (m_configMgr &&
-                    m_configMgr->getEditorConfig().getDefaultImageFormat() == QLatin1String("png"));
+  const bool png = insertAsBase64() || !m_configMgr ||
+                   m_configMgr->getEditorConfig().getDefaultImageFormat() == QLatin1String("png");
   QImage image = m_image;
   if (!png && image.hasAlphaChannel()) {
     // JPEG has no alpha channel. Composite onto white rather than discarding alpha.
@@ -428,7 +427,8 @@ QByteArray ImageInsertDialog::getImageData() const {
   }
   QByteArray data;
   QBuffer output(&data);
-  if (!output.open(QIODevice::WriteOnly) || !image.save(&output, png ? "PNG" : "JPEG")) {
+  if (!output.open(QIODevice::WriteOnly) ||
+      !image.save(&output, png ? "PNG" : "JPEG", png ? -1 : 100)) {
     return QByteArray();
   }
   return data;

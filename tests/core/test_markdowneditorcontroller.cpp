@@ -859,6 +859,15 @@ void TestMarkdownEditorController::testPrepareBufferState_modifiedBuffer() {
 }
 
 void TestMarkdownEditorController::clipboardImageFileFlattensAlphaWithoutChangingBase64() {
+  ConfigCoreService configService(m_context);
+  const auto original = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    configService.updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  ConfigMgr2 configMgr(&configService);
+  configMgr.init();
+  configMgr.getEditorConfig().setDefaultImageFormat(QStringLiteral("jpeg"));
+
   QImage image(64, 32, QImage::Format_ARGB32);
   image.setDevicePixelRatio(2.0);
   image.fill(QColor(255, 0, 0, 128));
@@ -867,7 +876,7 @@ void TestMarkdownEditorController::clipboardImageFileFlattensAlphaWithoutChangin
       image.setPixelColor(x, y, Qt::transparent);
     }
   }
-  ImageInsertDialog dialog(QStringLiteral("Image"), QString(), QString(), QString(), nullptr,
+  ImageInsertDialog dialog(QStringLiteral("Image"), QString(), QString(), QString(), &configMgr,
                            false);
   dialog.setImage(image);
   dialog.setImageSource(ImageInsertDialog::ImageData);

@@ -106,8 +106,8 @@ void EditorPage::setupUI() {
     m_defaultImageFormatComboBox->setToolTip(
         tr("Format for clipboard images saved as files. JPEG uses a white background; PNG keeps "
            "transparency. Original files and URLs keep their format; Base64 stays lossless"));
-    m_defaultImageFormatComboBox->addItem(QStringLiteral("JPEG"), QStringLiteral("jpeg"));
     m_defaultImageFormatComboBox->addItem(QStringLiteral("PNG"), QStringLiteral("png"));
+    m_defaultImageFormatComboBox->addItem(QStringLiteral("JPEG"), QStringLiteral("jpeg"));
 
     const QString label(tr("Default image format"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));

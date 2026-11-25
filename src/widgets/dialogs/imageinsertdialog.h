@@ -54,7 +54,7 @@ public:
   void setSourceImageData(const QByteArray &p_data);
 
   // Original source bytes, or the configured JPEG/PNG for a clipboard QImage saved as a file.
-  // JPEG composites alpha onto white; PNG preserves it.
+  // JPEG uses quality 100 and composites alpha onto white; PNG (the default) preserves it.
   // Base64 keeps lossless PNG and alpha, except Typst always uses image files. Never staged on
   // disk.
   QByteArray getImageData() const;

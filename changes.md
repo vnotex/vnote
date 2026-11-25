@@ -14,6 +14,7 @@ A refinement release with smoother TODO planning, unified editor settings and fa
     * Keep empty concealed Markdown elements visible and use a sticky-note icon for mind-map node notes
     * Display Created and Modified timestamps in note and folder properties using the application locale, preserving local time and seconds
     * Offer Open Link and Copy Link for bare URLs in Markdown edit mode, using parsed link destinations and excluding code
+    * Default clipboard image files to lossless PNG for new profiles and missing or invalid format settings; profiles already storing JPEG keep JPEG, now encoded at quality 100 ([#2791](https://github.com/vnotex/vnote/issues/2791))
 * **Search and reliability**
     * Use typed vxcore results for folder listings, search and tags to avoid in-process JSON round trips while preserving metadata, ordering and existing JSON APIs
     * Remove the ripgrep backend and use built-in search for consistent Unicode replacement and cooperative cancellation

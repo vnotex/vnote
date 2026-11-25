@@ -283,8 +283,10 @@ void EditorConfig::setInputMode(EditorConfig::InputMode p_mode) {
 }
 
 QString EditorConfig::normalizeDefaultImageFormat(const QString &p_format) {
-  return p_format.compare(QStringLiteral("png"), Qt::CaseInsensitive) == 0 ? QStringLiteral("png")
-                                                                           : QStringLiteral("jpeg");
+  return p_format.compare(QStringLiteral("jpeg"), Qt::CaseInsensitive) == 0 ||
+                 p_format.compare(QStringLiteral("jpg"), Qt::CaseInsensitive) == 0
+             ? QStringLiteral("jpeg")
+             : QStringLiteral("png");
 }
 
 const QString &EditorConfig::getDefaultImageFormat() const { return m_defaultImageFormat; }
