@@ -164,6 +164,10 @@ underlying `vte::VTextEdit` for cursor, selection and other advanced text operat
 
 It uses the active theme's resolved Markdown editor styles and native code-highlight
 theme, updating on theme switch/refresh without reloading source or discarding undo.
+`setFontPointSize(int)` overrides only that instance's body size in whole points (minimum 2);
+nonpositive values restore the active theme's size. The override survives theme changes and
+keeps Markdown heading size offsets, font families, colors, source, cursor and undo history.
+Other instances retain their theme defaults; the override is transient, not a saved preference.
 The upstream Aggressive concealment preset is always enabled, independently of document-editor
 preferences; concealment does not strip source markers. Normal input, no line numbers/folding,
 and disabled in-place previews keep embedding independent of resource paths, WebEngine and
@@ -648,6 +652,9 @@ One hidden, enabled, non-focusable `SimpleMarkdownEditor` owns the LF-normalized
 `TodoEditor` renders `TodoListModel` / `TodoTaskModel`; `TodoViewWindowController` validates
 and applies source commands without widgets or direct storage writes. Projected task notes use a
 separate `SimpleMarkdownEditor` input with local undo disabled and source-history routing.
+Its body font size follows the resolved `todoCreatedDate` details-label font (rounded to whole
+points), including font changes and theme refreshes, through `setFontPointSize()`. The hidden
+source engine is unaffected. No configuration migration is needed: no saved values change.
 Typing coalesces by field until focus, selection, mode or another command ends the group.
 The details panel has a right-aligned close icon, then completion/title/My Day/star, inline
 steps, Add a step, due date and Markdown note, in that order. The note placeholder is

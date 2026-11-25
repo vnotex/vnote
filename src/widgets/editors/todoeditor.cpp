@@ -15,6 +15,7 @@
 #include <QDragMoveEvent>
 #include <QDropEvent>
 #include <QEnterEvent>
+#include <QFontInfo>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QInputMethodEvent>
@@ -960,6 +961,8 @@ void TodoEditor::createDetails() {
   m_createdDate->setWordWrap(true);
   m_createdDate->setMinimumWidth(0);
   m_createdDate->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_createdDate->ensurePolished();
+  m_note->setFontPointSize(QFontInfo(m_createdDate->font()).pointSize());
   m_deleteTask = named(new QToolButton(m_details), "todoDeleteTask", tr("Delete task"));
   m_deleteTask->setAutoRaise(true);
   m_deleteTask->setIconSize(QSize(20, 20));
@@ -2684,6 +2687,10 @@ bool TodoEditor::eventFilter(QObject *p_object, QEvent *p_event) {
   }
   if (!widget || (widget != this && !isAncestorOf(widget)) || widget->window() != window()) {
     return QWidget::eventFilter(p_object, p_event);
+  }
+  if (widget == m_createdDate &&
+      (p_event->type() == QEvent::FontChange || p_event->type() == QEvent::Show)) {
+    m_note->setFontPointSize(QFontInfo(m_createdDate->font()).pointSize());
   }
   if (p_object == m_tasks->viewport() && (p_event->type() == QEvent::MouseButtonPress ||
                                           p_event->type() == QEvent::MouseButtonDblClick)) {

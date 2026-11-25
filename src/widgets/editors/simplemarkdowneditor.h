@@ -18,6 +18,10 @@ public:
 
   QString toPlainText() const;
 
+  // Override this instance's font size in whole points (minimum 2), including after theme changes.
+  // Nonpositive values restore the active theme's size. Markdown heading size offsets are retained.
+  void setFontPointSize(int p_pointSize);
+
 public slots:
   void setPlainText(const QString &p_text);
 
@@ -34,6 +38,7 @@ private:
   void typeTable();
 
   ServiceLocator &m_services;
+  int m_fontPointSize = 0;
   QToolBar *m_toolBar = nullptr;
   QList<QShortcut *> m_formattingShortcuts;
 };

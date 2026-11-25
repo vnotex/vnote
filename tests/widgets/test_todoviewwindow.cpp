@@ -29,6 +29,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontInfo>
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QItemSelectionModel>
@@ -765,6 +766,7 @@ private slots:
   void readOnlyNavigation();
   void sharedBufferRejectsStaleGestures();
   void foreignReloadAndSameTypeReplacement();
+  void noteFontTracksDetailsLabel();
   void nativeLayoutsKeyboardAndTheme();
   void zoomGesturesAreIgnored();
   void paneWidthsSurviveLayoutChanges();
@@ -4975,6 +4977,42 @@ void TestTodoViewWindow::taskClickTogglesDetails() {
   QTRY_VERIFY(tasks->isVisible());
   click(QStringLiteral("id:alpha"));
   QTRY_VERIFY(details->isVisible());
+}
+
+void TestTodoViewWindow::noteFontTracksDetailsLabel() {
+  qApp->setStyleSheet(m_theme->fetchQtStyleSheet());
+  connect(m_theme.get(), &ThemeService::themeChanged, this,
+          [this]() { qApp->setStyleSheet(m_theme->fetchQtStyleSheet()); });
+  createArea();
+  QVERIFY(openNote(QStringLiteral("note-font.todo")).isValid());
+  auto *window = current();
+  QVERIFY(window);
+  QVERIFY(openTask(window, QStringLiteral("id:alpha")));
+  auto *note = control<SimpleMarkdownEditor>(window, "todoNote");
+  auto *label = control<QLabel>(window, "todoCreatedDate");
+  QVERIFY(note && label);
+  QTRY_VERIFY(note->isVisible() && label->isVisible());
+  QTRY_COMPARE(note->getTextEdit()->font().pointSize(), QFontInfo(label->font()).pointSize());
+  const auto source = window->getLatestContent();
+  const auto noteText = note->toPlainText();
+  const auto sourceFont = window->getSourceEditor()->editorFontPointSize();
+  auto labelFont = label->font();
+  labelFont.setPointSize(15);
+  label->setFont(labelFont);
+  QTRY_COMPARE(note->getTextEdit()->font().pointSize(), 15);
+  QCOMPARE(window->getSourceEditor()->editorFontPointSize(), sourceFont);
+  label->setStyleSheet(QStringLiteral("font-size: 20px;"));
+  QTRY_COMPARE(note->getTextEdit()->font().pointSize(), QFontInfo(label->font()).pointSize());
+  m_theme->switchTheme(QStringLiteral("latex-light"));
+  m_theme->refreshCurrentTheme();
+  QTRY_COMPARE(note->getTextEdit()->font().pointSize(), QFontInfo(label->font()).pointSize());
+  label->setStyleSheet(QString());
+  label->setFont(QFont());
+  m_theme->switchTheme(QStringLiteral("pure"));
+  QTRY_COMPARE(note->getTextEdit()->font().pointSize(), QFontInfo(label->font()).pointSize());
+  QCOMPARE(note->toPlainText(), noteText);
+  QCOMPARE(window->getLatestContent(), source);
+  QVERIFY(!window->isModified());
 }
 
 void TestTodoViewWindow::nativeLayoutsKeyboardAndTheme() {

@@ -209,6 +209,78 @@ private slots:
     QVERIFY(!editor.isModified());
   }
 
+  void fontSizeOverrideSurvivesThemeChanges() {
+    ThemeService theme(m_themeConfig);
+    ServiceLocator services;
+    services.registerService(&theme);
+    services.registerService(m_config.get());
+    SimpleMarkdownEditor editor(services);
+    SimpleMarkdownEditor peer(services);
+    const auto source = QStringLiteral("# Heading\n\nbody");
+    editor.setPlainText(source);
+    peer.setPlainText(source);
+    editor.resize(640, 360);
+    editor.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&editor));
+    auto *edit = editor.getTextEdit();
+    auto cursor = edit->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QStringLiteral(" retained"));
+    cursor.setPosition(source.size());
+    cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+    edit->setTextCursor(cursor);
+    const auto text = editor.toPlainText();
+    const int undoSteps = editor.document()->availableUndoSteps();
+    const auto headingSize = [](SimpleMarkdownEditor &p_editor) {
+      for (const auto &range : p_editor.document()->firstBlock().layout()->formats()) {
+        if (range.start <= 2 && range.start + range.length > 2 &&
+            range.format.fontPointSize() > 0) {
+          return range.format.fontPointSize();
+        }
+      }
+      return qreal(0);
+    };
+    QTRY_VERIFY(headingSize(editor) > 0);
+    const auto baseSize = editor.editorFontPointSize();
+    const auto baseHeadingSize = headingSize(editor);
+    editor.setFontPointSize(baseSize + 3);
+    QTRY_COMPARE(edit->font().pointSize(), baseSize + 3);
+    QTRY_COMPARE(headingSize(editor), baseHeadingSize + 3);
+    QCOMPARE(peer.editorFontPointSize(), baseSize);
+    editor.setFontPointSize(baseSize + 3);
+    QCOMPARE(editor.editorFontPointSize(), baseSize + 3);
+    editor.setFontPointSize(1);
+    QCOMPARE(editor.editorFontPointSize(), 2);
+    editor.setFontPointSize(0);
+    QCOMPARE(editor.editorFontPointSize(), baseSize);
+    QTRY_COMPARE(headingSize(editor), baseHeadingSize);
+
+    // Setting the current size must still pin it when the next theme has a different base.
+    editor.setFontPointSize(baseSize);
+    editor.setReadOnly(true);
+    for (const auto &name : {QStringLiteral("latex-light"), QStringLiteral("everforest-dark")}) {
+      theme.switchTheme(name);
+      theme.refreshCurrentTheme();
+      QTRY_COMPARE(edit->font().pointSize(), baseSize);
+      QTRY_VERIFY(headingSize(peer) > 0);
+      QTRY_COMPARE(headingSize(editor), headingSize(peer) + baseSize - peer.editorFontPointSize());
+      QCOMPARE(editor.toPlainText(), text);
+      QCOMPARE(editor.document()->availableUndoSteps(), undoSteps);
+      QCOMPARE(edit->textCursor().position(), cursor.position());
+      QCOMPARE(edit->textCursor().anchor(), cursor.anchor());
+      QVERIFY(editor.isReadOnly());
+      QVERIFY(editor.isModified());
+    }
+    editor.setFontPointSize(0);
+    QCOMPARE(editor.editorFontPointSize(), peer.editorFontPointSize());
+    editor.setReadOnly(false);
+    edit->undo();
+    QCOMPARE(editor.toPlainText(), source);
+    QVERIFY(!editor.isModified());
+    edit->redo();
+    QCOMPARE(editor.toPlainText(), text);
+  }
+
   void formattingShortcutsFollowFocusAndReadOnly() {
     ThemeService theme(m_themeConfig);
     ServiceLocator services;

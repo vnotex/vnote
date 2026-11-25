@@ -52,7 +52,14 @@ SimpleMarkdownEditor::SimpleMarkdownEditor(ServiceLocator &p_services, QWidget *
   setupToolBar();
   connect(getTextEdit(), &QTextEdit::textChanged, this, &SimpleMarkdownEditor::textChanged);
   connect(m_services.get<ThemeService>(), &ThemeService::themeChanged, this, [this]() {
+    if (m_fontPointSize > 0) {
+      // setConfig() reloads theme sizes but does not reset the upstream zoom delta.
+      zoom(0);
+    }
     setConfig(createConfig(m_services));
+    if (m_fontPointSize > 0) {
+      setFontPointSize(m_fontPointSize);
+    }
     refreshToolBarIcons();
   });
 }
@@ -60,6 +67,11 @@ SimpleMarkdownEditor::SimpleMarkdownEditor(ServiceLocator &p_services, QWidget *
 QString SimpleMarkdownEditor::toPlainText() const { return getTextEdit()->toPlainText(); }
 
 void SimpleMarkdownEditor::setPlainText(const QString &p_text) { setText(p_text); }
+
+void SimpleMarkdownEditor::setFontPointSize(int p_pointSize) {
+  m_fontPointSize = p_pointSize > 0 ? qMax(2, p_pointSize) : 0;
+  zoom(m_fontPointSize > 0 ? zoomDelta() + m_fontPointSize - editorFontPointSize() : 0);
+}
 
 void SimpleMarkdownEditor::setupToolBar() {
   m_toolBar = new QToolBar(this);
