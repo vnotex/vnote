@@ -788,26 +788,24 @@ QTreeView::branch {
 }
 
 QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: none;
+    border-image: url(branch_line.svg) 0;
 }
 
 QTreeView::branch:has-siblings:adjoins-item {
-    border-image: none;
+    border-image: url(branch_more.svg) 0;
 }
 
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: none;
+QTreeView::branch:!has-siblings:adjoins-item {
+    border-image: url(branch_end.svg) 0;
 }
 
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
-    border-image: none;
     image: url(branch_closed.svg);
 }
 
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings  {
-    border-image: none;
     image: url(branch_open.svg);
 }
 

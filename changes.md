@@ -9,6 +9,7 @@ A refinement release with smoother TODO planning, unified editor settings and fa
     * Add My Day icon marks beside importance stars in the TODO editor and dashboard sticker for direct membership changes
     * Remember Lists and Task details panel widths across list switches, narrow layouts and restarts, and fix cropped list emoji icons
 * **Editing and interface**
+    * Restore tree branch connector lines in the Pure theme, retaining its expand/collapse arrows
     * Default note opening to Edit; upgrading from versions below `4.15.1` resets the previous opening mode to Edit, while later saved Read preferences remain respected
     * Centralize Normal, Vi and VSCode modes in shared Input Mode settings, preserving existing selections across text and Markdown editors
     * Keep empty concealed Markdown elements visible and use a sticky-note icon for mind-map node notes

@@ -658,6 +658,9 @@
         <file>themes/pure/arrow_dropdown.svg</file>
         <file>themes/pure/arrow_dropdown_disabled.svg</file>
         <file>themes/pure/branch_closed.svg</file>
+        <file>themes/pure/branch_end.svg</file>
+        <file>themes/pure/branch_line.svg</file>
+        <file>themes/pure/branch_more.svg</file>
         <file>themes/pure/branch_open.svg</file>
         <file>themes/pure/checkbox_checked.svg</file>
         <file>themes/pure/checkbox_checked_disabled.svg</file>
