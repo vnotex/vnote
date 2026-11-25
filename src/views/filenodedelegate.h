@@ -3,6 +3,8 @@
 
 #include <QStyledItemDelegate>
 
+#include "nodeiconhelper.h"
+
 namespace vnotex {
 
 class ServiceLocator;
@@ -46,6 +48,7 @@ private:
 
   // Configuration
   ServiceLocator &m_services;
+  NodeIconHelper m_iconHelper;
   const int m_hPadding = 8; // Horizontal padding (left/right margins)
   const int m_iconSize = 16;
   const int m_lineSpacing = 2;

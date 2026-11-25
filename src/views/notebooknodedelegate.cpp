@@ -1,5 +1,6 @@
 #include "notebooknodedelegate.h"
 
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QFontMetricsF>
 #include <QLineEdit>
@@ -7,7 +8,6 @@
 #include <QTimer>
 #include <QtMath>
 
-#include "nodeiconhelper.h"
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/itemviewutils.h>
@@ -17,7 +17,12 @@
 using namespace vnotex;
 
 NotebookNodeDelegate::NotebookNodeDelegate(ServiceLocator &p_services, QObject *p_parent)
-    : TreeChildCountDelegate(p_parent), m_services(p_services) {}
+    : TreeChildCountDelegate(p_parent), m_services(p_services), m_iconHelper(p_services) {
+  if (auto *view = qobject_cast<QAbstractItemView *>(p_parent)) {
+    connect(&m_iconHelper, &NodeIconHelper::iconsChanged, view->viewport(),
+            QOverload<>::of(&QWidget::update));
+  }
+}
 
 NotebookNodeDelegate::~NotebookNodeDelegate() {}
 
@@ -83,7 +88,7 @@ void NotebookNodeDelegate::paintNode(QPainter *p_painter, const QStyleOptionView
 
   // Draw icon (files only — folders have no icon)
   if (!p_nodeInfo.isFolder) {
-    QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
+    QIcon icon = m_iconHelper.getNodeIcon(p_nodeInfo);
     if (!icon.isNull()) {
       QIcon::Mode iconMode = QIcon::Normal;
       if (!(p_option.state & QStyle::State_Enabled)) {

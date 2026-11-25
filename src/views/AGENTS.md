@@ -22,6 +22,35 @@ See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for views: *
 | `NodeIconHelper` | Helper for node icon resolution |
 | `INodeExplorer` | Interface for node explorers |
 
+## Node file-type icons
+
+`NotebookNodeDelegate` and `FileNodeDelegate` each own a `NodeIconHelper`. It snapshots
+`FileTypeCoreService::getAllFileTypes()` at construction and after a successful
+`fileTypesChanged` notification, then requests a viewport repaint. Parent delegates to
+their item view so this repaint connection is installed.
+
+The suffix-to-icon map is case-insensitive and first-assignment-wins, including custom
+or Others rows that claim a suffix. Use the node's relative path, not its display label.
+Do not query the registry, inspect file contents, or infer MIME types while painting.
+The projected Image row participates normally; saved suffix choices remain authoritative.
+
+| Registry type | Built-in resource in `src/data/core/icons/` |
+|---|---|
+| Markdown | `file_markdown.svg` |
+| Text (including source code) | `file_text.svg` |
+| TODO | `file_todo.svg` |
+| Typst | `file_typst.svg` |
+| Image | `file_image.svg` |
+| PDF | `file_pdf.svg` |
+| MindMap | `file_mindmap.svg` |
+
+Unknown/unassigned suffixes and unsupported custom types retain `file_node.svg`.
+Encrypted files always retain `lock.svg`; folders still have no painted tree icon.
+Resolve filenames through `ThemeService` and tint through `IconUtils` on each paint,
+so theme overrides and runtime light/dark switches work without stale cached pixmaps.
+Preserve each delegate's existing selected, disabled, external and missing-node treatment.
+This is resource/presentation behavior only: no saved configuration migration is needed.
+
 ## Tag hierarchy dragging
 
 `TagView` moves one tag and its existing subtree within the current notebook. Dropping

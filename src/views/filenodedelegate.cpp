@@ -1,12 +1,12 @@
 #include "filenodedelegate.h"
 
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QLineEdit>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QTimer>
 
-#include "nodeiconhelper.h"
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
@@ -16,7 +16,12 @@
 using namespace vnotex;
 
 FileNodeDelegate::FileNodeDelegate(ServiceLocator &p_services, QObject *p_parent)
-    : QStyledItemDelegate(p_parent), m_services(p_services) {}
+    : QStyledItemDelegate(p_parent), m_services(p_services), m_iconHelper(p_services) {
+  if (auto *view = qobject_cast<QAbstractItemView *>(p_parent)) {
+    connect(&m_iconHelper, &NodeIconHelper::iconsChanged, view->viewport(),
+            QOverload<>::of(&QWidget::update));
+  }
+}
 
 FileNodeDelegate::~FileNodeDelegate() {}
 
@@ -99,7 +104,7 @@ void FileNodeDelegate::paintFileNode(QPainter *p_painter, const QStyleOptionView
   nameRect.setRight(p_option.rect.right() - m_hPadding);
 
   // Draw icon
-  QIcon icon = NodeIconHelper::getNodeIcon(m_services, p_nodeInfo);
+  QIcon icon = m_iconHelper.getNodeIcon(p_nodeInfo);
   if (!icon.isNull()) {
     QIcon::Mode iconMode = QIcon::Normal;
     if (!(p_option.state & QStyle::State_Enabled)) {

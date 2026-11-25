@@ -6,6 +6,8 @@
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 
+#include "nodeiconhelper.h"
+
 namespace vnotex {
 
 // A QStyledItemDelegate for custom rendering of notebook nodes.
@@ -43,6 +45,7 @@ private:
 
   // Configuration
   ServiceLocator &m_services;
+  NodeIconHelper m_iconHelper;
   const int m_iconSize = 16;
 };
 

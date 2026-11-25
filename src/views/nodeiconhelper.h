@@ -1,23 +1,35 @@
 #ifndef NODEICONHELPER_H
 #define NODEICONHELPER_H
 
+#include <QHash>
 #include <QIcon>
+#include <QObject>
 
 namespace vnotex {
 
 class ServiceLocator;
 struct NodeInfo;
 
-// Static utility for node icon rendering.
-// Consolidates icon logic shared by NotebookNodeDelegate and FileNodeDelegate.
-class NodeIconHelper {
+// Shared node icon rendering with a snapshot of the applied suffix associations.
+class NodeIconHelper : public QObject {
+  Q_OBJECT
+
 public:
-  NodeIconHelper() = delete;
+  explicit NodeIconHelper(ServiceLocator &p_services, QObject *p_parent = nullptr);
 
   // Get the appropriate icon for a node.
   // Uses ThemeService for icon files and palette colors.
   // External nodes get a tinted icon color from theme.
-  static QIcon getNodeIcon(ServiceLocator &p_services, const NodeInfo &p_nodeInfo);
+  QIcon getNodeIcon(const NodeInfo &p_nodeInfo) const;
+
+signals:
+  void iconsChanged();
+
+private:
+  void reloadFileTypes();
+
+  ServiceLocator &m_services;
+  QHash<QString, QString> m_iconsBySuffix;
 };
 
 } // namespace vnotex

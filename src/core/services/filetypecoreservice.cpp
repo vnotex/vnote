@@ -251,5 +251,6 @@ bool FileTypeCoreService::setAllFileTypes(const QVector<FileType> &p_types) {
     return false;
   }
 
+  emit fileTypesChanged();
   return true;
 }

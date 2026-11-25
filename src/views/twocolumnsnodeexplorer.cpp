@@ -72,7 +72,7 @@ void TwoColumnsNodeExplorer::setupUI() {
   m_fileView = new FileListView(this);
   m_fileView->setModel(m_fileProxyModel);
 
-  m_fileDelegate = new FileNodeDelegate(m_services, this);
+  m_fileDelegate = new FileNodeDelegate(m_services, m_fileView);
   m_fileView->setItemDelegate(m_fileDelegate);
 
   m_fileController = new NotebookNodeController(m_services, this);

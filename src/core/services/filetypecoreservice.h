@@ -43,6 +43,10 @@ public:
   // Returns true on success, false on validation/save failure.
   bool setAllFileTypes(const QVector<FileType> &p_types);
 
+signals:
+  // Emitted after the applied file associations have been saved successfully.
+  void fileTypesChanged();
+
 private:
   // Parse a single file type from JSON object.
   FileType parseFileType(const QJsonObject &p_obj) const;

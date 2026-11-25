@@ -39,6 +39,13 @@
         <file>icons/export.svg</file>
         <file>icons/notebook_default.svg</file>
         <file>icons/file_node.svg</file>
+        <file>icons/file_markdown.svg</file>
+        <file>icons/file_text.svg</file>
+        <file>icons/file_todo.svg</file>
+        <file>icons/file_typst.svg</file>
+        <file>icons/file_image.svg</file>
+        <file>icons/file_pdf.svg</file>
+        <file>icons/file_mindmap.svg</file>
         <file>icons/folder_node.svg</file>
         <file>icons/new_group.svg</file>
         <file>icons/file_archive.svg</file>

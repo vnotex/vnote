@@ -72,7 +72,7 @@ void TagExplorer2::setupUI() {
   m_fileView->setAcceptDrops(false);
   m_fileView->setDragDropMode(QAbstractItemView::NoDragDrop);
 
-  m_fileDelegate = new FileNodeDelegate(m_services, this);
+  m_fileDelegate = new FileNodeDelegate(m_services, m_fileView);
   m_fileView->setItemDelegate(m_fileDelegate);
 
   // Splitter: tag tree on top, node list on bottom

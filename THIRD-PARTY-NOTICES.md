@@ -157,6 +157,14 @@ Both license texts are reproduced in `licenses/Lucide-LICENSE.txt`.
 
 ---
 
+## VNote file-type artwork
+
+The original `24x24` file-type icons in `src/data/core/icons/` are VNote artwork,
+not third-party Lucide or IconPark assets: `file_markdown.svg`, `file_text.svg`,
+`file_todo.svg`, `file_typst.svg`, `file_image.svg`, `file_pdf.svg`, and `file_mindmap.svg`.
+
+---
+
 ## IconPark
 
 - **Upstream:** https://github.com/bytedance/IconPark
@@ -166,7 +174,8 @@ Both license texts are reproduced in `licenses/Lucide-LICENSE.txt`.
 
 Covers the older icons, drawn on a `48x48` viewBox:
 
-- 31 files in `src/data/core/icons/` (those without a `lucide` class)
+- 31 older `48x48` files in `src/data/core/icons/` (without a `lucide` class;
+  excludes the original VNote file-type artwork above)
 - 263 files in `src/data/extra/themes/*/icons/` — per-theme copies, recolored
 
 Four were spot-checked against upstream and match byte-for-byte in their `d`
