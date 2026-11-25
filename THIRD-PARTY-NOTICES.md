@@ -157,11 +157,34 @@ Both license texts are reproduced in `licenses/Lucide-LICENSE.txt`.
 
 ---
 
-## VNote file-type artwork
+## Tabler Icons
 
-The original `24x24` file-type icons in `src/data/core/icons/` are VNote artwork,
-not third-party Lucide or IconPark assets: `file_markdown.svg`, `file_text.svg`,
-`file_todo.svg`, `file_typst.svg`, `file_image.svg`, `file_pdf.svg`, and `file_mindmap.svg`.
+- **Upstream:** https://github.com/tabler/tabler-icons
+- **Version:** [v3.53.0](https://github.com/tabler/tabler-icons/releases/tag/v3.53.0),
+  commit `999041dfbde45ad28e6da8af9d96b492461ffb59`
+- **Copyright:** Copyright (c) 2020-2026 Paweł Kuna
+- **License:** MIT
+- **Full text:** [`licenses/Tabler-LICENSE.txt`](licenses/Tabler-LICENSE.txt)
+  (verbatim upstream `LICENSE` at the pinned commit)
+
+The built-in file-type icons are downloaded from the outline set:
+
+| VNote file in `src/data/core/icons/` | Upstream icon (pinned source) |
+|---|---|
+| `file_markdown.svg` | [`markdown`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/markdown.svg) |
+| `file_text.svg` | [`file-type-txt`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/file-type-txt.svg) |
+| `file_todo.svg` | [`list-check`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/list-check.svg) |
+| `file_typst.svg` | [`typography`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/typography.svg) |
+| `file_image.svg` | [`photo`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/photo.svg) |
+| `file_pdf.svg` | [`file-type-pdf`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/file-type-pdf.svg) |
+| `file_mindmap.svg` | [`hierarchy-2`](https://raw.githubusercontent.com/tabler/tabler-icons/999041dfbde45ad28e6da8af9d96b492461ffb59/icons/outline/hierarchy-2.svg) |
+
+The only SVG modification is `stroke="currentColor"` to `stroke="#000000"`
+for VNote's existing theme recoloring. Geometry and upstream metadata are unchanged.
+`typography` represents typesetting for Typst; it is not a Typst brand logo.
+
+The MIT text is also compiled into `core.qrc` at
+`:/vnotex/data/core/licenses/Tabler-LICENSE.txt`, so binary distributions carry it.
 
 ---
 
@@ -175,7 +198,7 @@ not third-party Lucide or IconPark assets: `file_markdown.svg`, `file_text.svg`,
 Covers the older icons, drawn on a `48x48` viewBox:
 
 - 31 older `48x48` files in `src/data/core/icons/` (without a `lucide` class;
-  excludes the original VNote file-type artwork above)
+  excludes the `24x24` Tabler icons above)
 - 263 files in `src/data/extra/themes/*/icons/` — per-theme copies, recolored
 
 Four were spot-checked against upstream and match byte-for-byte in their `d`
@@ -227,9 +250,11 @@ window caption buttons, which is worth knowing before replacing them.
 
 ## Known gap
 
-The icon-set notices above ship in the **source tree** only. They are not
-compiled into `core.qrc` and VNote has no About dialog that displays them, so a
-user receiving only a built binary does not receive those icon notices. This
+The Lucide and IconPark license texts and this mapping document ship in the
+**source tree** only. Unlike the Tabler MIT text compiled into `core.qrc` at
+`:/vnotex/data/core/licenses/Tabler-LICENSE.txt`, they are not included in the
+binary, and VNote has no About dialog that displays them. A binary-only recipient
+therefore does not receive the Lucide and IconPark notices. This
 does not describe the separate dependency license files installed above,
 including `updater/LICENSE.minisign`. Both the ISC and MIT texts ask that the
 notice appear "in all copies". Closing the icon-notice gap properly means either

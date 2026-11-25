@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/vnotex/data/core">
+        <file alias="licenses/Tabler-LICENSE.txt">../../../licenses/Tabler-LICENSE.txt</file>
         <file>icons/vnote.icns</file>
         <file>icons/vnote.ico</file>
         <file>icons/new_note.svg</file>
