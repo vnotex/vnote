@@ -1,19 +1,18 @@
-## v4.15.1
-A refinement release with smoother TODO planning, unified editor settings and faster notebook searches on top of VNote 4.15.0:
+## v4.15.2
+A maintenance release with steadier TODO planning, improved Markdown editing and clearer file navigation on top of VNote 4.15.1:
 
-* **TODO planner and dashboard**
-    * Commit list names when editing finishes, preserving pending names when switching lists or saving
-    * Expand and collapse TODO groups with a single click, and let task notes fill the available details pane
-    * Add My Day icon marks beside importance stars in the TODO editor and dashboard sticker for direct membership changes
-    * Remember Lists and Task details panel widths across list switches, narrow layouts and restarts, and fix cropped list emoji icons
-* **Editing and interface**
-    * Default note opening to Edit; upgrading from versions below `4.15.1` resets the previous opening mode to Edit, while later saved Read preferences remain respected
-    * Centralize Normal, Vi and VSCode modes in shared Input Mode settings, preserving existing selections across text and Markdown editors
-    * Keep empty concealed Markdown elements visible and use a sticky-note icon for mind-map node notes
-    * Display Created and Modified timestamps in note and folder properties using the application locale, preserving local time and seconds
-* **Search and reliability**
-    * Use typed vxcore results for folder listings, search and tags to avoid in-process JSON round trips while preserving metadata, ordering and existing JSON APIs
-    * Remove the ripgrep backend and use built-in search for consistent Unicode replacement and cooperative cancellation
-    * Batch raw-notebook search metadata checks in the HTTP API ([#2789](https://github.com/vnotex/vnote/pull/2789))
-    * Fix deleting notebook folders whose ordinary descendants have missing index metadata, while retaining protected-file and unsafe-path checks
+* **TODO planner**
+    * Keep My Day actions and task-row labels correct across midnight, including expired My Day membership
+    * Toggle task details by clicking the selected task again
+    * Fix sidebar group drag-and-drop reordering and keep groups before ungrouped lists
+    * Remember the task sort order across TODO files and restarts, with Manual available to restore document order
+    * Disable document zoom in the TODO editor to keep its task layout stable
+* **Markdown and images**
+    * Offer Open Link and Copy Link for bare URLs in Markdown edit mode, using parsed link destinations and excluding code
+    * Prevent cursor jumps at folded document tails
+    * Stop the mouse release that opens the Insert Table popup from also triggering its dialog
+    * Default clipboard image files to lossless PNG for new profiles and missing or invalid format settings; profiles already storing JPEG keep JPEG, now encoded at quality 100 ([#2791](https://github.com/vnotex/vnote/issues/2791))
+* **Navigation and interface**
+    * Add built-in file-type icons to node explorers using upstream Tabler artwork
+    * Restore tree branch connector lines in the Pure theme, retaining its expand/collapse arrows
 * **Translations**: Simplified Chinese (zh_CN) and Japanese (ja) catalogs updated

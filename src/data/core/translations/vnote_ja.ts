@@ -1123,7 +1123,7 @@ Trust is remembered until you close this notebook.</source>
 <context>
     <name>TodoDocument</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+804"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="+802"/>
         <location line="+222"/>
         <source>Default</source>
         <translation>デフォルト</translation>
@@ -5360,12 +5360,12 @@ Trust is remembered until you close this notebook.</source>
         <translation>画像のアドレスをコピー</translation>
     </message>
     <message>
-        <location line="+492"/>
+        <location line="+485"/>
         <source>Use the image menu to copy an embedded image</source>
         <translation>埋め込み画像をコピーするには画像メニューを使用してください</translation>
     </message>
     <message>
-        <location line="-1844"/>
+        <location line="-1837"/>
         <location line="+752"/>
         <source>Paste as Plain Text</source>
         <translation>プレーンテキストとして貼り付け</translation>
@@ -5400,7 +5400,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>インラインプレビューをコピー</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+49"/>
         <source>Open Link</source>
         <translation>リンクを開く</translation>
     </message>
@@ -5411,7 +5411,7 @@ Trust is remembered until you close this notebook.</source>
         <translation>リンクをコピー</translation>
     </message>
     <message>
-        <location line="-745"/>
+        <location line="-744"/>
         <source>Fetching images to local...</source>
         <translation>ローカルにイメージを取得しています...</translation>
     </message>
@@ -12007,18 +12007,18 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::TodoEditor</name>
     <message>
-        <location filename="../../../widgets/editors/todoeditor.cpp" line="+76"/>
+        <location filename="../../../widgets/editors/todoeditor.cpp" line="+81"/>
         <source>Untitled group</source>
         <translation>無題のグループ</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+536"/>
+        <location line="+606"/>
         <source>Untitled list</source>
         <translation>無題のリスト</translation>
     </message>
     <message>
-        <location line="-530"/>
+        <location line="-600"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
@@ -12029,17 +12029,17 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+714"/>
+        <location line="+792"/>
         <source>Untitled task</source>
         <translation>無題のタスク</translation>
     </message>
     <message>
-        <location line="-322"/>
+        <location line="-332"/>
         <source>TODO planner</source>
         <translation>TODO プランナー</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>List navigation</source>
         <translation>リストナビゲーション</translation>
     </message>
@@ -12082,33 +12082,33 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+1187"/>
+        <location line="+1217"/>
         <location line="+193"/>
         <source>New List</source>
         <translation>新しいリスト</translation>
     </message>
     <message>
-        <location line="-1380"/>
-        <location line="+1186"/>
+        <location line="-1410"/>
+        <location line="+1216"/>
         <source>New list</source>
         <translation>新しいリスト</translation>
     </message>
     <message>
-        <location line="-1185"/>
+        <location line="-1215"/>
         <location line="+1"/>
-        <location line="+1245"/>
+        <location line="+1275"/>
         <source>New group</source>
         <translation>新しいグループ</translation>
     </message>
     <message>
-        <location line="-1242"/>
-        <location line="+494"/>
-        <location line="+781"/>
+        <location line="-1272"/>
+        <location line="+513"/>
+        <location line="+792"/>
         <source>Archive Completed Tasks</source>
         <translation>完了したタスクをアーカイブ</translation>
     </message>
     <message>
-        <location line="-1244"/>
+        <location line="-1274"/>
         <source>Tasks or details</source>
         <translation>タスクまたは詳細</translation>
     </message>
@@ -12119,12 +12119,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1405"/>
+        <location line="+1435"/>
         <source>Add list icon</source>
         <translation>リストのアイコンを追加</translation>
     </message>
     <message>
-        <location line="-1397"/>
+        <location line="-1427"/>
         <source>List title</source>
         <translation>リストのタイトル</translation>
     </message>
@@ -12136,18 +12136,18 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+3"/>
         <location line="+1"/>
-        <location line="+1611"/>
+        <location line="+1640"/>
         <source>List Options</source>
         <translation>リストのオプション</translation>
     </message>
     <message>
-        <location line="-1603"/>
-        <location line="+1356"/>
+        <location line="-1632"/>
+        <location line="+1386"/>
         <source>List description</source>
         <translation>リストの説明</translation>
     </message>
     <message>
-        <location line="-1347"/>
+        <location line="-1377"/>
         <source>Tasks; Enter opens details, Space completes</source>
         <translation>タスク: Enter キーで詳細を開き、Space キーで完了にします</translation>
     </message>
@@ -12188,7 +12188,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>タスクを追加</translation>
     </message>
     <message>
-        <location line="+124"/>
+        <location line="+132"/>
         <location line="+3"/>
         <source>Task details</source>
         <translation>タスクの詳細</translation>
@@ -12236,20 +12236,20 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-37"/>
-        <location line="+365"/>
-        <location line="+1191"/>
+        <location line="+376"/>
+        <location line="+1202"/>
         <source>Add to My Day</source>
         <translation>今日の予定に追加</translation>
     </message>
     <message>
-        <location line="-1516"/>
-        <location line="+810"/>
+        <location line="-1538"/>
+        <location line="+832"/>
         <location line="+38"/>
         <source>Task due date</source>
         <translation>タスクの期限</translation>
     </message>
     <message>
-        <location line="-839"/>
+        <location line="-861"/>
         <location line="+1"/>
         <source>Task note in Markdown</source>
         <translation>Markdown 形式のタスクのメモ</translation>
@@ -12267,13 +12267,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+6"/>
         <location line="+4"/>
-        <location line="+1222"/>
-        <location line="+322"/>
+        <location line="+1244"/>
+        <location line="+320"/>
         <source>Delete task</source>
         <translation>タスクを削除</translation>
     </message>
     <message>
-        <location line="-1366"/>
+        <location line="-1375"/>
         <source>Archive Completed Tasks (requires completed tasks in an editable file)</source>
         <translation>完了したタスクをアーカイブ（編集可能なファイル内に完了したタスクが必要）</translation>
     </message>
@@ -12299,23 +12299,23 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+1204"/>
+        <location line="+1213"/>
         <source>Remove importance</source>
         <translation>重要マークを解除</translation>
     </message>
     <message>
-        <location line="-1204"/>
-        <location line="+1204"/>
+        <location line="-1213"/>
+        <location line="+1213"/>
         <source>Mark as important</source>
         <translation>重要マークを付ける</translation>
     </message>
     <message>
-        <location line="-88"/>
+        <location line="-86"/>
         <source>Added to My Day</source>
         <translation>今日の予定に追加済み</translation>
     </message>
     <message>
-        <location line="-1109"/>
+        <location line="-1120"/>
         <source>My Day: %1</source>
         <translation>今日の予定: %1</translation>
     </message>
@@ -12342,12 +12342,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-17"/>
-        <location line="+394"/>
+        <location line="+405"/>
         <source>Step options</source>
         <translation>ステップのオプション</translation>
     </message>
     <message>
-        <location line="-376"/>
+        <location line="-387"/>
         <source>Complete step: %1</source>
         <translation>ステップを完了にする: %1</translation>
     </message>
@@ -12362,7 +12362,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>「予定」に追加する前に期限を選択してください</translation>
     </message>
     <message>
-        <location line="+354"/>
+        <location line="+365"/>
         <source>Mark as Not Completed</source>
         <translation>未完了にする</translation>
     </message>
@@ -12475,24 +12475,24 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+13"/>
-        <location line="+307"/>
+        <location line="+306"/>
         <source>Rename</source>
         <translation>名前変更</translation>
     </message>
     <message>
-        <location line="-305"/>
+        <location line="-304"/>
         <source>Ungroup Lists</source>
         <translation>リストのグループ化を解除</translation>
     </message>
     <message>
         <location line="+38"/>
         <location line="+1"/>
-        <location line="+267"/>
+        <location line="+266"/>
         <source>Edit Description</source>
         <translation>説明を編集</translation>
     </message>
     <message>
-        <location line="-237"/>
+        <location line="-236"/>
         <source>Change list icon</source>
         <translation>リストのアイコンを変更</translation>
     </message>
@@ -12538,12 +12538,17 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>タスク「%1」を削除しますか?</translation>
     </message>
     <message>
-        <location line="+146"/>
+        <location line="+145"/>
         <source>Sort by</source>
         <translation>並べ替え</translation>
     </message>
     <message>
         <location line="+40"/>
+        <source>Manual</source>
+        <translation>手動</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Importance</source>
         <translation>重要度</translation>
     </message>
@@ -12583,13 +12588,13 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>タスクの操作</translation>
     </message>
     <message>
-        <location line="-1168"/>
-        <location line="+1191"/>
+        <location line="-1179"/>
+        <location line="+1202"/>
         <source>Remove from My Day</source>
         <translation>今日の予定から除外</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+14"/>
         <source>Mark as not completed</source>
         <translation>未完了にする</translation>
     </message>
@@ -13088,7 +13093,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>無題のタスク</translation>
     </message>
     <message>
-        <location line="+454"/>
+        <location line="+457"/>
         <location line="+54"/>
         <source>Completed</source>
         <translation>完了</translation>
@@ -13219,20 +13224,21 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
 <context>
     <name>vnotex::TodoViewWindowController</name>
     <message>
-        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-948"/>
+        <location filename="../../../controllers/todoviewwindowcontroller.cpp" line="-946"/>
         <source>Line %1: %2</source>
         <translation>%1 行目: %2</translation>
     </message>
     <message>
         <location line="+165"/>
         <location line="+12"/>
-        <location line="+17"/>
-        <location line="+1176"/>
+        <location line="+15"/>
+        <location line="+1094"/>
+        <location line="+102"/>
         <source>The task no longer exists.</source>
         <translation>タスクはもう存在しません。</translation>
     </message>
     <message>
-        <location line="-1101"/>
+        <location line="-1121"/>
         <source>There are no completed tasks to archive.</source>
         <translation>アーカイブする完了済みのタスクがありません。</translation>
     </message>
@@ -13368,12 +13374,12 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
     </message>
     <message>
         <location line="+44"/>
-        <location line="+241"/>
+        <location line="+261"/>
         <source>A new task needs a nonempty, single-line title.</source>
         <translation>新しいタスクには、空でなく改行を含まないタイトルが必要です。</translation>
     </message>
     <message>
-        <location line="-237"/>
+        <location line="-257"/>
         <source>Choose an existing destination list.</source>
         <translation>既存の追加先リストを選択してください。</translation>
     </message>
@@ -13383,7 +13389,7 @@ They will be moved, with their group and list hierarchy, to a new .archived.todo
         <translation>タスク</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+35"/>
         <source>The task is missing or its title contains a line break.</source>
         <translation>タスクが存在しないか、タイトルに改行が含まれています。</translation>
     </message>
