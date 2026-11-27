@@ -43,11 +43,13 @@ jobs:
             tool_arch: x86_64
             qt_host: linux
             qt_arch: linux_gcc_64
+            minizip_package: libminizip1
           - os: ubuntu-24.04-arm
             arch: arm64
             tool_arch: aarch64
             qt_host: linux_arm64
             qt_arch: linux_gcc_arm64
+            minizip_package: libminizip1t64
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -85,6 +87,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libsecret-1-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-dri libnss3
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ${{ matrix.minizip_package }}
           test -c /dev/fuse
           # Permit Chromium's namespace sandbox for the unprofiled AppImage helper.
           # This changes only the disposable runner, not the packaged application.

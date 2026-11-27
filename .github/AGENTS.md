@@ -47,6 +47,10 @@ Use `x86_64` / `aarch64` for tool downloads, but retain `x64` / `arm64` in relea
 filenames. Include OS and architecture in compiled caches and architecture in report/debug
 artifacts. Each job may prune only its own continuous-release asset family.
 
+Install the minizip runtime explicitly before packaging: `libminizip1` on Ubuntu 22.04
+and `libminizip1t64` on Ubuntu 24.04 both provide `libminizip.so.1`. Do not rely on the
+runner image to supply it; linuxdeploy needs it to resolve the application dependency tree.
+
 Both jobs fetch architecture-independent OpenSSL sources from the `linux` Qt tool
 repository and compile with `--prefix=/usr/local --libdir=lib64`, matching the
 deployment template. Keep FUSE 2 support (`fuse` pulls `libfuse2t64` on Ubuntu 24.04).
