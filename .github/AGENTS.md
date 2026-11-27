@@ -37,6 +37,32 @@ The existing `[Release]` condition disables these suites for both kits. Both Qt 
 build and sign packages and run the signed-package ABI, consumer and WebEngine gates,
 including native Intel verification; do not describe Qt 6.9.3 as unit-test validated.
 
+### Linux architecture matrix
+
+`ci-linux.yml` builds natively on `ubuntu-22.04` (x64) and `ubuntu-24.04-arm`
+(ARM64), with `fail-fast: false`. Keep x64's glibc 2.35 baseline; official Qt 6.10.3
+ARM64 binaries require glibc 2.39, so the ARM AppImage does not support Ubuntu 22.04.
+Qt hosts/kits are `linux` / `linux_gcc_64` and `linux_arm64` / `linux_gcc_arm64`.
+Use `x86_64` / `aarch64` for tool downloads, but retain `x64` / `arm64` in release
+filenames. Include OS and architecture in compiled caches and architecture in report/debug
+artifacts. Each job may prune only its own continuous-release asset family.
+
+Both jobs fetch architecture-independent OpenSSL sources from the `linux` Qt tool
+repository and compile with `--prefix=/usr/local --libdir=lib64`, matching the
+deployment template. Keep FUSE 2 support (`fuse` pulls `libfuse2t64` on Ubuntu 24.04).
+On the disposable Ubuntu 24.04 runner, clear `apparmor_restrict_unprivileged_userns`
+when present so Chromium's namespace sandbox can run the unprofiled AppImage helper.
+Never disable the Chromium sandbox in the package or smoke gate.
+
+Before publication, retain the Typst/consumer gates and run
+`scripts/e2e/smoke_linux_webengine.py` against the final extracted AppImage. It checks
+every ELF's architecture and renders with package-only Qt/helper/resources under Xvfb
+and software GL, with an isolated profile. Compilation alone is not ARM runtime proof.
+The browser stays unprivileged and sandboxed. Only a bounded `sudo -n cat` of the
+reported renderer's procfs maps is privileged: Chromium marks that process non-dumpable.
+The dedicated smoke supervisor adopts and reaps orphaned helpers, including descendants
+that leave the probe's process group; a leader's exit alone is not cleanup proof.
+
 ### HTTP API test registration
 
 All test-enabled platform jobs run `scripts/e2e/smoke_http_api.py --check-registration`
@@ -88,7 +114,7 @@ Choose the workflow and connection artifact for the required platform:
 | Workflow | Connection artifact | Pause point |
 |----------|---------------------|-------------|
 | `ci-win.yml` | `debug-connection-windows` | After tools, before configure/build |
-| `ci-linux.yml` | `debug-connection-linux` | After configure, before build and test dependencies |
+| `ci-linux.yml` | `debug-connection-linux-x64`, `debug-connection-linux-arm64` | After configure, before build and test dependencies |
 | `ci-macos.yml` | `debug-connection-macos-<Qt version>` | After configure, before test build/keychain setup |
 
 macOS build jobs also use the `Mac-code-sign` environment. Any configured approval or
@@ -105,7 +131,8 @@ Download once the connection-upload step succeeds; the artifact is available whi
 the job is still running. Do not wait for workflow completion to obtain it. Each
 macOS matrix job has its own session/artifact, including the Qt 6.9 job whose unit
 suite is disabled. Account for every paused job. No guest within 15 minutes ends a
-session; the normal job deadline also continues to run.
+session; the normal job deadline also continues to run. A Linux debug dispatch pauses
+both architecture jobs; download and close each session independently.
 
 ```powershell
 $connectionDir = Join-Path $debugDir 'connection'

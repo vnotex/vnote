@@ -30,14 +30,28 @@ env:
 
 jobs:
   build-linux:
-    name: Build On Ubuntu 22.04
-    # Build on the oldest supported Ubuntu so the AppImage works with glibc 2.35 (#2748).
-    runs-on: ubuntu-22.04
+    name: Build On ${{ matrix.os }} (${{ matrix.arch }})
+    # Keep x64 on glibc 2.35 (#2748); official ARM64 Qt requires glibc 2.39.
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: x64
+            tool_arch: x86_64
+            qt_host: linux
+            qt_arch: linux_gcc_64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            tool_arch: aarch64
+            qt_host: linux_arm64
+            qt_arch: linux_gcc_arm64
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -49,13 +63,13 @@ jobs:
 
       - name: Install a Fresh CMake
         run: |
-          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-Linux-x86_64.sh
-          chmod +x cmake-${CMAKE_VER}-Linux-x86_64.sh
-          mkdir ${{runner.workspace}}/cmake
-          sudo ./cmake-${CMAKE_VER}-Linux-x86_64.sh --skip-license --prefix=${{runner.workspace}}/cmake
+          wget --no-verbose https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-${{ matrix.tool_arch }}.sh
+          chmod +x cmake-${CMAKE_VER}-linux-${{ matrix.tool_arch }}.sh
+          mkdir ${{github.workspace}}/../cmake
+          sudo ./cmake-${CMAKE_VER}-linux-${{ matrix.tool_arch }}.sh --skip-license --prefix=${{github.workspace}}/../cmake
           sudo rm -f /usr/local/bin/cmake /usr/local/bin/cpack
-          sudo ln -s ${{runner.workspace}}/cmake/bin/cmake /usr/local/bin/cmake
-          sudo ln -s ${{runner.workspace}}/cmake/bin/cpack /usr/local/bin/cpack
+          sudo ln -s ${{github.workspace}}/../cmake/bin/cmake /usr/local/bin/cmake
+          sudo ln -s ${{github.workspace}}/../cmake/bin/cpack /usr/local/bin/cpack
 
       - name: Install linuxdeploy
         uses: miurahr/install-linuxdeploy-action@v1
@@ -70,21 +84,31 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev xvfb xauth
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libsecret-1-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-dri libnss3
+          test -c /dev/fuse
+          # Permit Chromium's namespace sandbox for the unprofiled AppImage helper.
+          # This changes only the disposable runner, not the packaged application.
+          if [ "${{ matrix.os }}" = "ubuntu-24.04-arm" ] && [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
           python3 -m pip config set global.break-system-packages true
 
       - name: Cache Qt
         id: cache-qt
         uses: actions/cache@v4
         with:
-          path: ${{runner.workspace}}/Qt
+          path: ${{github.workspace}}/../Qt
           # The Qt tree also contains OpenSSL compiled on the runner.
-          key: ${{ runner.os }}-ubuntu-22.04-QtCache-6.10.3
+          key: ${{ runner.os }}-${{ matrix.os }}-${{ matrix.arch }}-QtCache-6.10.3-aqt3.3.0
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: 6.10.3
+          aqtversion: ==3.3.0
+          host: ${{ matrix.qt_host }}
           target: desktop
+          arch: ${{ matrix.qt_arch }}
           # NOTE: do NOT add qtdeclarative here. It is not an aqt add-on module
           # for Qt 6 -- it ships inside the base desktop package -- and naming
           # it makes aqt fail this whole step with "The packages
@@ -94,20 +118,22 @@ jobs:
           # test_pdfviewercore_js registration check below is the gate that
           # proves it.
           modules: 'qtwebengine qtwebchannel qtpositioning qtpdf qtimageformats qt5compat qtserialport'
-          tools: 'tools_opensslv3_src'
           cache: 'true'
-          cache-key-prefix: install-qt-action-ubuntu-22.04
+          cache-key-prefix: install-qt-action-${{ matrix.os }}-${{ matrix.arch }}-aqt3.3.0
 
       - name: Compile OpenSSLV3
         run: |
-          cd ${Qt6_DIR}/../../Tools/OpenSSLv3/src
-          ./Configure
+          # Qt publishes these architecture-independent sources only under linux_x64.
+          python3 -m aqt install-tool linux desktop tools_opensslv3_src --outputdir "${{github.workspace}}/../Qt"
+          cd "${{github.workspace}}/../Qt/Tools/OpenSSLv3/src"
+          # Match the deployment template on both native architectures.
+          ./Configure --prefix=/usr/local --libdir=lib64
           make -j2
           sudo make install
 
       - name: Create Build Dir
         run: mkdir build
-        working-directory: ${{runner.workspace}}
+        working-directory: ${{github.workspace}}/..
 
       - name: Cache Typst compiler dependencies
         uses: actions/cache@v4
@@ -115,8 +141,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            ${{runner.workspace}}/build/typst-cargo
-          key: ${{runner.os}}-ubuntu-22.04-typst-Rust-1.99.0-${{hashFiles('libs/vtextedit/tools/typst-backend/Cargo.lock')}}
+            ${{github.workspace}}/../build/typst-cargo
+          key: ${{runner.os}}-${{ matrix.os }}-${{ matrix.arch }}-typst-Rust-1.99.0-${{hashFiles('libs/vtextedit/tools/typst-backend/Cargo.lock')}}
 
       - name: Install pinned Typst build tools
         run: |
@@ -148,7 +174,7 @@ jobs:
           cmake -DENABLE_QT5=OFF -DENABLE_QT6=ON ..
           make -j2
           sudo make install
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
 
       # A "Compile qt6ct" step used to live here. It was removed because:
       #   * the upstream it cloned (trialuser02/qt6ct) is archived and includes
@@ -169,7 +195,7 @@ jobs:
           qmake -v
           cmake --version
           cmake -DVNOTE_BUILD_TESTS=${VNOTE_TESTS} ${GITHUB_WORKSPACE}
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
 
       - name: Start restricted SSH debug session
         id: debug_session
@@ -184,7 +210,7 @@ jobs:
         if: ${{ !cancelled() && steps.debug_session.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
-          name: debug-connection-linux
+          name: debug-connection-linux-${{ matrix.arch }}
           path: ${{ steps.debug_session.outputs.connection_file }}
           if-no-files-found: error
           retention-days: 1
@@ -202,9 +228,9 @@ jobs:
       - name: Build Project
         run: |
           # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
-          rm -f ${{runner.workspace}}/Qt/6.*/gcc_64/plugins/sqldrivers/libqsqlmimer.so
+          rm -f "${QT_ROOT_DIR}/plugins/sqldrivers/libqsqlmimer.so"
           cmake --build . --target pack
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
 
       - name: Install Test Dependencies
         if: env.VNOTE_TESTS == 'ON'
@@ -230,7 +256,7 @@ jobs:
           export LANG=C.UTF-8
           # libVTextEdit.so lives next to the parent build's vnote binary;
           # add it to LD_LIBRARY_PATH so Qt-side test exes resolve it at load.
-          export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${{github.workspace}}/../build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
           # test_pdfviewercore_js is guarded on TARGET Qt6::Qml. If qtdeclarative
           # is missing from the Qt install, CMake silently skips the target and
           # the ONLY gate covering the PDF outline JS contract disappears from an
@@ -245,17 +271,17 @@ jobs:
           bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure || test_status=1
           QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1
           exit "$test_status"
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
 
       - name: Preserve original test reports
         if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         uses: actions/upload-artifact@v4
         with:
-          name: test-report-linux
+          name: test-report-linux-${{ matrix.arch }}
           path: |
-            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
-            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
-            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+            ${{github.workspace}}/../build/Testing/Temporary/Last*.log
+            ${{github.workspace}}/../build/libs/vtextedit/Testing/Temporary/Last*.log
+            ${{github.workspace}}/../build/tests/widgets/test_typstviewwindow_*.xml
           if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -267,14 +293,14 @@ jobs:
           export QT_QPA_PLATFORM=offscreen
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
-          export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${{github.workspace}}/../build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
           if [ -s Testing/Temporary/LastTestsFailed.log ]; then
             bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
           fi
           if [ -s libs/vtextedit/Testing/Temporary/LastTestsFailed.log ]; then
             QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit --rerun-failed --extra-verbose --no-tests=error || true
           fi
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
 
       - name: Fix Package
         run: |
@@ -297,20 +323,20 @@ jobs:
           find ./squashfs-root -name 'libfontconfig.so*' -delete
           # Re-package
           rm VNote*.AppImage
-          linuxdeploy-plugin-appimage-x86_64.AppImage --appdir=./squashfs-root
+          linuxdeploy-plugin-appimage-${{ matrix.tool_arch }}.AppImage --appdir=./squashfs-root
           mv VNote*.AppImage ../
           popd
-          mv VNote*.AppImage VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
-        working-directory: ${{runner.workspace}}/build
+          mv VNote*.AppImage VNote-${{env.VNOTE_VER}}-linux-${{ matrix.arch }}.AppImage
+        working-directory: ${{github.workspace}}/../build
 
       - name: Verify packaged Typst runtime
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
         run: |
           # Inspect the final, repacked AppImage rather than the Cargo output or
           # the pre-fix linuxdeploy staging directory.
           mkdir "$RUNNER_TEMP/typst-package"
           cd "$RUNNER_TEMP/typst-package"
-          "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage" --appimage-extract
+          "${{github.workspace}}/../build/VNote-${{env.VNOTE_VER}}-linux-${{ matrix.arch }}.AppImage" --appimage-extract
           python3 - <<'PY'
           import os
           from pathlib import Path
@@ -324,7 +350,7 @@ jobs:
           executable = appdir / 'usr/bin/vnote'
           # Install-owned notices retain the configured GNUInstallDirs layout.
           cache = {}
-          for line in Path('${{runner.workspace}}/build/CMakeCache.txt').read_text().splitlines():
+          for line in Path('${{github.workspace}}/../build/CMakeCache.txt').read_text().splitlines():
               if '=' in line and ':' in line.split('=', 1)[0]:
                   key, value = line.split('=', 1)
                   cache[key.split(':', 1)[0]] = value
@@ -384,16 +410,22 @@ jobs:
 
           PY
 
+      - name: Verify packaged architecture and WebEngine
+        run: |
+          xvfb-run -a python3 scripts/e2e/smoke_linux_webengine.py \
+            --appdir "$RUNNER_TEMP/typst-package/squashfs-root" \
+            --qt-prefix "$QT_ROOT_DIR" --architecture "${{ matrix.arch }}"
+
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
-          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
+          name: VNote-${{env.VNOTE_VER}}-linux-${{ matrix.arch }}.AppImage
+          path: ${{github.workspace}}/../build/VNote-${{env.VNOTE_VER}}-linux-${{ matrix.arch }}.AppImage
 
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
         shell: bash
-        working-directory: ${{runner.workspace}}/build
+        working-directory: ${{github.workspace}}/../build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # gh release commands run from build/ (not a git checkout), so gh's
@@ -412,24 +444,24 @@ jobs:
             -F sha="$GITHUB_SHA" -F force=true || true
 
           # Copy the built artifact to a stable, non-versioned name.
-          cp "VNote-${VNOTE_VER}-linux-x64.AppImage" "VNote-continuous-linux-x64.AppImage"
+          cp "VNote-${VNOTE_VER}-linux-${{ matrix.arch }}.AppImage" "VNote-continuous-linux-${{ matrix.arch }}.AppImage"
 
           # Prune this job's own asset family (old 4.x versioned + previous stable).
           for asset in $(gh release view continuous-build \
               --json assets --jq '.assets[].name' \
-              | grep -E 'linux-x64\.AppImage$'); do
+              | grep -E 'linux-${{ matrix.arch }}\.AppImage$'); do
             gh release delete-asset continuous-build "$asset" -y || true
           done
 
           # Upload the stable-named asset.
-          gh release upload continuous-build "VNote-continuous-linux-x64.AppImage" --clobber
+          gh release upload continuous-build "VNote-continuous-linux-${{ matrix.arch }}.AppImage" --clobber
 
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
+          artifacts: ${{github.workspace}}/../build/VNote-${{env.VNOTE_VER}}-linux-${{ matrix.arch }}.AppImage
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true

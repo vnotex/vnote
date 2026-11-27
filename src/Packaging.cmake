@@ -12,7 +12,7 @@ cmake_path(NORMAL_PATH QT_PLUGINS_DIR OUTPUT_VARIABLE QT_PLUGINS_DIR)
 # To use the specific version of Qt
 set(WINDEPLOYQT_EXECUTABLE "${QT_BIN_DIR}/windeployqt.exe")
 
-find_program(LINUXDEPLOY_EXECUTABLE linuxdeploy linuxdeploy-x86_64.AppImage HINTS "${QT_BIN_DIR}")
+find_program(LINUXDEPLOY_EXECUTABLE linuxdeploy linuxdeploy-${CMAKE_SYSTEM_PROCESSOR}.AppImage HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)

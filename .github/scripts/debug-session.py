@@ -25,6 +25,7 @@ ARCHIVES = {
     ("Darwin", "arm64"): ("upterm_darwin_arm64.tar.gz", "9721c3b586a5de4f55d5e8d4cc8d9fcf17e1bcdc2e861cae9c31848fe204ede7"),
     ("Darwin", "amd64"): ("upterm_darwin_amd64.tar.gz", "eb31198215928ea003b42665c4ec248dba462f3ae921a7a6ff9d5a1faff30f71"),
     ("Linux", "amd64"): ("upterm_linux_amd64.tar.gz", "6149f1821dcd4abad864a2284ad8b32133a05a4032b0614abb66622860a68d17"),
+    ("Linux", "arm64"): ("upterm_linux_arm64.tar.gz", "61580ec7148e65a61c085b1c3091d29633b855126fbdc35f558f789f0923d05f"),
 }
 RELAY = "ssh://uptermd.upterm.dev:22"
 KNOWN_HOSTS = (
